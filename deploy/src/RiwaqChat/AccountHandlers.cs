@@ -83,6 +83,20 @@ namespace RiwaqChat
                     if (action == "login")
                     {
                         if (!Web.Allow("login:" + Web.Ip(req), 10, TimeSpan.FromMinutes(15))) { Web.Error(res, 429, "rate_limited", "محاولات كتير، استنى شوية وجرّب تاني."); return; }
+                        // a super admin (platform console) can sign in from the same form: then they go to admin.html
+                        if (!email.Contains("@"))
+                        {
+                            int adminId = 0; string adminHash = null;
+                            using (var cmd = Db.Cmd(c, "SELECT Id, PasswordHash FROM dbo.Admins WHERE Username = @u", "@u", email))
+                            using (var r = cmd.ExecuteReader()) if (r.Read()) { adminId = (int)r[0]; adminHash = (string)r[1]; }
+                            if (adminHash != null && Web.CheckPassword(password, adminHash))
+                            {
+                                using (var cmd = Db.Cmd(c, "UPDATE dbo.Admins SET LastLoginAt = SYSUTCDATETIME() WHERE Id = @id", "@id", adminId)) cmd.ExecuteNonQuery();
+                                AdminAuth.SignIn(ctx, adminId);
+                                Web.Json(res, 200, new Dictionary<string, object> { { "role", "superadmin" }, { "redirect", "admin.html" } });
+                                return;
+                            }
+                        }
                         // log in with the email or with the store id (e.g. "riwaq")
                         var s = email.Contains("@") ? Db.StoreByEmail(c, email) : Db.StoreBySlug(c, email);
                         if (s == null || !Web.CheckPassword(password, s.PasswordHash)) { Web.Error(res, 401, "bad_login", "بيانات الدخول أو الباسورد غلط."); return; }

@@ -977,7 +977,11 @@
   $("slugPreview").textContent = BASE + "?store=my-store";
   $("loginForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("lMsg", ""); $("lBtn").classList.add("loading");
-    try { me = await api("api/auth.ashx?action=login", { method: "POST", json: { email: $("lEmail").value, password: $("lPass").value } }); showApp(); }
+    try {
+      var r = await api("api/auth.ashx?action=login", { method: "POST", json: { email: $("lEmail").value, password: $("lPass").value } });
+      if (r && r.role === "superadmin") { $("lPass").value = ""; location.href = r.redirect || "admin.html"; return; }   // platform admin -> admin dashboard
+      me = r; showApp();
+    }
     catch (err) { setMsg("lMsg", err.message); shake(); }
     finally { $("lBtn").classList.remove("loading"); }
   };

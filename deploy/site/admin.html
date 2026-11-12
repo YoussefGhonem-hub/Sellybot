@@ -527,7 +527,8 @@
   };
 
   // ---------- auth ----------
-  function showLogin() { $("appView").hidden = true; $("loginView").hidden = false; setTimeout(function () { $("lUser").focus(); }, 50); }
+  // One login for everyone: the dashboard's login form recognizes super admins and sends them back here.
+  function showLogin() { $("appView").hidden = true; location.replace("dashboard.html"); }
   async function showApp(name, defaultPw) {
     $("loginView").hidden = true; $("appView").hidden = false;
     $("pwWarn").hidden = !defaultPw;
