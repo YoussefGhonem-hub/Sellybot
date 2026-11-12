@@ -124,6 +124,47 @@
   th,td{padding:8px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
   th{color:var(--muted);font-weight:600;font-size:12px}
   .table-wrap{overflow-x:auto}
+  /* my plan + support */
+  .nb{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--brand);color:#fff;font-size:11px;font-weight:700;margin-inline-start:4px;animation:pulse 2s infinite}
+  .wa-btn{background:linear-gradient(135deg,#1faa53,#25d366);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+  .wa-btn:hover{box-shadow:0 6px 14px rgba(37,211,102,.3)}
+  .my-plan{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;align-items:center;animation:fadeUp .45s both;position:relative;overflow:hidden}
+  .my-plan:before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(232,119,74,.14),transparent 70%);top:-110px;left:-70px}
+  @media (max-width:760px){.my-plan{grid-template-columns:1fr}}
+  .mp-name{font-size:24px;font-weight:700;margin:2px 0}
+  .mp-ring{--p:0;width:120px;height:120px;border-radius:50%;display:grid;place-items:center;flex:none;transition:--p 1s;
+    background:conic-gradient(var(--brand) calc(var(--p)*1%),var(--soft) 0);box-shadow:inset 0 0 0 1px var(--line)}
+  .mp-ring b{width:94px;height:94px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:22px;text-align:center;line-height:1.1}
+  .mp-ring b small{display:block;font-size:11px;color:var(--muted);font-weight:500}
+  .pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .pl{position:relative;display:flex;flex-direction:column;gap:4px;animation:fadeUp .45s both;transition:transform .25s,box-shadow .25s;overflow:hidden}
+  .pl:hover{transform:translateY(-4px);box-shadow:var(--lift)}
+  .pl.cur{border:2px solid var(--brand)}
+  .pl .pr{font-size:28px;font-weight:700;letter-spacing:-.5px}
+  .pl .pr small{font-size:13px;color:var(--muted);font-weight:500}
+  .pl .pr s{font-size:15px;color:var(--muted);font-weight:400;margin-inline-start:6px}
+  .pl .tagx{position:absolute;top:12px;left:12px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#e8394a,#ff6b5c)}
+  .pl .tagf{background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .pl ul{list-style:none;padding:0;margin:6px 0 12px;font-size:13.5px}
+  .pl li:before{content:"✓ ";color:var(--ok);font-weight:700}
+  .pl .btn{margin-top:auto;text-align:center;text-decoration:none}
+  .pl .est{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;margin:6px 0}
+  .pl .est b{font-size:18px}
+  .sup-grid{display:grid;grid-template-columns:380px 1fr;gap:14px;align-items:start}
+  @media (max-width:860px){.sup-grid{grid-template-columns:1fr}}
+  .tk{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);margin-bottom:8px;cursor:pointer;transition:border-color .2s,transform .2s;animation:fadeUp .35s both}
+  .tk:hover{border-color:var(--brand);transform:translateX(-3px)}
+  .tk .grow{flex:1;min-width:0}
+  .tk b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-pill{font-size:12px;padding:3px 10px;border-radius:999px;white-space:nowrap;background:var(--soft);border:1px solid var(--line)}
+  .st-pill.answered{background:#e6f6ec;color:#1f7a45;border-color:transparent}
+  .st-pill.open{background:#fff1d6;color:#8a5200;border-color:transparent}
+  [data-theme=dark] .st-pill.answered{background:#173726;color:#8be0ad}[data-theme=dark] .st-pill.open{background:#3d2c10;color:#f3c26b}
+  .bubs{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;margin:12px 0;padding:2px}
+  .bb{max-width:85%;padding:9px 13px;border-radius:15px;white-space:pre-wrap;word-wrap:break-word;font-size:14px;animation:fadeUp .3s both}
+  .bb.me{align-self:flex-start;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-bottom-right-radius:5px}
+  .bb.them{align-self:flex-end;background:var(--soft);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .bb small{display:block;font-size:11px;opacity:.75;margin-top:3px}
   .modal{position:fixed;inset:0;background:rgba(30,15,5,.45);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:60}
   .modal .card{width:100%;max-width:760px}
   .modal textarea{min-height:46vh}
@@ -323,6 +364,32 @@
   .ok-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#e6f6ec;color:#1f7a45}
   .warn-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#fff1d6;color:#8a5200}
   [data-theme=dark] .ok-pill{background:#173726;color:#8be0ad}[data-theme=dark] .warn-pill{background:#3d2c10;color:#f3c26b}
+  /* data tab: two sources */
+  .sec-title{margin:6px 0 10px;font-size:16px}
+  .sources{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .src{display:flex;align-items:center;gap:12px;text-align:right;padding:14px 16px;border-radius:16px;border:2px solid var(--line);background:var(--card);cursor:pointer;box-shadow:var(--shadow);transition:border-color .2s,transform .2s,background .2s}
+  .src:hover{transform:translateY(-2px)}
+  .src.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 6%,var(--card))}
+  .src-ic{width:44px;height:44px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:22px;background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+  .src-ic.shop{background:color-mix(in srgb,#95bf47 22%,var(--card))}
+  .src-txt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
+  .src-txt b{font-size:15px}
+  .src-txt small{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .src-count{flex:none;min-width:30px;height:30px;padding:0 8px;border-radius:999px;display:grid;place-items:center;font-weight:700;font-size:14px;background:var(--soft);border:1px solid var(--line)}
+  .src-dot{flex:none;width:12px;height:12px;border-radius:50%;background:var(--line);box-shadow:0 0 0 4px color-mix(in srgb,var(--line) 40%,transparent)}
+  .src-dot.ok{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 20%,transparent)}
+  .src-dot.warn{background:#e8a33d;box-shadow:0 0 0 4px rgba(232,163,61,.2)}
+  .src-rule{margin:10px 2px 16px;font-size:13px;color:var(--muted)}
+  .src-rule b{color:var(--ink)}
+  .src-panel{animation:fadeUp .35s cubic-bezier(.2,.8,.2,1)}
+  .list-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 2px 10px}
+  .list-head h3{margin:0;font-size:15px}
+  .list-head .n{font-size:12px;color:var(--muted);font-weight:500}
+  .name-tip{margin-top:12px}
+  .name-tip summary{margin:0}
+  .name-tip div{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.7}
+  .name-tip b{color:var(--ink);font-weight:600}
+  @media (max-width:640px){.sources{grid-template-columns:minmax(0,1fr)}}
   .shop-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
   .shop-logo{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#5e8e3e,#95bf47)}
   .shop-logo svg{width:22px;height:22px}
@@ -402,6 +469,8 @@
       <button data-tab="look">🎨 شكل الشات</button>
       <button data-tab="install">🛍️ ضيفه لمتجرك</button>
       <button data-tab="settings">⚙️ المساعد</button>
+      <button data-tab="plan">💎 باقتي</button>
+      <button data-tab="support">🎧 الدعم <span class="nb" id="supBadge" hidden></span></button>
       <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
     </nav>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="غيّر الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق">
@@ -417,6 +486,9 @@
       <div class="menu" id="acctMenu" hidden>
         <a id="menuChat" target="_blank" rel="noopener">💬 افتح الشات ↗</a>
         <button data-goto="install">🛍️ كود الإضافة لمتجرك</button>
+        <button data-goto="plan">💎 باقتي والاشتراك</button>
+        <button data-goto="support">🎧 الدعم الفني</button>
+        <a id="menuWa" target="_blank" rel="noopener">🟢 كلّمنا على واتساب ↗</a>
         <div class="sep"></div>
         <button id="logoutBtn">↩️ تسجيل خروج</button>
       </div>
@@ -498,7 +570,6 @@
           <input type="password" id="sPass" class="ltr" required minlength="8" autocomplete="new-password" placeholder="••••••••">
           <button type="button" class="eye" aria-label="اظهر الباسورد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
         </div>
-        <details><summary>عندي كود أدمن</summary><input type="text" id="sCode" class="ltr" placeholder="كود الأدمن" style="margin-top:6px"></details>
         <div class="msg" id="sMsg"></div>
         <button class="btn big" id="sBtn">إنشاء الحساب <span class="arr">←</span></button>
       </form>
@@ -527,10 +598,11 @@
 <!-- ================= app ================= -->
 <div class="wrap" id="appView" hidden>
   <div class="banner" id="storageBanner" hidden></div>
+  <div class="banner" id="planBanner" hidden></div>
 
   <!-- data -->
   <section data-panel="data">
-    <div class="page-title"><div><h2>داتا المتجر</h2><p>كل اللي هنا المساعد بيرد منه على زباينك</p></div></div>
+    <div class="page-title"><div><h2>داتا المتجر</h2><p>كل اللي المساعد بيعرفه عن متجرك، ومنه بيرد على زباينك</p></div></div>
     <div class="grid">
       <div class="card stat"><div class="label">الاستهلاك الشهر ده</div><div class="value" id="usageVal">—</div><div class="bar" id="usageBar"><i style="width:0"></i></div><div class="hint" id="usageHint"></div></div>
       <div class="card stat"><div class="label">حجم داتا المتجر</div><div class="value" id="dataVal">—</div><div class="bar" id="dataBar"><i style="width:0"></i></div><div class="hint" id="dataHint"></div></div>
@@ -539,23 +611,47 @@
         <div class="row"><button class="btn sm" id="copyLink">نسخ</button><a class="btn ghost sm" id="openLink" target="_blank" rel="noopener">افتح الشات ↗</a></div>
       </div>
     </div>
-    <div class="tip">
-      <strong>💡 سمّي كل ملف ونص باسم واضح بيوصف اللي جواه</strong>
-      <div>مثلًا: <b>"أسعار منتجات التنظيف - نوفمبر 2026"</b> أو <b>"سياسة الشحن والاسترجاع"</b> بدل "file1.pdf" أو "مستند جديد".
-      الأسماء الواضحة بتخلّي المساعد يعرف يدوّر فين ويلاقي المعلومة أسرع وأدق، خصوصًا لما الداتا تكبر.
-      ولو المعلومة اتغيرت، <b>عدّل الملف القديم</b> بدل ما ترفع نسخة جديدة جنبه.</div>
+    <!-- where the assistant's knowledge comes from: two sources, one at a time -->
+    <h3 class="sec-title">مصادر الداتا</h3>
+    <div class="sources" role="tablist" aria-label="مصادر الداتا">
+      <button class="src on" type="button" role="tab" data-src="files" aria-selected="true">
+        <span class="src-ic">📁</span>
+        <span class="src-txt"><b>ملفاتك ونصوصك</b><small id="srcFilesInfo">…</small></span>
+        <span class="src-count" id="srcFilesCount">0</span>
+      </button>
+      <button class="src" type="button" role="tab" data-src="shopify" aria-selected="false">
+        <span class="src-ic shop">🛍️</span>
+        <span class="src-txt"><b>متجرك على Shopify</b><small id="srcShopInfo">…</small></span>
+        <span class="src-dot" id="srcShopDot" aria-hidden="true"></span>
+      </button>
     </div>
-    <div class="card" style="margin-bottom:12px">
-      <div class="row"><h3>ضيف داتا جديدة</h3><span class="space"></span><button class="btn sm" id="addTextBtn">➕ إضافة نص</button></div>
-      <label for="upTitle">اسم واضح للملف اللي هترفعه (اختياري، لو فاضي هنستخدم اسم الملف)</label>
-      <input type="text" id="upTitle" maxlength="200" placeholder="مثلًا: كتالوج المنتجات والأسعار 2026">
-      <div class="drop" id="drop" style="margin-top:12px">
-        📎 اسحب ملف هنا أو <u>اختار ملف</u><br>
-        <span class="hint">TXT · CSV · PDF · Word (.docx) · Excel (.xlsx) — لحد 10 ميجا</span>
-        <input type="file" id="fileInput" accept=".txt,.md,.csv,.pdf,.docx,.xlsx" hidden>
+    <p class="src-rule">⚖️ لو نفس المعلومة موجودة في ملفاتك وفي Shopify ومختلفة، المساعد بياخد بكلام <b>ملفاتك</b>. ولو مش موجودة في ملفاتك، بياخدها من Shopify.</p>
+
+    <!-- source 1: the owner's own files and texts -->
+    <div class="src-panel" id="srcFiles" role="tabpanel">
+      <div class="card" style="margin-bottom:12px">
+        <div class="row"><div><h3>ضيف داتا جديدة</h3><p class="sub" style="margin:0">ارفع ملف أو اكتب نص: منتجات، أسعار، شحن، أسئلة شائعة، أي حاجة عايز المساعد يعرفها.</p></div>
+          <span class="space"></span><button class="btn sm" id="addTextBtn">➕ اكتب نص</button></div>
+        <label for="upTitle">اسم واضح للملف اللي هترفعه (اختياري، لو فاضي هنستخدم اسم الملف)</label>
+        <input type="text" id="upTitle" maxlength="200" placeholder="مثلًا: كتالوج المنتجات والأسعار 2026">
+        <div class="drop" id="drop" style="margin-top:12px">
+          📎 اسحب ملف هنا أو <u>اختار ملف</u><br>
+          <span class="hint">TXT · CSV · PDF · Word (.docx) · Excel (.xlsx) — لحد 10 ميجا</span>
+          <input type="file" id="fileInput" accept=".txt,.md,.csv,.pdf,.docx,.xlsx" hidden>
+        </div>
+        <div class="msg" id="upMsg"></div>
+        <details class="name-tip">
+          <summary>💡 إزاي تسمّي ملفاتك عشان المساعد يلاقي المعلومة أسرع؟</summary>
+          <div>سمّي كل ملف أو نص باسم بيوصف اللي جواه، مثلًا <b>"أسعار منتجات التنظيف - نوفمبر 2026"</b> أو <b>"سياسة الشحن والاسترجاع"</b> بدل "file1.pdf" أو "مستند جديد".
+          ولو المعلومة اتغيرت، <b>عدّل الملف القديم</b> بدل ما ترفع نسخة جديدة جنبه.</div>
+        </details>
       </div>
-      <div class="msg" id="upMsg"></div>
+      <div class="list-head"><h3>📁 الداتا اللي ضفتها <span class="n" id="filesN"></span></h3><span class="hint" style="margin:0">دوس على أي جزء عشان تشوفه أو تعدّله</span></div>
+      <div id="items"></div>
     </div>
+
+    <!-- source 2: Shopify -->
+    <div class="src-panel" id="srcShop" role="tabpanel" hidden>
     <div class="card shop-card" id="shopCard" style="margin-bottom:12px">
       <div class="shop-head">
         <span class="shop-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg></span>
@@ -632,7 +728,11 @@
       </div>
       <div class="msg" id="shopMsg"></div>
     </div>
-    <div id="items"></div>
+      <div id="shopDataWrap" hidden>
+        <div class="list-head"><h3>🛍️ الداتا اللي اتسحبت من Shopify</h3><span class="hint" style="margin:0">بتتحدث لوحدها، ومش بتتعدّل من هنا</span></div>
+        <div id="shopData"></div>
+      </div>
+    </div>
   </section>
 
   <!-- look -->
@@ -749,9 +849,42 @@
     </form>
   </section>
 
+  <!-- my plan -->
+  <section data-panel="plan" hidden>
+    <div class="page-title"><div><h2>باقتي</h2><p>اشتراكك واستهلاكك، والباقات المتاحة. الاشتراك والتجديد بيتم عن طريق واتساب.</p></div>
+      <a class="btn wa-btn" id="planWaTop" target="_blank" rel="noopener">🟢 كلّمنا على واتساب</a></div>
+    <div class="my-plan card" id="myPlan"></div>
+    <h3 class="sec-title" style="margin-top:22px">الباقات المتاحة <span class="hint" id="plansFor"></span></h3>
+    <div class="pl-grid" id="plGrid"><div class="card"><div class="hint">بنحمّل الباقات…</div></div></div>
+    <p class="hint" style="margin-top:10px">عدد الرسايل تقديري على حسب حجم داتا متجرك واستهلاكك الحقيقي. <a href="pricing.html" target="_blank" rel="noopener">صفحة الأسعار ↗</a></p>
+  </section>
+
+  <!-- support -->
+  <section data-panel="support" hidden>
+    <div class="page-title"><div><h2>الدعم الفني</h2><p>ابعتلنا أي مشكلة أو سؤال، وهنرد عليك هنا. ولو مستعجل كلّمنا واتساب.</p></div>
+      <a class="btn wa-btn" id="supWa" target="_blank" rel="noopener">🟢 واتساب مباشر</a></div>
+    <div class="sup-grid">
+      <form class="card" id="tkForm">
+        <h3>تذكرة جديدة</h3>
+        <p class="sub">اكتب المشكلة بالتفصيل، وهيوصلك الرد هنا.</p>
+        <label for="tkCat">النوع</label>
+        <select id="tkCat"><option value="technical">مشكلة تقنية في الشات</option><option value="data">داتا المتجر</option><option value="billing">الاشتراك والدفع</option><option value="suggestion">اقتراح</option><option value="other">حاجة تانية</option></select>
+        <label for="tkSub">العنوان</label><input type="text" id="tkSub" maxlength="150" required placeholder="مثلًا: الشات مش ظاهر على موقعي">
+        <label for="tkBody">التفاصيل</label><textarea id="tkBody" maxlength="4000" required placeholder="إيه اللي حصل؟ وعلى أنهي صفحة؟"></textarea>
+        <div class="msg" id="tkMsg"></div>
+        <button class="btn" id="tkSend">إرسال التذكرة</button>
+      </form>
+      <div>
+        <div class="card" id="tkConvBox" hidden></div>
+        <div id="tkMine"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- admin -->
   <section data-panel="admin" hidden>
-    <div class="page-title"><div><h2>كل المتاجر</h2><p id="adminMonth"></p></div></div>
+    <div class="page-title"><div><h2>كل المتاجر</h2><p id="adminMonth"></p></div>
+      <a class="btn" href="admin.html" target="_blank" rel="noopener">🛡️ لوحة الإدارة الكاملة ↗</a></div>
     <div class="card">
       <div class="table-wrap">
         <table>
@@ -851,7 +984,7 @@
   $("signupForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("sMsg", ""); $("sBtn").classList.add("loading");
     try {
-      me = await api("api/auth.ashx?action=signup", { method: "POST", json: { name: $("sName").value, slug: $("sSlug").value, email: $("sEmail").value, password: $("sPass").value, adminCode: $("sCode").value } });
+      me = await api("api/auth.ashx?action=signup", { method: "POST", json: { name: $("sName").value, slug: $("sSlug").value, email: $("sEmail").value, password: $("sPass").value } });
       showApp(); toast("تم إنشاء متجرك 🎉 ابدأ ضيف الداتا");
     } catch (err) { setMsg("sMsg", err.message); shake(); }
     finally { $("sBtn").classList.remove("loading"); }
@@ -939,6 +1072,8 @@
     $("acctMenu").hidden = true;
     if (tab === "admin") loadAdmin();
     if (tab === "look") initLook();
+    if (tab === "plan") loadPlanTab();
+    if (tab === "support") loadSupport();
     showLiveChat(tab !== "look");   // the look tab has its own preview of the chat
     if (history.replaceState) history.replaceState(null, "", "#" + tab);
     window.scrollTo(0, 0);
@@ -953,8 +1088,102 @@
     $("adminTabBtn").hidden = !me.isAdmin;
     render(); loadItems(); mountLiveChat();
     var want = (location.hash || "").replace("#", "");
-    go(["data", "look", "install", "settings"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "data");
+    go(["data", "look", "install", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "data");
   }
+
+  // ---------------- my plan + support ----------------
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function waLink(text) { return "https://wa.me/" + (me.whatsapp || "201229391155") + "?text=" + encodeURIComponent(text); }
+  function dateAr(iso) { return iso ? new Date(iso).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : "—"; }
+  function agoAr(iso) {
+    var s = (Date.now() - new Date(iso).getTime()) / 1000;
+    return s < 60 ? "دلوقتي" : s < 3600 ? "من " + fmt(Math.floor(s / 60)) + " دقيقة" : s < 86400 ? "من " + fmt(Math.floor(s / 3600)) + " ساعة" : "من " + fmt(Math.floor(s / 86400)) + " يوم";
+  }
+  // how many units one message of THIS store takes: its real average once it has enough messages, otherwise by its data size
+  function unitsPerMsg(U) {
+    if (me.usage.messages >= 10 && me.usage.used > 0) return me.usage.used / me.usage.messages;
+    var ch = me.knowledge.chars;
+    return ch <= 40000 ? U.small : ch <= 150000 ? U.medium : U.large;
+  }
+  var plansData = null;
+  function renderMyPlan() {
+    var p = me.plan || {}, used = me.usage.used, limit = me.usage.limit, pct = limit > 0 ? Math.min(100, Math.round(used * 100 / limit)) : 100;
+    var per = plansData ? unitsPerMsg(plansData.units) : 0, left = per ? Math.max(0, Math.floor((limit - used) / per)) : null;
+    var status = !p.name ? '<span class="st-pill">تجربة مجانية</span>' : p.expired ? '<span class="st-pill" style="background:#fdecea;color:#b23324;border-color:transparent">الاشتراك خلص</span>'
+      : '<span class="st-pill answered">شغالة · فاضل ' + fmt(p.daysLeft) + ' يوم</span>';
+    $("myPlan").innerHTML =
+      '<div><div class="hint">باقتك الحالية</div><div class="mp-name">' + esc(p.name || "التجربة المجانية") + '</div>' + status +
+      '<p class="hint" style="margin:10px 0 0">' + (p.name ? (p.expired ? "خلصت يوم " : "بتتجدد / بتخلص يوم ") + dateAr(p.endsAt) : "رصيد تجربة عشان تختبر المساعد على داتا متجرك. اشترك في باقة عشان تكمّل من غير توقف.") + '</p>' +
+      '<div class="row" style="margin-top:14px"><a class="btn wa-btn" target="_blank" rel="noopener" href="' + esc(waLink(p.name ? "أهلاً 👋 عايز أجدد باقة " + p.name + " لمتجر " + me.name + " (" + me.slug + ")" : "أهلاً 👋 عايز أشترك في باقة لمتجر " + me.name + " (" + me.slug + ")")) + '">' + (p.name ? "🔁 جدّد على واتساب" : "🚀 اشترك على واتساب") + '</a></div></div>' +
+      '<div class="row" style="justify-content:center;gap:18px"><div class="mp-ring" id="mpRing" style="--p:0"><b>' + pct + '%<small>من رصيد الشهر</small></b></div>' +
+      '<div><div class="hint">الشهر ده</div><div style="font-size:20px;font-weight:700">' + fmt(me.usage.messages) + ' رسالة</div>' +
+      (left != null ? '<div class="hint">فاضل حوالي <b style="color:var(--ink)">' + fmt(left) + '</b> رسالة</div>' : '') + '</div></div>';
+    requestAnimationFrame(function () { setTimeout(function () { var r = $("mpRing"); if (r) r.style.setProperty("--p", pct); }, 60); });
+  }
+  async function loadPlanTab() {
+    $("planWaTop").href = waLink("أهلاً 👋 عندي سؤال عن باقات Sellybot لمتجر " + me.name + " (" + me.slug + ")");
+    renderMyPlan();
+    try { plansData = await api("api/plans.ashx"); } catch (e) { $("plGrid").innerHTML = '<div class="card hint">مقدرناش نحمّل الباقات دلوقتي.</div>'; return; }
+    renderMyPlan();
+    var per = unitsPerMsg(plansData.units);
+    $("plansFor").textContent = "· الرسايل محسوبة على متجرك (≈ " + fmt(Math.round(per)) + " وحدة للرسالة)";
+    $("plGrid").innerHTML = plansData.plans.length ? plansData.plans.map(function (p, i) {
+      var cur = me.plan && me.plan.id === p.id, d = p.discount;
+      var msgs = Math.floor(p.messages.small * plansData.units.small / per);
+      var label = d ? (d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "وفّر " + fmt(d.value) + " ج.م")) : "";
+      return '<div class="card pl' + (cur ? " cur" : "") + '" style="animation-delay:' + (i * 0.07) + 's">' +
+        (d ? '<span class="tagx">🔥 ' + esc(label) + '</span>' : p.isFeatured ? '<span class="tagx tagf">⭐ الأكثر طلبًا</span>' : '') +
+        '<h3>' + esc(p.name) + (cur ? ' <span class="st-pill answered">باقتك</span>' : '') + '</h3><div class="hint">' + esc(p.description) + '</div>' +
+        '<div class="pr">' + fmt(p.finalPrice) + ' <small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' + (d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
+        '<div class="est">💬 حوالي <b>' + fmt(msgs) + '</b> رسالة في الشهر لمتجرك</div>' +
+        '<ul>' + p.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' +
+        '<a class="btn' + (cur ? " ghost" : "") + '" target="_blank" rel="noopener" href="' + esc(waLink("أهلاً 👋 عايز " + (cur ? "أجدد" : "أشترك في") + " باقة " + p.name + " (" + fmt(p.finalPrice) + " ج.م) لمتجر " + me.name + " (" + me.slug + ")")) + '">' + (cur ? "جدّد على واتساب" : "اشترك على واتساب") + '</a></div>';
+    }).join("") : '<div class="card hint">مفيش باقات متاحة دلوقتي. كلّمنا على واتساب.</div>';
+  }
+
+  var openTk = null;
+  var CATS = { technical: "مشكلة تقنية", data: "داتا المتجر", billing: "الاشتراك والدفع", suggestion: "اقتراح", other: "حاجة تانية" };
+  function stPill(s) { return '<span class="st-pill ' + s + '">' + (s === "answered" ? "اترد عليك ✓" : s === "open" ? "مستنية رد" : "مقفولة") + '</span>'; }
+  async function loadSupport() {
+    $("supWa").href = waLink("أهلاً 👋 محتاج مساعدة في متجر " + me.name + " (" + me.slug + ")");
+    var d;
+    try { d = await api("api/support.ashx"); } catch (e) { $("tkMine").innerHTML = '<div class="card hint">' + esc(e.message) + '</div>'; return; }
+    $("tkMine").innerHTML = '<h3 class="sec-title">تذاكري</h3>' + (d.tickets.length ? d.tickets.map(function (t, i) {
+      return '<div class="tk" data-id="' + t.id + '" style="animation-delay:' + Math.min(i * 0.05, 0.4) + 's"><span style="font-size:22px">' + (t.status === "answered" ? "📬" : t.status === "open" ? "⏳" : "📁") + '</span>' +
+        '<div class="grow"><b>' + esc(t.subject) + '</b><div class="hint">' + esc(CATS[t.category] || "") + ' · ' + agoAr(t.updated) + ' · ' + fmt(t.messages) + ' رسالة</div></div>' + stPill(t.status) + '</div>';
+    }).join("") : '<div class="card empty">لسه مفيش تذاكر. لو عندك أي مشكلة، ابعتها من الفورم. 👋</div>');
+    $("tkMine").querySelectorAll(".tk").forEach(function (el) { el.onclick = function () { openTicket(+el.dataset.id); }; });
+    if (openTk) openTicket(openTk);
+  }
+  async function openTicket(id) {
+    openTk = id;
+    var t;
+    try { t = await api("api/support.ashx?id=" + id); } catch (e) { toast(e.message); return; }
+    var box = $("tkConvBox"); box.hidden = false;
+    box.innerHTML = '<div class="row"><h3 style="margin:0">' + esc(t.subject) + '</h3><span class="space"></span>' + stPill(t.status) + '<button class="btn ghost sm" id="tkX">إغلاق</button></div>' +
+      '<div class="bubs" id="tkBubs">' + t.messages.map(function (m) { return '<div class="bb ' + (m.fromAdmin ? "them" : "me") + '">' + esc(m.body) + '<small>' + (m.fromAdmin ? "فريق الدعم" : "انت") + ' · ' + agoAr(m.at) + '</small></div>'; }).join("") + '</div>' +
+      (t.status === "closed" ? '<div class="hint">التذكرة دي مقفولة. لو المشكلة رجعت، ابعت رد هنا وهتتفتح تاني.</div>' : '') +
+      '<form id="tkRe" class="row" style="align-items:flex-end"><textarea id="tkReBody" maxlength="4000" required placeholder="اكتب ردك…" style="flex:1;min-height:52px"></textarea><button class="btn">إرسال</button></form>' +
+      (t.status !== "closed" ? '<button class="btn ghost sm" id="tkDone" style="margin-top:8px">✓ المشكلة اتحلت، اقفل التذكرة</button>' : '');
+    var bubs = $("tkBubs"); bubs.scrollTop = bubs.scrollHeight;
+    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    $("tkX").onclick = function () { box.hidden = true; openTk = null; };
+    $("tkRe").onsubmit = async function (e) {
+      e.preventDefault();
+      try { await api("api/support.ashx?action=reply", { method: "POST", json: { id: id, body: $("tkReBody").value } }); toast("اتبعت ✓"); loadSupport(); } catch (err) { toast(err.message); }
+    };
+    var done = $("tkDone");
+    if (done) done.onclick = async function () { try { await api("api/support.ashx?action=close", { method: "POST", json: { id: id } }); toast("اتقفلت التذكرة 👍"); loadSupport(); } catch (err) { toast(err.message); } };
+    if (t.status === "answered") { me.supportAnswered = Math.max(0, (me.supportAnswered || 1) - 1); }
+  }
+  $("tkForm").onsubmit = async function (e) {
+    e.preventDefault(); setMsg("tkMsg", ""); $("tkSend").disabled = true;
+    try {
+      var r = await api("api/support.ashx?action=create", { method: "POST", json: { category: $("tkCat").value, subject: $("tkSub").value, body: $("tkBody").value } });
+      this.reset(); toast("اتبعتت التذكرة ✓ هنرد عليك في أقرب وقت"); openTk = r.id; loadSupport();
+    } catch (err) { setMsg("tkMsg", err.message); }
+    finally { $("tkSend").disabled = false; }
+  };
 
   function render() {
     var link = BASE + "?store=" + me.slug;
@@ -963,6 +1192,16 @@
     $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
     $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
     $("menuChat").href = link;
+    $("menuWa").href = waLink("أهلاً 👋 أنا صاحب متجر " + me.name + " (" + me.slug + ") على Sellybot");
+    $("supBadge").textContent = fmt(me.supportAnswered || 0); $("supBadge").hidden = !me.supportAnswered;
+    // subscription: ended, ending soon, or the month's allowance nearly used up
+    var pl = me.plan || {}, pb = $("planBanner"), upct = me.usage.limit > 0 ? me.usage.used * 100 / me.usage.limit : 100;
+    var renew = ' <a href="#plan" data-goto="plan" style="font-weight:700">جدّد من هنا ←</a>';
+    if (pl.name && pl.expired) { pb.className = "banner full"; pb.innerHTML = "⛔ اشتراكك في باقة " + esc(pl.name) + " خلص، والمساعد واقف على موقعك." + renew; pb.hidden = false; }
+    else if (pl.name && pl.daysLeft <= 5) { pb.className = "banner"; pb.innerHTML = "⏳ باقتك هتخلص بعد " + fmt(pl.daysLeft) + " يوم." + renew; pb.hidden = false; }
+    else if (upct >= 90) { pb.className = upct >= 100 ? "banner full" : "banner"; pb.innerHTML = (upct >= 100 ? "⛔ رصيد الشهر خلص، والمساعد واقف لحد أول الشهر." : "⚠️ استهلكت " + Math.round(upct) + "% من رصيد الشهر.") + ' <a href="#plan" data-goto="plan" style="font-weight:700">رقّي باقتك ←</a>'; pb.hidden = false; }
+    else pb.hidden = true;
+    pb.querySelectorAll("[data-goto]").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); go("plan"); }; });
     // storage
     var st = me.storage || {}, bn = $("storageBanner");
     var mb = st.capacityMB > 0 ? " (" + fmt(st.usedMB) + " من " + fmt(st.capacityMB) + " ميجا)" : "";
@@ -1018,27 +1257,53 @@
   function copy(t) { try { navigator.clipboard.writeText(t); } catch (e) { var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } }
 
   // ---------------- knowledge ----------------
+  // ---------------- data sources (files | Shopify) ----------------
+  function showSource(src) {
+    document.querySelectorAll(".sources .src").forEach(function (b) { var on = b.dataset.src === src; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+    $("srcFiles").hidden = src !== "files"; $("srcShop").hidden = src !== "shopify";
+    try { localStorage.setItem("sb-data-src", src); } catch (e) {}
+  }
+  document.querySelectorAll(".sources .src").forEach(function (b) { b.onclick = function () { showSource(b.dataset.src); }; });
+  try { if (localStorage.getItem("sb-data-src") === "shopify") showSource("shopify"); } catch (e) {}
+
+  function itemRow(it) {
+    var row = document.createElement("div"); row.className = "item"; row.tabIndex = 0; row.style.cursor = "pointer";
+    var ic = document.createElement("div"); ic.className = "ic"; ic.textContent = ICON[it.type] || "📄";
+    var meta = document.createElement("div"); meta.className = "meta";
+    var t = document.createElement("div"); t.className = "t"; t.textContent = it.title;
+    if (it.type !== "shopify" && vagueName(it.title)) { var bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚠️ غيّر الاسم لاسم أوضح"; t.appendChild(bd); }
+    var s = document.createElement("div"); s.className = "s";
+    s.textContent = fmt(it.chars) + " حرف · " + (it.fileName ? it.fileName + " · " : "") + (it.type === "shopify" ? "اتحدثت " : "آخر تعديل ") + it.updated;
+    meta.appendChild(t); meta.appendChild(s);
+    var edit = document.createElement("button"); edit.className = "btn ghost sm"; edit.type = "button"; edit.textContent = it.type === "shopify" ? "عرض" : "عرض / تعديل";
+    function open(e) { if (e) e.stopPropagation(); openEditor(it.id); }
+    edit.onclick = open; row.onclick = function () { open(); };
+    row.onkeydown = function (e) { if (e.key === "Enter") open(); };
+    row.appendChild(ic); row.appendChild(meta); row.appendChild(edit);
+    return row;
+  }
   async function loadItems() {
-    var box = $("items");
+    var box = $("items"), shopBox = $("shopData");
     try {
       var data = await api("api/knowledge.ashx");
-      box.innerHTML = "";
-      if (!data.items.length) {
+      var files = data.items.filter(function (it) { return it.type !== "shopify"; });
+      var synced = data.items.filter(function (it) { return it.type === "shopify"; });
+      box.textContent = ""; shopBox.textContent = "";
+      // files
+      $("srcFilesCount").textContent = fmt(files.length);
+      $("filesN").textContent = files.length ? "(" + fmt(files.length) + ")" : "";
+      $("srcFilesInfo").textContent = files.length
+        ? fmt(files.length) + (files.length === 1 ? " جزء" : " أجزاء") + " · آخر تعديل " + files.map(function (f) { return f.updated; }).sort().pop().slice(0, 10)
+        : "لسه مارفعتش حاجة";
+      if (!files.length) {
         var e = document.createElement("div"); e.className = "card empty";
-        e.textContent = "لسه مفيش داتا. ضيف نص أو ارفع ملف فيه المنتجات والأسعار والشحن والأسئلة الشائعة، والمساعد هيرد منها.";
-        box.appendChild(e); return;
-      }
-      data.items.forEach(function (it) {
-        var row = document.createElement("div"); row.className = "item";
-        var ic = document.createElement("div"); ic.className = "ic"; ic.textContent = ICON[it.type] || "📄";
-        var meta = document.createElement("div"); meta.className = "meta";
-        var t = document.createElement("div"); t.className = "t"; t.textContent = it.title;
-        if (vagueName(it.title)) { var bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚠️ غيّر الاسم لاسم أوضح"; t.appendChild(bd); }
-        var s = document.createElement("div"); s.className = "s"; s.textContent = fmt(it.chars) + " حرف · " + (it.fileName ? it.fileName + " · " : "") + it.updated;
-        meta.appendChild(t); meta.appendChild(s);
-        var edit = document.createElement("button"); edit.className = "btn ghost sm"; edit.textContent = it.type === "shopify" ? "عرض" : "عرض / تعديل"; edit.onclick = function () { openEditor(it.id); };
-        row.appendChild(ic); row.appendChild(meta); row.appendChild(edit); box.appendChild(row);
-      });
+        e.textContent = "لسه مفيش ملفات. ارفع ملف أو اكتب نص فيه المنتجات والأسعار والشحن والأسئلة الشائعة، والمساعد هيرد منها." +
+          (synced.length ? " (المساعد بيرد دلوقتي من داتا Shopify بس.)" : "");
+        box.appendChild(e);
+      } else files.forEach(function (it) { box.appendChild(itemRow(it)); });
+      // Shopify
+      synced.forEach(function (it) { shopBox.appendChild(itemRow(it)); });
+      $("shopDataWrap").hidden = synced.length === 0;
     } catch (err) { if (err.status === 401) showAuth(); else toast(err.message); }
   }
   $("addTextBtn").onclick = function () { openEditor(null); };
@@ -1076,6 +1341,12 @@
   function renderShop() {
     var sh = (me && me.shopify) || {}, on = !!sh.domain;
     $("shopOff").hidden = on; $("shopOn").hidden = !on;
+    // summary on the "Shopify" source button
+    var bad = on && /^⚠️/.test(sh.status || "");
+    $("srcShopDot").className = "src-dot" + (on ? (bad ? " warn" : " ok") : "");
+    $("srcShopInfo").textContent = !on ? "مش مربوط · اربطه في دقايق"
+      : bad ? "⚠️ مربوط، بس آخر تحديث فشل"
+      : (sh.full ? "ربط كامل" : "ربط سريع") + " · " + (sh.status || "") + (sh.syncedAt ? " · " + ago(sh.syncedAt) : "");
     if (on) {
       var warn = /^⚠️/.test(sh.status || "");
       $("shopPill").className = warn ? "warn-pill" : "ok-pill";

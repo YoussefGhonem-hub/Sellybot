@@ -86,7 +86,8 @@ namespace RiwaqChat
                 { Web.Error(res, 429, "rate_limited"); return; }
 
                 // ---- monthly limit per store ----
-                if (store != null && Db.Usage(conn, store.Id, Db.Month).Weighted >= store.MonthlyTokenLimit) { Web.Error(res, 402, "limit_reached"); return; }
+                // (a plan whose end date passed allows nothing until the super admin renews it)
+                if (store != null && Db.Usage(conn, store.Id, Db.Month).Weighted >= Billing.EffectiveLimit(store)) { Web.Error(res, 402, "limit_reached"); return; }
 
                 // keep the store's Shopify data fresh (refreshes in the background when it is older than a few hours)
                 if (store != null) { try { Shopify.RefreshIfOld(store); } catch (Exception ex) { Log.Error(ex); } }

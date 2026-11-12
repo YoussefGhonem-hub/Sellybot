@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sellybot · الباقات والأسعار</title>
+<meta name="description" content="باقات Sellybot: مساعد ذكي بيرد على زباين متجرك 24 ساعة من داتا متجرك. اختار الباقة اللي تناسبك واشترك على واتساب.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 2 60 72'%3E%3Cpath d='M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15' fill='none' stroke='%23E8774A' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15' fill='none' stroke='%233a2a20' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  (function () {
+    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}
+    var m = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
+    function apply() { document.documentElement.setAttribute("data-theme", t || (m && m.matches ? "dark" : "light")); }
+    apply();
+    if (m && m.addEventListener) m.addEventListener("change", function () { if (!t) apply(); });
+    window.sbTheme = function (v) { t = v; try { localStorage.setItem("sb-theme", v); } catch (e) {} apply(); };
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme:light;
+    --bg:#faf6f1; --card:#ffffff; --ink:#221a14; --muted:#7f7266; --line:#ece4db; --soft:#fbf7f3;
+    --brand:#e8774a; --brand2:#f5a25d; --ok:#2e9d5b; --wa:#25d366;
+    --shadow:0 1px 2px rgba(40,25,10,.05),0 12px 34px rgba(40,25,10,.08); --lift:0 34px 90px rgba(60,35,15,.2);
+  }
+  :root[data-theme=dark]{
+    color-scheme:dark;
+    --bg:#120d0a; --card:#1d1611; --ink:#f4ebe2; --muted:#b0a193; --line:#33281f; --soft:#261d17; --ok:#4cc27e;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4); --lift:0 34px 90px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;overflow-x:hidden}
+  button{font:inherit;color:inherit}
+  a{color:var(--brand)}
+  [hidden]{display:none!important}
+  .theme-anim,.theme-anim *{transition:background-color .35s,border-color .35s,color .35s,box-shadow .35s!important}
+  @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(60px,-40px) scale(1.1)}66%{transform:translate(-50px,30px) scale(.92)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  @keyframes floatY{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
+  @keyframes waPulse{0%{box-shadow:0 0 0 0 rgba(37,211,102,.5)}70%{box-shadow:0 0 0 18px rgba(37,211,102,0)}100%{box-shadow:0 0 0 0 rgba(37,211,102,0)}}
+  @keyframes sheen{to{background-position:200% 0}}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes tick{from{transform:translateY(40%);opacity:0}to{transform:none;opacity:1}}
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.8,.2,1),transform .7s cubic-bezier(.2,.8,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* nav */
+  .nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid transparent;transition:border-color .3s}
+  .nav.scrolled{border-bottom-color:var(--line)}
+  .nav-in{max-width:1160px;margin:0 auto;padding:0 18px;height:66px;display:flex;align-items:center;gap:14px}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .logo svg{width:28px;height:34px;color:var(--ink);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+  .logo:hover svg{transform:rotate(-8deg) scale(1.08)}
+  .logo b{font-size:21px;direction:ltr;letter-spacing:-.4px}
+  .logo b span{color:var(--brand)}
+  .space{flex:1}
+  .nav a.link{color:var(--muted);text-decoration:none;font-size:15px;padding:8px 10px;border-radius:10px}
+  .nav a.link:hover{color:var(--ink)}
+  .icon-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;transition:transform .2s,border-color .2s}
+  .icon-btn:hover{transform:rotate(-12deg);border-color:var(--brand)}
+  .icon-btn svg{width:18px;height:18px}
+  .btn{border:0;border-radius:13px;padding:11px 20px;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;font-weight:600;text-decoration:none;
+       display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .2s,box-shadow .2s;white-space:nowrap}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(232,119,74,.35)}
+  .btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--ink)}
+  .btn.ghost:hover{border-color:var(--brand);box-shadow:none}
+  .btn.wa{background:linear-gradient(135deg,#1faa53,#25d366)}
+  .btn.wa:hover{box-shadow:0 12px 26px rgba(37,211,102,.35)}
+  .btn svg{width:19px;height:19px}
+  @media (max-width:640px){.nav a.link{display:none}}
+
+  /* hero */
+  .hero{position:relative;text-align:center;padding:70px 18px 30px;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;animation:drift 18s ease-in-out infinite;z-index:-1}
+  .blob.a{width:460px;height:460px;background:#f5a25d;top:-160px;right:-120px}
+  .blob.b{width:380px;height:380px;background:#e8774a;top:80px;left:-140px;animation-delay:-6s}
+  .blob.c{width:280px;height:280px;background:#ffd59a;top:260px;right:30%;animation-delay:-11s;opacity:.3}
+  [data-theme=dark] .blob{opacity:.22}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--muted);box-shadow:var(--shadow);animation:fadeUp .6s both}
+  .eyebrow i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(46,157,91,.18)}
+  .hero h1{font-size:clamp(32px,5.6vw,58px);line-height:1.2;margin:18px auto 12px;max-width:820px;letter-spacing:-.5px;animation:fadeUp .7s .08s both}
+  .hero h1 .grad{background:linear-gradient(100deg,var(--brand),#ff9a5a,var(--brand));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sheen 5s linear infinite}
+  .hero p{font-size:clamp(16px,2.2vw,19px);color:var(--muted);max-width:640px;margin:0 auto;animation:fadeUp .7s .16s both}
+  .chip-row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:22px;animation:fadeUp .7s .24s both}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:14px;padding:6px 12px;border-radius:999px;background:color-mix(in srgb,var(--card) 70%,transparent);border:1px solid var(--line)}
+
+  /* data size picker */
+  .picker{display:flex;flex-direction:column;align-items:center;gap:10px;margin:34px auto 6px;animation:fadeUp .7s .3s both}
+  .picker .q{font-size:15px;color:var(--muted)}
+  .seg{position:relative;display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:5px;box-shadow:var(--shadow)}
+  .seg button{position:relative;z-index:1;border:0;background:none;padding:9px 18px;border-radius:12px;cursor:pointer;color:var(--muted);transition:color .25s;font-size:15px}
+  .seg button.on{color:#fff;font-weight:600}
+  .seg .ind{position:absolute;top:5px;bottom:5px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(232,119,74,.35);transition:all .4s cubic-bezier(.34,1.3,.64,1)}
+  .seg-hint{font-size:13px;color:var(--muted);min-height:20px}
+
+  /* plans */
+  .plans{max-width:1160px;margin:26px auto 0;padding:0 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;align-items:stretch}
+  .plan{position:relative;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:28px 24px 24px;box-shadow:var(--shadow);display:flex;flex-direction:column;
+        transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s;overflow:hidden}
+  .plan:hover{transform:translateY(-8px);box-shadow:var(--lift)}
+  .plan.feat{border:2px solid var(--brand);background:linear-gradient(180deg,color-mix(in srgb,var(--brand) 7%,var(--card)),var(--card) 45%)}
+  @media (min-width:960px){.plan.feat{scale:1.04}}
+  .plan .tag{position:absolute;top:18px;left:18px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:999px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 6px 14px rgba(232,119,74,.35);animation:bob 2.6s ease-in-out infinite}
+  .plan .dtag{position:absolute;top:18px;left:18px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:999px;background:linear-gradient(135deg,#e8394a,#ff6b5c);color:#fff;box-shadow:0 6px 14px rgba(232,57,74,.35);animation:bob 2.6s ease-in-out infinite}
+  .plan.feat .dtag{top:52px}
+  .plan h3{margin:0;font-size:22px}
+  .plan .desc{color:var(--muted);font-size:14.5px;margin-top:2px}
+  .price{display:flex;align-items:baseline;gap:8px;margin:18px 0 2px;flex-wrap:wrap}
+  .price b{font-size:46px;line-height:1;letter-spacing:-1px}
+  .price small{color:var(--muted);font-size:15px}
+  .price s{color:var(--muted);font-size:18px}
+  .ends{font-size:13px;color:#d4453a;font-weight:600;min-height:20px}
+  .msgs-box{margin:16px 0 4px;padding:14px 16px;border-radius:18px;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .msgs-box .em{font-size:28px;animation:floatY 3.5s ease-in-out infinite}
+  .msgs-box .n{font-size:26px;font-weight:700;line-height:1.1;display:inline-block}
+  .msgs-box .n.tick{animation:tick .45s cubic-bezier(.2,.8,.2,1)}
+  .msgs-box .l{font-size:13px;color:var(--muted)}
+  .per-day{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .plan ul{list-style:none;padding:0;margin:8px 0 22px;display:flex;flex-direction:column;gap:9px;font-size:15px}
+  .plan li{display:flex;gap:10px;align-items:flex-start}
+  .plan li:before{content:"";flex:none;width:20px;height:20px;margin-top:3px;border-radius:50%;background:color-mix(in srgb,var(--ok) 16%,var(--card)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232e9d5b' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/12px no-repeat}
+  .plan .btn{margin-top:auto;width:100%;padding:13px}
+  .skel{height:440px;border-radius:26px;background:linear-gradient(90deg,var(--soft) 25%,var(--line) 50%,var(--soft) 75%);background-size:200% 100%;animation:sheen 1.2s infinite reverse}
+
+  /* sections */
+  section.blk{max-width:1000px;margin:90px auto 0;padding:0 18px}
+  .blk h2{font-size:clamp(26px,3.6vw,36px);text-align:center;margin:0 0 8px}
+  .blk .lead{text-align:center;color:var(--muted);max-width:640px;margin:0 auto 30px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media (max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow);transition:transform .3s}
+  .step:hover{transform:translateY(-5px)}
+  .step .num{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:20px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));margin-bottom:12px;box-shadow:0 8px 18px rgba(232,119,74,.3)}
+  .step h3{margin:0 0 4px;font-size:18px}
+  .step p{margin:0;color:var(--muted);font-size:15px}
+  .tbl{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--shadow)}
+  .tbl table{width:100%;border-collapse:collapse;font-size:15px}
+  .tbl th,.tbl td{padding:14px 16px;text-align:center;border-bottom:1px solid var(--line)}
+  .tbl th{background:var(--soft);font-size:14px;color:var(--muted);font-weight:600}
+  .tbl td:first-child,.tbl th:first-child{text-align:right}
+  .tbl tr:last-child td{border-bottom:0}
+  .tbl .wrap{overflow-x:auto}
+  .tbl table{min-width:560px}
+  .note{font-size:13.5px;color:var(--muted);text-align:center;margin-top:12px}
+  .faq{display:flex;flex-direction:column;gap:12px}
+  .faq details{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:4px 20px;box-shadow:var(--shadow);transition:border-color .2s}
+  .faq details[open]{border-color:var(--brand)}
+  .faq summary{cursor:pointer;list-style:none;padding:14px 0;font-weight:600;display:flex;align-items:center;gap:10px}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary:after{content:"+";margin-inline-start:auto;font-size:22px;color:var(--brand);transition:transform .3s}
+  .faq details[open] summary:after{transform:rotate(45deg)}
+  .faq details p{margin:0 0 16px;color:var(--muted)}
+  .cta{margin:90px auto 0;max-width:1000px;padding:0 18px}
+  .cta-in{position:relative;overflow:hidden;border-radius:30px;padding:44px 28px;text-align:center;color:#fff;background:linear-gradient(135deg,#e8774a,#f5a25d 55%,#ffb877)}
+  .cta-in:before{content:"";position:absolute;width:340px;height:340px;border-radius:50%;background:rgba(255,255,255,.14);top:-150px;left:-80px;animation:drift 14s ease-in-out infinite}
+  .cta-in h2{margin:0 0 8px;font-size:clamp(24px,3.4vw,34px)}
+  .cta-in p{margin:0 auto 22px;max-width:560px;opacity:.95}
+  .cta-in .btn{background:#fff;color:#1f8a47;font-size:17px;padding:14px 26px}
+  .cta-in .btn:hover{box-shadow:0 14px 30px rgba(0,0,0,.18)}
+  footer{max-width:1160px;margin:70px auto 0;padding:26px 18px 40px;border-top:1px solid var(--line);display:flex;gap:14px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:14px}
+  footer a{color:var(--muted);text-decoration:none}
+  footer a:hover{color:var(--brand)}
+
+  /* floating WhatsApp */
+  .wa-float{position:fixed;left:20px;bottom:22px;z-index:50;display:flex;align-items:center;gap:10px;text-decoration:none}
+  .wa-float .circle{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--wa);color:#fff;animation:waPulse 2.2s infinite;transition:transform .25s cubic-bezier(.34,1.56,.64,1);box-shadow:0 10px 26px rgba(37,211,102,.4)}
+  .wa-float:hover .circle{transform:scale(1.08) rotate(-8deg)}
+  .wa-float .circle svg{width:32px;height:32px}
+  .wa-float .bubble{background:var(--card);color:var(--ink);border:1px solid var(--line);padding:8px 14px;border-radius:14px;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(-8px);transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap}
+  .wa-float:hover .bubble,.wa-float.peek .bubble{opacity:1;transform:none}
+  @media (max-width:520px){.wa-float .bubble{display:none}}
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="nav-in">
+    <a class="logo" href="pricing.html" aria-label="Sellybot">
+      <svg viewBox="12 2 60 72" aria-hidden="true">
+        <path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/>
+        <path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+        <path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <b>Selly<span>bot</span></b>
+    </a>
+    <span class="space"></span>
+    <a class="link" href="#how">إزاي بنحسب</a>
+    <a class="link" href="#faq">أسئلة شائعة</a>
+    <button class="icon-btn" id="themeBtn" aria-label="الوضع الفاتح / الغامق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+    <a class="btn ghost" href="dashboard.html">دخول / حساب جديد</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="blob a"></div><div class="blob b"></div><div class="blob c"></div>
+  <span class="eyebrow"><i></i>جرّبه مجانًا قبل ما تشترك</span>
+  <h1>مساعد ذكي بيرد على زباينك <span class="grad">24 ساعة</span><br>بأسعار تناسب متجرك</h1>
+  <p>Sellybot بيقرا داتا متجرك (منتجات، أسعار، شحن، سياسات) ويجاوب زباينك على طول بأسلوبك. اختار باقتك، واشترك في دقيقة على واتساب.</p>
+  <div class="chip-row"><span class="chip">⚡ ردود فورية</span><span class="chip">🛍️ Shopify وأي موقع</span><span class="chip">📄 PDF و Word و Excel</span><span class="chip">🌙 فاتح وداكن</span></div>
+
+  <div class="picker">
+    <span class="q">حجم داتا متجرك قد إيه؟ (عشان نحسبلك عدد الرسايل)</span>
+    <div class="seg" id="sizeSeg"><span class="ind" id="segInd"></span>
+      <button data-s="small" class="on">صغيرة</button><button data-s="medium">متوسطة</button><button data-s="large">كبيرة</button>
+    </div>
+    <span class="seg-hint" id="segHint"></span>
+  </div>
+</section>
+
+<div class="plans" id="plans"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+<p class="note" id="plansNote"></p>
+
+<section class="blk reveal" id="how">
+  <h2>إزاي بنحسب عدد الرسايل؟</h2>
+  <p class="lead">كل باقة فيها رصيد شهري. كل رسالة بتاخد جزء منه، والجزء ده بيكبر كل ما داتا متجرك تكبر، لأن المساعد بيقرا داتا متجرك كلها قبل ما يرد.</p>
+  <div class="tbl"><div class="wrap"><table id="cmpTable"><thead><tr><th>حجم داتا المتجر</th></tr></thead><tbody></tbody></table></div></div>
+  <p class="note">الأرقام تقريبية. المحادثة اللي فيها كذا سؤال ورا بعض أرخص من أسئلة متفرقة، وهتشوف استهلاكك الحقيقي في لوحة متجرك أول بأول.</p>
+</section>
+
+<section class="blk reveal">
+  <h2>تشترك إزاي؟</h2>
+  <p class="lead">من غير كروت ولا دفع أونلاين. كلّمنا، ادفع بالطريقة اللي تريحك، وباقتك تشتغل في نفس اليوم.</p>
+  <div class="steps">
+    <div class="step"><div class="num">١</div><h3>اعمل حسابك</h3><p>سجّل متجرك مجانًا، ارفع داتاتك، وجرّب المساعد بنفسك.</p></div>
+    <div class="step"><div class="num">٢</div><h3>كلّمنا على واتساب</h3><p>اختار باقتك ودوس "اشترك"، هتفتح محادثة واتساب جاهزة باسم الباقة.</p></div>
+    <div class="step"><div class="num">٣</div><h3>ادفع وابدأ</h3><p>كاش، InstaPay أو فودافون كاش. بنفعّل الباقة على حسابك على طول.</p></div>
+  </div>
+</section>
+
+<section class="blk reveal" id="faq">
+  <h2>أسئلة شائعة</h2>
+  <p class="lead">لو سؤالك مش هنا، ابعتلنا على واتساب.</p>
+  <div class="faq">
+    <details><summary>إيه اللي يحصل لو الرسايل خلصت قبل آخر الشهر؟</summary><p>المساعد بيقف لحد أول الشهر الجاي، أو تقدر تكلّمنا ونرقّيك لباقة أكبر في نفس اليوم. وهتلاقي نسبة استهلاكك في لوحة متجرك قبلها بوقت كافي.</p></details>
+    <details><summary>يعني إيه داتا صغيرة ومتوسطة وكبيرة؟</summary><p>صغيرة: صفحات قليلة (زي قايمة منتجات وأسعار وسياسة الشحن). متوسطة: حوالي 15 صفحة. كبيرة: كتالوج كبير بمئات المنتجات. لوحة متجرك بتوريك حجم داتاتك بالظبط.</p></details>
+    <details><summary>أقدر أجرّب قبل ما أدفع؟</summary><p>أيوه. أي حساب جديد بياخد رصيد تجربة مجاني تقدر تختبر بيه المساعد على داتا متجرك.</p></details>
+    <details><summary>بيشتغل مع Shopify؟</summary><p>أيوه، ومع أي موقع تاني. سطر كود واحد بيتحط في موقعك، وكمان تقدر تربط متجر Shopify عشان المنتجات والأسعار تتسحب لوحدها.</p></details>
+    <details><summary>بدفع إزاي؟</summary><p>مفيش دفع أونلاين. بتدفع كاش أو InstaPay أو فودافون كاش أو تحويل بنكي، وإحنا بنفعّل الباقة على حسابك.</p></details>
+    <details><summary>أقدر أغيّر الباقة أو ألغيها؟</summary><p>طبعًا، في أي وقت. كلّمنا على واتساب ونغيّرها لك.</p></details>
+  </div>
+</section>
+
+<section class="cta reveal">
+  <div class="cta-in">
+    <h2>جاهز تخلّي متجرك يرد لوحده؟</h2>
+    <p>ابعتلنا على واتساب، وهنساعدك تختار الباقة المناسبة ونجهّزلك المساعد على داتا متجرك.</p>
+    <a class="btn" id="ctaWa" target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>كلّمنا على واتساب</a>
+  </div>
+</section>
+
+<footer>
+  <span>© <span id="yr"></span> Sellybot</span><span class="space"></span>
+  <a href="dashboard.html">لوحة المتجر</a><a href="#faq">أسئلة شائعة</a><a id="footWa" target="_blank" rel="noopener">واتساب</a>
+</footer>
+
+<a class="wa-float" id="waFloat" target="_blank" rel="noopener" aria-label="كلّمنا على واتساب">
+  <span class="circle"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></span>
+  <span class="bubble">عندك سؤال؟ كلّمنا 👋</span>
+</a>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var data = null, size = "small", WA = "201229391155";
+  var HINT = { small: "صفحات قليلة: منتجات وأسعار وشحن", medium: "حوالي 15 صفحة من المعلومات", large: "كتالوج كبير بمئات المنتجات" };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function fmt(n) { return Math.round(n || 0).toLocaleString("ar-EG"); }
+  function waLink(text) { return "https://wa.me/" + WA + "?text=" + encodeURIComponent(text); }
+
+  $("yr").textContent = new Date().getFullYear();
+  $("themeBtn").onclick = function () {
+    var dark = document.documentElement.getAttribute("data-theme") !== "dark";
+    document.documentElement.classList.add("theme-anim"); window.sbTheme(dark ? "dark" : "light");
+    setTimeout(function () { document.documentElement.classList.remove("theme-anim"); }, 450);
+  };
+  window.addEventListener("scroll", function () { $("nav").classList.toggle("scrolled", scrollY > 8); }, { passive: true });
+
+  function setWa() {
+    var general = waLink("أهلاً 👋 عايز أعرف أكتر عن باقات Sellybot");
+    $("waFloat").href = general; $("ctaWa").href = general; $("footWa").href = general;
+  }
+  setWa();
+  setTimeout(function () { $("waFloat").classList.add("peek"); setTimeout(function () { $("waFloat").classList.remove("peek"); }, 4000); }, 2500);
+
+  // size picker
+  function moveInd() { var on = document.querySelector("#sizeSeg button.on"); var ind = $("segInd"); ind.style.width = on.offsetWidth + "px"; ind.style.left = on.offsetLeft + "px"; }
+  $("sizeSeg").onclick = function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    size = b.dataset.s; this.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); });
+    moveInd(); $("segHint").textContent = HINT[size]; updateMsgs(true);
+  };
+  window.addEventListener("resize", moveInd);
+  requestAnimationFrame(moveInd); $("segHint").textContent = HINT[size];
+
+  function countTo(el, to) {
+    var from = Number(el.dataset.v || 0), start = performance.now(), dur = 700;
+    el.dataset.v = to;
+    function step(t) { if (el.dataset.v != to) return; var p = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(from + (to - from) * e); if (p < 1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+    setTimeout(function () { if (el.dataset.v == to) el.textContent = fmt(to); }, dur + 60);   // frames pause in background tabs
+  }
+  function updateMsgs(anim) {
+    if (!data) return;
+    document.querySelectorAll(".plan").forEach(function (card) {
+      var p = data.plans[+card.dataset.i], n = p.messages[size], el = card.querySelector(".n");
+      if (anim) { el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); }
+      countTo(el, n);
+      card.querySelector(".per-day").textContent = "يعني حوالي " + fmt(n / 30) + " رسالة في اليوم";
+    });
+  }
+
+  function render() {
+    var plans = data.plans;
+    if (!plans.length) { $("plans").innerHTML = ""; $("plansNote").textContent = "الباقات هتنزل قريب. كلّمنا على واتساب نعرّفك الأسعار."; return; }
+    $("plans").innerHTML = plans.map(function (p, i) {
+      var d = p.discount, label = d ? (d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "وفّر " + fmt(d.value) + " ج.م")) : "";
+      var per = p.durationDays === 30 ? "شهريًا" : "كل " + fmt(p.durationDays) + " يوم";
+      return '<div class="plan' + (p.isFeatured ? " feat" : "") + '" data-i="' + i + '" style="animation:fadeUp .7s ' + (0.1 + i * 0.12) + 's cubic-bezier(.2,.8,.2,1) both">' +
+        (p.isFeatured ? '<span class="tag">⭐ الأكثر طلبًا</span>' : '') + (d ? '<span class="dtag">🔥 ' + esc(label) + '</span>' : '') +
+        '<h3>' + esc(p.name) + '</h3><div class="desc">' + esc(p.description) + '</div>' +
+        '<div class="price"><b>' + fmt(p.finalPrice) + '</b><small>ج.م ' + per + '</small>' + (d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
+        '<div class="ends" data-ends="' + (d && d.endsAt ? d.endsAt : "") + '"></div>' +
+        '<div class="msgs-box"><span class="em">💬</span><div><span class="n" data-v="0">0</span> <span class="l">رسالة في الشهر تقريبًا</span></div></div>' +
+        '<div class="per-day"></div>' +
+        '<ul>' + p.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' +
+        '<a class="btn' + (p.isFeatured ? "" : " ghost") + '" target="_blank" rel="noopener" href="' + esc(waLink("أهلاً 👋 عايز أشترك في باقة " + p.name + " (" + fmt(p.finalPrice) + " ج.م) في Sellybot")) + '">اشترك على واتساب</a></div>';
+    }).join("");
+    $("plansNote").textContent = "الأسعار بالجنيه المصري. الدفع كاش أو InstaPay أو فودافون كاش، ومن غير أي عقود.";
+    observe();
+    updateMsgs(false);
+    tickEnds(); setInterval(tickEnds, 1000);
+    // comparison table
+    var U = data.units, rows = [["صغيرة", "small"], ["متوسطة", "medium"], ["كبيرة", "large"]];
+    $("cmpTable").querySelector("thead tr").innerHTML = "<th>حجم داتا المتجر</th>" + plans.map(function (p) { return "<th>" + esc(p.name) + "</th>"; }).join("");
+    $("cmpTable").querySelector("tbody").innerHTML = rows.map(function (r) {
+      return "<tr><td><b>" + r[0] + "</b><div style='font-size:12.5px;color:var(--muted)'>" + HINT[r[1]] + "</div></td>" + plans.map(function (p) { return "<td>~" + fmt(p.messages[r[1]]) + " رسالة</td>"; }).join("") + "</tr>";
+    }).join("");
+  }
+
+  function tickEnds() {
+    document.querySelectorAll(".ends[data-ends]").forEach(function (el) {
+      var iso = el.dataset.ends; if (!iso) return;
+      var ms = new Date(iso).getTime() - Date.now(); if (ms <= 0) { el.textContent = ""; return; }
+      var d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000), s = Math.floor(ms % 60000 / 1000);
+      el.textContent = "⏰ العرض بيخلص بعد " + (d ? fmt(d) + " يوم و " : "") + [h, m, s].map(function (x) { return (x < 10 ? "0" : "") + x; }).join(":");
+    });
+  }
+
+  var io = "IntersectionObserver" in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }); }, { threshold: .12 }) : null;
+  function observe() { document.querySelectorAll(".reveal:not(.in)").forEach(function (el) { if (io) io.observe(el); else el.classList.add("in"); }); }
+  observe();
+
+  fetch("api/plans.ashx", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
+    data = d; if (d.wa) { WA = d.wa; setWa(); } render();
+  }).catch(function () { $("plans").innerHTML = ""; $("plansNote").textContent = "مقدرناش نحمّل الباقات دلوقتي. كلّمنا على واتساب."; });
+})();
+</script>
+</body>
+</html>

@@ -29,11 +29,19 @@ namespace RiwaqChat
                     { "full", !string.IsNullOrEmpty(s.ShopifyClientId) }, { "shop", s.ShopifyShop ?? "" }, { "scopes", s.ShopifyScopes ?? "" },
                     { "orders", s.ShopifyOrders }, { "ordersAvailable", ShopifyAdmin.Has(s.ShopifyScopes, "read_orders") }, { "webhooks", s.ShopifyWebhooks },
                     { "missing", ShopifyAdmin.Wanted.Where(w => !ShopifyAdmin.Has(s.ShopifyScopes, w)).ToArray() } } },
-                { "usage", new Dictionary<string, object> { { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", s.MonthlyTokenLimit } } },
+                { "usage", new Dictionary<string, object> { { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", Billing.EffectiveLimit(s) } } },
+                { "plan", Billing.StorePlan(s) }, { "whatsapp", Billing.WaNumber(Billing.WhatsApp(c)) },
+                { "supportAnswered", SupportAnswered(c, s.Id) },
                 { "storage", storage },
                 { "knowledge", new Dictionary<string, object> { { "items", items }, { "chars", chars }, { "maxChars", KnowledgeHandler.MaxStoreChars },
                                                                 { "fullModeMaxChars", Claude.FullModeMaxChars }, { "mode", chars > Claude.FullModeMaxChars ? "search" : "full" } } },
             };
+        }
+
+        // tickets where support replied and the owner hasn't answered yet (badge in the dashboard)
+        static int SupportAnswered(SqlConnection c, int storeId)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.Tickets WHERE StoreId=@s AND Status='answered'", "@s", storeId)) return (int)cmd.ExecuteScalar();
         }
 
         public static StoreInfo Require(HttpContext ctx, SqlConnection c)
@@ -88,12 +96,11 @@ namespace RiwaqChat
                         if (!Web.Allow("signup:" + Web.Ip(req), 5, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "عملت حسابات كتير، جرّب بعد ساعة."); return; }
                         string name = Web.Str(b, "name", 100);
                         string slug = (Web.Str(b, "slug", 40) ?? "").ToLowerInvariant();
-                        string code = Web.Str(b, "adminCode", 200);
-                        bool admin = !string.IsNullOrEmpty(code) && code == Web.Setting("AdminSignupCode");
-                        if (!string.IsNullOrEmpty(code) && !admin) { Web.Error(res, 400, "bad_code", "كود الأدمن غلط."); return; }
+                        // Sign-up never makes an admin (no admin code any more); the platform is run from the super admin console.
+                        const bool admin = false;
                         if (string.IsNullOrWhiteSpace(name) || name.Length < 2) { Web.Error(res, 400, "bad_name", "اكتب اسم المتجر."); return; }
                         if (!Web.SlugRx.IsMatch(slug)) { Web.Error(res, 400, "bad_slug", "معرّف المتجر لازم يكون حروف إنجليزي صغيرة وأرقام وشرطة (-)، من 3 لـ 30 حرف."); return; }
-                        if (Web.Reserved(slug) && !admin) { Web.Error(res, 400, "reserved_slug", "المعرّف ده محجوز، اختار غيره."); return; }
+                        if (Web.Reserved(slug)) { Web.Error(res, 400, "reserved_slug", "المعرّف ده محجوز، اختار غيره."); return; }
                         if (!Web.ValidEmail(email)) { Web.Error(res, 400, "bad_email", "الإيميل مش صحيح."); return; }
                         if (password.Length < 8) { Web.Error(res, 400, "weak_password", "الباسورد لازم يكون 8 حروف على الأقل."); return; }
                         if (Db.StoreBySlug(c, slug) != null) { Web.Error(res, 409, "slug_taken", "المعرّف ده مستخدم، اختار غيره."); return; }

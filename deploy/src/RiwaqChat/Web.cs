@@ -90,7 +90,7 @@ namespace RiwaqChat
         public static bool ValidEmail(string e) { return e != null && e.Length <= 200 && Regex.IsMatch(e, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"); }
         public static bool Reserved(string slug)
         {
-            var list = (Setting("ReservedSlugs", "riwaq,admin,api,dashboard,www,app")).Split(',').Select(s => s.Trim().ToLowerInvariant());
+            var list = (Setting("ReservedSlugs", "admin,api,dashboard,www,app,pricing,support")).Split(',').Select(s => s.Trim().ToLowerInvariant());
             return list.Contains(slug);
         }
 

@@ -19,6 +19,10 @@ namespace RiwaqChat
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
+        // subscription (set by the super admin; no online payment): null PlanId = no plan (free / custom limit)
+        public int? PlanId;
+        public string PlanName;
+        public DateTime? PlanEndsAt;
     }
 
     public class UsageInfo
@@ -178,6 +182,9 @@ namespace RiwaqChat
                 MonthlyTokenLimit = (int)r["MonthlyTokenLimit"],
                 DataVersion = (int)r["DataVersion"],
                 CreatedAt = (DateTime)r["CreatedAt"],
+                PlanId = r["PlanId"] is int ? (int)r["PlanId"] : (int?)null,
+                PlanName = r["PlanName"] as string,
+                PlanEndsAt = r["PlanEndsAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["PlanEndsAt"], DateTimeKind.Utc),
             };
         }
 
@@ -290,6 +297,91 @@ BEGIN
   UPDATE dbo.Stores SET Welcome = REPLACE(REPLACE(Welcome, N'اسألني عن أي منتج وأنا أساعدك تختار الأنسب.', N'عندك أي سؤال؟ اسألني وأنا أساعدك على طول.'), N'**! 🛍️', N'**! 👋')
     WHERE CHARINDEX(N'اسألني عن أي منتج وأنا أساعدك تختار الأنسب.', Welcome) > 0;
   INSERT INTO dbo.Migrations(Name) VALUES ('neutral-welcome');
+END
+-- ---------- plans, subscriptions, support, super admin ----------
+IF COL_LENGTH('dbo.Stores', 'PlanId') IS NULL ALTER TABLE dbo.Stores ADD PlanId INT NULL, PlanName NVARCHAR(100) NULL, PlanEndsAt DATETIME2 NULL;
+IF OBJECT_ID('dbo.Admins') IS NULL
+  CREATE TABLE dbo.Admins(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(50) NOT NULL UNIQUE,
+    PasswordHash NVARCHAR(300) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    LastLoginAt DATETIME2 NULL);
+IF COL_LENGTH('dbo.Admins', 'DefaultPassword') IS NULL ALTER TABLE dbo.Admins ADD DefaultPassword BIT NOT NULL CONSTRAINT DF_Admins_DefaultPassword DEFAULT 1;
+IF OBJECT_ID('dbo.Plans') IS NULL
+  CREATE TABLE dbo.Plans(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(400) NULL,
+    Features NVARCHAR(2000) NULL,
+    PriceEgp DECIMAL(12,2) NOT NULL,
+    UsdBudget DECIMAL(10,2) NOT NULL,
+    TokenLimit INT NOT NULL,
+    DurationDays INT NOT NULL DEFAULT 30,
+    IsActive BIT NOT NULL DEFAULT 1,
+    IsFeatured BIT NOT NULL DEFAULT 0,
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    SortOrder INT NOT NULL DEFAULT 0,
+    DiscountType NVARCHAR(10) NULL,
+    DiscountValue DECIMAL(12,2) NULL,
+    DiscountEndsAt DATETIME2 NULL,
+    DiscountLabel NVARCHAR(60) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+IF OBJECT_ID('dbo.Subscriptions') IS NULL
+BEGIN
+  CREATE TABLE dbo.Subscriptions(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    PlanId INT NULL,
+    PlanName NVARCHAR(100) NOT NULL,
+    Months INT NOT NULL DEFAULT 1,
+    PriceEgp DECIMAL(12,2) NOT NULL,
+    DiscountEgp DECIMAL(12,2) NOT NULL DEFAULT 0,
+    PaidEgp DECIMAL(12,2) NOT NULL,
+    PaymentMethod NVARCHAR(40) NULL,
+    Notes NVARCHAR(500) NULL,
+    StartsAt DATETIME2 NOT NULL,
+    EndsAt DATETIME2 NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_Subscriptions_Store ON dbo.Subscriptions(StoreId);
+END
+IF OBJECT_ID('dbo.Tickets') IS NULL
+BEGIN
+  CREATE TABLE dbo.Tickets(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Subject NVARCHAR(150) NOT NULL,
+    Category NVARCHAR(30) NOT NULL DEFAULT 'other',
+    Status NVARCHAR(20) NOT NULL DEFAULT 'open',
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_Tickets_Store ON dbo.Tickets(StoreId);
+END
+IF OBJECT_ID('dbo.TicketMessages') IS NULL
+  CREATE TABLE dbo.TicketMessages(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    TicketId INT NOT NULL REFERENCES dbo.Tickets(Id) ON DELETE CASCADE,
+    FromAdmin BIT NOT NULL DEFAULT 0,
+    Body NVARCHAR(4000) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+IF OBJECT_ID('dbo.AppSettings') IS NULL
+  CREATE TABLE dbo.AppSettings([Key] NVARCHAR(60) NOT NULL PRIMARY KEY, [Value] NVARCHAR(400) NULL);
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'seed-super-admin')
+BEGIN
+  -- The first super admin: user ""admin"". Only a PBKDF2 hash is stored; change the password from the console's settings.
+  IF NOT EXISTS (SELECT 1 FROM dbo.Admins WHERE Username = N'admin')
+    INSERT INTO dbo.Admins(Username, PasswordHash) VALUES (N'admin', N'pbkdf2$100000$3iQZqYUUaiU1pvtuEHhFKw==$YwyN/etSIi3/KvXpkgKsBVJlZR3AL8mKvtZvegtOuMA=');
+  INSERT INTO dbo.Migrations(Name) VALUES ('seed-super-admin');
+END
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'seed-plans')
+BEGIN
+  -- Starting plans: price in EGP, a monthly Claude budget in USD (1$ = 10,000,000 cost-weighted units at Haiku 5.5 prices).
+  IF NOT EXISTS (SELECT 1 FROM dbo.Plans)
+    INSERT INTO dbo.Plans(Name, Description, Features, PriceEgp, UsdBudget, TokenLimit, DurationDays, IsFeatured, SortOrder) VALUES
+    (N'الأساسية', N'بداية مثالية لمتجر صغير', N'مساعد ذكي بيرد 24 ساعة' + NCHAR(10) + N'رفع ملفات PDF و Word و Excel' + NCHAR(10) + N'20 شكل للشات وأي لون' + NCHAR(10) + N'دعم فني', 1000, 2, 20000000, 30, 0, 1),
+    (N'المتقدمة', N'الأنسب لأغلب المتاجر', N'كل مميزات الأساسية' + NCHAR(10) + N'رسايل أكتر بـ 50%' + NCHAR(10) + N'ربط متجر Shopify' + NCHAR(10) + N'أولوية في الدعم', 1300, 3, 30000000, 30, 1, 2),
+    (N'الاحترافية', N'للمتاجر الكبيرة والزحمة', N'كل مميزات المتقدمة' + NCHAR(10) + N'أكبر عدد رسايل' + NCHAR(10) + N'تتبع الأوردرات في الشات' + NCHAR(10) + N'دعم مباشر على واتساب', 1600, 5, 50000000, 30, 0, 3);
+  INSERT INTO dbo.Migrations(Name) VALUES ('seed-plans');
 END";
     }
 }
