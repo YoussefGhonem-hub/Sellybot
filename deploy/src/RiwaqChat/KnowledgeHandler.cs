@@ -44,6 +44,19 @@ namespace RiwaqChat
 
                     string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
 
+                    // Suggested questions written by Claude from the store's data (not saved: the owner reviews them, then saves).
+                    if (action == "suggest")
+                    {
+                        if (!Web.Allow("sg:" + s.Id, 15, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "جرّبت كتير، استنى شوية وجرّب تاني."); return; }
+                        var idx = Search.For(c, s);
+                        if (idx.TotalChars < 40) { Web.Error(res, 400, "no_data", "ضيف داتا المتجر الأول من تاب \"داتا المتجر\"، وبعدين نقترح أسئلة منها."); return; }
+                        var sr = await Claude.SuggestQuestions(s, idx);
+                        Db.AddUsage(c, s.Id, 0, sr.In, sr.CacheRead, sr.CacheWrite, sr.Out);
+                        if (sr.Items.Count == 0) { Web.Error(res, 502, "no_suggestions", "مقدرناش نطلع أسئلة دلوقتي، جرّب تاني."); return; }
+                        Web.Json(res, 200, new Dictionary<string, object> { { "suggestions", sr.Items } });
+                        return;
+                    }
+
                     if (action == "upload")
                     {
                         var file = req.Files.Count > 0 ? req.Files[0] : null;

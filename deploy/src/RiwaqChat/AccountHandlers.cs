@@ -22,7 +22,7 @@ namespace RiwaqChat
             {
                 { "id", s.Id }, { "slug", s.Slug }, { "name", s.Name }, { "email", s.OwnerEmail }, { "isAdmin", s.IsAdmin },
                 { "status", s.Status }, { "botName", s.BotName }, { "welcome", s.Welcome ?? "" }, { "instructions", s.Instructions ?? "" },
-                { "allowedOrigins", s.AllowedOrigins ?? "" }, { "bubbleStyle", s.BubbleStyle }, { "brandColor", s.BrandColor }, { "chatTitle", s.ChatTitle ?? "" },
+                { "allowedOrigins", s.AllowedOrigins ?? "" }, { "bubbleStyle", s.BubbleStyle }, { "brandColor", s.BrandColor }, { "chatTitle", s.ChatTitle ?? "" }, { "suggestions", s.Suggestions ?? "" },
                 { "usage", new Dictionary<string, object> { { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", s.MonthlyTokenLimit } } },
                 { "storage", storage },
                 { "knowledge", new Dictionary<string, object> { { "items", items }, { "chars", chars }, { "maxChars", KnowledgeHandler.MaxStoreChars },
@@ -96,11 +96,11 @@ namespace RiwaqChat
                         int freeLimit;
                         if (!int.TryParse(Web.Setting("FreeMonthlyTokenLimit", "300000"), out freeLimit)) freeLimit = 300000;
                         int id;
-                        using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Stores (Slug, Name, OwnerEmail, PasswordHash, IsAdmin, MonthlyTokenLimit, Welcome)
-                                                     OUTPUT INSERTED.Id VALUES (@slug, @name, @email, @hash, @admin, @limit, @welcome)",
+                        using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Stores (Slug, Name, OwnerEmail, PasswordHash, IsAdmin, MonthlyTokenLimit, Welcome, BotName)
+                                                     OUTPUT INSERTED.Id VALUES (@slug, @name, @email, @hash, @admin, @limit, @welcome, N'')",
                             "@slug", slug, "@name", name, "@email", email, "@hash", Web.HashPassword(password), "@admin", admin,
                             "@limit", admin ? 20000000 : freeLimit,
-                            "@welcome", "أهلاً بيك في **" + name + "**! 🛍️\nأنا **دبدوب** 🐻، اسألني عن أي منتج وأنا أساعدك تختار الأنسب."))
+                            "@welcome", "أهلاً بيك في **" + name + "**! 👋\nعندك أي سؤال؟ اسألني وأنا أساعدك على طول."))
                             id = (int)cmd.ExecuteScalar();
                         if (slug == Web.Setting("LegacyStore", "riwaq")) ImportLegacy(c, id);
                         Web.SignIn(ctx, id);
@@ -158,10 +158,11 @@ namespace RiwaqChat
                     var sets = new List<string>();
                     var ps = new List<object>();
                     if (b.ContainsKey("name")) { var v = Web.Str(b, "name", 100); if (!string.IsNullOrWhiteSpace(v)) { sets.Add("Name=@name"); ps.Add("@name"); ps.Add(v); } }
-                    if (b.ContainsKey("botName")) { var v = Web.Str(b, "botName", 50); if (!string.IsNullOrWhiteSpace(v)) { sets.Add("BotName=@bot"); ps.Add("@bot"); ps.Add(v); } }
+                    if (b.ContainsKey("botName")) { sets.Add("BotName=@bot"); ps.Add("@bot"); ps.Add((Web.Str(b, "botName", 50) ?? "").Trim()); }
                     if (b.ContainsKey("welcome")) { sets.Add("Welcome=@welcome"); ps.Add("@welcome"); ps.Add(NullIfEmpty(Web.Str(b, "welcome", 600))); }
                     if (b.ContainsKey("instructions")) { sets.Add("Instructions=@ins"); ps.Add("@ins"); ps.Add(NullIfEmpty(Web.Str(b, "instructions", 20000))); }
                     if (b.ContainsKey("allowedOrigins")) { sets.Add("AllowedOrigins=@origins"); ps.Add("@origins"); ps.Add(NormalizeOrigins(Web.Str(b, "allowedOrigins", 1000))); }
+                    if (b.ContainsKey("suggestions")) { var list = Claude.CleanSuggestions(Web.Str(b, "suggestions", 2000)); sets.Add("Suggestions=@sugg"); ps.Add("@sugg"); ps.Add(list.Count == 0 ? null : string.Join("\n", list)); }
                     if (b.ContainsKey("chatTitle")) { sets.Add("ChatTitle=@title"); ps.Add("@title"); ps.Add(NullIfEmpty(Web.Str(b, "chatTitle", 80))); }
                     if (b.ContainsKey("bubbleStyle"))
                     {

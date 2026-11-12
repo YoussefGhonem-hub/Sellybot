@@ -72,10 +72,11 @@ namespace RiwaqChat
                     {
                         { "ok", true },
                         { "name", store == null ? "رِواق" : store.Name },
-                        { "botName", store == null ? "دبدوب" : store.BotName },
+                        { "botName", store == null ? "" : store.BotName },
                         { "welcome", store == null ? null : store.Welcome },
                         { "bubbleStyle", store == null ? "bear" : store.BubbleStyle },
                         { "brandColor", store == null ? "#e8774a" : store.BrandColor }, { "chatTitle", store == null ? null : store.ChatTitle },
+                        { "suggestions", store == null || string.IsNullOrEmpty(store.Suggestions) ? new string[0] : store.Suggestions.Split('\n') },
                     });
                     return;
                 }

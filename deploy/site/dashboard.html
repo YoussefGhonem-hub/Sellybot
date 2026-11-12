@@ -323,6 +323,7 @@
   .ok-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#e6f6ec;color:#1f7a45}
   .warn-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#fff1d6;color:#8a5200}
   [data-theme=dark] .ok-pill{background:#173726;color:#8be0ad}[data-theme=dark] .warn-pill{background:#3d2c10;color:#f3c26b}
+  .sugg-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media (max-width:860px){.two{grid-template-columns:1fr}}
 
@@ -491,7 +492,7 @@
 
   <!-- data -->
   <section data-panel="data">
-    <div class="page-title"><div><h2>داتا المتجر</h2><p>كل اللي هنا دبدوب بيرد منه على زباينك</p></div></div>
+    <div class="page-title"><div><h2>داتا المتجر</h2><p>كل اللي هنا المساعد بيرد منه على زباينك</p></div></div>
     <div class="grid">
       <div class="card stat"><div class="label">الاستهلاك الشهر ده</div><div class="value" id="usageVal">—</div><div class="bar" id="usageBar"><i style="width:0"></i></div><div class="hint" id="usageHint"></div></div>
       <div class="card stat"><div class="label">حجم داتا المتجر</div><div class="value" id="dataVal">—</div><div class="bar" id="dataBar"><i style="width:0"></i></div><div class="hint" id="dataHint"></div></div>
@@ -503,7 +504,7 @@
     <div class="tip">
       <strong>💡 سمّي كل ملف ونص باسم واضح بيوصف اللي جواه</strong>
       <div>مثلًا: <b>"أسعار منتجات التنظيف - نوفمبر 2026"</b> أو <b>"سياسة الشحن والاسترجاع"</b> بدل "file1.pdf" أو "مستند جديد".
-      الأسماء الواضحة بتخلّي دبدوب يعرف يدوّر فين ويلاقي المعلومة أسرع وأدق، خصوصًا لما الداتا تكبر.
+      الأسماء الواضحة بتخلّي المساعد يعرف يدوّر فين ويلاقي المعلومة أسرع وأدق، خصوصًا لما الداتا تكبر.
       ولو المعلومة اتغيرت، <b>عدّل الملف القديم</b> بدل ما ترفع نسخة جديدة جنبه.</div>
     </div>
     <div class="card" style="margin-bottom:12px">
@@ -530,7 +531,7 @@
           <h3>اسم الشات</h3>
           <p class="sub">الاسم اللي بيظهر فوق في الشات جنب صورة المساعد، وفي عنوان صفحة الشات.</p>
           <input type="text" id="chatTitle" maxlength="80" aria-label="اسم الشات">
-          <div class="hint">سيبه فاضي عشان يظهر <b id="chatTitleDef"></b> (اسم المساعد · اسم المتجر). مثلًا: "خدمة عملاء رِواق" أو "اسأل رِواق 💬".</div>
+          <div class="hint">سيبه فاضي عشان يظهر اسم المتجر: <b id="chatTitleDef"></b>. مثلًا: "خدمة عملاء رِواق" أو "اسأل رِواق 💬".</div>
         </div>
         <div class="card">
           <h3>شكل الفقاعة</h3>
@@ -614,10 +615,17 @@
       <label>اسم المتجر</label>
       <input type="text" id="stName" maxlength="100">
       <label>اسم المساعد</label>
-      <input type="text" id="stBot" maxlength="50" placeholder="دبدوب">
+      <input type="text" id="stBot" maxlength="50" placeholder="اختياري، مثلًا: سارة">
+      <div class="hint">سيبه فاضي والمساعد هيتكلم باسم المتجر بس. ولو كتبت اسم، هيعرّف نفسه بيه.</div>
       <label>رسالة الترحيب</label>
       <textarea id="stWelcome" maxlength="600" style="min-height:80px"></textarea>
       <div class="hint">أول رسالة الزبون بيشوفها لما يفتح الشات. ينفع تستخدم **كلام بخط عريض**.</div>
+      <label for="stSugg">أسئلة مقترحة للزبون</label>
+      <textarea id="stSugg" maxlength="400" style="min-height:100px" placeholder="سؤال في كل سطر، لحد 4 أسئلة. مثلًا:&#10;إزاي أعمل حساب؟ 📱&#10;التطبيق ببلاش؟ 💸"></textarea>
+      <div class="sugg-row">
+        <button type="button" class="btn ghost sm" id="suggestBtn">✨ اقترحلي من داتا المتجر</button>
+        <span class="hint" style="margin:0">بتظهر للزبون كأزرار تحت أول رسالة، يدوس عليها بدل ما يكتب. سيبها فاضية عشان ماتظهرش.</span>
+      </div>
       <label>تعليمات إضافية للمساعد</label>
       <textarea id="stIns" maxlength="20000" placeholder="مثال: اتكلم باللهجة السعودية، ورشّح المنتج الأغلى لو الزبون محتار."></textarea>
       <div class="hint">أسلوب الكلام، قواعد مهمة، حاجات مايقولهاش... (الداتا نفسها في "داتا المتجر").</div>
@@ -661,7 +669,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="widget.js?v=20261112135442" data-art-only="1"></script>
+<script src="widget.js?v=20261112142147" data-art-only="1"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -854,10 +862,10 @@
     $("dataVal").textContent = fmt(me.knowledge.items) + " جزء";
     $("dataBar").querySelector("i").style.width = Math.max(dpct, me.knowledge.chars > 0 ? 1 : 0) + "%";
     $("dataHint").textContent = fmt(me.knowledge.chars) + " حرف من " + fmt(me.knowledge.maxChars) + " · " +
-      (me.knowledge.mode === "search" ? "🔎 وضع البحث: الداتا كبيرة، فدبدوب بيدوّر فيها مع كل سؤال" : "كل الداتا بتتقري مع كل سؤال");
+      (me.knowledge.mode === "search" ? "🔎 وضع البحث: الداتا كبيرة، فالمساعد بيدوّر فيها مع كل سؤال" : "كل الداتا بتتقري مع كل سؤال");
     $("chatLink").value = link; $("openLink").href = link;
     // settings
-    $("stName").value = me.name; $("stBot").value = me.botName; $("stWelcome").value = me.welcome; $("stIns").value = me.instructions;
+    $("stName").value = me.name; $("stBot").value = me.botName; $("stWelcome").value = me.welcome; $("stIns").value = me.instructions; $("stSugg").value = me.suggestions || "";
     // install
     renderCode();
     $("stOrigins").value = (me.allowedOrigins || "").split(",").filter(Boolean).join(", ");
@@ -868,7 +876,7 @@
   // keeps the floating chat on this page in step with what was just saved (look, title, names)
   function syncLiveChat() {
     if (!me) return;
-    document.dispatchEvent(new CustomEvent("sellybot:look", { detail: { store: me.slug, style: me.bubbleStyle, color: me.brandColor, title: me.chatTitle || "", name: me.name, botName: me.botName } }));
+    document.dispatchEvent(new CustomEvent("sellybot:look", { detail: { store: me.slug, style: me.bubbleStyle, color: me.brandColor, title: me.chatTitle || "", name: me.name, botName: me.botName, suggestions: (me.suggestions || "").split("\n").filter(Boolean) } }));
   }
   async function refreshMe() { try { me = await api("api/auth.ashx?action=me"); render(); } catch (e) {} }
   $("copyLink").onclick = function () { copy($("chatLink").value); toast("اتنسخ اللينك ✅"); };
@@ -902,7 +910,7 @@
       box.innerHTML = "";
       if (!data.items.length) {
         var e = document.createElement("div"); e.className = "card empty";
-        e.textContent = "لسه مفيش داتا. ضيف نص أو ارفع ملف فيه المنتجات والأسعار والشحن والأسئلة الشائعة، ودبدوب هيرد منها.";
+        e.textContent = "لسه مفيش داتا. ضيف نص أو ارفع ملف فيه المنتجات والأسعار والشحن والأسئلة الشائعة، والمساعد هيرد منها.";
         box.appendChild(e); return;
       }
       data.items.forEach(function (it) {
@@ -932,13 +940,13 @@
   $("editor").addEventListener("click", function (e) { if (e.target === $("editor")) $("editor").hidden = true; });
   $("editorForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("edMsg", "");
-    if (vagueName($("edTitle").value) && !confirm("الاسم \"" + $("edTitle").value + "\" مش بيوصف المحتوى. الأسماء الواضحة بتخلّي دبدوب يلاقي المعلومة أسرع. تحفظ بالاسم ده برضه؟")) { $("edTitle").focus(); return; }
+    if (vagueName($("edTitle").value) && !confirm("الاسم \"" + $("edTitle").value + "\" مش بيوصف المحتوى. الأسماء الواضحة بتخلّي المساعد يلاقي المعلومة أسرع. تحفظ بالاسم ده برضه؟")) { $("edTitle").focus(); return; }
     $("edSave").disabled = true;
     try {
       var body = { title: $("edTitle").value, content: $("edContent").value };
       if (editingId) { body.id = editingId; await api("api/knowledge.ashx?action=update", { method: "POST", json: body }); }
       else await api("api/knowledge.ashx?action=add", { method: "POST", json: body });
-      $("editor").hidden = true; toast("اتحفظ ✅ دبدوب هيستخدم الداتا الجديدة على طول"); loadItems(); refreshMe();
+      $("editor").hidden = true; toast("اتحفظ ✅ المساعد هيستخدم الداتا الجديدة على طول"); loadItems(); refreshMe();
     } catch (err) { setMsg("edMsg", err.message); if (err.status === 507) refreshMe(); }
     finally { $("edSave").disabled = false; }
   };
@@ -973,7 +981,7 @@
   var look = { style: "bear", color: "#e8774a", title: "" }, lookInit = false, pvView = "bubble";
   function initLook() {
     look.style = me.bubbleStyle || "bear"; look.color = me.brandColor || "#e8774a"; look.title = me.chatTitle || "";
-    var def = (me.botName || "دبدوب") + (me.name ? " · " + me.name : "");
+    var def = me.name || me.botName || "";
     $("chatTitle").value = look.title; $("chatTitle").placeholder = def; $("chatTitleDef").textContent = def;
     if (!lookInit) {
       lookInit = true;
@@ -1034,8 +1042,19 @@
   // ---------------- settings ----------------
   $("settingsForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("stMsg", "");
-    try { me = await api("api/store.ashx", { method: "POST", json: { name: $("stName").value, botName: $("stBot").value, welcome: $("stWelcome").value, instructions: $("stIns").value } }); render(); setMsg("stMsg", "اتحفظ ✅", true); }
+    try { me = await api("api/store.ashx", { method: "POST", json: { name: $("stName").value, botName: $("stBot").value, welcome: $("stWelcome").value, instructions: $("stIns").value, suggestions: $("stSugg").value } }); render(); setMsg("stMsg", "اتحفظ ✅", true); }
     catch (err) { setMsg("stMsg", err.message); }
+  };
+  // Claude reads the store's data and proposes questions; the owner reviews them, then saves.
+  $("suggestBtn").onclick = async function () {
+    var b = this, old = b.textContent;
+    b.disabled = true; b.textContent = "⏳ بنقرا الداتا ونكتب أسئلة…"; setMsg("stMsg", "");
+    try {
+      var d = await api("api/knowledge.ashx?action=suggest", { method: "POST" });
+      $("stSugg").value = d.suggestions.join("\n");
+      setMsg("stMsg", "✨ دي أسئلة من داتا متجرك. عدّل فيها براحتك، وبعدين دوس \"حفظ الإعدادات\".", true);
+    } catch (err) { setMsg("stMsg", err.message); }
+    finally { b.disabled = false; b.textContent = old; }
   };
 
   // ---------------- admin ----------------

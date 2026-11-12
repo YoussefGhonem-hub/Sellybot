@@ -18,7 +18,7 @@
   if (PREVIEW && qs.get("view") === "bubble") MODE = "bubble";
   var API = BASE + "api/chat.ashx?store=" + encodeURIComponent(STORE);
 
-  var cfg = { name: "", botName: "دبدوب", welcome: null, style: "bear", color: "#e8774a" };
+  var cfg = { name: "", botName: "", welcome: null, style: "bear", color: "#e8774a" };
   var history = [], busy = false, opened = false, storeMissing = false;
 
   // ---------------------------------------------------------------- colors
@@ -101,7 +101,7 @@
       }
     },
     bear: {
-      name: "دبدوب", art: function () { return svg("0 0 120 120", bearHeadParts(), "face"); }, launcher: bearFull, tall: true
+      name: "دب لطيف", art: function () { return svg("0 0 120 120", bearHeadParts(), "face"); }, launcher: bearFull, tall: true
     },
     cat: {
       name: "قطقوطة", art: function (big) {
@@ -490,6 +490,7 @@ button{font:inherit;cursor:pointer;color:inherit}
 @keyframes spark{0%{opacity:1;transform:translate(0,0) scale(.4)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2) rotate(var(--rot))}}
 .chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;transition:opacity .3s,max-height .4s;max-height:140px;overflow:hidden}
 .chips.gone{opacity:0;max-height:0;padding-bottom:0}
+.chips[hidden]{display:none}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;animation:chipIn .45s cubic-bezier(.34,1.56,.64,1) both;transition:transform .2s,border-color .2s}
 .chip:nth-child(2){animation-delay:.12s}.chip:nth-child(3){animation-delay:.24s}
 @media (hover:hover){.chip:hover{transform:translateY(-2px);border-color:var(--c)}}
@@ -567,7 +568,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
         '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>' +
         '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>' : "") +
       '<button class="close" aria-label="إغلاق">✕</button></div>' +
-      '<div class="msgs"></div><div class="chips"></div>' +
+      '<div class="msgs"></div><div class="chips" hidden></div>' +
       '<form><input class="q" autocomplete="off" maxlength="600" aria-label="رسالتك"><button class="send" aria-label="إرسال"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z"/></svg></button></form>' +
     "</section>";
   root.appendChild(w);
@@ -576,7 +577,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
 
   // ---------------------------------------------------------------- apply look
   // Header title: the owner's own chat title if set, otherwise "assistant · store".
-  function chatTitle() { return (cfg.title || "").trim() || (cfg.botName + (cfg.name ? " · " + cfg.name : "")); }
+  function chatTitle() { return (cfg.title || "").trim() || cfg.name || cfg.botName || "الشات"; }
   function applyLook() {
     var p = palette(cfg.color);
     w.style.setProperty("--c", p.c); w.style.setProperty("--c2", p.c2); w.style.setProperty("--c3", p.c3); w.style.setProperty("--on", p.on); w.style.setProperty("--soft", p.soft);
@@ -589,7 +590,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     $(".hdr").innerHTML = S.art();
     w.querySelectorAll(".row.bot .av").forEach(function (a) { a.innerHTML = S.art(); });
     $(".title").textContent = chatTitle();
-    $(".q").placeholder = "اكتب سؤالك لـ" + cfg.botName + "...";
+    $(".q").placeholder = "اكتب سؤالك هنا...";
     if (MODE === "page") document.title = chatTitle();
   }
 
@@ -663,13 +664,19 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   var RIWAQ = STORE === "riwaq";
   var HELLO = RIWAQ
     ? ["أهلاً! 👋<br>محتاج مساعدة في التنظيف؟", "بقعة عنيدة؟ 😤<br>سيبهالي أنا!", "اسألني عن أي منتج 🫧<br>مش بعضّ والله 😄", "ريحة رطوبة؟ 🤢<br>عندي الحل!"]
-    : ["أهلاً! 👋<br>محتاج مساعدة؟", "محتار تختار إيه؟ 🤔<br>اسألني!", "أنا هنا عشان أساعدك<br>تلاقي اللي محتاجه 🛍️", "اسألني عن أي منتج<br>مش بعضّ والله 😄"];
-  var CHIPS = RIWAQ
-    ? ["عندي بقع عرق في القميص، أستخدم إيه؟ 👕", "بكام ملمع الأخشاب؟ 🪵", "الشحن بكام؟ 🚚"]
-    : ["إيه المنتجات اللي عندكم؟ 🛍️", "الشحن بكام؟ 🚚", "ينفع أدفع عند الاستلام؟ 💵"];
+    : ["أهلاً! 👋<br>محتاج مساعدة؟", "عندك سؤال؟ 🤔<br>اسألني!", "أنا هنا عشان أساعدك 😊", "اسألني أي حاجة<br>مش بعضّ والله 😄"];
   $(".helloTxt").innerHTML = HELLO[0];
-  $(".chips").innerHTML = CHIPS.map(function (c) { return '<button class="chip" type="button"></button>'; }).join("");
-  w.querySelectorAll(".chip").forEach(function (b, i) { b.textContent = CHIPS[i]; b.onclick = function () { ask(CHIPS[i].replace(/[\u{1F300}-\u{1FAFF}☀-➿]/gu, "").trim()); }; });
+  // Suggested questions come from the store's own settings (none saved = no buttons, instead of questions that don't fit the store).
+  function renderChips() {
+    var box = $(".chips"), list = (cfg.suggestions || []).filter(function (q) { return q && q.trim(); }).slice(0, 4);
+    box.textContent = "";
+    list.forEach(function (q) {
+      var b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = q;
+      b.onclick = function () { ask(q.replace(/[\u{1F300}-\u{1FAFF}☀-➿]/gu, "").trim()); };
+      box.appendChild(b);
+    });
+    box.hidden = list.length === 0;
+  }
 
   // ---------------------------------------------------------------- config from the server
   var ready = (async function () {
@@ -677,9 +684,9 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
       var r = await fetch(API, { cache: "no-store" });
       if (r.ok) {
         var c = await r.json();
-        cfg.name = c.name || ""; cfg.botName = c.botName || "دبدوب"; cfg.welcome = c.welcome; cfg.style = c.bubbleStyle || "bear"; cfg.color = c.brandColor || "#e8774a"; cfg.title = c.chatTitle || "";
+        cfg.name = c.name || ""; cfg.botName = c.botName || ""; cfg.welcome = c.welcome; cfg.style = c.bubbleStyle || "bear"; cfg.color = c.brandColor || "#e8774a"; cfg.title = c.chatTitle || ""; cfg.suggestions = c.suggestions || [];
         if (PREVIEW) { if (qs.get("style")) cfg.style = qs.get("style"); if (qs.get("color")) cfg.color = qs.get("color"); }
-        applyLook(); setStatus("ok", "متصل وجاهز يساعدك");
+        applyLook(); renderChips(); setStatus("ok", "متصل وجاهز يساعدك");
         return true;
       }
       if (MODE === "bubble" && !PREVIEW && (r.status === 403 || r.status === 404)) {
@@ -732,7 +739,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
       setStatus("ok", "متصل وجاهز يساعدك");
     } catch (err) {
       bot.row.remove(); history.pop(); talk(null, false);
-      var n = cfg.botName, msg = "حصلت مشكلة صغيرة 😕 جرّب تاني بعد شوية، أو كلّم المتجر مباشرة.";
+      var n = cfg.botName || "المساعد", msg = "حصلت مشكلة صغيرة 😕 جرّب تاني بعد شوية، أو كلّم المتجر مباشرة.";
       if (err && err.status === 429) msg = "استنى دقيقة كده 😅 بعتّ رسايل كتير ورا بعض.";
       else if (err && err.status === 402) msg = n + " واخد استراحة الشهر ده 😴 كلّم المتجر مباشرة وهيردّوا عليك.";
       else if (err && err.status === 403) msg = n + " مش متاح دلوقتي، كلّم المتجر مباشرة.";
@@ -746,7 +753,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     var bot = addBot(), tw = typer(bot.bubble, function () { talk(bot, true); });
     await Promise.all([ready, new Promise(function (r) { setTimeout(r, 650); })]);
     if (storeMissing) { bot.row.remove(); addErr("المتجر ده مش موجود. اتأكد من اللينك."); return; }
-    var text = cfg.welcome || ("أهلاً بيك" + (cfg.name ? " في **" + cfg.name + "**" : "") + "! 👋\nأنا **" + cfg.botName + "**، اسألني عن أي منتج وأنا أساعدك تختار الأنسب.");
+    var text = cfg.welcome || ("أهلاً بيك" + (cfg.name ? " في **" + cfg.name + "**" : "") + "! 👋\n" + (cfg.botName ? "أنا **" + cfg.botName + "**، " : "") + "عندك أي سؤال؟ اسألني وأنا أساعدك على طول.");
     tw.push(text); tw.end(); await tw.finished; finishBot(bot);
   }
 
@@ -795,7 +802,8 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     if (d.store !== STORE) return;
     if (d.style) cfg.style = d.style; if (d.color) cfg.color = d.color;
     if (typeof d.title === "string") cfg.title = d.title;
-    if (d.name) cfg.name = d.name; if (d.botName) cfg.botName = d.botName;
+    if (d.name) cfg.name = d.name; if (typeof d.botName === "string") cfg.botName = d.botName;
+    if (d.suggestions) { cfg.suggestions = d.suggestions; renderChips(); }
     applyLook();
   });
 

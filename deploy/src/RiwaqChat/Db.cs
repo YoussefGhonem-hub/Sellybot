@@ -10,7 +10,7 @@ namespace RiwaqChat
     public class StoreInfo
     {
         public int Id;
-        public string Slug, Name, OwnerEmail, PasswordHash, Status, BotName, Welcome, Instructions, AllowedOrigins, BubbleStyle, BrandColor, ChatTitle;
+        public string Slug, Name, OwnerEmail, PasswordHash, Status, BotName, Welcome, Instructions, AllowedOrigins, BubbleStyle, BrandColor, ChatTitle, Suggestions;
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -160,6 +160,7 @@ namespace RiwaqChat
                 BubbleStyle = r["BubbleStyle"] as string ?? "bear",
                 BrandColor = r["BrandColor"] as string ?? "#e8774a",
                 ChatTitle = r["ChatTitle"] as string,
+                Suggestions = r["Suggestions"] as string,
                 MonthlyTokenLimit = (int)r["MonthlyTokenLimit"],
                 DataVersion = (int)r["DataVersion"],
                 CreatedAt = (DateTime)r["CreatedAt"],
@@ -212,7 +213,7 @@ BEGIN
     PasswordHash NVARCHAR(300) NOT NULL,
     IsAdmin BIT NOT NULL DEFAULT 0,
     Status NVARCHAR(20) NOT NULL DEFAULT 'active',
-    BotName NVARCHAR(50) NOT NULL DEFAULT N'دبدوب',
+    BotName NVARCHAR(50) NOT NULL DEFAULT N'',
     Welcome NVARCHAR(600) NULL,
     Instructions NVARCHAR(MAX) NULL,
     AllowedOrigins NVARCHAR(1000) NULL,
@@ -247,6 +248,24 @@ BEGIN
 END
 IF COL_LENGTH('dbo.Stores', 'BubbleStyle') IS NULL ALTER TABLE dbo.Stores ADD BubbleStyle NVARCHAR(20) NOT NULL CONSTRAINT DF_Stores_BubbleStyle DEFAULT 'bear';
 IF COL_LENGTH('dbo.Stores', 'BrandColor') IS NULL ALTER TABLE dbo.Stores ADD BrandColor NVARCHAR(9) NOT NULL CONSTRAINT DF_Stores_BrandColor DEFAULT '#e8774a';
-IF COL_LENGTH('dbo.Stores', 'ChatTitle') IS NULL ALTER TABLE dbo.Stores ADD ChatTitle NVARCHAR(80) NULL;";
+IF COL_LENGTH('dbo.Stores', 'ChatTitle') IS NULL ALTER TABLE dbo.Stores ADD ChatTitle NVARCHAR(80) NULL;
+IF COL_LENGTH('dbo.Stores', 'Suggestions') IS NULL ALTER TABLE dbo.Stores ADD Suggestions NVARCHAR(400) NULL;
+IF OBJECT_ID('dbo.Migrations') IS NULL CREATE TABLE dbo.Migrations(Name NVARCHAR(100) NOT NULL PRIMARY KEY, RanAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'drop-default-bot-name')
+BEGIN
+  -- The chat used to call every assistant N'دبدوب' by default; stores now speak with their own name.
+  UPDATE dbo.Stores SET BotName = N'' WHERE BotName = N'دبدوب';
+  UPDATE dbo.Stores SET Welcome = REPLACE(Welcome, N'أنا **دبدوب** 🐻، ', N'') WHERE CHARINDEX(N'أنا **دبدوب** 🐻، ', Welcome) > 0;
+  UPDATE dbo.Stores SET DataVersion = DataVersion + 1;
+  INSERT INTO dbo.Migrations(Name) VALUES ('drop-default-bot-name');
+END
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'riwaq-suggestions')
+BEGIN
+  -- Suggested questions used to be built into the chat; Riwaq keeps the ones it had.
+  -- Run as its own statement: the column is added in this same batch, so a direct UPDATE would not compile.
+  DECLARE @riwaqQ NVARCHAR(400) = N'عندي بقع عرق في القميص، أستخدم إيه؟ 👕' + NCHAR(10) + N'بكام ملمع الأخشاب؟ 🪵' + NCHAR(10) + N'الشحن بكام؟ 🚚';
+  EXEC sp_executesql N'UPDATE dbo.Stores SET Suggestions = @q WHERE Slug = ''riwaq'' AND Suggestions IS NULL;', N'@q NVARCHAR(400)', @q = @riwaqQ;
+  INSERT INTO dbo.Migrations(Name) VALUES ('riwaq-suggestions');
+END";
     }
 }
