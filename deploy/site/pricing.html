@@ -115,6 +115,8 @@
   .price b{font-size:46px;line-height:1;letter-spacing:-1px}
   .price small{color:var(--muted);font-size:15px}
   .price s{color:var(--muted);font-size:18px}
+  .per-save{font-size:13.5px;color:var(--muted);margin:2px 0 4px}
+  .per-save b{color:var(--ok)}
   .ends{font-size:13px;color:#d4453a;font-weight:600;min-height:20px}
   .msgs-box{margin:16px 0 4px;padding:14px 16px;border-radius:18px;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;gap:12px}
   .msgs-box .em{font-size:28px;animation:floatY 3.5s ease-in-out infinite}
@@ -211,10 +213,22 @@
     </div>
     <span class="seg-hint" id="segHint"></span>
   </div>
+  <div class="picker" style="margin-top:14px">
+    <span class="q">هتدفع لمدة قد إيه؟ (كل ما المدة تطول توفّر أكتر)</span>
+    <div class="seg" id="perSeg"><span class="ind" id="perInd"></span>
+      <button data-m="1" class="on">شهر</button><button data-m="4">4 شهور</button><button data-m="6">6 شهور</button><button data-m="12">سنة</button>
+    </div>
+  </div>
 </section>
 
 <div class="plans" id="plans"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
 <p class="note" id="plansNote"></p>
+
+<section class="blk reveal" id="periodsBlk">
+  <h2>كل الباقات والمدد</h2>
+  <p class="lead">الرصيد بيتجدد كل شهر طول مدة الاشتراك. عدد الرسايل تقريبي: المتجر الصغير (نصوص وكام ملف) والمتجر الكبير أو المربوط بـ Shopify.</p>
+  <div class="tbl"><div class="wrap"><table id="perTable"><thead><tr><th>الباقة</th><th>المدة</th><th>السعر</th><th>في الشهر</th><th>رسايل المدة (متجر صغير)</th><th>رسايل المدة (متجر كبير / Shopify)</th></tr></thead><tbody></tbody></table></div></div>
+</section>
 
 <section class="blk reveal" id="how">
   <h2>إزاي بنحسب عدد الرسايل؟</h2>
@@ -299,6 +313,18 @@
   window.addEventListener("resize", moveInd);
   requestAnimationFrame(moveInd); $("segHint").textContent = HINT[size];
 
+  // period picker (1, 4, 6 or 12 months): changes the price on every card
+  var period = 1;
+  function qOf(p) { return (p.periods || []).filter(function (q) { return q.months === period; })[0] || { total: p.finalPrice, price: p.priceEgp, save: 0, perMonth: p.finalPrice }; }
+  function movePer() { var on = document.querySelector("#perSeg button.on"); var ind = $("perInd"); ind.style.width = on.offsetWidth + "px"; ind.style.left = on.offsetLeft + "px"; }
+  $("perSeg").onclick = function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    period = +b.dataset.m; this.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); });
+    movePer(); if (data) render();
+  };
+  window.addEventListener("resize", movePer);
+  requestAnimationFrame(movePer);
+
   function countTo(el, to) {
     var from = Number(el.dataset.v || 0), start = performance.now(), dur = 700;
     el.dataset.v = to;
@@ -321,21 +347,34 @@
     if (!plans.length) { $("plans").innerHTML = ""; $("plansNote").textContent = "الباقات هتنزل قريب. كلّمنا على واتساب نعرّفك الأسعار."; return; }
     $("plans").innerHTML = plans.map(function (p, i) {
       var d = p.discount, label = d ? (d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "وفّر " + fmt(d.value) + " ج.م")) : "";
-      var per = p.durationDays === 30 ? "شهريًا" : "كل " + fmt(p.durationDays) + " يوم";
+      var q = qOf(p), per = period === 1 ? "شهريًا" : "لـ " + (period === 12 ? "سنة" : fmt(period) + " شهور");
       return '<div class="plan' + (p.isFeatured ? " feat" : "") + '" data-i="' + i + '" style="animation:fadeUp .7s ' + (0.1 + i * 0.12) + 's cubic-bezier(.2,.8,.2,1) both">' +
         (p.isFeatured ? '<span class="tag">⭐ الأكثر طلبًا</span>' : '') + (d ? '<span class="dtag">🔥 ' + esc(label) + '</span>' : '') +
         '<h3>' + esc(p.name) + '</h3><div class="desc">' + esc(p.description) + '</div>' +
-        '<div class="price"><b>' + fmt(p.finalPrice) + '</b><small>ج.م ' + per + '</small>' + (d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
+        '<div class="price"><b>' + fmt(q.total) + '</b><small>ج.م ' + per + '</small>' + (q.save > 0 ? '<s>' + fmt(q.price) + '</s>' : '') + '</div>' +
+        (period > 1 ? '<div class="per-save">≈ ' + fmt(q.perMonth) + ' ج.م في الشهر' + (q.save > 0 ? ' · <b>وفّرت ' + fmt(q.save) + ' ج.م</b>' : '') + '</div>' : '') +
         '<div class="ends" data-ends="' + (d && d.endsAt ? d.endsAt : "") + '"></div>' +
         '<div class="msgs-box"><span class="em">💬</span><div><span class="n" data-v="0">0</span> <span class="l">رسالة في الشهر تقريبًا</span></div></div>' +
         '<div class="per-day"></div>' +
         '<ul>' + p.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' +
-        '<a class="btn' + (p.isFeatured ? "" : " ghost") + '" target="_blank" rel="noopener" href="' + esc(waLink("أهلاً 👋 عايز أشترك في باقة " + p.name + " (" + fmt(p.finalPrice) + " ج.م) في Sellybot")) + '">اشترك على واتساب</a></div>';
+        '<a class="btn' + (p.isFeatured ? "" : " ghost") + '" href="dashboard.html">ابدأ واشترك من لوحتك</a></div>';
     }).join("");
-    $("plansNote").textContent = "الأسعار بالجنيه المصري. الدفع كاش أو InstaPay أو فودافون كاش، ومن غير أي عقود.";
+    $("plansNote").textContent = "الأسعار بالجنيه المصري. اعمل حساب لمتجرك، واطلب الباقة من تاب \"باقتي\" بعد ما تحوّل (InstaPay أو فودافون كاش)، ومن غير أي عقود.";
+    // every plan x every period
+    var U2 = data.units;
+    $("perTable").querySelector("tbody").innerHTML = plans.map(function (p) {
+      return (p.periods || []).map(function (q, j) {
+        var units = p.messages.small * U2.small * q.months;   // total units for the period (monthly quota x months)
+        return "<tr>" + (j === 0 ? "<td rowspan='" + p.periods.length + "'><b>" + esc(p.name) + "</b></td>" : "") +
+          "<td>" + (q.months === 1 ? "شهر" : q.months === 12 ? "سنة" : fmt(q.months) + " شهور") + "</td>" +
+          "<td><b>" + fmt(q.total) + " ج.م</b>" + (q.pct ? "<div style='font-size:12px;color:var(--ok)'>وفّر " + fmt(q.pct) + "%</div>" : "") + "</td>" +
+          "<td>" + fmt(q.perMonth) + " ج.م</td>" +
+          "<td>~" + fmt(Math.round(units / U2.small / 100) * 100) + "</td><td>~" + fmt(Math.round(units / U2.large / 50) * 50) + "</td></tr>";
+      }).join("");
+    }).join("");
     observe();
     updateMsgs(false);
-    tickEnds(); setInterval(tickEnds, 1000);
+    tickEnds(); if (!render.ticking) { render.ticking = true; setInterval(tickEnds, 1000); }
     // comparison table
     var U = data.units, rows = [["صغيرة", "small"], ["متوسطة", "medium"], ["كبيرة", "large"]];
     $("cmpTable").querySelector("thead tr").innerHTML = "<th>حجم داتا المتجر</th>" + plans.map(function (p) { return "<th>" + esc(p.name) + "</th>"; }).join("");

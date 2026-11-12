@@ -212,10 +212,36 @@ namespace RiwaqChat
             return end;
         }
 
+        // ---------- extra quota for the current month (when the monthly quota runs out before the month ends) ----------
+        public static readonly int[] TopupPcts = { 25, 50, 100 };
+
+        // +X% of the plan's monthly quota for X% of the plan's current monthly price.
+        public static Quote TopupQuote(PlanInfo p, int pct, out long units)
+        {
+            units = (long)p.TokenLimit * pct / 100;
+            decimal total = Math.Max(0, Math.Round(FinalPrice(p) * pct / 100m, 0));
+            return new Quote { Months = 0, Price = total, Discount = 0, Total = total, Pct = pct };
+        }
+
+        // Extra units approved for this store in the current month.
+        public static long TopupUnits(SqlConnection c, int storeId)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT ISNULL(SUM(Units), 0) FROM dbo.PlanRequests WHERE StoreId=@s AND Kind='topup' AND Status='approved' AND Month=@m", "@s", storeId, "@m", Db.Month))
+                return Convert.ToInt64(cmd.ExecuteScalar());
+        }
+
+        // What the store may use this month: its plan's monthly quota (0 when the plan ended) + extra quota bought for this month.
+        public static long TotalLimit(SqlConnection c, StoreInfo s)
+        {
+            if (Expired(s)) return 0;
+            return s.MonthlyTokenLimit + TopupUnits(c, s.Id);
+        }
+
         public static Dictionary<string, object> RequestJson(SqlDataReader r)
         {
             return new Dictionary<string, object>
             {
+                { "kind", r["Kind"] as string ?? "plan" }, { "units", r["Units"] == DBNull.Value ? 0L : Convert.ToInt64(r["Units"]) }, { "month", r["Month"] as string ?? "" },
                 { "id", r["Id"] }, { "storeId", r["StoreId"] }, { "planId", r["PlanId"] }, { "plan", r["PlanName"] }, { "months", r["Months"] },
                 { "price", r["PriceEgp"] }, { "discount", r["DiscountEgp"] }, { "amount", r["AmountEgp"] },
                 { "method", r["PaymentMethod"] as string ?? "" }, { "ref", r["PaymentRef"] as string ?? "" }, { "note", r["Note"] as string ?? "" },
@@ -694,13 +720,14 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
         {
             var id = Web.Int(b, "id");
             if (id == null) { Web.Error(res, 400, "bad_request"); return; }
-            int storeId = 0, planId = 0, months = 0; decimal price = 0, amount = 0; string status = null, method = null, refNo = null, note = null;
+            int storeId = 0, planId = 0, months = 0; decimal price = 0, amount = 0; string status = null, method = null, refNo = null, note = null, kind = "plan"; long units = 0;
             using (var cmd = Db.Cmd(c, "SELECT * FROM dbo.PlanRequests WHERE Id = @id", "@id", id.Value))
             using (var r = cmd.ExecuteReader())
                 if (r.Read())
                 {
                     storeId = (int)r["StoreId"]; planId = (int)r["PlanId"]; months = (int)r["Months"]; price = (decimal)r["PriceEgp"]; amount = (decimal)r["AmountEgp"];
                     status = (string)r["Status"]; method = r["PaymentMethod"] as string; refNo = r["PaymentRef"] as string; note = r["Note"] as string;
+                    kind = r["Kind"] as string ?? "plan"; units = r["Units"] == DBNull.Value ? 0 : Convert.ToInt64(r["Units"]);
                 }
             if (status == null) { Web.Error(res, 404, "not_found", "الطلب مش موجود."); return; }
             if (status != "pending") { Web.Error(res, 409, "decided", "الطلب ده اتراجع قبل كده."); return; }
@@ -723,6 +750,21 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             string notes = string.Join(" · ", new[] { string.IsNullOrWhiteSpace(refNo) ? null : "رقم العملية: " + refNo, note, adminNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
             if (notes.Length > 500) notes = notes.Substring(0, 500);
             int subId;
+            if (kind == "topup")
+            {
+                // extra quota counts for the month it is approved in; recorded with the payments (Months = 0) for the revenue page
+                if (Billing.Expired(s)) { Web.Error(res, 400, "expired", "باقة المتجر ده خلصت. الرصيد الإضافي مش هيفيده، ارفض الطلب وخليه يجدد الباقة الأول."); return; }
+                var now = DateTime.UtcNow;
+                var monthEnd = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1).AddSeconds(-1);
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, 0, @price, @disc, @paid, @method, @notes, @start, @end)",
+                    "@s", s.Id, "@p", p.Id, "@n", "رصيد إضافي · " + p.Name, "@price", price, "@disc", Math.Max(0, price - paid), "@paid", paid,
+                    "@method", (object)method ?? DBNull.Value, "@notes", notes, "@start", now, "@end", monthEnd)) subId = (int)cmd.ExecuteScalar();
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, Month=@m, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
+                    "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@m", Db.Month, "@id", id.Value)) cmd.ExecuteNonQuery();
+                Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "units", units }, { "endsAt", monthEnd.ToString("o") } });
+                return;
+            }
             var end = Billing.Activate(c, s, p, months, price, paid, method, notes, out subId);
             using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
                 "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
@@ -930,9 +972,18 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 using (var r = cmd.ExecuteReader())
                     while (r.Read())
                         subs.Add(new Dictionary<string, object> {
-                            { "id", r["Id"] }, { "plan", r["PlanName"] }, { "months", r["Months"] }, { "paid", r["PaidEgp"] },
+                            { "id", r["Id"] }, { "plan", r["PlanName"] }, { "months", r["Months"] }, { "paid", r["PaidEgp"] }, { "topup", (int)r["Months"] == 0 },
                             { "startsAt", Billing.Iso(r["StartsAt"]) }, { "endsAt", Billing.Iso(r["EndsAt"]) } });
-                Web.Json(res, 200, new Dictionary<string, object> { { "requests", requests }, { "subscriptions", subs }, { "methods", Methods } });
+                // extra quota options for the running plan (none when there's no plan or it ended)
+                var topups = new List<Dictionary<string, object>>();
+                var cur = s.PlanId.HasValue && !Billing.Expired(s) ? Billing.Plan(c, s.PlanId.Value) : null;
+                if (cur != null)
+                    foreach (var pct in Billing.TopupPcts)
+                    {
+                        long u; var tq = Billing.TopupQuote(cur, pct, out u);
+                        topups.Add(new Dictionary<string, object> { { "pct", pct }, { "units", u }, { "total", tq.Total } });
+                    }
+                Web.Json(res, 200, new Dictionary<string, object> { { "requests", requests }, { "subscriptions", subs }, { "methods", Methods }, { "topups", topups } });
                 return;
             }
             if (!Web.CsrfOk(req)) { Web.Error(res, 400, "bad_request"); return; }
@@ -951,10 +1002,26 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             if (action != "request") { Web.Error(res, 404, "unknown_action"); return; }
 
             if (!Web.Allow("planreq:" + s.Id, 6, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "بعت طلبات كتير، استنى شوية."); return; }
-            var planId = Web.Int(b, "planId"); int months = Web.Int(b, "months") ?? 1;
-            var p = planId.HasValue ? Billing.Plan(c, planId.Value) : null;
-            if (p == null || !p.IsActive) { Web.Error(res, 404, "no_plan", "الباقة دي مش متاحة دلوقتي."); return; }
-            if (!Billing.Periods.Contains(months)) { Web.Error(res, 400, "bad_months", "اختار مدة: شهر أو 4 أو 6 أو 12 شهر."); return; }
+            bool topup = (Web.Str(b, "kind", 10) ?? "") == "topup";
+            PlanInfo p; int months; Billing.Quote q; long units = 0;
+            if (topup)
+            {
+                // extra quota for this month: only on a running plan, priced from that plan
+                if (!s.PlanId.HasValue || Billing.Expired(s)) { Web.Error(res, 400, "no_active_plan", "الرصيد الإضافي للباقات الشغالة بس. لو باقتك خلصت، جدّدها الأول."); return; }
+                p = Billing.Plan(c, s.PlanId.Value);
+                if (p == null) { Web.Error(res, 404, "no_plan", "باقتك مش متاحة دلوقتي، كلّمنا."); return; }
+                int pct = Web.Int(b, "pct") ?? 0;
+                if (!Billing.TopupPcts.Contains(pct)) { Web.Error(res, 400, "bad_pct", "اختار كمية الرصيد الإضافي."); return; }
+                q = Billing.TopupQuote(p, pct, out units); months = 0;
+            }
+            else
+            {
+                var planId = Web.Int(b, "planId"); months = Web.Int(b, "months") ?? 1;
+                p = planId.HasValue ? Billing.Plan(c, planId.Value) : null;
+                if (p == null || !p.IsActive) { Web.Error(res, 404, "no_plan", "الباقة دي مش متاحة دلوقتي."); return; }
+                if (!Billing.Periods.Contains(months)) { Web.Error(res, 400, "bad_months", "اختار مدة: شهر أو 4 أو 6 أو 12 شهر."); return; }
+                q = Billing.QuoteFor(c, p, months);
+            }
             string method = (Web.Str(b, "method", 40) ?? "").Trim();
             if (!Methods.Contains(method)) { Web.Error(res, 400, "bad_method", "اختار طريقة الدفع."); return; }
             string refNo = (Web.Str(b, "ref", 100) ?? "").Trim();
@@ -963,12 +1030,12 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending'", "@s", s.Id))
                 if ((int)cmd.ExecuteScalar() > 0) { Web.Error(res, 409, "has_pending", "عندك طلب لسه بيتراجع. استنى الرد عليه، أو الغيه وابعت طلب جديد."); return; }
 
-            var q = Billing.QuoteFor(c, p, months);
             int newId;
-            using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note)
-                                         OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note)",
+            using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note, Kind, Units)
+                                         OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note, @kind, @units)",
                 "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", q.Price, "@disc", q.Discount, "@amt", q.Total,
-                "@method", method, "@ref", refNo, "@note", note.Length == 0 ? (object)DBNull.Value : note)) newId = (int)cmd.ExecuteScalar();
+                "@method", method, "@ref", refNo, "@note", note.Length == 0 ? (object)DBNull.Value : note,
+                "@kind", topup ? "topup" : "plan", "@units", topup ? (object)units : DBNull.Value)) newId = (int)cmd.ExecuteScalar();
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "id", newId }, { "amount", q.Total } });
         }
     }

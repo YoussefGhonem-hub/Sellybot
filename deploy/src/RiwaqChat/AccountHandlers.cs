@@ -29,7 +29,7 @@ namespace RiwaqChat
                     { "full", !string.IsNullOrEmpty(s.ShopifyClientId) }, { "shop", s.ShopifyShop ?? "" }, { "scopes", s.ShopifyScopes ?? "" },
                     { "orders", s.ShopifyOrders }, { "ordersAvailable", ShopifyAdmin.Has(s.ShopifyScopes, "read_orders") }, { "webhooks", s.ShopifyWebhooks },
                     { "missing", ShopifyAdmin.Wanted.Where(w => !ShopifyAdmin.Has(s.ShopifyScopes, w)).ToArray() } } },
-                { "usage", new Dictionary<string, object> { { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", Billing.EffectiveLimit(s) } } },
+                { "usage", new Dictionary<string, object> { { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", Billing.TotalLimit(c, s) }, { "extra", Billing.TopupUnits(c, s.Id) } } },
                 { "plan", Billing.StorePlan(s) }, { "whatsapp", Billing.WaNumber(Billing.WhatsApp(c)) },
                 { "supportAnswered", SupportAnswered(c, s.Id) },
                 { "storage", storage },

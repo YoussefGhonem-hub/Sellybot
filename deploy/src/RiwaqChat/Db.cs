@@ -367,6 +367,9 @@ BEGIN
     DecidedAt DATETIME2 NULL);
   CREATE INDEX IX_PlanRequests_Store ON dbo.PlanRequests(StoreId);
 END
+-- a request is either a plan (Kind 'plan') or extra quota for the current month (Kind 'topup', Units added to Month when approved)
+IF COL_LENGTH('dbo.PlanRequests', 'Kind') IS NULL
+  ALTER TABLE dbo.PlanRequests ADD Kind NVARCHAR(10) NOT NULL CONSTRAINT DF_PlanRequests_Kind DEFAULT 'plan', Units BIGINT NULL, Month CHAR(7) NULL;
 IF OBJECT_ID('dbo.Tickets') IS NULL
 BEGIN
   CREATE TABLE dbo.Tickets(

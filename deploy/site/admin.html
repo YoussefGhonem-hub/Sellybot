@@ -599,7 +599,8 @@
     $("rqRows").innerHTML = d.requests.length ? d.requests.map(function (r, i) {
       var cur = r.currentPlan ? esc(r.currentPlan) + (r.currentEnds ? '<div class="hint">' + (new Date(r.currentEnds) < new Date() ? "خلصت " : "لحد ") + date(r.currentEnds) + '</div>' : '') : '<span class="hint">بدون باقة</span>';
       return '<tr style="animation-delay:' + Math.min(i * 0.03, 0.4) + 's"><td><b>' + esc(r.store) + '</b><div class="hint ltr" style="text-align:right">' + esc(r.slug) + '</div></td>' +
-        '<td><b>' + esc(r.plan) + '</b><div class="hint">' + monthsAr(r.months) + '</div></td>' +
+        '<td>' + (r.kind === "topup" ? '<span class="pill brand">➕ رصيد إضافي</span><div><b>' + esc(r.plan) + '</b></div><div class="hint">' + fmt(r.units / 1e6, 1) + ' مليون وحدة للشهر ده</div>'
+                                       : '<b>' + esc(r.plan) + '</b><div class="hint">' + monthsAr(r.months) + '</div>') + '</td>' +
         '<td><b>' + money(r.amount) + '</b>' + (r.discount ? '<div class="hint">خصم ' + money(r.discount) + '</div>' : '') + '</td>' +
         '<td>' + esc(r.method) + '<div class="hint ltr" style="text-align:right">' + esc(r.ref) + '</div>' + (r.note ? '<div class="hint">' + esc(r.note) + '</div>' : '') + '</td>' +
         '<td>' + cur + '</td>' +
@@ -613,8 +614,11 @@
   document.querySelectorAll("#rqFilter button").forEach(function (b) { b.onclick = function () { state.rqFilter = b.dataset.f; loadReqs(); }; });
   function approveReq(id) {
     var r = state.reqs.filter(function (x) { return x.id === id; })[0]; if (!r) return;
-    var m = modal('<h3>تفعيل باقة ' + esc(r.plan) + ' لـ ' + esc(r.store) + '</h3>' +
-      '<p class="sub">اتأكد إن المبلغ وصلك على ' + esc(r.method) + ' (رقم العملية: <span class="ltr">' + esc(r.ref) + '</span>). الباقة هتشتغل ' + monthsAr(r.months) + ' من النهارده' + (r.currentPlan === r.plan && r.currentEnds && new Date(r.currentEnds) > new Date() ? '، بعد ما الاشتراك الحالي يخلص' : '') + '.</p>' +
+    var topup = r.kind === "topup";
+    var m = modal('<h3>' + (topup ? 'رصيد إضافي لـ ' : 'تفعيل باقة ' + esc(r.plan) + ' لـ ') + esc(r.store) + '</h3>' +
+      '<p class="sub">اتأكد إن المبلغ وصلك على ' + esc(r.method) + ' (رقم العملية: <span class="ltr">' + esc(r.ref) + '</span>). ' +
+      (topup ? 'هيتضاف ' + fmt(r.units / 1e6, 1) + ' مليون وحدة لرصيد الشهر ده بس.'
+             : 'الباقة هتشتغل ' + monthsAr(r.months) + (r.currentPlan === r.plan && r.currentEnds && new Date(r.currentEnds) > new Date() ? ' بعد ما الاشتراك الحالي يخلص' : ' من النهارده') + '.') + '</p>' +
       '<label for="apPaid">المبلغ اللي وصلك فعلًا (ج.م)</label><input type="number" id="apPaid" class="ltr" min="0" step="1" value="' + r.amount + '">' +
       '<label for="apNote">ملاحظة لصاحب المتجر (اختياري)</label><input type="text" id="apNote" maxlength="500" placeholder="مثلًا: شكرًا لاشتراكك 🙏">' +
       '<div class="msg" id="apMsg"></div><div class="row" style="margin-top:14px"><button class="btn" id="apGo">✓ فعّل الباقة</button><button class="btn ghost" data-close>إلغاء</button></div>');
@@ -998,7 +1002,7 @@
     $("subKpis").querySelectorAll(".k-val").forEach(function (el, i) { countUp(el, K[i].v, K[i].f); });
     $("subRows").innerHTML = list.length ? list.map(function (s, i) {
       return '<tr style="animation-delay:' + Math.min(i * 0.03, 0.4) + 's"><td><b>' + esc(s.store) + '</b><div class="hint ltr" style="text-align:right">' + esc(s.slug) + '</div></td><td>' + esc(s.plan) + '</td>' +
-        '<td>' + (s.months === 1 ? "شهر" : fmt(s.months) + " شهور") + '</td><td>' + money(s.price) + '</td><td>' + (s.discount ? '<span class="pill brand">' + money(s.discount) + '</span>' : "—") + '</td>' +
+        '<td>' + (s.months === 0 ? "رصيد إضافي" : s.months === 1 ? "شهر" : fmt(s.months) + " شهور") + '</td><td>' + money(s.price) + '</td><td>' + (s.discount ? '<span class="pill brand">' + money(s.discount) + '</span>' : "—") + '</td>' +
         '<td><b>' + money(s.paid) + '</b></td><td>' + esc(s.method || "—") + (s.notes ? '<div class="hint">' + esc(s.notes) + '</div>' : '') + '</td>' +
         '<td class="hint">' + date(s.startsAt) + ' ← ' + date(s.endsAt) + '</td><td><button class="btn ghost sm" data-store="' + s.storeId + '">المتجر</button></td></tr>';
     }).join("") : '<tr><td colspan="9"><div class="empty"><span class="e-ic">🧾</span>مفيش اشتراكات</div></td></tr>';

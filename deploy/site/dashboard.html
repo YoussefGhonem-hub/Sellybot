@@ -888,7 +888,7 @@
     <!-- request a plan -->
     <form class="card req-form" id="reqForm" hidden>
       <div class="row"><h3 style="margin:0">طلب باقة <span id="rqPlanName"></span></h3><span class="space"></span><button type="button" class="btn ghost sm" id="rqClose">إلغاء</button></div>
-      <p class="sub">١) اختار المدة &nbsp;·&nbsp; ٢) حوّل المبلغ &nbsp;·&nbsp; ٣) اكتب رقم العملية وابعت الطلب. الإدارة بتفعّل الباقة بعد ما تتأكد من الدفع.</p>
+      <p class="sub" id="rqHint">١) اختار المدة &nbsp;·&nbsp; ٢) حوّل المبلغ &nbsp;·&nbsp; ٣) اكتب رقم العملية وابعت الطلب. الإدارة بتفعّل الباقة بعد ما تتأكد من الدفع.</p>
       <div class="per-grid" id="rqPeriods" role="radiogroup" aria-label="المدة"></div>
       <div class="pay-box">
         <div class="pay-amt"><span>المبلغ المطلوب</span><b id="rqAmount">—</b><small id="rqSave"></small></div>
@@ -1173,15 +1173,19 @@
     $("myPlan").innerHTML =
       '<div><div class="hint">باقتك الحالية</div><div class="mp-name">' + esc(p.name || "التجربة المجانية") + '</div>' + status +
       '<p class="hint" style="margin:10px 0 0">' + (p.name ? (p.expired ? "خلصت يوم " + dateAr(p.endsAt) + ". المساعد متوقف لحد ما تجدد." : "بتخلص يوم " + dateAr(p.endsAt) + "، وبعدها المساعد بيتوقف لحد ما تجدد.") : "رصيد تجربة عشان تختبر المساعد على داتا متجرك. اشترك في باقة عشان تكمّل من غير توقف.") + '</p>' +
-      '<div class="row" style="margin-top:14px"><button type="button" class="btn" id="mpRenew">' + (p.name ? "🔁 جدّد الباقة" : "🚀 اختار باقة") + '</button></div></div>' +
+      (p.name && !p.expired && pct >= 80 ? '<p class="hint" style="margin:8px 0 0;color:#b26b00">⚠️ رصيد الشهر ده قرب يخلص. زوّد الرصيد عشان المساعد مايقفش قبل آخر الشهر.</p>' : '') +
+      '<div class="row" style="margin-top:14px"><button type="button" class="btn" id="mpRenew">' + (p.name ? (p.expired ? "🔁 جدّد الباقة" : "🔁 جدّد قبل ميعادها") : "🚀 اختار باقة") + '</button>' +
+      (p.name && !p.expired ? '<button type="button" class="btn ghost" id="mpTopup">➕ زوّد الرصيد</button>' : '') + '</div></div>' +
       '<div class="row" style="justify-content:center;gap:18px"><div class="mp-ring" id="mpRing" style="--p:0"><b>' + pct + '%<small>من رصيد الشهر</small></b></div>' +
       '<div><div class="hint">الشهر ده</div><div style="font-size:20px;font-weight:700">' + fmt(me.usage.messages) + ' رسالة</div>' +
+      (me.usage.extra > 0 ? '<div class="hint">➕ فيه رصيد إضافي الشهر ده</div>' : '') +
       (left != null ? '<div class="hint">فاضل حوالي <b style="color:var(--ink)">' + fmt(left) + '</b> رسالة</div>' : '') + '</div></div>';
     requestAnimationFrame(function () { setTimeout(function () { var r = $("mpRing"); if (r) r.style.setProperty("--p", pct); }, 60); });
     $("mpRenew").onclick = function () {
       var same = p.id && plansData && plansData.plans.some(function (x) { return x.id === p.id; });
       if (same) openRequest(p.id); else $("plGrid").scrollIntoView({ behavior: "smooth", block: "start" });
     };
+    if ($("mpTopup")) $("mpTopup").onclick = function () { openTopup(); };
   }
   async function loadPlanTab() {
     $("planWaTop").href = waLink("أهلاً 👋 عندي سؤال عن باقات Sellybot لمتجر " + me.name + " (" + me.slug + ")");
@@ -1199,6 +1203,8 @@
         '<h3>' + esc(p.name) + (cur ? ' <span class="st-pill answered">باقتك</span>' : '') + '</h3><div class="hint">' + esc(p.description) + '</div>' +
         '<div class="pr">' + fmt(p.finalPrice) + ' <small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' + (d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
         '<div class="est">💬 حوالي <b>' + fmt(msgs) + '</b> رسالة في الشهر لمتجرك</div>' +
+        '<div class="hint" style="margin:6px 0 2px">' + (p.periods || []).filter(function (q) { return q.months > 1; }).map(function (q) {
+          return monthsAr(q.months) + ' <b style="color:var(--ink)">' + fmt(q.total) + '</b>' + (q.pct ? ' <span style="color:var(--ok)">(-' + fmt(q.pct) + '%)</span>' : ''); }).join(" · ") + '</div>' +
         '<ul>' + p.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' +
         '<button type="button" class="btn' + (cur ? " ghost" : "") + '" data-req="' + p.id + '">' + (cur ? "🔁 جدّد الباقة" : "📨 اطلب الباقة") + '</button></div>';
     }).join("") : '<div class="card hint">مفيش باقات متاحة دلوقتي. كلّمنا على واتساب.</div>';
@@ -1210,14 +1216,15 @@
   var mine = { requests: [], subscriptions: [], methods: [] }, rq = { plan: null, months: 1 };
   var REQ_ST = { pending: ['open', "⏳ بيتراجع"], approved: ['answered', "✅ اتفعّلت"], rejected: ['bad', "✕ اترفض"], cancelled: ['', "اتلغى"] };
   function monthsAr(m) { return m === 1 ? "شهر" : m === 12 ? "سنة" : fmt(m) + " شهور"; }
+  function reqTitle(r) { return r.kind === "topup" ? "رصيد إضافي لباقة " + esc(r.plan) : "باقة " + esc(r.plan) + " · " + monthsAr(r.months); }
   async function loadMine() {
     try { mine = await api("api/plans.ashx?mine=1"); } catch (e) { return; }
     var pending = mine.requests.filter(function (r) { return r.status === "pending"; })[0];
     // waiting for the admin
     $("reqPending").innerHTML = pending
-      ? '<div class="card req-card"><span style="font-size:26px">⏳</span><div class="grow"><b>طلبك لباقة ' + esc(pending.plan) + ' (' + monthsAr(pending.months) + ') بيتراجع</b>' +
+      ? '<div class="card req-card"><span style="font-size:26px">⏳</span><div class="grow"><b>طلبك (' + reqTitle(pending) + ') بيتراجع</b>' +
         '<div class="hint">بعته ' + agoAr(pending.at) + ' · ' + fmt(pending.amount) + ' ج.م · ' + esc(pending.method) + ' · رقم العملية: <span class="ltr">' + esc(pending.ref) + '</span></div>' +
-        '<div class="hint">الإدارة هتفعّل الباقة أول ما تتأكد من الدفع. ولو مستعجل ابعتلنا صورة التحويل على واتساب.</div></div>' +
+        '<div class="hint">' + (pending.kind === "topup" ? "الإدارة هتضيف الرصيد أول ما تتأكد من الدفع." : "الإدارة هتفعّل الباقة أول ما تتأكد من الدفع.") + ' ولو مستعجل ابعتلنا صورة التحويل على واتساب.</div></div>' +
         '<div class="row" style="flex-direction:column;align-items:stretch;gap:6px"><a class="btn wa-btn sm" target="_blank" rel="noopener" href="' +
         esc(waLink("أهلاً 👋 بعت طلب باقة " + pending.plan + " (" + monthsAr(pending.months) + ") لمتجر " + me.name + " (" + me.slug + ")، ودي صورة التحويل:")) + '">ابعت صورة التحويل</a>' +
         '<button type="button" class="btn ghost sm" id="rqCancel">إلغاء الطلب</button></div></div>'
@@ -1229,24 +1236,59 @@
     // history
     $("reqList").innerHTML = mine.requests.length ? mine.requests.map(function (r) {
       var st = REQ_ST[r.status] || ["", r.status];
-      return '<div class="hrow"><div class="grow"><b>' + esc(r.plan) + ' · ' + monthsAr(r.months) + '</b> <span class="st-pill ' + st[0] + '">' + st[1] + '</span>' +
+      return '<div class="hrow"><div class="grow"><b>' + (r.kind === "topup" ? "➕ " : "") + reqTitle(r) + '</b> <span class="st-pill ' + st[0] + '">' + (r.kind === "topup" && r.status === "approved" ? "✅ اتضاف" : st[1]) + '</span>' +
         '<div class="hint">' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م · ' + esc(r.method) + '</div>' +
         (r.adminNote ? '<div class="rsn">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظة الإدارة: ") + esc(r.adminNote) + '</div>' : '') + '</div></div>';
     }).join("") : '<div class="card empty">لسه مابعتش طلبات.</div>';
     $("subList").innerHTML = mine.subscriptions.length ? mine.subscriptions.map(function (s) {
+      if (s.topup) return '<div class="hrow"><div class="grow"><b>➕ ' + esc(s.plan) + '</b>' +
+        '<div class="hint">لشهر ' + new Date(s.startsAt).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }) + ' · دفعت ' + fmt(s.paid) + ' ج.م</div></div></div>';
       var live = new Date(s.endsAt) > new Date() && new Date(s.startsAt) <= new Date();
       return '<div class="hrow"><div class="grow"><b>' + esc(s.plan) + ' · ' + monthsAr(s.months) + '</b>' + (live ? ' <span class="st-pill answered">شغالة دلوقتي</span>' : '') +
         '<div class="hint">من ' + dateAr(s.startsAt) + ' لحد ' + dateAr(s.endsAt) + ' · دفعت ' + fmt(s.paid) + ' ج.م</div></div></div>';
     }).join("") : '<div class="card empty">مفيش اشتراكات لسه.</div>';
   }
-  function openRequest(planId) {
-    if (mine.requests.some(function (r) { return r.status === "pending"; })) { toast("عندك طلب لسه بيتراجع. استنى الرد أو الغيه الأول."); $("reqPending").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
-    rq.plan = plansData.plans.filter(function (p) { return p.id === planId; })[0]; if (!rq.plan) return;
-    rq.months = rq.months || 1;
-    $("rqPlanName").textContent = rq.plan.name;
+  function hasPending() {
+    if (!mine.requests.some(function (r) { return r.status === "pending"; })) return false;
+    toast("عندك طلب لسه بيتراجع. استنى الرد أو الغيه الأول."); $("reqPending").scrollIntoView({ behavior: "smooth", block: "center" }); return true;
+  }
+  function fillPayFields() {
     $("rqPayInfo").textContent = plansData.paymentInfo || "";
     $("rqMethod").innerHTML = '<option value="">اختار…</option>' + (mine.methods || []).map(function (m) { return '<option>' + esc(m) + '</option>'; }).join("");
     $("rqRef").value = ""; $("rqNote").value = ""; setMsg("rqMsg", "");
+  }
+  // extra quota for the rest of this month (on a running plan)
+  function openTopup() {
+    if (hasPending()) return;
+    if (!mine.topups || !mine.topups.length) { toast("الرصيد الإضافي للباقات الشغالة بس."); return; }
+    rq.kind = "topup"; rq.plan = null;
+    var per = plansData ? unitsPerMsg(plansData.units) : 0;
+    $("rqPlanName").textContent = "رصيد إضافي لباقة " + (me.plan && me.plan.name || "");
+    fillPayFields();
+    $("rqPeriods").innerHTML = mine.topups.map(function (t) {
+      return '<button type="button" class="per" role="radio" data-p="' + t.pct + '"><b>+' + fmt(t.pct) + '% رصيد</b><div class="pp">' + fmt(t.total) + ' <small style="display:inline">ج.م</small></div>' +
+        '<small>' + (per ? "≈ " + fmt(Math.floor(t.units / per)) + " رسالة زيادة" : fmt(t.units) + " وحدة") + '</small></button>';
+    }).join("");
+    $("rqPeriods").querySelectorAll(".per").forEach(function (b) { b.onclick = function () { pickTopup(+b.dataset.p); }; });
+    $("rqHint").textContent = "الرصيد الإضافي بيتضاف للشهر ده بس، أول ما الإدارة توافق. الشهر الجاي رصيد باقتك بيتجدد عادي.";
+    pickTopup(mine.topups[0].pct);
+    $("reqForm").hidden = false; $("reqForm").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function pickTopup(pct) {
+    rq.pct = pct;
+    var t = mine.topups.filter(function (x) { return x.pct === pct; })[0];
+    $("rqPeriods").querySelectorAll(".per").forEach(function (b) { var on = +b.dataset.p === pct; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
+    $("rqAmount").textContent = fmt(t.total) + " ج.م"; $("rqSave").textContent = "";
+  }
+  function openRequest(planId) {
+    if (hasPending()) return;
+    rq.kind = "plan";
+    rq.plan = plansData.plans.filter(function (p) { return p.id === planId; })[0]; if (!rq.plan) return;
+    rq.months = rq.months || 1;
+    $("rqHint").textContent = "١) اختار المدة  ·  ٢) حوّل المبلغ  ·  ٣) اكتب رقم العملية وابعت الطلب. الإدارة بتفعّل الباقة بعد ما تتأكد من الدفع." +
+      (me.plan && me.plan.id === planId && !me.plan.expired ? " بما إن باقتك لسه شغالة، المدة الجديدة هتبدأ بعد آخر يوم فيها، فمش هتخسر أي يوم." : "");
+    $("rqPlanName").textContent = rq.plan.name;
+    fillPayFields();
     $("rqPeriods").innerHTML = rq.plan.periods.map(function (q) {
       return '<button type="button" class="per" role="radio" data-m="' + q.months + '">' + (q.pct ? '<span class="off">وفّر ' + fmt(q.pct) + '%</span>' : '') +
         '<b>' + monthsAr(q.months) + '</b><div class="pp">' + fmt(q.total) + ' <small style="display:inline">ج.م</small></div>' +
@@ -1270,8 +1312,11 @@
     if ($("rqRef").value.trim().length < 3) { setMsg("rqMsg", "اكتب رقم العملية أو الرقم اللي حوّلت منه."); $("rqRef").focus(); return; }
     var b = $("rqSend"); b.disabled = true;
     try {
-      await api("api/plans.ashx?action=request", { method: "POST", json: { planId: rq.plan.id, months: rq.months, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() } });
-      $("reqForm").hidden = true; toast("اتبعت الطلب ✅ هنفعّل الباقة أول ما نتأكد من الدفع");
+      var body = rq.kind === "topup"
+        ? { kind: "topup", pct: rq.pct, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
+        : { planId: rq.plan.id, months: rq.months, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() };
+      await api("api/plans.ashx?action=request", { method: "POST", json: body });
+      $("reqForm").hidden = true; toast(rq.kind === "topup" ? "اتبعت الطلب ✅ هنضيف الرصيد أول ما نتأكد من الدفع" : "اتبعت الطلب ✅ هنفعّل الباقة أول ما نتأكد من الدفع");
       await loadMine(); $("reqPending").scrollIntoView({ behavior: "smooth", block: "center" });
     } catch (err) { setMsg("rqMsg", err.message); }
     finally { b.disabled = false; }
