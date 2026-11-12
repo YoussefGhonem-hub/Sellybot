@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة تحكم المتجر</title>
+<style>
+  :root{
+    --bg:#f7f4f0; --card:#ffffff; --ink:#221a14; --muted:#7f7266; --line:#ece4db; --soft:#fbf7f3;
+    --brand:#e8774a; --brand2:#f5a25d; --ok:#2e9d5b; --err:#c0392b; --shadow:0 1px 2px rgba(40,25,10,.05),0 8px 24px rgba(40,25,10,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#17120e; --card:#211a15; --ink:#f4ebe2; --muted:#ad9e90; --line:#33291f; --soft:#2a211a; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+  button,input,textarea,select{font:inherit;color:inherit}
+  a{color:var(--brand)}
+  [hidden]{display:none!important}
+
+  /* ---------- navbar ---------- */
+  .nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:1080px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:18px}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);flex:none}
+  .logo .mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 4px 12px rgba(232,119,74,.35)}
+  .logo b{display:block;font-size:16px;line-height:1.1}
+  .logo small{display:block;font-size:11px;color:var(--muted)}
+  .links{display:flex;gap:4px;flex:1;height:100%;overflow-x:auto;scrollbar-width:none}
+  .links::-webkit-scrollbar{display:none}
+  .links button{position:relative;border:0;background:none;padding:0 12px;height:100%;color:var(--muted);white-space:nowrap;cursor:pointer;font-size:14px;transition:color .15s}
+  .links button:hover{color:var(--ink)}
+  .links button.on{color:var(--ink);font-weight:600}
+  .links button.on:after{content:"";position:absolute;inset:auto 10px 0 10px;height:3px;border-radius:3px 3px 0 0;background:var(--brand)}
+  .acct{position:relative;flex:none}
+  .acct-btn{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 10px 4px 4px;cursor:pointer}
+  .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .acct-txt{display:flex;flex-direction:column;line-height:1.15;text-align:right;max-width:140px}
+  .acct-txt b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .acct-txt small{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+  .sdot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+  .sdot.off{background:var(--err)}
+  .menu{position:absolute;left:0;top:calc(100% + 8px);min-width:200px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:6px;z-index:50}
+  .menu a,.menu button{display:block;width:100%;text-align:right;padding:9px 12px;border:0;background:none;border-radius:10px;cursor:pointer;color:var(--ink);text-decoration:none;font-size:14px}
+  .menu a:hover,.menu button:hover{background:var(--soft)}
+  .menu .sep{height:1px;background:var(--line);margin:4px 6px}
+  @media (max-width:760px){
+    .nav-in{flex-wrap:wrap;height:auto;padding-top:10px;gap:10px}
+    .logo small{display:none}
+    .acct{margin-inline-start:auto}
+    .acct-txt{display:none}
+    .links{order:3;flex-basis:100%;height:44px}
+  }
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+  .page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:4px 0 16px;flex-wrap:wrap}
+  .page-title .btn{white-space:nowrap}
+  .page-title h2{margin:0;font-size:22px}
+  .page-title p{margin:2px 0 0;color:var(--muted);font-size:14px}
+  .btn{border:0;border-radius:10px;padding:9px 16px;cursor:pointer;background:var(--brand);color:#fff;font-weight:600;transition:transform .15s,opacity .15s,box-shadow .15s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(232,119,74,.25)}
+  .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+  .btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--ink);font-weight:500}
+  .btn.ghost:hover{box-shadow:none;border-color:var(--brand)}
+  .btn.danger{background:none;border:1px solid var(--err);color:var(--err)}
+  .btn.sm{padding:6px 12px;font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 4px;font-size:16px}
+  .card .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 20px}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  .stat .label{color:var(--muted);font-size:13px}
+  .stat .value{font-size:22px;font-weight:700;margin:2px 0 8px}
+  .bar{height:8px;background:var(--soft);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand2),var(--brand));border-radius:999px;transition:width .4s}
+  .bar.hot i{background:var(--err)}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+  input[type=text],input[type=email],input[type=password],input[type=number],textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(232,119,74,.15)}
+  textarea{min-height:120px;resize:vertical}
+  .ltr{direction:ltr;text-align:left}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .space{flex:1}
+  .item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--card)}
+  .item .ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--soft);font-size:20px;flex:none}
+  .item .meta{flex:1;min-width:0}
+  .item .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .s{font-size:12px;color:var(--muted)}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px}
+  .msg{margin-top:10px;font-size:14px;min-height:1.4em}
+  .msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  .table-wrap{overflow-x:auto}
+  .modal{position:fixed;inset:0;background:rgba(30,15,5,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:60}
+  .modal .card{width:100%;max-width:760px}
+  .modal textarea{min-height:46vh}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;transition:transform .3s;z-index:70;max-width:90vw}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .drop{border:2px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted);cursor:pointer;transition:border-color .2s,background .2s}
+  .drop.over{border-color:var(--brand);background:var(--soft)}
+  .tip{background:var(--soft);border:1px solid var(--line);border-inline-start:4px solid var(--brand);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+  .tip div{color:var(--muted);margin-top:4px}
+  .tip b{color:var(--ink);font-weight:600}
+  .badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:#fff1d6;color:#9a5b00;margin-inline-start:6px;vertical-align:1px}
+  @media (prefers-color-scheme: dark){.badge{background:#3d2c10;color:#f3c26b}}
+  .banner{margin:0 0 16px;padding:12px 16px;border-radius:12px;font-size:14px;background:#fff1d6;color:#7a4700;border:1px solid #f3c26b}
+  .banner.full{background:#fdecea;color:var(--err);border-color:#f1a7a0}
+  @media (prefers-color-scheme: dark){.banner{background:#3d2c10;color:#f3c26b;border-color:#6b4b14}.banner.full{background:#3a1d1b;color:#ffb4ab;border-color:#6b2a24}}
+
+  /* ---------- auth ---------- */
+  .auth{max-width:440px;margin:40px auto}
+  .seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:4px;margin:12px 0 4px}
+  .seg button{flex:1;border:0;background:none;padding:8px;border-radius:9px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:12px}
+
+  /* ---------- look ---------- */
+  .look{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start}
+  @media (max-width:980px){.look{grid-template-columns:1fr}}
+  .styles{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+  .sty{position:relative;border:2px solid var(--line);background:var(--soft);border-radius:14px;padding:10px 6px 8px;cursor:pointer;text-align:center;transition:border-color .15s,transform .15s}
+  .sty:hover{transform:translateY(-2px)}
+  .sty.on{border-color:var(--brand);background:var(--card);box-shadow:0 0 0 3px rgba(232,119,74,.15)}
+  .sty .art{height:78px;margin:0 auto 6px;width:100%}
+  .sty b{font-size:13px;display:block}
+  .sty small{font-size:11px;color:var(--muted)}
+  .sty .chk{position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:none;place-items:center}
+  .sty.on .chk{display:grid}
+  .group-title{font-size:13px;color:var(--muted);margin:14px 0 8px;font-weight:600}
+  .swatches{display:flex;flex-wrap:wrap;gap:8px}
+  .sw{width:34px;height:34px;border-radius:50%;border:3px solid var(--card);box-shadow:0 0 0 1px var(--line);cursor:pointer;transition:transform .15s}
+  .sw:hover{transform:scale(1.12)}
+  .sw.on{box-shadow:0 0 0 2px var(--ink)}
+  .colorrow{display:flex;gap:8px;align-items:center;margin-top:12px}
+  .colorrow input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-radius:10px;padding:2px;background:var(--bg);cursor:pointer}
+  .colorrow input[type=text]{max-width:130px}
+  .phone{position:sticky;top:84px;background:#111;border-radius:34px;padding:10px;box-shadow:var(--shadow)}
+  .phone iframe{display:block;width:100%;height:620px;border:0;border-radius:26px;background:#f4f1ee}
+  .phone .seg{margin:0 0 10px;background:#222;border-color:#333}
+  .phone .seg button{color:#aaa}
+  .phone .seg button.on{background:#3a3a3a;color:#fff}
+
+  /* ---------- install ---------- */
+  /* code block (looks like a small code editor window) */
+  .codebox{border-radius:14px;overflow:hidden;border:1px solid #2c2622;background:#15110f;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+  .codebar{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#221c18;border-bottom:1px solid #2c2622;direction:ltr}
+  .codebar .dots{display:flex;gap:6px;flex:none}
+  .codebar .dots i{width:11px;height:11px;border-radius:50%;background:#ff5f57}
+  .codebar .dots i:nth-child(2){background:#febc2e}.codebar .dots i:nth-child(3){background:#28c840}
+  .codebar .fname{flex:1;min-width:0;color:#a8998b;font:12px ui-monospace,Consolas,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .copybtn{display:inline-flex;align-items:center;gap:6px;flex:none;border:1px solid #3a322c;background:#2c2521;color:#f3e6da;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .copybtn:hover{background:#372e29;border-color:#55493f}
+  .copybtn svg{width:15px;height:15px}
+  .copybtn.done{background:#173726;border-color:#2f6b47;color:#8be0ad}
+  .codepre{margin:0;padding:18px 16px;overflow-x:auto;direction:ltr;text-align:left;font:14px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;color:#e9ded3;white-space:pre;scrollbar-width:thin;scrollbar-color:#3a322c transparent}
+  .codepre .ln{display:inline-block;width:22px;margin-right:14px;color:#5d5249;text-align:right;user-select:none}
+  .tk-p{color:#8f8378}.tk-t{color:#ff8a6b}.tk-a{color:#f6c177}.tk-v{color:#9ccfd8}.tk-e{color:#8f8378}
+  .codenote{display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-size:13px;color:var(--muted)}
+  .codenote code{direction:ltr;unicode-bidi:isolate;font:12px ui-monospace,Consolas,monospace;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--ink)}
+  @media (max-width:560px){.codepre{font-size:12.5px;padding:14px 12px}.copybtn .lbl{display:none}.copybtn{padding:6px 9px}}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:0}
+  .steps li{counter-increment:s;position:relative;padding:4px 44px 14px 0;border-right:2px solid var(--line);margin-right:15px}
+  .steps li:last-child{border-color:transparent}
+  .steps li:before{content:counter(s);position:absolute;right:-16px;top:0;width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px}
+  .steps b{display:block}
+  .steps span{color:var(--muted);font-size:14px}
+  .kbd{display:inline-block;direction:ltr;font:12px ui-monospace,Consolas,monospace;background:var(--soft);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:0 6px;color:var(--ink)}
+  .ok-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#e6f6ec;color:#1f7a45}
+  .warn-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#fff1d6;color:#8a5200}
+  @media (prefers-color-scheme: dark){.ok-pill{background:#173726;color:#8be0ad}.warn-pill{background:#3d2c10;color:#f3c26b}}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:860px){.two{grid-template-columns:1fr}}
+
+  /* ---------- small screens (kept last so they win over the rules above) ---------- */
+  @media (max-width:980px){
+    .phone{position:static;max-width:420px;margin:0 auto;width:100%}
+  }
+  @media (max-width:560px){
+    .page-title{align-items:stretch}
+    .page-title .btn{width:100%}
+    .wrap{padding:16px 12px 48px}
+    .card{padding:14px}
+    .phone{border-radius:26px;padding:8px}
+    .phone iframe{height:540px;border-radius:20px}
+    .styles{grid-template-columns:repeat(2,1fr)}
+    .grid{gap:10px}
+    .item{flex-wrap:wrap}
+    .item .meta{min-width:calc(100% - 60px)}
+    .item .btn{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-in">
+    <a class="logo" href="dashboard.html"><span class="mark">🐻</span><span><b>دبدوب</b><small>لوحة تحكم المتجر</small></span></a>
+    <nav class="links" id="navLinks" hidden>
+      <button data-tab="data" class="on">📚 داتا المتجر</button>
+      <button data-tab="look">🎨 شكل الشات</button>
+      <button data-tab="install">🛍️ ضيفه لمتجرك</button>
+      <button data-tab="settings">⚙️ المساعد</button>
+      <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
+    </nav>
+    <div class="acct" id="acct" hidden>
+      <button class="acct-btn" id="acctBtn" aria-haspopup="true">
+        <span class="avatar" id="acctAvatar">م</span>
+        <span class="acct-txt"><b id="acctName"></b><small><i class="sdot" id="acctDot"></i><span id="acctStatus"></span></small></span>
+        <span aria-hidden="true">▾</span>
+      </button>
+      <div class="menu" id="acctMenu" hidden>
+        <a id="menuChat" target="_blank" rel="noopener">💬 افتح الشات ↗</a>
+        <button data-goto="install">🛍️ كود الإضافة لمتجرك</button>
+        <div class="sep"></div>
+        <button id="logoutBtn">↩️ تسجيل خروج</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= login / signup ================= -->
+<div class="wrap" id="authView" hidden>
+  <div class="card auth">
+    <div style="text-align:center;font-size:46px">🐻</div>
+    <h2 style="text-align:center;margin:4px 0 0">أهلاً بيك</h2>
+    <p style="text-align:center;color:var(--muted);margin:2px 0 0">ضيف داتا متجرك ودبدوب يرد على زباينك</p>
+    <div class="seg">
+      <button class="on" data-auth="login">تسجيل دخول</button>
+      <button data-auth="signup">حساب جديد</button>
+    </div>
+    <form id="loginForm">
+      <label>الإيميل أو معرّف المتجر</label>
+      <input type="text" id="lEmail" class="ltr" required autocomplete="username" placeholder="riwaq">
+      <label>الباسورد</label>
+      <input type="password" id="lPass" class="ltr" required autocomplete="current-password">
+      <div class="msg" id="lMsg"></div>
+      <button class="btn" style="width:100%;margin-top:6px">دخول</button>
+    </form>
+    <form id="signupForm" hidden>
+      <label>اسم المتجر</label>
+      <input type="text" id="sName" required maxlength="100" placeholder="مثلًا: رِواق">
+      <label>معرّف المتجر (بيظهر في لينك الشات)</label>
+      <input type="text" id="sSlug" class="ltr" required maxlength="30" placeholder="my-store">
+      <div class="hint">حروف إنجليزي صغيرة وأرقام وشرطة (-) بس. مثال: <span class="ltr" id="slugPreview">…/?store=my-store</span></div>
+      <label>الإيميل</label>
+      <input type="email" id="sEmail" class="ltr" required autocomplete="email">
+      <label>الباسورد (8 حروف على الأقل)</label>
+      <input type="password" id="sPass" class="ltr" required minlength="8" autocomplete="new-password">
+      <details><summary>عندي كود أدمن</summary><input type="text" id="sCode" class="ltr" placeholder="كود الأدمن" style="margin-top:6px"></details>
+      <div class="msg" id="sMsg"></div>
+      <button class="btn" style="width:100%;margin-top:6px">إنشاء الحساب</button>
+    </form>
+  </div>
+</div>
+
+<!-- ================= app ================= -->
+<div class="wrap" id="appView" hidden>
+  <div class="banner" id="storageBanner" hidden></div>
+
+  <!-- data -->
+  <section data-panel="data">
+    <div class="page-title"><div><h2>داتا المتجر</h2><p>كل اللي هنا دبدوب بيرد منه على زباينك</p></div></div>
+    <div class="grid">
+      <div class="card stat"><div class="label">الاستهلاك الشهر ده</div><div class="value" id="usageVal">—</div><div class="bar" id="usageBar"><i style="width:0"></i></div><div class="hint" id="usageHint"></div></div>
+      <div class="card stat"><div class="label">حجم داتا المتجر</div><div class="value" id="dataVal">—</div><div class="bar" id="dataBar"><i style="width:0"></i></div><div class="hint" id="dataHint"></div></div>
+      <div class="card stat"><div class="label">لينك الشات بتاعك</div>
+        <input type="text" id="chatLink" class="ltr" readonly style="margin:6px 0 8px">
+        <div class="row"><button class="btn sm" id="copyLink">نسخ</button><a class="btn ghost sm" id="openLink" target="_blank" rel="noopener">افتح الشات ↗</a></div>
+      </div>
+    </div>
+    <div class="tip">
+      <strong>💡 سمّي كل ملف ونص باسم واضح بيوصف اللي جواه</strong>
+      <div>مثلًا: <b>"أسعار منتجات التنظيف - نوفمبر 2026"</b> أو <b>"سياسة الشحن والاسترجاع"</b> بدل "file1.pdf" أو "مستند جديد".
+      الأسماء الواضحة بتخلّي دبدوب يعرف يدوّر فين ويلاقي المعلومة أسرع وأدق، خصوصًا لما الداتا تكبر.
+      ولو المعلومة اتغيرت، <b>عدّل الملف القديم</b> بدل ما ترفع نسخة جديدة جنبه.</div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="row"><h3>ضيف داتا جديدة</h3><span class="space"></span><button class="btn sm" id="addTextBtn">➕ إضافة نص</button></div>
+      <label for="upTitle">اسم واضح للملف اللي هترفعه (اختياري، لو فاضي هنستخدم اسم الملف)</label>
+      <input type="text" id="upTitle" maxlength="200" placeholder="مثلًا: كتالوج المنتجات والأسعار 2026">
+      <div class="drop" id="drop" style="margin-top:12px">
+        📎 اسحب ملف هنا أو <u>اختار ملف</u><br>
+        <span class="hint">TXT · CSV · PDF · Word (.docx) · Excel (.xlsx) — لحد 10 ميجا</span>
+        <input type="file" id="fileInput" accept=".txt,.md,.csv,.pdf,.docx,.xlsx" hidden>
+      </div>
+      <div class="msg" id="upMsg"></div>
+    </div>
+    <div id="items"></div>
+  </section>
+
+  <!-- look -->
+  <section data-panel="look" hidden>
+    <div class="page-title"><div><h2>شكل الشات</h2><p>اختار شكل الفقاعة ولون الشات اللي يناسب موقعك. التغيير بيظهر في المعاينة على طول.</p></div>
+      <button class="btn" id="saveLook">حفظ الشكل</button></div>
+    <div class="look">
+      <div>
+        <div class="card">
+          <h3>شكل الفقاعة</h3>
+          <p class="sub">الفقاعة اللي بتظهر في ركن موقعك، والزبون بيدوس عليها عشان يفتح الشات.</p>
+          <div class="group-title">أشكال كلاسيك</div><div class="styles" id="stylesStd"></div>
+          <div class="group-title">أشكال مضحكة 😄</div><div class="styles" id="stylesFun"></div>
+          <div class="group-title">تنفع لأي نوع متجر</div><div class="styles" id="stylesAny"></div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <h3>اللون الأساسي</h3>
+          <p class="sub">اختار لون قريب من لون موقعك أو اللوجو. لون الكلام جوه الشات بيتظبط لوحده عشان يبقى واضح.</p>
+          <div class="swatches" id="swatches"></div>
+          <div class="colorrow">
+            <input type="color" id="colorPick" value="#e8774a" aria-label="اختار لون">
+            <input type="text" id="colorHex" class="ltr" maxlength="7" placeholder="#e8774a" aria-label="كود اللون">
+            <span class="hint">أو حط كود لون موقعك (زي <span class="ltr">#1a73e8</span>)</span>
+          </div>
+          <div class="msg" id="lookMsg"></div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="seg" id="pvSeg"><button class="on" data-view="bubble">على موقعك</button><button data-view="page">صفحة الشات</button></div>
+        <iframe id="preview" title="معاينة الشات"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- install -->
+  <section data-panel="install" hidden>
+    <div class="page-title"><div><h2>ضيف الشات لمتجرك</h2><p>انسخ الكود ده وحطه في متجرك على Shopify (أو أي موقع)، والفقاعة هتظهر لكل زباينك.</p></div></div>
+    <div class="card" style="margin-bottom:12px">
+      <h3>1. الكود بتاعك</h3>
+      <p class="sub">ده كود متجرك بالظبط، انسخه زي ما هو.</p>
+      <div class="codebox">
+        <div class="codebar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="fname">theme.liquid — before &lt;/body&gt;</span>
+          <button class="copybtn" id="copyCode" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span class="lbl">نسخ الكود</span>
+          </button>
+        </div>
+        <pre class="codepre"><code id="embedText"></code></pre>
+      </div>
+      <div class="codenote">💡 <span>الجزء <code id="slugNote">data-store="…"</code> ده معرّف متجرك، ماتغيرهوش. انسخ الكود كله زي ما هو.</span></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>2. حطه في Shopify</h3>
+        <p class="sub">بياخد دقيقتين:</p>
+        <ol class="steps">
+          <li><b>افتح لوحة Shopify</b><span>من <b style="display:inline">Online Store</b> (المتجر الإلكتروني) ← <b style="display:inline">Themes</b> (القوالب).</span></li>
+          <li><b>افتح تعديل الكود</b><span>جنب القالب الحالي دوس على <span class="kbd">…</span> ← <b style="display:inline">Edit code</b>.</span></li>
+          <li><b>افتح ملف theme.liquid</b><span>من قسم <b style="display:inline">layout</b> على الشمال ← <span class="kbd">theme.liquid</span>.</span></li>
+          <li><b>الصق الكود</b><span>دوّر على <span class="kbd">&lt;/body&gt;</span> (اضغط <span class="kbd">Ctrl+F</span>) والصق الكود في السطر اللي قبله على طول.</span></li>
+          <li><b>احفظ</b><span>دوس <b style="display:inline">Save</b> فوق على اليمين.</span></li>
+          <li><b>ضيف دومين متجرك هنا</b><span>في الخانة اللي على الشمال، عشان الشات يقبل يشتغل على موقعك.</span></li>
+          <li><b>جرّب</b><span>افتح متجرك، هتلاقي الفقاعة في الركن. ممكن تاخد دقيقة لحد ما تظهر.</span></li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>3. دومينات متجرك</h3>
+        <p class="sub">الشات مش هيشتغل غير على المواقع اللي هنا (عشان محدش ياخد الكود ويستخدمه على حسابك).</p>
+        <div id="originsState" style="margin-bottom:8px"></div>
+        <textarea id="stOrigins" class="ltr" style="min-height:90px" placeholder="my-shop.myshopify.com, www.mystore.com"></textarea>
+        <div class="hint">حط دومين Shopify بتاعك (اللي آخره <span class="ltr">.myshopify.com</span>) وكمان دومينك الخاص لو عندك. افصل بينهم بفاصلة.</div>
+        <div class="msg" id="orMsg"></div>
+        <button class="btn" id="saveOrigins">حفظ الدومينات</button>
+        <div class="tip" style="margin-top:16px;margin-bottom:0">
+          <strong>🌐 مش على Shopify؟</strong>
+          <div>نفس الكود بيشتغل على أي موقع (WordPress، سلة، زد، أو موقع خاص): الصقه قبل <span class="kbd">&lt;/body&gt;</span> وضيف الدومين هنا. ولو مش عايز تركّب حاجة، شارك <b>لينك الشات</b> مع زباينك على الواتساب أو انستجرام.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- settings -->
+  <section data-panel="settings" hidden>
+    <div class="page-title"><div><h2>إعدادات المساعد</h2><p>اسمه وطريقة كلامه وأول رسالة الزبون بيشوفها</p></div></div>
+    <form class="card" id="settingsForm" style="max-width:760px">
+      <label>اسم المتجر</label>
+      <input type="text" id="stName" maxlength="100">
+      <label>اسم المساعد</label>
+      <input type="text" id="stBot" maxlength="50" placeholder="دبدوب">
+      <label>رسالة الترحيب</label>
+      <textarea id="stWelcome" maxlength="600" style="min-height:80px"></textarea>
+      <div class="hint">أول رسالة الزبون بيشوفها لما يفتح الشات. ينفع تستخدم **كلام بخط عريض**.</div>
+      <label>تعليمات إضافية للمساعد</label>
+      <textarea id="stIns" maxlength="20000" placeholder="مثال: اتكلم باللهجة السعودية، ورشّح المنتج الأغلى لو الزبون محتار."></textarea>
+      <div class="hint">أسلوب الكلام، قواعد مهمة، حاجات مايقولهاش... (الداتا نفسها في "داتا المتجر").</div>
+      <div class="msg" id="stMsg"></div>
+      <button class="btn">حفظ الإعدادات</button>
+    </form>
+  </section>
+
+  <!-- admin -->
+  <section data-panel="admin" hidden>
+    <div class="page-title"><div><h2>كل المتاجر</h2><p id="adminMonth"></p></div></div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>المتجر</th><th>الإيميل</th><th>الحالة</th><th>رسايل</th><th>الاستهلاك</th><th>الحد الشهري</th><th></th></tr></thead>
+          <tbody id="adminRows"></tbody>
+        </table>
+      </div>
+      <div class="hint" style="margin-top:8px">الاستهلاك والحد بالـ "token الموزون" (الرد بيتحسب أغلى من السؤال، والكاش أرخص). المتجر الجديد بياخد 300,000 تقريبًا = أكتر من 100 رد.</div>
+    </div>
+  </section>
+</div>
+
+<!-- editor modal -->
+<div class="modal" id="editor" hidden>
+  <form class="card" id="editorForm">
+    <div class="row"><h3 id="edTitleLbl">إضافة نص</h3><span class="space"></span><span class="hint" id="edCount"></span></div>
+    <label>العنوان (اسم واضح بيوصف المحتوى)</label>
+    <input type="text" id="edTitle" maxlength="200" required placeholder="مثلًا: أسعار المنتجات ومصاريف الشحن">
+    <label>المحتوى</label>
+    <textarea id="edContent" required placeholder="اكتب أو الصق أي معلومات عن المنتجات، الأسعار، الشحن، الأسئلة الشائعة..."></textarea>
+    <div class="msg" id="edMsg"></div>
+    <div class="row">
+      <button class="btn" id="edSave">حفظ</button>
+      <button type="button" class="btn ghost" id="edCancel">إلغاء</button>
+      <span class="space"></span>
+      <button type="button" class="btn danger sm" id="edDelete" hidden>حذف</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="widget.js?v=20261112131553" data-art-only="1"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var me = null, editingId = null;
+  var ICON = { text: "📝", txt: "📄", pdf: "📕", docx: "📘", xlsx: "📗" };
+  var BASE = location.origin + location.pathname.replace(/dashboard\.html$/, "");
+
+  function fmt(n) { return Number(n || 0).toLocaleString("ar-EG"); }
+  function toast(t) { var el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove("show"); }, 2600); }
+  function setMsg(id, text, ok) { var el = $(id); el.textContent = text || ""; el.className = "msg " + (ok ? "ok" : "err"); }
+  function vagueName(t) {
+    t = (t || "").replace(/\.[a-z0-9]{2,5}$/i, "").trim();
+    if (t.length < 4) return true;
+    if (/^[\s_\-().\d]+$/.test(t)) return true;
+    return /^(file|files|document|doc|docs|new|scan|scanned|img|image|photo|untitled|copy|data|test|final|book|sheet|ملف|مستند|جديد|صوره|صورة|بيانات|نسخه|نسخة|كتاب|ورقة)[\s_\-().\d]*(\(\d+\))?$/i.test(t);
+  }
+  async function api(url, opts) {
+    opts = opts || {};
+    var init = { method: opts.method || "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch" } };
+    if (opts.json !== undefined) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.json); }
+    if (opts.form) init.body = opts.form;
+    var r = await fetch(url, init), data = null;
+    try { data = await r.json(); } catch (e) {}
+    if (!r.ok) { var e = new Error((data && data.message) || "حصلت مشكلة، جرّب تاني."); e.status = r.status; e.code = data && data.error; throw e; }
+    return data;
+  }
+
+  // ---------------- auth ----------------
+  document.querySelectorAll("[data-auth]").forEach(function (b) {
+    b.onclick = function () {
+      document.querySelectorAll("[data-auth]").forEach(function (x) { x.classList.toggle("on", x === b); });
+      $("loginForm").hidden = b.dataset.auth !== "login"; $("signupForm").hidden = b.dataset.auth !== "signup";
+    };
+  });
+  $("sSlug").addEventListener("input", function () { this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, ""); $("slugPreview").textContent = BASE + "?store=" + (this.value || "my-store"); });
+  $("slugPreview").textContent = BASE + "?store=my-store";
+  $("loginForm").onsubmit = async function (e) {
+    e.preventDefault(); setMsg("lMsg", "");
+    try { me = await api("api/auth.ashx?action=login", { method: "POST", json: { email: $("lEmail").value, password: $("lPass").value } }); showApp(); }
+    catch (err) { setMsg("lMsg", err.message); }
+  };
+  $("signupForm").onsubmit = async function (e) {
+    e.preventDefault(); setMsg("sMsg", "");
+    try {
+      me = await api("api/auth.ashx?action=signup", { method: "POST", json: { name: $("sName").value, slug: $("sSlug").value, email: $("sEmail").value, password: $("sPass").value, adminCode: $("sCode").value } });
+      showApp(); toast("تم إنشاء متجرك 🎉 ابدأ ضيف الداتا");
+    } catch (err) { setMsg("sMsg", err.message); }
+  };
+  async function logout() { try { await api("api/auth.ashx?action=logout", { method: "POST" }); } catch (e) {} me = null; showAuth(); }
+  $("logoutBtn").onclick = logout;
+
+  function showAuth() { $("authView").hidden = false; $("appView").hidden = true; $("navLinks").hidden = true; $("acct").hidden = true; }
+
+  // ---------------- navigation ----------------
+  var current = "data";
+  function go(tab) {
+    current = tab;
+    document.querySelectorAll("[data-tab]").forEach(function (x) { x.classList.toggle("on", x.dataset.tab === tab); });
+    document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== tab; });
+    $("acctMenu").hidden = true;
+    if (tab === "admin") loadAdmin();
+    if (tab === "look") initLook();
+    if (history.replaceState) history.replaceState(null, "", "#" + tab);
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { go(b.dataset.tab); }; });
+  document.querySelectorAll("[data-goto]").forEach(function (b) { b.onclick = function () { go(b.dataset.goto); }; });
+  $("acctBtn").onclick = function (e) { e.stopPropagation(); $("acctMenu").hidden = !$("acctMenu").hidden; };
+  document.addEventListener("click", function (e) { if (!e.target.closest("#acct")) $("acctMenu").hidden = true; });
+
+  function showApp() {
+    $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("acct").hidden = false;
+    $("adminTabBtn").hidden = !me.isAdmin;
+    render(); loadItems();
+    var want = (location.hash || "").replace("#", "");
+    go(["data", "look", "install", "settings"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "data");
+  }
+
+  function render() {
+    var link = BASE + "?store=" + me.slug;
+    $("acctName").textContent = me.name; $("acctAvatar").textContent = (me.name || "م").trim().charAt(0);
+    $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
+    $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
+    $("menuChat").href = link;
+    // storage
+    var st = me.storage || {}, bn = $("storageBanner");
+    var mb = st.capacityMB > 0 ? " (" + fmt(st.usedMB) + " من " + fmt(st.capacityMB) + " ميجا)" : "";
+    if (st.full) { bn.className = "banner full"; bn.hidden = false; bn.textContent = "⛔ مساحة التخزين على السيرفر خلصت" + mb + ". مش هتقدر تضيف أو تعدّل داتا لحد ما تتمسح ملفات قديمة" + (me.isAdmin ? " أو تزوّد مساحة قاعدة البيانات من لوحة SmarterASP." : " أو إدارة الموقع تزوّد المساحة. الشات نفسه شغال عادي."); }
+    else if (st.nearlyFull) { bn.className = "banner"; bn.hidden = false; bn.textContent = "⚠️ مساحة التخزين على السيرفر قربت تخلص (" + st.percent + "%)" + mb + ". لو رفعت ملفات كبيرة ممكن الرفع يتوقف" + (me.isAdmin ? "، زوّد المساحة من لوحة SmarterASP." : "، امسح الملفات اللي مش محتاجها."); }
+    else bn.hidden = true;
+    // stats
+    var used = me.usage.used, limit = Math.max(1, me.usage.limit), pct = Math.min(100, Math.round(used * 100 / limit));
+    $("usageVal").textContent = pct + "%"; $("usageBar").querySelector("i").style.width = pct + "%"; $("usageBar").classList.toggle("hot", pct >= 85);
+    $("usageHint").textContent = fmt(me.usage.messages) + " رسالة · " + fmt(used) + " من " + fmt(me.usage.limit);
+    var dpct = Math.min(100, Math.round(me.knowledge.chars * 100 / me.knowledge.maxChars));
+    $("dataVal").textContent = fmt(me.knowledge.items) + " جزء";
+    $("dataBar").querySelector("i").style.width = Math.max(dpct, me.knowledge.chars > 0 ? 1 : 0) + "%";
+    $("dataHint").textContent = fmt(me.knowledge.chars) + " حرف من " + fmt(me.knowledge.maxChars) + " · " +
+      (me.knowledge.mode === "search" ? "🔎 وضع البحث: الداتا كبيرة، فدبدوب بيدوّر فيها مع كل سؤال" : "كل الداتا بتتقري مع كل سؤال");
+    $("chatLink").value = link; $("openLink").href = link;
+    // settings
+    $("stName").value = me.name; $("stBot").value = me.botName; $("stWelcome").value = me.welcome; $("stIns").value = me.instructions;
+    // install
+    renderCode();
+    $("stOrigins").value = (me.allowedOrigins || "").split(",").filter(Boolean).join(", ");
+    $("originsState").innerHTML = me.allowedOrigins
+      ? '<span class="ok-pill">✅ مضاف ' + fmt(me.allowedOrigins.split(",").length) + " دومين</span>"
+      : '<span class="warn-pill">⚠️ لسه مفيش دومين، الفقاعة مش هترد على موقعك لحد ما تضيفه</span>';
+  }
+  async function refreshMe() { try { me = await api("api/auth.ashx?action=me"); render(); } catch (e) {} }
+  $("copyLink").onclick = function () { copy($("chatLink").value); toast("اتنسخ اللينك ✅"); };
+  // the embed code, shown with colors (built from text nodes, never HTML strings)
+  var embedCode = "";
+  function renderCode() {
+    embedCode = '<script src="' + BASE + 'widget.js" data-store="' + me.slug + '" defer><\/script>';
+    var box = $("embedText"); box.textContent = "";
+    function tk(cls, text) { var s = document.createElement("span"); s.className = cls; s.textContent = text; box.appendChild(s); }
+    tk("ln", "1");
+    tk("tk-p", "<"); tk("tk-t", "script"); box.appendChild(document.createTextNode(" "));
+    tk("tk-a", "src"); tk("tk-p", "="); tk("tk-v", '"' + BASE + 'widget.js"'); box.appendChild(document.createTextNode(" "));
+    tk("tk-a", "data-store"); tk("tk-p", "="); tk("tk-v", '"' + me.slug + '"'); box.appendChild(document.createTextNode(" "));
+    tk("tk-a", "defer"); tk("tk-p", "></"); tk("tk-t", "script"); tk("tk-p", ">");
+    $("slugNote").textContent = 'data-store="' + me.slug + '"';
+  }
+  $("copyCode").onclick = function () {
+    copy(embedCode);
+    var b = $("copyCode"), l = b.querySelector(".lbl");
+    b.classList.add("done"); l.textContent = "✓ اتنسخ";
+    clearTimeout(b.t); b.t = setTimeout(function () { b.classList.remove("done"); l.textContent = "نسخ الكود"; }, 2200);
+    toast("اتنسخ الكود ✅ الصقه في Shopify");
+  };
+  function copy(t) { try { navigator.clipboard.writeText(t); } catch (e) { var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } }
+
+  // ---------------- knowledge ----------------
+  async function loadItems() {
+    var box = $("items");
+    try {
+      var data = await api("api/knowledge.ashx");
+      box.innerHTML = "";
+      if (!data.items.length) {
+        var e = document.createElement("div"); e.className = "card empty";
+        e.textContent = "لسه مفيش داتا. ضيف نص أو ارفع ملف فيه المنتجات والأسعار والشحن والأسئلة الشائعة، ودبدوب هيرد منها.";
+        box.appendChild(e); return;
+      }
+      data.items.forEach(function (it) {
+        var row = document.createElement("div"); row.className = "item";
+        var ic = document.createElement("div"); ic.className = "ic"; ic.textContent = ICON[it.type] || "📄";
+        var meta = document.createElement("div"); meta.className = "meta";
+        var t = document.createElement("div"); t.className = "t"; t.textContent = it.title;
+        if (vagueName(it.title)) { var bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚠️ غيّر الاسم لاسم أوضح"; t.appendChild(bd); }
+        var s = document.createElement("div"); s.className = "s"; s.textContent = fmt(it.chars) + " حرف · " + (it.fileName ? it.fileName + " · " : "") + it.updated;
+        meta.appendChild(t); meta.appendChild(s);
+        var edit = document.createElement("button"); edit.className = "btn ghost sm"; edit.textContent = "عرض / تعديل"; edit.onclick = function () { openEditor(it.id); };
+        row.appendChild(ic); row.appendChild(meta); row.appendChild(edit); box.appendChild(row);
+      });
+    } catch (err) { if (err.status === 401) showAuth(); else toast(err.message); }
+  }
+  $("addTextBtn").onclick = function () { openEditor(null); };
+  async function openEditor(id) {
+    editingId = id; setMsg("edMsg", ""); $("edDelete").hidden = !id;
+    $("edTitleLbl").textContent = id ? "تعديل الداتا" : "إضافة نص";
+    $("edTitle").value = ""; $("edContent").value = ""; $("editor").hidden = false;
+    if (id) { try { var it = await api("api/knowledge.ashx?id=" + id); $("edTitle").value = it.title; $("edContent").value = it.content; } catch (err) { setMsg("edMsg", err.message); } }
+    updateCount(); $("edTitle").focus();
+  }
+  function updateCount() { $("edCount").textContent = fmt($("edContent").value.length) + " حرف"; }
+  $("edContent").addEventListener("input", updateCount);
+  $("edCancel").onclick = function () { $("editor").hidden = true; };
+  $("editor").addEventListener("click", function (e) { if (e.target === $("editor")) $("editor").hidden = true; });
+  $("editorForm").onsubmit = async function (e) {
+    e.preventDefault(); setMsg("edMsg", "");
+    if (vagueName($("edTitle").value) && !confirm("الاسم \"" + $("edTitle").value + "\" مش بيوصف المحتوى. الأسماء الواضحة بتخلّي دبدوب يلاقي المعلومة أسرع. تحفظ بالاسم ده برضه؟")) { $("edTitle").focus(); return; }
+    $("edSave").disabled = true;
+    try {
+      var body = { title: $("edTitle").value, content: $("edContent").value };
+      if (editingId) { body.id = editingId; await api("api/knowledge.ashx?action=update", { method: "POST", json: body }); }
+      else await api("api/knowledge.ashx?action=add", { method: "POST", json: body });
+      $("editor").hidden = true; toast("اتحفظ ✅ دبدوب هيستخدم الداتا الجديدة على طول"); loadItems(); refreshMe();
+    } catch (err) { setMsg("edMsg", err.message); if (err.status === 507) refreshMe(); }
+    finally { $("edSave").disabled = false; }
+  };
+  $("edDelete").onclick = async function () {
+    if (!editingId || !confirm("متأكد إنك عايز تمسح الجزء ده؟ مش هينفع ترجعه.")) return;
+    try { await api("api/knowledge.ashx?action=delete", { method: "POST", json: { id: editingId } }); $("editor").hidden = true; toast("اتمسح"); loadItems(); refreshMe(); }
+    catch (err) { setMsg("edMsg", err.message); }
+  };
+  var drop = $("drop");
+  drop.onclick = function () { $("fileInput").click(); };
+  $("fileInput").onchange = function () { if (this.files[0]) upload(this.files[0]); this.value = ""; };
+  ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); }); });
+  drop.addEventListener("drop", function (e) { var f = e.dataTransfer.files[0]; if (f) upload(f); });
+  async function upload(file) {
+    if (file.size > 10 * 1024 * 1024) { setMsg("upMsg", "الملف أكبر من 10 ميجا."); return; }
+    setMsg("upMsg", (/\.pdf$/i.test(file.name) ? "بنقرا الـ PDF بالذكاء الاصطناعي، ممكن ياخد دقيقة… ⏳" : "بنقرا الملف… ⏳"), true);
+    var fd = new FormData(); fd.append("file", file);
+    var title = $("upTitle").value.trim(); if (title) fd.append("title", title);
+    try {
+      var it = await api("api/knowledge.ashx?action=upload", { method: "POST", form: fd });
+      var note = vagueName(it.title) ? " 💡 الاسم \"" + it.title + "\" مش واضح، دوس \"عرض / تعديل\" وسمّيه باسم بيوصف محتواه." : " افتحه وراجع النص لو حابب.";
+      setMsg("upMsg", "✅ اتضاف \"" + it.title + "\" (" + fmt(it.chars) + " حرف)." + note, true);
+      $("upTitle").value = ""; loadItems(); refreshMe();
+    } catch (err) { setMsg("upMsg", err.message); if (err.status === 507) refreshMe(); }
+  }
+
+  // ---------------- look (bubble style + color) ----------------
+  var GROUPS = { stylesStd: ["classic", "pill", "agent", "minimal"], stylesFun: ["bear", "cat", "blob"], stylesAny: ["bag", "gift", "star"] };
+  var NOTES = { classic: "بسيط ومعروف", pill: "زرار فيه كلام", agent: "موظف خدمة عملاء", minimal: "هادي وشيك", bear: "بيتكلم وبيرش 🧽", cat: "بتهز ديلها", blob: "وحش لطيف", bag: "لأي متجر", gift: "هدايا وورد", star: "تجميل وموضة" };
+  var SWATCHES = ["#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222"];
+  var look = { style: "bear", color: "#e8774a" }, lookInit = false, pvView = "bubble";
+  function initLook() {
+    look.style = me.bubbleStyle || "bear"; look.color = me.brandColor || "#e8774a";
+    if (!lookInit) {
+      lookInit = true;
+      Object.keys(GROUPS).forEach(function (g) {
+        GROUPS[g].forEach(function (id) {
+          var name = (window.StoreChatArt.styles.filter(function (s) { return s.id === id; })[0] || {}).name || id;
+          var c = document.createElement("button"); c.type = "button"; c.className = "sty"; c.dataset.style = id;
+          c.innerHTML = '<span class="chk">✓</span><div class="art"></div><b></b><small></small>';
+          c.querySelector("b").textContent = name; c.querySelector("small").textContent = NOTES[id] || "";
+          c.onclick = function () { look.style = id; updateLook(); };
+          $(g).appendChild(c);
+        });
+      });
+      SWATCHES.forEach(function (hex) {
+        var s = document.createElement("button"); s.type = "button"; s.className = "sw"; s.style.background = hex; s.dataset.color = hex; s.title = hex;
+        s.onclick = function () { look.color = hex; updateLook(); }; $("swatches").appendChild(s);
+      });
+      $("colorPick").oninput = function () { look.color = this.value; updateLook(true); };
+      $("colorHex").oninput = function () { var v = this.value.trim(); if (v[0] !== "#") v = "#" + v; if (/^#[0-9a-fA-F]{6}$/.test(v)) { look.color = v.toLowerCase(); updateLook(true, true); } };
+      document.querySelectorAll("#pvSeg button").forEach(function (b) { b.onclick = function () { pvView = b.dataset.view; document.querySelectorAll("#pvSeg button").forEach(function (x) { x.classList.toggle("on", x === b); }); loadPreview(); }; });
+      loadPreview();
+    }
+    updateLook();
+  }
+  function loadPreview() { $("preview").src = BASE + "?store=" + me.slug + "&preview=1&view=" + pvView + "&style=" + look.style + "&color=" + encodeURIComponent(look.color); }
+  function updateLook(fromPicker, fromHex) {
+    document.querySelectorAll(".sty").forEach(function (c) { c.classList.toggle("on", c.dataset.style === look.style); window.StoreChatArt.render(c.querySelector(".art"), c.dataset.style, look.color); });
+    document.querySelectorAll(".sw").forEach(function (s) { s.classList.toggle("on", s.dataset.color === look.color); });
+    if (!fromPicker) $("colorPick").value = look.color;
+    if (!fromHex) $("colorHex").value = look.color;
+    try { $("preview").contentWindow.postMessage({ type: "chat-look", style: look.style, color: look.color }, location.origin); } catch (e) {}
+    var changed = look.style !== me.bubbleStyle || look.color !== me.brandColor;
+    $("saveLook").textContent = changed ? "حفظ الشكل •" : "محفوظ ✓"; $("saveLook").disabled = !changed;
+  }
+  $("saveLook").onclick = async function () {
+    setMsg("lookMsg", "");
+    try { me = await api("api/store.ashx", { method: "POST", json: { bubbleStyle: look.style, brandColor: look.color } }); render(); updateLook(); toast("اتحفظ الشكل ✅ هيظهر لزباينك على طول"); }
+    catch (err) { setMsg("lookMsg", err.message); }
+  };
+
+  // ---------------- install (domains) ----------------
+  $("saveOrigins").onclick = async function () {
+    setMsg("orMsg", "");
+    try { me = await api("api/store.ashx", { method: "POST", json: { allowedOrigins: $("stOrigins").value } }); render(); setMsg("orMsg", "اتحفظ ✅", true); }
+    catch (err) { setMsg("orMsg", err.message); }
+  };
+
+  // ---------------- settings ----------------
+  $("settingsForm").onsubmit = async function (e) {
+    e.preventDefault(); setMsg("stMsg", "");
+    try { me = await api("api/store.ashx", { method: "POST", json: { name: $("stName").value, botName: $("stBot").value, welcome: $("stWelcome").value, instructions: $("stIns").value } }); render(); setMsg("stMsg", "اتحفظ ✅", true); }
+    catch (err) { setMsg("stMsg", err.message); }
+  };
+
+  // ---------------- admin ----------------
+  async function loadAdmin() {
+    var tb = $("adminRows"); tb.innerHTML = "";
+    try {
+      var data = await api("api/admin.ashx");
+      var st = (me && me.storage) || {};
+      $("adminMonth").textContent = "شهر " + data.month + " · قاعدة البيانات: " + (st.capacityMB > 0 ? fmt(st.usedMB) + " من " + fmt(st.capacityMB) + " ميجا (" + st.percent + "%)" : fmt(st.usedMB) + " ميجا مستخدمة");
+      data.stores.forEach(function (s) {
+        var tr = document.createElement("tr");
+        function td(text) { var d = document.createElement("td"); if (text !== undefined) d.textContent = text; tr.appendChild(d); return d; }
+        var name = td(); var a = document.createElement("a"); a.href = "./?store=" + s.slug; a.target = "_blank"; a.textContent = s.name + (s.isAdmin ? " 🛡️" : ""); name.appendChild(a);
+        var sl = document.createElement("div"); sl.className = "hint ltr"; sl.textContent = s.slug; name.appendChild(sl);
+        td(s.email);
+        var stc = td(); var sel = document.createElement("select");
+        [["active", "شغال"], ["suspended", "موقوف"]].forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
+        sel.value = s.status; stc.appendChild(sel);
+        td(fmt(s.messages)); td(fmt(s.used) + " (" + Math.min(999, Math.round(s.used * 100 / Math.max(1, s.limit))) + "%)");
+        var lt = td(); var inp = document.createElement("input"); inp.type = "number"; inp.min = "0"; inp.step = "100000"; inp.value = s.limit; inp.style.minWidth = "130px"; lt.appendChild(inp);
+        var act = td(); var b = document.createElement("button"); b.className = "btn sm"; b.textContent = "حفظ";
+        b.onclick = async function () { try { await api("api/admin.ashx", { method: "POST", json: { id: s.id, monthlyTokenLimit: parseInt(inp.value, 10), status: sel.value } }); toast("اتحفظ ✅"); loadAdmin(); refreshMe(); } catch (err) { toast(err.message); } };
+        act.appendChild(b); tb.appendChild(tr);
+      });
+    } catch (err) { toast(err.message); }
+  }
+
+  // ---------------- start ----------------
+  api("api/auth.ashx?action=me").then(function (d) { me = d; showApp(); }).catch(showAuth);
+})();
+</script>
+</body>
+</html>

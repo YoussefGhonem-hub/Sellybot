@@ -1,0 +1,52 @@
+name: Deploy UAT
+
+# Every push to the "uat" branch builds the site and publishes it to SmarterASP.
+# It can also be started by hand: Actions > Deploy UAT > Run workflow.
+on:
+  push:
+    branches: [uat]
+  workflow_dispatch:
+
+# Never run two deploys at the same time; a newer push waits for the running one.
+concurrency:
+  group: deploy-uat
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Web Deploy (if the runner doesn't have it)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe")) {
+            choco install webdeploy -y --no-progress
+          }
+
+      - name: Build and publish to SmarterASP
+        shell: pwsh
+        env:
+          WEBDEPLOY_SERVER: ${{ secrets.WEBDEPLOY_SERVER }}
+          WEBDEPLOY_SITE: ${{ secrets.WEBDEPLOY_SITE }}
+          WEBDEPLOY_USER: ${{ secrets.WEBDEPLOY_USER }}
+          WEBDEPLOY_PASSWORD: ${{ secrets.WEBDEPLOY_PASSWORD }}
+          DB_SERVER: ${{ secrets.DB_SERVER }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          ADMIN_SIGNUP_CODE: ${{ secrets.ADMIN_SIGNUP_CODE }}
+        run: ./deploy/ci-deploy.ps1
