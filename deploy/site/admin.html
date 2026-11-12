@@ -332,6 +332,7 @@
       <button data-go="home"><span class="ic">📊</span>الرئيسية</button>
       <button data-go="stores"><span class="ic">🏪</span>المتاجر والمستخدمين</button>
       <button data-go="plans"><span class="ic">💎</span>الباقات والخصومات</button>
+      <button data-go="reqs"><span class="ic">📥</span>طلبات الاشتراك <span class="count" id="rqCount" hidden>0</span></button>
       <button data-go="subs"><span class="ic">🧾</span>الاشتراكات والإيرادات</button>
       <button data-go="support"><span class="ic">🎧</span>الدعم الفني <span class="count" id="tkCount" hidden>0</span></button>
       <button data-go="settings"><span class="ic">⚙️</span>الإعدادات</button>
@@ -406,6 +407,17 @@
         <div class="plans" id="plansGrid"></div>
       </section>
 
+      <!-- plan requests -->
+      <section data-page="reqs" hidden>
+        <div class="seg" id="rqFilter" style="margin-bottom:12px">
+          <button data-f="pending" class="on">محتاجة مراجعة</button><button data-f="approved">اتوافق عليها</button><button data-f="rejected">اترفضت</button><button data-f="all">الكل</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>المتجر</th><th>الباقة والمدة</th><th>المبلغ</th><th>الدفع</th><th>باقته الحالية</th><th>الطلب</th><th></th></tr></thead>
+          <tbody id="rqRows"></tbody>
+        </table></div>
+      </section>
+
       <!-- subscriptions -->
       <section data-page="subs" hidden>
         <div class="kpis" id="subKpis" style="grid-template-columns:repeat(3,1fr)"></div>
@@ -451,6 +463,15 @@
               <div><label for="sUs">داتا صغيرة</label><input type="number" id="sUs" class="ltr" min="100"></div>
               <div><label for="sUm">داتا متوسطة</label><input type="number" id="sUm" class="ltr" min="100"></div>
               <div><label for="sUl">داتا كبيرة</label><input type="number" id="sUl" class="ltr" min="100"></div>
+            </div>
+            <h3 style="margin-top:18px">الدفع وخصومات المدة</h3>
+            <p class="sub">بيظهروا لصاحب المتجر وهو بيطلب باقة.</p>
+            <label for="sPay">طريقة الدفع (اللي هيحوّل عليها)</label>
+            <textarea id="sPay" maxlength="400" style="min-height:70px" placeholder="مثلًا: InstaPay على youssef@instapay أو فودافون كاش على 010…"></textarea>
+            <div class="cols3">
+              <div><label for="sD4">خصم 4 شهور %</label><input type="number" id="sD4" class="ltr" min="0" max="89" step="0.5"></div>
+              <div><label for="sD6">خصم 6 شهور %</label><input type="number" id="sD6" class="ltr" min="0" max="89" step="0.5"></div>
+              <div><label for="sD12">خصم سنة %</label><input type="number" id="sD12" class="ltr" min="0" max="89" step="0.5"></div>
             </div>
             <div class="calc"><div class="r"><span>1 دولار في Claude</span><b>10,000,000 وحدة</b></div><div class="r"><span>باقة التجربة المجانية (للمتاجر الجديدة)</span><b id="sFree">—</b></div></div>
             <div class="msg" id="sMsg"></div>
@@ -534,7 +555,8 @@
     $("pwWarn").hidden = !defaultPw;
     $("meName").textContent = name; $("meAv").textContent = initial(name);
     var want = (location.hash || "#home").slice(1);
-    go(["home", "stores", "plans", "subs", "support", "settings"].indexOf(want) >= 0 ? want : "home");
+    go(["home", "stores", "plans", "reqs", "subs", "support", "settings"].indexOf(want) >= 0 ? want : "home");
+    api("requests", null, "&status=pending").then(function (d) { rqBadge(d.pending); }).catch(function () {});
   }
   $("pwEye").onclick = function () { var i = $("lPass"); i.type = i.type === "password" ? "text" : "password"; i.focus(); };
   $("loginForm").onsubmit = async function (e) {
@@ -546,7 +568,7 @@
   $("logoutBtn").onclick = async function () { try { await api("logout", {}); } catch (e) {} showLogin(); };
 
   // ---------- navigation ----------
-  var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
+  var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
                  subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
     var on = document.querySelector("#nav button.on"); if (!on) return;
@@ -560,7 +582,58 @@
     moveInd(); closeSide();
     if (history.replaceState) history.replaceState(null, "", "#" + page);
     window.scrollTo(0, 0);
-    ({ home: loadHome, stores: loadStores, plans: loadPlans, subs: loadSubs, support: loadTickets, settings: loadSettings })[page]();
+    ({ home: loadHome, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, settings: loadSettings })[page]();
+  }
+
+  // ---------- plan requests (owner pays, then asks; admin approves -> subscription, or rejects with a reason) ----------
+  state.rqFilter = "pending"; state.reqs = [];
+  function rqBadge(n) { $("rqCount").textContent = fmt(n); $("rqCount").hidden = !n; }
+  function monthsAr(m) { return m === 1 ? "شهر" : m === 12 ? "سنة" : fmt(m) + " شهور"; }
+  var RQ = { pending: '<span class="pill warn">محتاج مراجعة</span>', approved: '<span class="pill ok">اتوافق</span>', rejected: '<span class="pill err">اترفض</span>', cancelled: '<span class="pill">اتلغى</span>' };
+  async function loadReqs() {
+    document.querySelectorAll("#rqFilter button").forEach(function (b) { b.classList.toggle("on", b.dataset.f === state.rqFilter); });
+    $("rqRows").innerHTML = '<tr><td colspan="7"><div class="skel"></div></td></tr>';
+    var d;
+    try { d = await api("requests", null, "&status=" + state.rqFilter); } catch (e) { toast(e.message, true); return; }
+    state.reqs = d.requests; rqBadge(d.pending);
+    $("rqRows").innerHTML = d.requests.length ? d.requests.map(function (r, i) {
+      var cur = r.currentPlan ? esc(r.currentPlan) + (r.currentEnds ? '<div class="hint">' + (new Date(r.currentEnds) < new Date() ? "خلصت " : "لحد ") + date(r.currentEnds) + '</div>' : '') : '<span class="hint">بدون باقة</span>';
+      return '<tr style="animation-delay:' + Math.min(i * 0.03, 0.4) + 's"><td><b>' + esc(r.store) + '</b><div class="hint ltr" style="text-align:right">' + esc(r.slug) + '</div></td>' +
+        '<td><b>' + esc(r.plan) + '</b><div class="hint">' + monthsAr(r.months) + '</div></td>' +
+        '<td><b>' + money(r.amount) + '</b>' + (r.discount ? '<div class="hint">خصم ' + money(r.discount) + '</div>' : '') + '</td>' +
+        '<td>' + esc(r.method) + '<div class="hint ltr" style="text-align:right">' + esc(r.ref) + '</div>' + (r.note ? '<div class="hint">' + esc(r.note) + '</div>' : '') + '</td>' +
+        '<td>' + cur + '</td>' +
+        '<td>' + RQ[r.status] + '<div class="hint">' + date(r.at) + '</div>' + (r.adminNote ? '<div class="hint">' + esc(r.adminNote) + '</div>' : '') + '</td>' +
+        '<td>' + (r.status === "pending" ? '<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-ok="' + r.id + '">✓ وافق</button><button class="btn ghost sm" data-no="' + r.id + '">رفض</button></div>' : '<button class="btn ghost sm" data-store="' + r.storeId + '">المتجر</button>') + '</td></tr>';
+    }).join("") : '<tr><td colspan="7"><div class="empty"><span class="e-ic">📥</span>' + (state.rqFilter === "pending" ? "مفيش طلبات مستنية مراجعة 🎉" : "مفيش طلبات") + '</div></td></tr>';
+    $("rqRows").querySelectorAll("[data-ok]").forEach(function (b) { b.onclick = function () { approveReq(+b.dataset.ok); }; });
+    $("rqRows").querySelectorAll("[data-no]").forEach(function (b) { b.onclick = function () { rejectReq(+b.dataset.no); }; });
+    $("rqRows").querySelectorAll("[data-store]").forEach(function (b) { b.onclick = function () { openStore(+b.dataset.store, "hist"); }; });
+  }
+  document.querySelectorAll("#rqFilter button").forEach(function (b) { b.onclick = function () { state.rqFilter = b.dataset.f; loadReqs(); }; });
+  function approveReq(id) {
+    var r = state.reqs.filter(function (x) { return x.id === id; })[0]; if (!r) return;
+    var m = modal('<h3>تفعيل باقة ' + esc(r.plan) + ' لـ ' + esc(r.store) + '</h3>' +
+      '<p class="sub">اتأكد إن المبلغ وصلك على ' + esc(r.method) + ' (رقم العملية: <span class="ltr">' + esc(r.ref) + '</span>). الباقة هتشتغل ' + monthsAr(r.months) + ' من النهارده' + (r.currentPlan === r.plan && r.currentEnds && new Date(r.currentEnds) > new Date() ? '، بعد ما الاشتراك الحالي يخلص' : '') + '.</p>' +
+      '<label for="apPaid">المبلغ اللي وصلك فعلًا (ج.م)</label><input type="number" id="apPaid" class="ltr" min="0" step="1" value="' + r.amount + '">' +
+      '<label for="apNote">ملاحظة لصاحب المتجر (اختياري)</label><input type="text" id="apNote" maxlength="500" placeholder="مثلًا: شكرًا لاشتراكك 🙏">' +
+      '<div class="msg" id="apMsg"></div><div class="row" style="margin-top:14px"><button class="btn" id="apGo">✓ فعّل الباقة</button><button class="btn ghost" data-close>إلغاء</button></div>');
+    m.querySelector("#apGo").onclick = async function () {
+      busy(this, true);
+      try { var res = await api("request-approve", { id: id, paidEgp: m.querySelector("#apPaid").value, note: m.querySelector("#apNote").value }); closeModal(); toast("اتفعّلت الباقة لحد " + date(res.endsAt) + " ✅"); loadReqs(); }
+      catch (e) { setMsg(m.querySelector("#apMsg"), e.message); busy(this, false); }
+    };
+  }
+  function rejectReq(id) {
+    var r = state.reqs.filter(function (x) { return x.id === id; })[0]; if (!r) return;
+    var m = modal('<h3>رفض طلب ' + esc(r.store) + '</h3><p class="sub">السبب هيظهر لصاحب المتجر في لوحته، عشان يعرف يعمل إيه.</p>' +
+      '<label for="rjWhy">سبب الرفض</label><input type="text" id="rjWhy" maxlength="500" placeholder="مثلًا: المبلغ لسه ماوصلش، ابعت صورة التحويل على واتساب">' +
+      '<div class="msg" id="rjMsg"></div><div class="row" style="margin-top:14px"><button class="btn danger" id="rjGo">رفض الطلب</button><button class="btn ghost" data-close>إلغاء</button></div>');
+    m.querySelector("#rjGo").onclick = async function () {
+      busy(this, true);
+      try { await api("request-reject", { id: id, reason: m.querySelector("#rjWhy").value }); closeModal(); toast("اترفض الطلب"); loadReqs(); }
+      catch (e) { setMsg(m.querySelector("#rjMsg"), e.message); busy(this, false); }
+    };
   }
   document.addEventListener("click", function (e) { var b = e.target.closest("[data-go]"); if (b) { e.preventDefault(); go(b.dataset.go); } });
   window.addEventListener("resize", moveInd);
@@ -981,13 +1054,15 @@
     try {
       var s = await api("settings");
       $("sRate").value = s.usdRate; $("sWa").value = s.whatsapp; $("sUs").value = s.unitsSmall; $("sUm").value = s.unitsMedium; $("sUl").value = s.unitsLarge;
+      $("sPay").value = s.paymentInfo || ""; var pd = s.periodDiscounts || {}; $("sD4").value = pd["4"] || 0; $("sD6").value = pd["6"] || 0; $("sD12").value = pd["12"] || 0;
       $("sFree").textContent = fmt(s.freeLimitUsd, 3) + "$ (≈ " + fmt(s.freeLimitUsd * 10000000 / s.unitsSmall) + " رسالة)";
     } catch (e) { toast(e.message, true); }
   }
   $("setForm").onsubmit = async function (e) {
     e.preventDefault(); busy($("sBtn"), true);
     try {
-      await api("settings", { usdRate: $("sRate").value, whatsapp: $("sWa").value, unitsSmall: $("sUs").value, unitsMedium: $("sUm").value, unitsLarge: $("sUl").value });
+      await api("settings", { usdRate: $("sRate").value, whatsapp: $("sWa").value, unitsSmall: $("sUs").value, unitsMedium: $("sUm").value, unitsLarge: $("sUl").value,
+        paymentInfo: $("sPay").value, periodDiscounts: { "4": $("sD4").value || 0, "6": $("sD6").value || 0, "12": $("sD12").value || 0 } });
       setMsg($("sMsg"), "اتحفظت الإعدادات ✓", true); toast("اتحفظت الإعدادات");
       unitsP = Promise.resolve({ small: +$("sUs").value, medium: +$("sUm").value, large: +$("sUl").value });
     } catch (err) { setMsg($("sMsg"), err.message); }

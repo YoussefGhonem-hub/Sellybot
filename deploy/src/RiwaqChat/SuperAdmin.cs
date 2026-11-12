@@ -38,6 +38,10 @@ namespace RiwaqChat
         {
             { "UsdRate", "50" }, { "WhatsApp", "01229391155" },
             { "UnitsSmall", "3700" }, { "UnitsMedium", "7000" }, { "UnitsLarge", "26000" },
+            // discount % for paying several months at once ("months:percent")
+            { "PeriodDiscounts", "4:5,6:10,12:20" },
+            // shown to store owners in the plan request form
+            { "PaymentInfo", "حوّل المبلغ على InstaPay أو فودافون كاش على رقم الواتساب بتاعنا، وبعدين اكتب رقم العملية (أو الرقم اللي حوّلت منه) في الطلب." },
         };
 
         public static string Get(SqlConnection c, string key)
@@ -138,6 +142,7 @@ namespace RiwaqChat
                     { "type", p.DiscountType }, { "value", p.DiscountValue.Value }, { "label", p.DiscountLabel ?? "" },
                     { "endsAt", p.DiscountEndsAt.HasValue ? p.DiscountEndsAt.Value.ToString("o") : "" } } : null },
                 { "messages", new Dictionary<string, object> { { "small", p.TokenLimit / small }, { "medium", p.TokenLimit / medium }, { "large", p.TokenLimit / large } } },
+                { "periods", QuotesJson(c, p) },
             };
             if (forAdmin)
             {
@@ -150,6 +155,73 @@ namespace RiwaqChat
                     { "endsAt", p.DiscountEndsAt.HasValue ? p.DiscountEndsAt.Value.ToString("yyyy-MM-dd") : "" } };
             }
             return d;
+        }
+
+        // ---------- paying for several months at once: 1, 4, 6 or 12 months, with a discount per period ----------
+        public static readonly int[] Periods = { 1, 4, 6, 12 };
+
+        public static Dictionary<int, decimal> PeriodDiscounts(SqlConnection c)
+        {
+            var d = Periods.ToDictionary(m => m, m => 0m);
+            foreach (var part in (Get(c, "PeriodDiscounts") ?? "").Split(','))
+            {
+                var kv = part.Split(':');
+                int m; decimal pct;
+                if (kv.Length == 2 && int.TryParse(kv[0].Trim(), out m) && d.ContainsKey(m) && m > 1
+                    && decimal.TryParse(kv[1].Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out pct) && pct >= 0 && pct < 90) d[m] = pct;
+            }
+            return d;
+        }
+
+        public class Quote { public int Months; public decimal Price, Discount, Total, Pct; }
+
+        // Price for N months: the plan's current monthly price (after its own discount) x N, minus the period discount.
+        public static Quote QuoteFor(SqlConnection c, PlanInfo p, int months)
+        {
+            decimal pct; PeriodDiscounts(c).TryGetValue(months, out pct);
+            decimal list = p.PriceEgp * months;
+            decimal total = Math.Max(0, Math.Round(FinalPrice(p) * months * (1 - pct / 100m), 0));
+            return new Quote { Months = months, Price = list, Discount = Math.Max(0, list - total), Total = total, Pct = pct };
+        }
+
+        public static List<Dictionary<string, object>> QuotesJson(SqlConnection c, PlanInfo p)
+        {
+            return Periods.Select(m => { var q = QuoteFor(c, p, m); return new Dictionary<string, object> {
+                { "months", m }, { "total", q.Total }, { "perMonth", Math.Round(q.Total / m, 0) }, { "pct", q.Pct }, { "price", q.Price }, { "save", q.Discount } }; }).ToList();
+        }
+
+        // Starts (or extends) a subscription: history row + the store's plan, end date and monthly limit. Returns the new end date.
+        public static DateTime Activate(SqlConnection c, StoreInfo s, PlanInfo p, int months, decimal price, decimal paid, string method, string notes, out int subscriptionId)
+        {
+            var now = DateTime.UtcNow;
+            // same plan still running: the new time starts after it; otherwise from today
+            var start = (s.PlanId == p.Id && s.PlanEndsAt.HasValue && s.PlanEndsAt.Value > now) ? s.PlanEndsAt.Value : now;
+            var end = start.AddDays(p.DurationDays * months);
+            using (var tx = c.BeginTransaction())
+            {
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @paid, @method, @notes, @start, @end)",
+                    "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", price, "@disc", Math.Max(0, price - paid), "@paid", paid,
+                    "@method", (object)method ?? DBNull.Value, "@notes", (object)notes ?? DBNull.Value, "@start", start, "@end", end))
+                { cmd.Transaction = tx; subscriptionId = (int)cmd.ExecuteScalar(); }
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET PlanId=@p, PlanName=@n, PlanEndsAt=@end, MonthlyTokenLimit=@l, Status='active' WHERE Id=@s",
+                    "@p", p.Id, "@n", p.Name, "@end", end, "@l", p.TokenLimit, "@s", s.Id))
+                { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
+                tx.Commit();
+            }
+            return end;
+        }
+
+        public static Dictionary<string, object> RequestJson(SqlDataReader r)
+        {
+            return new Dictionary<string, object>
+            {
+                { "id", r["Id"] }, { "storeId", r["StoreId"] }, { "planId", r["PlanId"] }, { "plan", r["PlanName"] }, { "months", r["Months"] },
+                { "price", r["PriceEgp"] }, { "discount", r["DiscountEgp"] }, { "amount", r["AmountEgp"] },
+                { "method", r["PaymentMethod"] as string ?? "" }, { "ref", r["PaymentRef"] as string ?? "" }, { "note", r["Note"] as string ?? "" },
+                { "status", r["Status"] }, { "adminNote", r["AdminNote"] as string ?? "" },
+                { "at", Iso(r["CreatedAt"]) }, { "decidedAt", Iso(r["DecidedAt"]) },
+            };
         }
 
         // ---------- what a store may use ----------
@@ -271,6 +343,9 @@ namespace RiwaqChat
                         case "subscription-cancel": if (!post) break; SubscriptionCancel(c, b, res); return;
                         case "subscription-delete": if (!post) break; SubscriptionDelete(c, b, res); return;
                         case "subscriptions": Web.Json(res, 200, Subscriptions(c)); return;
+                        case "requests": Web.Json(res, 200, Requests(c, req.QueryString["status"])); return;
+                        case "request-approve": if (!post) break; RequestDecide(c, b, res, true); return;
+                        case "request-reject": if (!post) break; RequestDecide(c, b, res, false); return;
                         case "tickets": Web.Json(res, 200, Tickets(c, req.QueryString["status"])); return;
                         case "ticket": TicketDetail(c, req, res); return;
                         case "ticket-reply": if (!post) break; TicketReply(c, b, res); return;
@@ -589,22 +664,68 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             decimal price = p.PriceEgp * months, offer = Billing.FinalPrice(p) * months;
             var paid = DecOf(b, "paidEgp") ?? offer;
             if (paid < 0 || paid > price * 10) { Web.Error(res, 400, "bad_paid", "المبلغ المدفوع مش منطقي."); return; }
-            var now = DateTime.UtcNow;
-            // same plan still running: add the time after it; otherwise start today
-            var start = (s.PlanId == p.Id && s.PlanEndsAt.HasValue && s.PlanEndsAt.Value > now) ? s.PlanEndsAt.Value : now;
-            var end = start.AddDays(p.DurationDays * months);
-            using (var tx = c.BeginTransaction())
+            int subId;
+            var end = Billing.Activate(c, s, p, months, price, paid, Web.Str(b, "method", 40), Web.Str(b, "notes", 500), out subId);
+            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "endsAt", end.ToString("o") } });
+        }
+
+        // ---------- plan requests from store owners ----------
+        static Dictionary<string, object> Requests(SqlConnection c, string status)
+        {
+            string where = status == "pending" || status == "approved" || status == "rejected" || status == "cancelled" ? "WHERE r.Status = @st" : "";
+            var list = new List<Dictionary<string, object>>();
+            using (var cmd = Db.Cmd(c, @"SELECT TOP 300 r.*, s.Name AS StoreName, s.Slug, s.OwnerEmail, s.PlanName AS CurPlan, s.PlanEndsAt AS CurEnds
+                                         FROM dbo.PlanRequests r JOIN dbo.Stores s ON s.Id = r.StoreId " + where +
+                                       " ORDER BY CASE r.Status WHEN 'pending' THEN 0 ELSE 1 END, r.CreatedAt DESC", "@st", status ?? ""))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read())
+                {
+                    var d = Billing.RequestJson(r);
+                    d["store"] = r["StoreName"]; d["slug"] = r["Slug"]; d["email"] = r["OwnerEmail"];
+                    d["currentPlan"] = r["CurPlan"] as string ?? ""; d["currentEnds"] = Billing.Iso(r["CurEnds"]);
+                    list.Add(d);
+                }
+            int pending;
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE Status = 'pending'")) pending = (int)cmd.ExecuteScalar();
+            return new Dictionary<string, object> { { "requests", list }, { "pending", pending } };
+        }
+
+        static void RequestDecide(SqlConnection c, Dictionary<string, object> b, HttpResponse res, bool approve)
+        {
+            var id = Web.Int(b, "id");
+            if (id == null) { Web.Error(res, 400, "bad_request"); return; }
+            int storeId = 0, planId = 0, months = 0; decimal price = 0, amount = 0; string status = null, method = null, refNo = null, note = null;
+            using (var cmd = Db.Cmd(c, "SELECT * FROM dbo.PlanRequests WHERE Id = @id", "@id", id.Value))
+            using (var r = cmd.ExecuteReader())
+                if (r.Read())
+                {
+                    storeId = (int)r["StoreId"]; planId = (int)r["PlanId"]; months = (int)r["Months"]; price = (decimal)r["PriceEgp"]; amount = (decimal)r["AmountEgp"];
+                    status = (string)r["Status"]; method = r["PaymentMethod"] as string; refNo = r["PaymentRef"] as string; note = r["Note"] as string;
+                }
+            if (status == null) { Web.Error(res, 404, "not_found", "الطلب مش موجود."); return; }
+            if (status != "pending") { Web.Error(res, 409, "decided", "الطلب ده اتراجع قبل كده."); return; }
+            string adminNote = Web.Str(b, approve ? "note" : "reason", 500);
+
+            if (!approve)
             {
-                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt)
-                                             VALUES (@s, @p, @n, @m, @price, @disc, @paid, @method, @notes, @start, @end)",
-                    "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", price, "@disc", Math.Max(0, price - paid), "@paid", paid,
-                    "@method", Web.Str(b, "method", 40), "@notes", Web.Str(b, "notes", 500), "@start", start, "@end", end))
-                { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
-                using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET PlanId=@p, PlanName=@n, PlanEndsAt=@end, MonthlyTokenLimit=@l, Status='active' WHERE Id=@s",
-                    "@p", p.Id, "@n", p.Name, "@end", end, "@l", p.TokenLimit, "@s", s.Id))
-                { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
-                tx.Commit();
+                if (string.IsNullOrWhiteSpace(adminNote)) { Web.Error(res, 400, "need_reason", "اكتب سبب الرفض عشان يظهر لصاحب المتجر."); return; }
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='rejected', AdminNote=@n, DecidedAt=SYSUTCDATETIME() WHERE Id=@id AND Status='pending'", "@n", adminNote, "@id", id.Value)) cmd.ExecuteNonQuery();
+                Web.Json(res, 200, new { ok = true });
+                return;
             }
+
+            var s = Db.StoreById(c, storeId);
+            var p = Billing.Plan(c, planId);
+            if (s == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
+            if (p == null) { Web.Error(res, 404, "no_plan", "الباقة دي اتمسحت. ارفض الطلب واطلب من صاحب المتجر يختار باقة تانية."); return; }
+            var paid = DecOf(b, "paidEgp") ?? amount;
+            if (paid < 0 || paid > price * 10) { Web.Error(res, 400, "bad_paid", "المبلغ المدفوع مش منطقي."); return; }
+            string notes = string.Join(" · ", new[] { string.IsNullOrWhiteSpace(refNo) ? null : "رقم العملية: " + refNo, note, adminNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            if (notes.Length > 500) notes = notes.Substring(0, 500);
+            int subId;
+            var end = Billing.Activate(c, s, p, months, price, paid, method, notes, out subId);
+            using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
+                "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "endsAt", end.ToString("o") } });
         }
 
@@ -702,6 +823,8 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 { "usdRate", Billing.UsdRate(c) }, { "whatsapp", Billing.WhatsApp(c) },
                 { "unitsSmall", Billing.Units(c, "UnitsSmall") }, { "unitsMedium", Billing.Units(c, "UnitsMedium") }, { "unitsLarge", Billing.Units(c, "UnitsLarge") },
                 { "freeLimitUsd", Billing.UsdForUnits(FreeLimit()) },
+                { "paymentInfo", Billing.Get(c, "PaymentInfo") ?? "" },
+                { "periodDiscounts", Billing.PeriodDiscounts(c).Where(kv => kv.Key > 1).ToDictionary(kv => kv.Key.ToString(CultureInfo.InvariantCulture), kv => (object)kv.Value) },
             };
         }
 
@@ -722,6 +845,26 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 if (v < 100 || v > 1000000) { Web.Error(res, 400, "bad_units", "استهلاك الرسالة لازم يكون بين 100 و مليون وحدة."); return; }
                 Billing.Set(c, "U" + k.Substring(1), v.Value.ToString(CultureInfo.InvariantCulture));
             }
+            if (b.ContainsKey("paymentInfo"))
+            {
+                var pi = (Web.Str(b, "paymentInfo", 400) ?? "").Trim();
+                if (pi.Length < 5) { Web.Error(res, 400, "bad_payment_info", "اكتب طريقة الدفع اللي هتظهر لأصحاب المتاجر."); return; }
+                Billing.Set(c, "PaymentInfo", pi);
+            }
+            object pd;
+            if (b.TryGetValue("periodDiscounts", out pd) && pd is Dictionary<string, object>)
+            {
+                var parts = new List<string>();
+                foreach (var kv in (Dictionary<string, object>)pd)
+                {
+                    int m; decimal pct;
+                    if (!int.TryParse(kv.Key, out m) || !Billing.Periods.Contains(m) || m == 1) continue;
+                    if (!decimal.TryParse(Convert.ToString(kv.Value, CultureInfo.InvariantCulture), NumberStyles.Number, CultureInfo.InvariantCulture, out pct) || pct < 0 || pct >= 90)
+                    { Web.Error(res, 400, "bad_discount", "خصم المدة لازم يكون من 0 لـ 89%."); return; }
+                    parts.Add(m + ":" + pct.ToString(CultureInfo.InvariantCulture));
+                }
+                Billing.Set(c, "PeriodDiscounts", string.Join(",", parts));
+            }
             Web.Json(res, 200, SettingsGet(c));
         }
 
@@ -739,28 +882,94 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
     }
 
     // api/plans.ashx  public list of plans (pricing page + store dashboard)
+    //   GET ?mine=1              the signed-in store's requests + subscription history
+    //   POST action=request      ask for a plan (planId, months, method, ref, note) -> waits for the super admin
+    //   POST action=cancel       cancel my pending request (id)
     public class PlansHandler : IHttpHandler
     {
         public bool IsReusable { get { return true; } }
         public void ProcessRequest(HttpContext ctx)
         {
-            var res = ctx.Response;
+            var req = ctx.Request; var res = ctx.Response;
             res.Cache.SetCacheability(HttpCacheability.NoCache);
             if (!Db.Configured) { Web.Error(res, 503, "not_configured"); return; }
             try
             {
                 using (var c = Db.Open())
                 {
+                    bool post = req.HttpMethod == "POST";
+                    if (post || req.QueryString["mine"] == "1") { Mine(ctx, c, post); return; }
                     var wa = Billing.WhatsApp(c);
                     Web.Json(res, 200, new Dictionary<string, object>
                     {
                         { "plans", Billing.Plans(c, false).Select(p => Billing.PlanJson(c, p, false)).ToList() },
                         { "whatsapp", wa }, { "wa", Billing.WaNumber(wa) },
                         { "units", new Dictionary<string, object> { { "small", Billing.Units(c, "UnitsSmall") }, { "medium", Billing.Units(c, "UnitsMedium") }, { "large", Billing.Units(c, "UnitsLarge") } } },
+                        { "paymentInfo", Billing.Get(c, "PaymentInfo") ?? "" },
                     });
                 }
             }
+            catch (BadRequestException ex) { Web.Error(res, 400, "bad_request", ex.Message); }
             catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error"); }
+        }
+
+        static readonly string[] Methods = { "InstaPay", "فودافون كاش", "تحويل بنكي", "كاش", "تاني" };
+
+        static void Mine(HttpContext ctx, SqlConnection c, bool post)
+        {
+            var req = ctx.Request; var res = ctx.Response;
+            var s = Me.Require(ctx, c);
+            if (s == null) { Web.Error(res, 401, "not_logged_in"); return; }
+            if (!post)
+            {
+                var requests = new List<Dictionary<string, object>>();
+                using (var cmd = Db.Cmd(c, "SELECT TOP 100 * FROM dbo.PlanRequests WHERE StoreId=@s ORDER BY CreatedAt DESC", "@s", s.Id))
+                using (var r = cmd.ExecuteReader()) while (r.Read()) requests.Add(Billing.RequestJson(r));
+                var subs = new List<Dictionary<string, object>>();
+                using (var cmd = Db.Cmd(c, "SELECT TOP 100 * FROM dbo.Subscriptions WHERE StoreId=@s ORDER BY StartsAt DESC, Id DESC", "@s", s.Id))
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read())
+                        subs.Add(new Dictionary<string, object> {
+                            { "id", r["Id"] }, { "plan", r["PlanName"] }, { "months", r["Months"] }, { "paid", r["PaidEgp"] },
+                            { "startsAt", Billing.Iso(r["StartsAt"]) }, { "endsAt", Billing.Iso(r["EndsAt"]) } });
+                Web.Json(res, 200, new Dictionary<string, object> { { "requests", requests }, { "subscriptions", subs }, { "methods", Methods } });
+                return;
+            }
+            if (!Web.CsrfOk(req)) { Web.Error(res, 400, "bad_request"); return; }
+            string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
+            var b = Web.Body(req, 4000);
+
+            if (action == "cancel")
+            {
+                var id = Web.Int(b, "id");
+                int n;
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='cancelled', DecidedAt=SYSUTCDATETIME() WHERE Id=@id AND StoreId=@s AND Status='pending'", "@id", id ?? 0, "@s", s.Id)) n = cmd.ExecuteNonQuery();
+                if (n == 0) { Web.Error(res, 404, "not_found", "مالقيناش طلب مستني مراجعة نلغيه."); return; }
+                Web.Json(res, 200, new { ok = true });
+                return;
+            }
+            if (action != "request") { Web.Error(res, 404, "unknown_action"); return; }
+
+            if (!Web.Allow("planreq:" + s.Id, 6, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "بعت طلبات كتير، استنى شوية."); return; }
+            var planId = Web.Int(b, "planId"); int months = Web.Int(b, "months") ?? 1;
+            var p = planId.HasValue ? Billing.Plan(c, planId.Value) : null;
+            if (p == null || !p.IsActive) { Web.Error(res, 404, "no_plan", "الباقة دي مش متاحة دلوقتي."); return; }
+            if (!Billing.Periods.Contains(months)) { Web.Error(res, 400, "bad_months", "اختار مدة: شهر أو 4 أو 6 أو 12 شهر."); return; }
+            string method = (Web.Str(b, "method", 40) ?? "").Trim();
+            if (!Methods.Contains(method)) { Web.Error(res, 400, "bad_method", "اختار طريقة الدفع."); return; }
+            string refNo = (Web.Str(b, "ref", 100) ?? "").Trim();
+            if (refNo.Length < 3) { Web.Error(res, 400, "need_ref", "اكتب رقم العملية أو الرقم اللي حوّلت منه، عشان نقدر نتأكد من الدفع."); return; }
+            string note = (Web.Str(b, "note", 500) ?? "").Trim();
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending'", "@s", s.Id))
+                if ((int)cmd.ExecuteScalar() > 0) { Web.Error(res, 409, "has_pending", "عندك طلب لسه بيتراجع. استنى الرد عليه، أو الغيه وابعت طلب جديد."); return; }
+
+            var q = Billing.QuoteFor(c, p, months);
+            int newId;
+            using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note)
+                                         OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note)",
+                "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", q.Price, "@disc", q.Discount, "@amt", q.Total,
+                "@method", method, "@ref", refNo, "@note", note.Length == 0 ? (object)DBNull.Value : note)) newId = (int)cmd.ExecuteScalar();
+            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "id", newId }, { "amount", q.Total } });
         }
     }
 

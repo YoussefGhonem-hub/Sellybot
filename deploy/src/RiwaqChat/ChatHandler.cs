@@ -87,6 +87,8 @@ namespace RiwaqChat
 
                 // ---- monthly limit per store ----
                 // (a plan whose end date passed allows nothing until the super admin renews it)
+                // subscription ended: the chat stops until the super admin renews it (the widget says "not available, contact the store")
+                if (store != null && Billing.Expired(store)) { Web.Error(res, 403, "plan_expired"); return; }
                 if (store != null && Db.Usage(conn, store.Id, Db.Month).Weighted >= Billing.EffectiveLimit(store)) { Web.Error(res, 402, "limit_reached"); return; }
 
                 // keep the store's Shopify data fresh (refreshes in the background when it is older than a few hours)

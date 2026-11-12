@@ -345,6 +345,28 @@ BEGIN
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
   CREATE INDEX IX_Subscriptions_Store ON dbo.Subscriptions(StoreId);
 END
+-- a store owner asks for a plan (after paying); the super admin approves it (-> Subscriptions) or rejects it
+IF OBJECT_ID('dbo.PlanRequests') IS NULL
+BEGIN
+  CREATE TABLE dbo.PlanRequests(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    PlanId INT NOT NULL,
+    PlanName NVARCHAR(100) NOT NULL,
+    Months INT NOT NULL,
+    PriceEgp DECIMAL(12,2) NOT NULL,
+    DiscountEgp DECIMAL(12,2) NOT NULL DEFAULT 0,
+    AmountEgp DECIMAL(12,2) NOT NULL,
+    PaymentMethod NVARCHAR(40) NULL,
+    PaymentRef NVARCHAR(100) NULL,
+    Note NVARCHAR(500) NULL,
+    Status NVARCHAR(12) NOT NULL DEFAULT 'pending',
+    AdminNote NVARCHAR(500) NULL,
+    SubscriptionId INT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    DecidedAt DATETIME2 NULL);
+  CREATE INDEX IX_PlanRequests_Store ON dbo.PlanRequests(StoreId);
+END
 IF OBJECT_ID('dbo.Tickets') IS NULL
 BEGIN
   CREATE TABLE dbo.Tickets(
