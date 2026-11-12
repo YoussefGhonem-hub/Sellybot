@@ -16,5 +16,6 @@
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 </Project>

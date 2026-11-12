@@ -88,6 +88,9 @@ namespace RiwaqChat
                 // ---- monthly limit per store ----
                 if (store != null && Db.Usage(conn, store.Id, Db.Month).Weighted >= store.MonthlyTokenLimit) { Web.Error(res, 402, "limit_reached"); return; }
 
+                // keep the store's Shopify data fresh (refreshes in the background when it is older than a few hours)
+                if (store != null) { try { Shopify.RefreshIfOld(store); } catch (Exception ex) { Log.Error(ex); } }
+
                 // ---- read the conversation ----
                 ArrayList incoming;
                 try
@@ -139,12 +142,13 @@ namespace RiwaqChat
                 long inTok = 0, outTok = 0, cacheRead = 0, cacheWrite = 0;
                 bool wrote = false;
 
-                // ---- big store: let Claude search the data, then send the answer ----
-                if (Claude.UseSearch(idx))
+                // ---- big store (search) and/or order tracking (Shopify): let Claude use its tools, then send the answer ----
+                bool orderTool = store != null && store.ShopifyOrders && ShopifyAdmin.For(store) != null;
+                if (Claude.UseSearch(idx) || orderTool)
                 {
                     try
                     {
-                        var u = await SearchAndAnswer(parameters, messages, idx);
+                        var u = await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, Web.Ip(req));
                         inTok = u.In; cacheRead = u.CacheRead; cacheWrite = u.CacheWrite; outTok = u.Out;
                         string answer = string.IsNullOrWhiteSpace(u.Text) ? Fallback : u.Text;
                         for (int i = 0; i < answer.Length; i += 60) Send(res, answer.Substring(i, Math.Min(60, answer.Length - i)));
@@ -197,25 +201,30 @@ namespace RiwaqChat
 
         class LoopResult { public string Text; public long In, CacheRead, CacheWrite, Out; }
 
-        // Up to 3 searches, then the answer. Thinking and tool calls are echoed back unchanged, as the API requires.
-        static async Task<LoopResult> SearchAndAnswer(MessageCreateParams first, List<MessageParam> conversation, StoreIndex idx)
+        // Up to 3 tool rounds (data search and/or order lookup), then the answer.
+        // Thinking and tool calls are echoed back unchanged, as the API requires.
+        static async Task<LoopResult> ToolLoop(MessageCreateParams first, List<MessageParam> conversation, StoreIndex idx, StoreInfo orderStore, string ip)
         {
-            var tool = new Tool
+            var tools = new List<ToolUnion>();
+            if (idx != null) tools.Add(SearchTool());
+            if (orderStore != null) tools.Add(new Tool
             {
-                Name = Claude.SearchToolName,
-                Description = "يدوّر في بيانات المتجر (المنتجات، الأسعار، المواصفات، الشحن، السياسات، الأسئلة الشائعة) ويرجّع أقرب الأجزاء للبحث، ومع كل جزء اسم الملف وتاريخ آخر تحديث.",
+                Name = ShopifyAdmin.OrderToolName,
+                Description = "يجيب حالة أوردر الزبون من المتجر: اتشحن ولا لأ، حالة الدفع، شركة الشحن ولينك التتبع، ومعاد التوصيل المتوقع. " +
+                              "محتاج رقم الأوردر والإيميل أو رقم الموبايل اللي الطلب اتعمل بيه، وبيرجّع التفاصيل بس لو الاتنين مطابقين لنفس الأوردر.",
                 InputSchema = new InputSchema
                 {
                     Properties = new Dictionary<string, JsonElement>
                     {
-                        ["query"] = JsonSerializer.SerializeToElement(new { type = "string", description = "كلمات البحث: اسم المنتج أو الموضوع، ممكن بأكتر من صيغة (عربي/إنجليزي، مفرد/جمع)." }),
+                        ["order_number"] = JsonSerializer.SerializeToElement(new { type = "string", description = "رقم الأوردر زي ما الزبون كتبه، مثلًا 1052 أو #1052." }),
+                        ["contact"] = JsonSerializer.SerializeToElement(new { type = "string", description = "الإيميل أو رقم الموبايل اللي الزبون قال إنه طلب بيه، زي ما كتبه." }),
                     },
-                    Required = new List<string> { "query" },
+                    Required = new List<string> { "order_number", "contact" },
                 },
-            };
+            });
             var result = new LoopResult();
             var msgs = new List<MessageParam>(conversation);
-            const int maxRounds = 4; // up to 3 searches + the final answer
+            const int maxRounds = 4; // up to 3 tool rounds + the final answer
             for (int round = 0; round < maxRounds; round++)
             {
                 bool last = round == maxRounds - 1;
@@ -225,7 +234,7 @@ namespace RiwaqChat
                     MaxTokens = first.MaxTokens,
                     System = first.System,
                     Messages = msgs,
-                    Tools = new List<ToolUnion> { tool },
+                    Tools = tools,
                     ToolChoice = last ? (ToolChoice)new ToolChoiceNone() : new ToolChoiceAuto(),
                 };
                 Message resp = await Claude.Client().Messages.Create(p);
@@ -245,10 +254,14 @@ namespace RiwaqChat
                     else if (block.TryPickToolUse(out ToolUseBlock tu))
                     {
                         assistant.Add(new ToolUseBlockParam { ID = tu.ID, Name = tu.Name, Input = tu.Input });
-                        string query = "";
-                        JsonElement q;
-                        if (tu.Input != null && tu.Input.TryGetValue("query", out q) && q.ValueKind == JsonValueKind.String) query = q.GetString();
-                        string found = tu.Name == Claude.SearchToolName ? Search.Run(idx, query) : "أداة غير معروفة.";
+                        string found;
+                        if (tu.Name == Claude.SearchToolName && idx != null) found = Search.Run(idx, Arg(tu, "query"));
+                        else if (tu.Name == ShopifyAdmin.OrderToolName && orderStore != null)
+                        {
+                            try { found = await ShopifyAdmin.LookupOrder(orderStore, ip, Arg(tu, "order_number"), Arg(tu, "contact")); }
+                            catch (Exception ex) { Log.Error(ex); found = "مقدرناش نوصل لبيانات الأوردرات دلوقتي. اعتذر للزبون وانصحه يكلّم المتجر."; }
+                        }
+                        else found = "أداة غير معروفة.";
                         toolResults.Add(new ToolResultBlockParam { ToolUseID = tu.ID, Content = found });
                     }
                 }
@@ -257,6 +270,29 @@ namespace RiwaqChat
                 msgs.Add(new UserMessageParam { Content = toolResults });
             }
             return result;
+        }
+
+        static string Arg(ToolUseBlock tu, string name)
+        {
+            JsonElement v;
+            return tu.Input != null && tu.Input.TryGetValue(name, out v) && v.ValueKind == JsonValueKind.String ? v.GetString() : "";
+        }
+
+        static Tool SearchTool()
+        {
+            return new Tool
+            {
+                Name = Claude.SearchToolName,
+                Description = "يدوّر في بيانات المتجر (المنتجات، الأسعار، المواصفات، الشحن، السياسات، الأسئلة الشائعة) ويرجّع أقرب الأجزاء للبحث، ومع كل جزء اسم الملف وتاريخ آخر تحديث.",
+                InputSchema = new InputSchema
+                {
+                    Properties = new Dictionary<string, JsonElement>
+                    {
+                        ["query"] = JsonSerializer.SerializeToElement(new { type = "string", description = "كلمات البحث: اسم المنتج أو الموضوع، ممكن بأكتر من صيغة (عربي/إنجليزي، مفرد/جمع)." }),
+                    },
+                    Required = new List<string> { "query" },
+                },
+            };
         }
 
         static bool SameSite(HttpRequest req, string origin)

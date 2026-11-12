@@ -323,6 +323,44 @@
   .ok-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#e6f6ec;color:#1f7a45}
   .warn-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#fff1d6;color:#8a5200}
   [data-theme=dark] .ok-pill{background:#173726;color:#8be0ad}[data-theme=dark] .warn-pill{background:#3d2c10;color:#f3c26b}
+  .shop-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+  .shop-logo{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#5e8e3e,#95bf47)}
+  .shop-logo svg{width:22px;height:22px}
+  .shop-form{display:flex;gap:8px;flex-wrap:wrap}
+  .shop-form input{flex:1;min-width:200px}
+  .shop-form .btn{white-space:nowrap}
+  .shop-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .btn.loading-txt{opacity:.75;pointer-events:none}
+  .shop-seg{margin:0 0 14px}
+  .shop-seg small{font-size:11px;opacity:.8}
+  .why{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+  .why>b{display:block;margin-bottom:8px}
+  .why ul{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+  .why li{display:flex;gap:10px;align-items:flex-start}
+  .why li>span{font-size:20px;line-height:1.3}
+  .why li b{display:block;font-size:14px}
+  .why li small{display:block;font-size:12.5px;color:var(--muted);line-height:1.55}
+  @media (max-width:640px){.why ul{grid-template-columns:minmax(0,1fr)}}
+  .steps-title{margin:0 0 10px;font-size:15px}
+  .shop-steps li span a{color:var(--brand)}
+  .scope-box{display:flex;align-items:center;gap:8px;margin:6px 0 4px;flex-wrap:wrap}
+  .scope-box code{font:12.5px ui-monospace,Consolas,monospace;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);word-break:break-all}
+  .scope-why{display:block;font-size:12px;color:var(--muted)}
+  .shop-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .shop-fields label{margin-top:0}
+  @media (max-width:860px){.shop-fields{grid-template-columns:minmax(0,1fr)}}
+  .feat-list{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+  .feat-list span{font-size:12.5px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--soft)}
+  .feat-list span.no{opacity:.65;text-decoration:line-through}
+  .toggle{display:flex;align-items:flex-start;gap:10px;margin:8px 0 0;cursor:pointer;color:var(--ink);font-size:14px}
+  .toggle input{position:absolute;opacity:0;pointer-events:none}
+  .toggle .tg{flex:none;width:40px;height:22px;border-radius:999px;background:var(--line);position:relative;transition:background .2s;margin-top:2px}
+  .toggle .tg:after{content:"";position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+  .toggle input:checked+.tg{background:var(--ok)}
+  .toggle input:checked+.tg:after{transform:translateX(-18px)}
+  .toggle input:focus-visible+.tg{box-shadow:0 0 0 3px rgba(232,119,74,.3)}
+  .toggle input:disabled+.tg{opacity:.5}
+  .toggle small{display:block;color:var(--muted);font-size:12.5px}
   .sugg-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media (max-width:860px){.two{grid-template-columns:1fr}}
@@ -518,6 +556,82 @@
       </div>
       <div class="msg" id="upMsg"></div>
     </div>
+    <div class="card shop-card" id="shopCard" style="margin-bottom:12px">
+      <div class="shop-head">
+        <span class="shop-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg></span>
+        <div style="flex:1;min-width:0"><h3>اربط متجرك على Shopify</h3>
+          <p class="sub" style="margin:0">المساعد يقرا منتجاتك وأسعارها والمخزون وسياسات الشحن والاسترجاع من متجرك على طول، فيرد على زباينك بإجابات أدق من غير ما ترفع ملفات. ملفاتك ليها الأولوية دايمًا لو فيها معلومة مختلفة.</p></div>
+      </div>
+
+      <div id="shopOff">
+        <div class="seg shop-seg" id="shopModes" role="tablist">
+          <button class="on" type="button" data-mode="full">🔐 ربط كامل <small>(الأفضل)</small></button>
+          <button type="button" data-mode="quick">⚡ ربط سريع بالدومين</button>
+        </div>
+
+        <!-- full connection: the owner's own Shopify app -->
+        <div id="shopFull">
+          <div class="why">
+            <b>ليه محتاجين الربط الكامل؟</b>
+            <ul>
+              <li><span>📦</span><div><b>الكمية بالظبط</b><small>المساعد يقول للزبون "فاضل 3 قطع من مقاس 42" بدل "متاح" بس، فيشجّعه يطلب.</small></div></li>
+              <li><span>🚚</span><div><b>"الأوردر بتاعي فين؟"</b><small>الزبون يعرف حالة أوردره وشركة الشحن ولينك التتبع من الشات، بدل ما يكلّمك. بعد ما يأكد رقم الأوردر والإيميل أو الموبايل اللي طلب بيه.</small></div></li>
+              <li><span>⚡</span><div><b>تحديث فوري</b><small>أول ما تغيّر سعر أو منتج يخلص، المساعد يعرف في ثواني.</small></div></li>
+              <li><span>🔒</span><div><b>قراية بس، وتحت سيطرتك</b><small>مش بنعدّل أي حاجة في متجرك، ومش بنشوف بيانات الدفع، والمساعد مابيقولش عنوان أي زبون. المفتاح بيتحفظ متشفّر، وتقدر توقفه من Shopify في أي وقت.</small></div></li>
+            </ul>
+          </div>
+
+          <h4 class="steps-title">الخطوات (حوالي 5 دقايق، من غير أي برمجة)</h4>
+          <ol class="steps shop-steps">
+            <li><b>افتح Dev Dashboard بتاع Shopify</b><span>ادخل على <a href="https://dev.shopify.com/dashboard/" target="_blank" rel="noopener" class="ltr">dev.shopify.com/dashboard</a> بنفس حساب متجرك.</span></li>
+            <li><b>اعمل تطبيق جديد</b><span>دوس <b style="display:inline">Create app</b> وسمّيه <span class="kbd">Sellybot</span>. ده مش برنامج ولا كود: ده "إذن دخول" بتديه لـ Sellybot عشان يقرا داتا متجرك.</span></li>
+            <li><b>اختار الصلاحيات (قراية بس)</b><span>في إعدادات النسخة (Version) حط دول في خانة <b style="display:inline">Scopes</b>:
+              <span class="scope-box"><code class="ltr" id="scopeText">read_products,read_inventory,read_orders</code><button type="button" class="btn ghost sm" id="copyScopes">نسخ</button></span>
+              <small class="scope-why"><span class="ltr">read_products</span>: المنتجات والأسعار · <span class="ltr">read_inventory</span>: الكمية المتاحة · <span class="ltr">read_orders</span>: حالة الأوردرات (لو مش عايز تتبع الأوردرات شيلها)</small></span></li>
+            <li><b>احفظ وركّبه على متجرك</b><span>دوس <b style="display:inline">Release</b> عشان تحفظ النسخة، وبعدين <b style="display:inline">Install</b> واختار متجرك ووافق.</span></li>
+            <li><b>انسخ المفاتيح وحطها هنا</b><span>من <b style="display:inline">Settings</b> بتاع التطبيق انسخ <b style="display:inline">Client ID</b> و<b style="display:inline">Client secret</b>.</span></li>
+          </ol>
+          <p class="hint" style="margin:0 0 12px">💡 شكل الشاشات في Shopify ممكن يختلف شوية عن الكلام ده. لو حاجة مش واضحة، كلّمنا ونساعدك.</p>
+
+          <div class="shop-fields">
+            <div><label for="admShop">دومين متجرك (اللي آخره .myshopify.com)</label>
+              <input type="text" id="admShop" class="ltr" maxlength="200" placeholder="my-shop.myshopify.com" autocomplete="off"></div>
+            <div><label for="admClient">Client ID</label>
+              <input type="text" id="admClient" class="ltr" maxlength="200" autocomplete="off" spellcheck="false"></div>
+            <div><label for="admSecret">Client secret</label>
+              <div class="field pw" style="position:relative"><input type="password" id="admSecret" class="ltr" maxlength="300" autocomplete="new-password" spellcheck="false" style="padding-right:12px!important">
+                <button type="button" class="eye" aria-label="اظهر الـ secret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+          </div>
+          <button class="btn" id="admConnect" type="button" style="margin-top:12px">🔐 احفظ واختبر الربط</button>
+        </div>
+
+        <!-- quick connection: public data only -->
+        <div id="shopQuick" hidden>
+          <div class="shop-form">
+            <input type="text" id="shopDomain" class="ltr" maxlength="200" placeholder="my-shop.myshopify.com" aria-label="دومين متجرك على Shopify">
+            <button class="btn" id="shopConnect" type="button">🔗 اربط واسحب الداتا</button>
+          </div>
+          <div class="hint">اكتب دومين متجرك (نفس اللينك اللي زباينك بيدخلوا منه). مش محتاج أي مفاتيح: بنسحب بس اللي أي زبون بيشوفه (المنتجات والأسعار ومتاح ولا خلصان والسياسات)، ونحدّثه كل 6 ساعات. مافيهوش الكمية بالظبط ولا تتبع الأوردرات.</div>
+        </div>
+      </div>
+
+      <div id="shopOn" hidden>
+        <div class="shop-status"><span class="ok-pill" id="shopPill">✅ مربوط</span><span class="hint" id="shopInfo" style="margin:0"></span></div>
+        <div id="shopFullInfo" hidden>
+          <div class="feat-list" id="shopFeats"></div>
+          <label class="toggle" id="ordersRow"><input type="checkbox" id="ordersToggle"><span class="tg" aria-hidden="true"></span>
+            <span><b>تتبع الأوردرات في الشات</b><small id="ordersHint">الزبون يسأل عن أوردره ويعرف حالته بعد ما يأكد رقم الأوردر والإيميل أو الموبايل.</small></span></label>
+        </div>
+        <p class="hint" id="shopUpgrade" hidden>عايز المساعد يعرف الكمية بالظبط ويرد على "الأوردر بتاعي فين؟"؟ <a href="#" id="shopUpgradeLink">اعمل ربط كامل</a>.</p>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="shopSync" type="button">🔄 حدّث دلوقتي</button>
+          <a class="btn ghost sm" id="shopOpen" target="_blank" rel="noopener">افتح المتجر ↗</a>
+          <span class="space"></span>
+          <button class="btn danger sm" id="shopOffBtn" type="button">إلغاء الربط</button>
+        </div>
+      </div>
+      <div class="msg" id="shopMsg"></div>
+    </div>
     <div id="items"></div>
   </section>
 
@@ -589,6 +703,7 @@
           <li><b>الصق الكود</b><span>دوّر على <span class="kbd">&lt;/body&gt;</span> (اضغط <span class="kbd">Ctrl+F</span>) والصق الكود في السطر اللي قبله على طول.</span></li>
           <li><b>احفظ</b><span>دوس <b style="display:inline">Save</b> فوق على اليمين.</span></li>
           <li><b>ضيف دومين متجرك هنا</b><span>في الخانة اللي على الشمال، عشان الشات يقبل يشتغل على موقعك.</span></li>
+          <li><b>اقفل شات Shopify لو شغال</b><span>لو مفعّل <b style="display:inline">Shopify Inbox</b> هيظهر شاتين: من <b style="display:inline">Online Store ← Themes ← Customize</b> افتح <b style="display:inline">App embeds</b> واقفل <b style="display:inline">Shopify Inbox</b> ← <b style="display:inline">Save</b>.</span></li>
           <li><b>جرّب</b><span>افتح متجرك، هتلاقي الفقاعة في الركن. ممكن تاخد دقيقة لحد ما تظهر.</span></li>
         </ol>
       </div>
@@ -669,12 +784,12 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="widget.js?v=20261112142147" data-art-only="1"></script>
+<script src="widget.js?v=20261112145445" data-art-only="1"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var me = null, editingId = null;
-  var ICON = { text: "📝", txt: "📄", pdf: "📕", docx: "📘", xlsx: "📗" };
+  var ICON = { text: "📝", txt: "📄", pdf: "📕", docx: "📘", xlsx: "📗", shopify: "🛍️" };
   var BASE = location.origin + location.pathname.replace(/dashboard\.html$/, "");
 
   function fmt(n) { return Number(n || 0).toLocaleString("ar-EG"); }
@@ -843,7 +958,7 @@
 
   function render() {
     var link = BASE + "?store=" + me.slug;
-    syncLiveChat();
+    syncLiveChat(); renderShop();
     $("acctName").textContent = me.name; $("acctAvatar").textContent = (me.name || "م").trim().charAt(0);
     $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
     $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
@@ -921,7 +1036,7 @@
         if (vagueName(it.title)) { var bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚠️ غيّر الاسم لاسم أوضح"; t.appendChild(bd); }
         var s = document.createElement("div"); s.className = "s"; s.textContent = fmt(it.chars) + " حرف · " + (it.fileName ? it.fileName + " · " : "") + it.updated;
         meta.appendChild(t); meta.appendChild(s);
-        var edit = document.createElement("button"); edit.className = "btn ghost sm"; edit.textContent = "عرض / تعديل"; edit.onclick = function () { openEditor(it.id); };
+        var edit = document.createElement("button"); edit.className = "btn ghost sm"; edit.textContent = it.type === "shopify" ? "عرض" : "عرض / تعديل"; edit.onclick = function () { openEditor(it.id); };
         row.appendChild(ic); row.appendChild(meta); row.appendChild(edit); box.appendChild(row);
       });
     } catch (err) { if (err.status === 401) showAuth(); else toast(err.message); }
@@ -931,10 +1046,111 @@
     editingId = id; setMsg("edMsg", ""); $("edDelete").hidden = !id;
     $("edTitleLbl").textContent = id ? "تعديل الداتا" : "إضافة نص";
     $("edTitle").value = ""; $("edContent").value = ""; $("editor").hidden = false;
-    if (id) { try { var it = await api("api/knowledge.ashx?id=" + id); $("edTitle").value = it.title; $("edContent").value = it.content; } catch (err) { setMsg("edMsg", err.message); } }
-    updateCount(); $("edTitle").focus();
+    readOnlyEditor(false);
+    if (id) {
+      try {
+        var it = await api("api/knowledge.ashx?id=" + id); $("edTitle").value = it.title; $("edContent").value = it.content;
+        if (it.type === "shopify") {   // synced from Shopify: view only (the next sync would overwrite edits)
+          readOnlyEditor(true); $("edTitleLbl").textContent = "داتا Shopify";
+          setMsg("edMsg", "🛍️ الجزء ده بيتسحب من متجرك على Shopify وبيتحدث لوحده. عدّل منتجاتك على Shopify ودوس \"حدّث دلوقتي\".", true);
+        }
+      } catch (err) { setMsg("edMsg", err.message); }
+    }
+    updateCount(); if (!$("edTitle").readOnly) $("edTitle").focus();
+  }
+  function readOnlyEditor(on) {
+    $("edTitle").readOnly = on; $("edContent").readOnly = on; $("edSave").hidden = on;
+    if (on) $("edDelete").hidden = true;
+    $("edCancel").textContent = on ? "قفل" : "إلغاء";
   }
   function updateCount() { $("edCount").textContent = fmt($("edContent").value.length) + " حرف"; }
+
+  // ---------------- Shopify ----------------
+  function ago(iso) {
+    if (!iso) return "";
+    var m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if (m < 1) return "دلوقتي"; if (m < 60) return "من " + fmt(m) + " دقيقة";
+    var h = Math.round(m / 60); if (h < 24) return "من " + fmt(h) + " ساعة";
+    return "من " + fmt(Math.round(h / 24)) + " يوم";
+  }
+  function renderShop() {
+    var sh = (me && me.shopify) || {}, on = !!sh.domain;
+    $("shopOff").hidden = on; $("shopOn").hidden = !on;
+    if (on) {
+      var warn = /^⚠️/.test(sh.status || "");
+      $("shopPill").className = warn ? "warn-pill" : "ok-pill";
+      $("shopPill").textContent = warn ? "⚠️ مربوط، بس آخر تحديث فشل" : (sh.full ? "✅ ربط كامل بـ " : "✅ ربط سريع بـ ") + (sh.full ? sh.shop : sh.domain);
+      $("shopInfo").textContent = (warn ? sh.status.replace(/^⚠️\s*/, "") : (sh.status || "")) + (sh.syncedAt ? " · آخر تحديث " + ago(sh.syncedAt) : "");
+      $("shopOpen").href = "https://" + sh.domain;
+      $("shopFullInfo").hidden = !sh.full; $("shopUpgrade").hidden = !!sh.full;
+      if (sh.full) {
+        var f = $("shopFeats"); f.textContent = "";
+        function chip(ok, text) { var s = document.createElement("span"); s.textContent = (ok ? "✓ " : "✕ ") + text; if (!ok) s.className = "no"; f.appendChild(s); }
+        var has = function (sc) { return (sh.missing || []).indexOf(sc) < 0; };
+        chip(has("read_products"), "المنتجات والأسعار");
+        chip(has("read_inventory"), "الكمية بالظبط");
+        chip(has("read_orders"), "تتبع الأوردرات");
+        chip(sh.webhooks > 0, sh.webhooks > 0 ? "تحديث فوري" : "تحديث فوري (بيشتغل على السيرفر بس)");
+        $("ordersToggle").checked = !!sh.orders; $("ordersToggle").disabled = !sh.ordersAvailable;
+        $("ordersHint").textContent = sh.ordersAvailable
+          ? "الزبون يسأل عن أوردره ويعرف حالته بعد ما يأكد رقم الأوردر والإيميل أو الموبايل."
+          : "محتاج صلاحية read_orders: ضيفها في Scopes، اعمل Release ووافق عليها في متجرك، وبعدين اربط تاني.";
+      }
+    } else {
+      // suggest the Shopify domain from the domains the owner already added
+      var guess = (me.allowedOrigins || "").split(",").map(function (o) { return o.replace(/^https?:\/\//, "").trim(); }).filter(function (o) { return /myshopify\.com$/.test(o); })[0];
+      if (guess && !$("shopDomain").value) $("shopDomain").value = guess;
+      if (guess && !$("admShop").value) $("admShop").value = guess;
+    }
+  }
+  function shopMode(mode) {
+    document.querySelectorAll("#shopModes button").forEach(function (b) { b.classList.toggle("on", b.dataset.mode === mode); });
+    $("shopFull").hidden = mode !== "full"; $("shopQuick").hidden = mode !== "quick";
+  }
+  document.querySelectorAll("#shopModes button").forEach(function (b) { b.onclick = function () { shopMode(b.dataset.mode); }; });
+  $("copyScopes").onclick = function () { copy($("scopeText").textContent); this.textContent = "✓ اتنسخ"; var b = this; setTimeout(function () { b.textContent = "نسخ"; }, 1800); };
+  $("shopUpgradeLink").onclick = function (e) { e.preventDefault(); $("shopOff").hidden = false; shopMode("full"); $("admShop").focus(); };
+  $("admConnect").onclick = async function () {
+    var body = { shop: $("admShop").value.trim(), clientId: $("admClient").value.trim(), secret: $("admSecret").value.trim() };
+    if (!body.shop || !body.clientId || !body.secret) { setMsg("shopMsg", "اكتب الدومين والـ Client ID والـ Client secret."); return; }
+    var r = await shopCall("shopify-admin-connect", body, this, "⏳ بنختبر الربط ونسحب منتجاتك…");
+    if (r) {
+      $("admSecret").value = "";
+      var extra = r.missing && r.missing.length ? " ⚠️ ناقص صلاحيات: " + r.missing.join("، ") + "." : "";
+      setMsg("shopMsg", "✅ الربط شغال! سحبنا " + fmt(r.products) + " منتج بالكميات" + (r.orders ? "، وتتبع الأوردرات اتفعّل" : "") + "." + extra, !extra);
+      toast("اتربط متجرك على Shopify 🎉");
+    }
+  };
+  $("ordersToggle").onchange = async function () {
+    var t = this, want = t.checked;
+    try { await api("api/knowledge.ashx?action=shopify-orders", { method: "POST", json: { enabled: want } }); await refreshMe(); toast(want ? "تتبع الأوردرات اتفعّل ✅" : "تتبع الأوردرات اتقفل"); }
+    catch (err) { t.checked = !want; setMsg("shopMsg", err.message); }
+  };
+  async function shopCall(action, body, btn, busyText) {
+    var old = btn.innerHTML; btn.classList.add("loading-txt"); btn.textContent = busyText; setMsg("shopMsg", "");
+    try {
+      var r = await api("api/knowledge.ashx?action=" + action, { method: "POST", json: body || {} });
+      await refreshMe(); renderShop(); loadItems();
+      return r;
+    } catch (err) { setMsg("shopMsg", err.message); if (err.status === 507) refreshMe(); return null; }
+    finally { btn.classList.remove("loading-txt"); btn.innerHTML = old; }
+  }
+  $("shopConnect").onclick = async function () {
+    var d = $("shopDomain").value.trim();
+    if (!d) { setMsg("shopMsg", "اكتب دومين متجرك الأول."); $("shopDomain").focus(); return; }
+    var r = await shopCall("shopify-connect", { domain: d }, this, "⏳ بنسحب منتجاتك… ممكن ياخد دقيقة");
+    if (r) { setMsg("shopMsg", "✅ اتربط! سحبنا " + fmt(r.products) + " منتج" + (r.policies ? " و" + fmt(r.policies) + " سياسات" : "") + "، والمساعد بقى بيرد منها.", true); toast("اتربط متجرك على Shopify 🎉"); }
+  };
+  $("shopDomain").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("shopConnect").click(); } });
+  $("shopSync").onclick = async function () {
+    var r = await shopCall("shopify-sync", {}, this, "⏳ بنحدّث…");
+    if (r) setMsg("shopMsg", "✅ اتحدثت: " + fmt(r.products) + " منتج" + (r.policies ? " و" + fmt(r.policies) + " سياسات" : "") + ".", true);
+  };
+  $("shopOffBtn").onclick = async function () {
+    if (!confirm("متأكد؟ هنمسح داتا Shopify اللي اتسحبت والمساعد مش هيرد منها تاني. ملفاتك التانية مش هتتأثر، وتقدر تربط تاني في أي وقت.")) return;
+    var r = await shopCall("shopify-disconnect", {}, this, "…");
+    if (r) setMsg("shopMsg", "اتلغى الربط.", true);
+  };
   $("edContent").addEventListener("input", updateCount);
   $("edCancel").onclick = function () { $("editor").hidden = true; };
   $("editor").addEventListener("click", function (e) { if (e.target === $("editor")) $("editor").hidden = true; });

@@ -10,7 +10,12 @@ namespace RiwaqChat
     public class StoreInfo
     {
         public int Id;
-        public string Slug, Name, OwnerEmail, PasswordHash, Status, BotName, Welcome, Instructions, AllowedOrigins, BubbleStyle, BrandColor, ChatTitle, Suggestions;
+        public string Slug, Name, OwnerEmail, PasswordHash, Status, BotName, Welcome, Instructions, AllowedOrigins, BubbleStyle, BrandColor, ChatTitle, Suggestions, ShopifyDomain, ShopifyStatus;
+        public DateTime? ShopifySyncedAt;
+        // full Shopify connection (Admin API): shop = x.myshopify.com, secret is encrypted (Secrets.Protect)
+        public string ShopifyShop, ShopifyClientId, ShopifySecret, ShopifyScopes;
+        public bool ShopifyOrders;
+        public int ShopifyWebhooks;
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -160,6 +165,15 @@ namespace RiwaqChat
                 BubbleStyle = r["BubbleStyle"] as string ?? "bear",
                 BrandColor = r["BrandColor"] as string ?? "#e8774a",
                 ChatTitle = r["ChatTitle"] as string,
+                ShopifyDomain = r["ShopifyDomain"] as string,
+                ShopifyStatus = r["ShopifyStatus"] as string,
+                ShopifySyncedAt = r["ShopifySyncedAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["ShopifySyncedAt"], DateTimeKind.Utc),
+                ShopifyShop = r["ShopifyShop"] as string,
+                ShopifyClientId = r["ShopifyClientId"] as string,
+                ShopifySecret = r["ShopifySecret"] as string,
+                ShopifyScopes = r["ShopifyScopes"] as string,
+                ShopifyOrders = r["ShopifyOrders"] is bool && (bool)r["ShopifyOrders"],
+                ShopifyWebhooks = r["ShopifyWebhooks"] is int ? (int)r["ShopifyWebhooks"] : 0,
                 Suggestions = r["Suggestions"] as string,
                 MonthlyTokenLimit = (int)r["MonthlyTokenLimit"],
                 DataVersion = (int)r["DataVersion"],
@@ -250,6 +264,9 @@ IF COL_LENGTH('dbo.Stores', 'BubbleStyle') IS NULL ALTER TABLE dbo.Stores ADD Bu
 IF COL_LENGTH('dbo.Stores', 'BrandColor') IS NULL ALTER TABLE dbo.Stores ADD BrandColor NVARCHAR(9) NOT NULL CONSTRAINT DF_Stores_BrandColor DEFAULT '#e8774a';
 IF COL_LENGTH('dbo.Stores', 'ChatTitle') IS NULL ALTER TABLE dbo.Stores ADD ChatTitle NVARCHAR(80) NULL;
 IF COL_LENGTH('dbo.Stores', 'Suggestions') IS NULL ALTER TABLE dbo.Stores ADD Suggestions NVARCHAR(400) NULL;
+IF COL_LENGTH('dbo.Stores', 'ShopifyDomain') IS NULL ALTER TABLE dbo.Stores ADD ShopifyDomain NVARCHAR(200) NULL, ShopifySyncedAt DATETIME2 NULL, ShopifyStatus NVARCHAR(400) NULL;
+IF COL_LENGTH('dbo.Stores', 'ShopifyShop') IS NULL ALTER TABLE dbo.Stores ADD ShopifyShop NVARCHAR(200) NULL, ShopifyClientId NVARCHAR(100) NULL, ShopifySecret NVARCHAR(1000) NULL,
+  ShopifyScopes NVARCHAR(600) NULL, ShopifyOrders BIT NOT NULL CONSTRAINT DF_Stores_ShopifyOrders DEFAULT 0, ShopifyWebhooks INT NOT NULL CONSTRAINT DF_Stores_ShopifyWebhooks DEFAULT 0;
 IF OBJECT_ID('dbo.Migrations') IS NULL CREATE TABLE dbo.Migrations(Name NVARCHAR(100) NOT NULL PRIMARY KEY, RanAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
 IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'drop-default-bot-name')
 BEGIN
@@ -266,6 +283,13 @@ BEGIN
   DECLARE @riwaqQ NVARCHAR(400) = N'عندي بقع عرق في القميص، أستخدم إيه؟ 👕' + NCHAR(10) + N'بكام ملمع الأخشاب؟ 🪵' + NCHAR(10) + N'الشحن بكام؟ 🚚';
   EXEC sp_executesql N'UPDATE dbo.Stores SET Suggestions = @q WHERE Slug = ''riwaq'' AND Suggestions IS NULL;', N'@q NVARCHAR(400)', @q = @riwaqQ;
   INSERT INTO dbo.Migrations(Name) VALUES ('riwaq-suggestions');
+END
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'neutral-welcome')
+BEGIN
+  -- The old default welcome talked about products, which doesn't fit apps, platforms or services. Only untouched defaults change.
+  UPDATE dbo.Stores SET Welcome = REPLACE(REPLACE(Welcome, N'اسألني عن أي منتج وأنا أساعدك تختار الأنسب.', N'عندك أي سؤال؟ اسألني وأنا أساعدك على طول.'), N'**! 🛍️', N'**! 👋')
+    WHERE CHARINDEX(N'اسألني عن أي منتج وأنا أساعدك تختار الأنسب.', Welcome) > 0;
+  INSERT INTO dbo.Migrations(Name) VALUES ('neutral-welcome');
 END";
     }
 }

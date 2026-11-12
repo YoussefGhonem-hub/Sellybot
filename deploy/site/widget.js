@@ -290,13 +290,14 @@
 *{box-sizing:border-box}
 .w{--bg:#fff7ef;--card:#fff;--ink:#2b1d14;--muted:#8a7565;--line:#efe3d6;--bot:#faf5f0;--shadow:0 22px 60px rgba(40,25,10,.22);
   font:15px/1.65 system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:var(--ink);direction:rtl;text-align:right;-webkit-font-smoothing:antialiased}
-.w.dark{--bg:#1d1611;--card:#241b15;--ink:#f6ece3;--muted:#b9a593;--line:#3a2d23;--bot:#30241b;--shadow:0 22px 60px rgba(0,0,0,.55)}
+.w.dark{--bg:var(--dbg,#1d1611);--card:var(--dcard,#241b15);--ink:#f3f0ed;--muted:#aaa49e;--line:var(--dline,#3a2d23);--bot:var(--dbot,#30241b);--shadow:0 22px 60px rgba(0,0,0,.55)}
+.w.dark .badge{box-shadow:0 0 0 3px var(--bg)}
 button{font:inherit;cursor:pointer;color:inherit}
 
 /* ----- page mode: the chat link ----- */
 .w.page{position:fixed;inset:0;display:grid;place-items:center;padding:16px;
   background:radial-gradient(900px 500px at 85% 110%,var(--soft),transparent 65%),radial-gradient(700px 420px at 10% -10%,var(--soft),transparent 60%),var(--bg)}
-.w.page.dark{background:radial-gradient(900px 500px at 85% 110%,#33241a,transparent 65%),var(--bg)}
+.w.page.dark{background:radial-gradient(900px 500px at 85% 110%,var(--dbot,#33241a),transparent 65%),var(--bg)}
 .w.page .chat{position:relative;inset:auto;right:auto;bottom:auto;width:min(480px,100%);height:min(760px,calc(100dvh - 32px));transform:none}
 .w.page .close,.w.page .launcher{display:none}
 .w.page .chat{animation:pageIn .6s cubic-bezier(.34,1.56,.64,1) both}
@@ -306,6 +307,9 @@ button{font:inherit;cursor:pointer;color:inherit}
 .w.site{position:fixed;inset:0;background:#f4f1ee}
 .w.site:before{content:"";position:absolute;inset:16px 16px auto 16px;height:46px;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.05)}
 .w.site:after{content:"";position:absolute;inset:80px 16px 40% 16px;border-radius:16px;background:linear-gradient(#ebe6e0,#ebe6e0) 0 0/60% 18px no-repeat,linear-gradient(#ebe6e0,#ebe6e0) 0 34px/85% 12px no-repeat,linear-gradient(#ebe6e0,#ebe6e0) 0 58px/70% 12px no-repeat,linear-gradient(#fff,#fff) 0 100px/48% 160px no-repeat,linear-gradient(#fff,#fff) 100% 100px/48% 160px no-repeat}
+.w.site.dark{background:#121315}
+.w.site.dark:before{background:#1e1f23;box-shadow:none}
+.w.site.dark:after{background:linear-gradient(#2a2b30,#2a2b30) 0 0/60% 18px no-repeat,linear-gradient(#2a2b30,#2a2b30) 0 34px/85% 12px no-repeat,linear-gradient(#2a2b30,#2a2b30) 0 58px/70% 12px no-repeat,linear-gradient(#1e1f23,#1e1f23) 0 100px/48% 160px no-repeat,linear-gradient(#1e1f23,#1e1f23) 100% 100px/48% 160px no-repeat}
 
 /* ----- drawings ----- */
 .art{display:block;width:100%;height:100%;overflow:visible}
@@ -548,17 +552,73 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   var styleEl = document.createElement("style"); styleEl.textContent = CSS; root.appendChild(styleEl);
   var w = document.createElement("div");
   w.className = "w " + MODE + (PREVIEW && MODE === "bubble" ? " site" : "");
-  // Dark mode (chat link page only; on store websites the chat stays light): the dashboard preview sends ?theme=,
-  // otherwise the visitor's saved choice, otherwise the device setting.
+  // Light / dark:
+  //  - on a website: the chat follows the website itself (its dark/light class or data-theme, otherwise how dark its
+  //    background is) and switches live when the website switches. data-theme="light" or "dark" on the script tag forces one.
+  //  - chat link page: the visitor's saved choice (sun/moon button), otherwise the device setting.
+  //  - dashboard preview: ?theme= and live messages from the dashboard.
   var darkMq = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
+  var FORCED = (me.getAttribute("data-theme") || "").toLowerCase();
+  if (FORCED !== "dark" && FORCED !== "light") FORCED = "";
   function savedTheme() { if (PREVIEW) return qs.get("theme"); try { return localStorage.getItem("sb-theme"); } catch (e) { return null; } }
   function setDark(on) {
-    if (MODE !== "page") return;
-    w.classList.toggle("dark", on);
-    document.documentElement.setAttribute("data-theme", on ? "dark" : "light");
+    w.classList.toggle("dark", !!on);
+    if (MODE === "page") document.documentElement.setAttribute("data-theme", on ? "dark" : "light");
   }
-  var theme0 = savedTheme(); setDark(theme0 ? theme0 === "dark" : !!(darkMq && darkMq.matches));
-  if (darkMq && darkMq.addEventListener) darkMq.addEventListener("change", function (e) { if (!savedTheme()) setDark(e.matches); });
+  var cvs = null;
+  function rgbaOf(css) {   // any CSS color (rgb, hsl, oklch, named...) -> [r, g, b, a] through a 1px canvas
+    try {
+      cvs = cvs || document.createElement("canvas"); cvs.width = cvs.height = 1;
+      var x = cvs.getContext("2d", { willReadFrequently: true });
+      x.clearRect(0, 0, 1, 1); x.fillStyle = "rgba(0,0,0,0)"; x.fillStyle = css; x.fillRect(0, 0, 1, 1);
+      var d = x.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255];
+    } catch (e) { return null; }
+  }
+  var DARK_RX = /(^|\s)(dark|dark-mode|dark-theme|theme-dark|is-dark|night|night-mode)(\s|$)/;
+  var LIGHT_RX = /(^|\s)(light|light-mode|light-theme|theme-light|is-light)(\s|$)/;
+  function hostIsDark() {
+    var els = [document.documentElement, document.body], i, el;
+    // 1) what the website says about itself
+    for (i = 0; i < els.length; i++) {
+      el = els[i]; if (!el) continue;
+      var t = ["data-theme", "data-bs-theme", "data-color-scheme", "data-mode", "data-color-mode"]
+        .map(function (a) { return el.getAttribute(a) || ""; }).join(" ").toLowerCase();
+      if (/\bdark\b/.test(t)) return true;
+      if (/\blight\b/.test(t)) return false;
+      var cls = (typeof el.className === "string" ? el.className : "").toLowerCase();
+      if (DARK_RX.test(cls)) return true;
+      if (LIGHT_RX.test(cls)) return false;
+    }
+    // 2) how dark its background really is
+    for (i = 1; i >= 0; i--) {
+      el = els[i]; if (!el) continue;
+      var c = rgbaOf(getComputedStyle(el).backgroundColor);
+      if (c && c[3] >= 0.5) return (c[0] * 299 + c[1] * 587 + c[2] * 114) / 1000 < 128;
+    }
+    // 3) no background at all: the browser paints it from color-scheme
+    var cs = (getComputedStyle(document.documentElement).colorScheme || "").toLowerCase();
+    return cs.indexOf("dark") >= 0 && (cs.indexOf("light") < 0 || !!(darkMq && darkMq.matches));
+  }
+  function followHost() {
+    var t1, t2;
+    function check() { setDark(hostIsDark()); }
+    function soon() { clearTimeout(t1); clearTimeout(t2); t1 = setTimeout(check, 30); t2 = setTimeout(check, 450); }  // again after a color transition
+    check();
+    if (window.MutationObserver) {
+      var mo = new MutationObserver(soon), opts = { attributes: true, attributeFilter: ["class", "style", "data-theme", "data-bs-theme", "data-color-scheme", "data-mode", "data-color-mode"] };
+      mo.observe(document.documentElement, opts);
+      if (document.body) mo.observe(document.body, opts);
+      else document.addEventListener("DOMContentLoaded", function () { mo.observe(document.body, opts); soon(); });
+    }
+    if (darkMq && darkMq.addEventListener) darkMq.addEventListener("change", soon);
+    window.addEventListener("load", soon);
+  }
+  if (FORCED) setDark(FORCED === "dark");
+  else if (PREVIEW || MODE === "page") {
+    var theme0 = savedTheme(); setDark(theme0 ? theme0 === "dark" : !!(darkMq && darkMq.matches));
+    if (darkMq && darkMq.addEventListener) darkMq.addEventListener("change", function (e) { if (!savedTheme()) setDark(e.matches); });
+  }
+  else followHost();
   w.innerHTML =
     '<div class="launcher"><div class="hello"><span class="helloTxt"></span><button class="x" aria-label="إخفاء">×</button></div>' +
     '<button class="lb bubbleBtn" aria-label="افتح الشات"></button></div>' +
@@ -581,6 +641,9 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   function applyLook() {
     var p = palette(cfg.color);
     w.style.setProperty("--c", p.c); w.style.setProperty("--c2", p.c2); w.style.setProperty("--c3", p.c3); w.style.setProperty("--on", p.on); w.style.setProperty("--soft", p.soft);
+    // dark surfaces: near-black with a hint of the brand color, so the dark chat matches the brand like the light one
+    w.style.setProperty("--dbg", mix(p.c, "#121315", 0.93)); w.style.setProperty("--dcard", mix(p.c, "#1a1b1e", 0.92));
+    w.style.setProperty("--dbot", mix(p.c, "#222327", 0.88)); w.style.setProperty("--dline", mix(p.c, "#2e2f34", 0.86));
     var st = styleOf(cfg.style), S = STYLES[st];
     w.className = w.className.replace(/\bst-\S+/g, "").replace(/\btall\b/g, "").trim() + " st-" + st + (S.tall ? " tall" : "");
     var btn = $(".lb");

@@ -1,4 +1,4 @@
-﻿// api/knowledge.ashx — a store owner's data: add text, upload files (txt/md/csv/pdf/docx/xlsx), edit, delete.
+// api/knowledge.ashx — a store owner's data: add text, upload files (txt/md/csv/pdf/docx/xlsx), edit, delete.
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -43,6 +43,96 @@ namespace RiwaqChat
                     if (!Web.Allow("kn:" + s.Id, 60, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "تعديلات كتير، استنى شوية."); return; }
 
                     string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
+
+                    // ---- Shopify: connect (and sync now), sync again, disconnect ----
+                    if (action == "shopify-connect" || action == "shopify-sync")
+                    {
+                        if (!Web.Allow("shop:" + s.Id, 12, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "حدّثت كتير، استنى شوية وجرّب تاني."); return; }
+                        string domain;
+                        if (action == "shopify-connect")
+                        {
+                            var body = Web.Body(req, 2000);
+                            domain = Shopify.NormalizeDomain(Web.Str(body, "domain", 300));
+                            if (domain == null) { Web.Error(res, 400, "bad_domain", "اكتب دومين متجرك صح، مثلًا my-shop.myshopify.com أو www.mystore.com"); return; }
+                        }
+                        else
+                        {
+                            domain = s.ShopifyDomain;
+                            if (string.IsNullOrEmpty(domain)) { Web.Error(res, 400, "not_connected", "اربط متجرك على Shopify الأول."); return; }
+                        }
+                        var early = Storage.CheckRoom(c, 0);
+                        if (early != null) { Web.Error(res, 507, "storage_full", early); return; }
+                        Shopify.SyncResult r;
+                        var adm = action == "shopify-sync" ? ShopifyAdmin.For(s) : null;   // full connection -> Admin API
+                        try { using (var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromMinutes(4))) r = adm != null ? await ShopifyAdmin.FetchCatalog(adm, cts.Token) : await Shopify.Fetch(domain, cts.Token); }
+                        catch (ShopifyException ex) { Web.Error(res, 400, "shopify_failed", ex.Message); return; }
+                        catch (Exception ex) { Log.Error(ex); Web.Error(res, 502, "shopify_failed", "مقدرناش نوصل لمتجرك على Shopify دلوقتي. اتأكد من الدومين وجرّب تاني."); return; }
+                        var saveErr = Shopify.Save(c, s.Id, r);
+                        if (saveErr != null) { Web.Error(res, 400, "too_much", saveErr); return; }
+                        Web.Json(res, 200, new Dictionary<string, object> { { "domain", r.Domain }, { "products", r.Products }, { "policies", r.Policies }, { "shopName", r.ShopName ?? "" }, { "chars", r.Text.Length } });
+                        return;
+                    }
+                    // Full connection: the owner's own Shopify app (Client ID + secret) -> Admin API.
+                    if (action == "shopify-admin-connect")
+                    {
+                        if (!Web.Allow("shopadm:" + s.Id, 10, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "جرّبت كتير، استنى شوية وجرّب تاني."); return; }
+                        var body = Web.Body(req, 4000);
+                        string shop = ShopifyAdmin.NormalizeShop(Web.Str(body, "shop", 300));
+                        string clientId = (Web.Str(body, "clientId", 200) ?? "").Trim();
+                        string secret = (Web.Str(body, "secret", 300) ?? "").Trim();
+                        if (shop == null) { Web.Error(res, 400, "bad_shop", "اكتب دومين متجرك اللي آخره .myshopify.com (تلاقيه في Shopify: Settings ← Domains)."); return; }
+                        if (!System.Text.RegularExpressions.Regex.IsMatch(clientId, "^[A-Za-z0-9_-]{8,100}$")) { Web.Error(res, 400, "bad_client", "الـ Client ID مش مظبوط. انسخه زي ما هو من إعدادات التطبيق."); return; }
+                        if (secret.Length < 10 || secret.Length > 300 || secret.Contains(" ")) { Web.Error(res, 400, "bad_secret", "الـ Client secret مش مظبوط. انسخه زي ما هو من إعدادات التطبيق."); return; }
+                        var early = Storage.CheckRoom(c, 0);
+                        if (early != null) { Web.Error(res, 507, "storage_full", early); return; }
+
+                        var creds = new ShopifyAdmin.Creds { StoreId = s.Id, Shop = shop, ClientId = clientId, Secret = secret, Slug = s.Slug };
+                        ShopifyAdmin.Forget(creds);
+                        ShopifyAdmin.TokenInfo tok;
+                        Shopify.SyncResult r;
+                        try
+                        {
+                            tok = await ShopifyAdmin.Token(creds, true);
+                            using (var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromMinutes(4))) r = await ShopifyAdmin.FetchCatalog(creds, cts.Token);
+                        }
+                        catch (ShopifyException ex) { Web.Error(res, 400, "shopify_failed", ex.Message); return; }
+                        catch (Exception ex) { Log.Error(ex); Web.Error(res, 502, "shopify_failed", "مقدرناش نوصل لـ Shopify دلوقتي. جرّب تاني كمان شوية."); return; }
+
+                        bool orders = ShopifyAdmin.Has(tok.Scopes, "read_orders");
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyShop=@sh, ShopifyClientId=@ci, ShopifySecret=@se, ShopifyScopes=@sc, ShopifyOrders=@o, ShopifyWebhooks=0 WHERE Id=@s",
+                            "@sh", shop, "@ci", clientId, "@se", Secrets.Protect(secret), "@sc", tok.Scopes, "@o", orders, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        var saveErr = Shopify.Save(c, s.Id, r);
+                        if (saveErr != null) { Web.Error(res, 400, "too_much", saveErr); return; }
+
+                        // instant updates: Shopify calls us when a product or its stock changes (needs our site to be reachable over https)
+                        string siteBase = "https://" + req.Url.Host + req.ApplicationPath;
+                        int hooks = await ShopifyAdmin.RegisterWebhooks(creds, siteBase, tok.Scopes);
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyWebhooks=@w WHERE Id=@s", "@w", hooks, "@s", s.Id)) cmd.ExecuteNonQuery();
+
+                        var missing = new List<string>();
+                        foreach (var w in ShopifyAdmin.Wanted) if (!ShopifyAdmin.Has(tok.Scopes, w)) missing.Add(w);
+                        Web.Json(res, 200, new Dictionary<string, object> {
+                            { "shop", shop }, { "products", r.Products }, { "policies", r.Policies }, { "shopName", r.ShopName ?? "" },
+                            { "orders", orders }, { "webhooks", hooks }, { "missing", missing } });
+                        return;
+                    }
+                    if (action == "shopify-orders")
+                    {
+                        var body = Web.Body(req, 500);
+                        object en; bool on = body.TryGetValue("enabled", out en) && en is bool && (bool)en;
+                        if (on && !ShopifyAdmin.Has(s.ShopifyScopes, "read_orders")) { Web.Error(res, 400, "no_scope", "التطبيق ناقصه صلاحية read_orders. ضيفها في Scopes واعمل Release للنسخة ووافق عليها، وبعدين اربط تاني."); return; }
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyOrders=@o WHERE Id=@s", "@o", on, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        Db.BumpVersion(c, s.Id);   // the assistant's instructions change with it
+                        Web.Json(res, 200, new { ok = true, orders = on });
+                        return;
+                    }
+                    if (action == "shopify-disconnect")
+                    {
+                        ShopifyAdmin.Forget(ShopifyAdmin.For(s));
+                        Shopify.Disconnect(c, s.Id);
+                        Web.Json(res, 200, new { ok = true });
+                        return;
+                    }
 
                     // Suggested questions written by Claude from the store's data (not saved: the owner reviews them, then saves).
                     if (action == "suggest")
@@ -118,6 +208,7 @@ namespace RiwaqChat
                         string title = Web.Str(b, "title", 200);
                         string content = Web.Str(b, "content", MaxItemChars);
                         if (id == null || string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content)) { Web.Error(res, 400, "empty", "اكتب عنوان ومحتوى."); return; }
+                        if (IsShopifyItem(c, s.Id, id.Value)) { Web.Error(res, 400, "shopify_item", ShopifyItemMessage); return; }
                         var err = CheckSize(c, s.Id, id.Value, content);
                         if (err != null) { Web.Error(res, 400, "too_much", err); return; }
                         var room = Storage.CheckRoom(c, content.Length);
@@ -134,6 +225,7 @@ namespace RiwaqChat
                     {
                         var id = Web.Int(b, "id");
                         if (id == null) { Web.Error(res, 400, "bad_request"); return; }
+                        if (IsShopifyItem(c, s.Id, id.Value)) { Web.Error(res, 400, "shopify_item", ShopifyItemMessage); return; }
                         using (var cmd = Db.Cmd(c, "DELETE FROM dbo.KnowledgeItems WHERE Id=@id AND StoreId=@s", "@id", id.Value, "@s", s.Id)) cmd.ExecuteNonQuery();
                         Db.BumpVersion(c, s.Id);
                         Web.Json(res, 200, new { ok = true });
@@ -147,7 +239,14 @@ namespace RiwaqChat
             catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error", "حصلت مشكلة، جرّب تاني."); }
         }
 
-        static string CheckSize(SqlConnection c, int storeId, int exceptId, string content)
+        const string ShopifyItemMessage = "الجزء ده بيتحدث تلقائيًا من Shopify، فمش بيتعدّل من هنا. عدّل المنتج على Shopify ودوس \"حدّث دلوقتي\"، ولو مش عايزه دوس \"إلغاء الربط\".";
+        static bool IsShopifyItem(SqlConnection c, int storeId, int id)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.KnowledgeItems WHERE Id=@id AND StoreId=@s AND SourceType=@t", "@id", id, "@s", storeId, "@t", Shopify.SourceType))
+                return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+        }
+
+        internal static string CheckSize(SqlConnection c, int storeId, int exceptId, string content)
         {
             if (content.Length > MaxItemChars) return "الجزء ده أكبر من " + MaxItemChars.ToString("N0") + " حرف. قسّمه لأكتر من جزء.";
             long others;
@@ -158,7 +257,7 @@ namespace RiwaqChat
             return null;
         }
 
-        static int Insert(SqlConnection c, int storeId, string title, string type, string fileName, string content)
+        internal static int Insert(SqlConnection c, int storeId, string title, string type, string fileName, string content)
         {
             int id;
             using (var cmd = Db.Cmd(c, "INSERT INTO dbo.KnowledgeItems (StoreId, Title, SourceType, FileName, Content) OUTPUT INSERTED.Id VALUES (@s,@t,@ty,@f,@c)",

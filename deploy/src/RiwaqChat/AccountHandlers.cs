@@ -23,6 +23,12 @@ namespace RiwaqChat
                 { "id", s.Id }, { "slug", s.Slug }, { "name", s.Name }, { "email", s.OwnerEmail }, { "isAdmin", s.IsAdmin },
                 { "status", s.Status }, { "botName", s.BotName }, { "welcome", s.Welcome ?? "" }, { "instructions", s.Instructions ?? "" },
                 { "allowedOrigins", s.AllowedOrigins ?? "" }, { "bubbleStyle", s.BubbleStyle }, { "brandColor", s.BrandColor }, { "chatTitle", s.ChatTitle ?? "" }, { "suggestions", s.Suggestions ?? "" },
+                { "shopify", new Dictionary<string, object> {
+                    { "domain", s.ShopifyDomain ?? "" }, { "status", s.ShopifyStatus ?? "" }, { "syncedAt", s.ShopifySyncedAt.HasValue ? s.ShopifySyncedAt.Value.ToString("o") : "" },
+                    // full connection (never the secret itself)
+                    { "full", !string.IsNullOrEmpty(s.ShopifyClientId) }, { "shop", s.ShopifyShop ?? "" }, { "scopes", s.ShopifyScopes ?? "" },
+                    { "orders", s.ShopifyOrders }, { "ordersAvailable", ShopifyAdmin.Has(s.ShopifyScopes, "read_orders") }, { "webhooks", s.ShopifyWebhooks },
+                    { "missing", ShopifyAdmin.Wanted.Where(w => !ShopifyAdmin.Has(s.ShopifyScopes, w)).ToArray() } } },
                 { "usage", new Dictionary<string, object> { { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", s.MonthlyTokenLimit } } },
                 { "storage", storage },
                 { "knowledge", new Dictionary<string, object> { { "items", items }, { "chars", chars }, { "maxChars", KnowledgeHandler.MaxStoreChars },
