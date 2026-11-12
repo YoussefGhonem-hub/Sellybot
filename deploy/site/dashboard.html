@@ -3,17 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>لوحة تحكم المتجر</title>
+<title>Sellybot · لوحة تحكم المتجر</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 2 60 72'%3E%3Cpath d='M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15' fill='none' stroke='%23E8774A' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15' fill='none' stroke='%233a2a20' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M58 22l8-6' stroke='%23E8774A' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M26 54l-8 6' stroke='%233a2a20' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  // Theme: the saved choice (light / dark) wins, otherwise follow the device. Runs before the page paints, so no flash.
+  (function () {
+    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}
+    var m = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
+    function apply() { document.documentElement.setAttribute("data-theme", t || (m && m.matches ? "dark" : "light")); }
+    apply();
+    if (m && m.addEventListener) m.addEventListener("change", function () { if (!t) apply(); });
+    window.sbTheme = function (v) { t = v; try { localStorage.setItem("sb-theme", v); } catch (e) {} apply(); };
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
+    color-scheme:light;
     --bg:#f7f4f0; --card:#ffffff; --ink:#221a14; --muted:#7f7266; --line:#ece4db; --soft:#fbf7f3;
     --brand:#e8774a; --brand2:#f5a25d; --ok:#2e9d5b; --err:#c0392b; --shadow:0 1px 2px rgba(40,25,10,.05),0 8px 24px rgba(40,25,10,.06);
+    --lift:0 30px 80px rgba(60,35,15,.14);
   }
-  @media (prefers-color-scheme: dark){
-    :root{ --bg:#17120e; --card:#211a15; --ink:#f4ebe2; --muted:#ad9e90; --line:#33291f; --soft:#2a211a; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3); }
+  :root[data-theme=dark]{
+    color-scheme:dark;
+    --bg:#16110d; --card:#211a15; --ink:#f4ebe2; --muted:#b3a496; --line:#362b22; --soft:#2a211a; --ok:#4cc27e; --err:#ff8a7a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3); --lift:0 30px 80px rgba(0,0,0,.5);
   }
+  /* smooth switch when the theme button is pressed */
+  .theme-anim,.theme-anim *{transition:background-color .35s,border-color .35s,color .35s,box-shadow .35s!important}
+  .theme-anim .theme-btn svg{transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s!important}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
   button,input,textarea,select{font:inherit;color:inherit}
   a{color:var(--brand)}
   [hidden]{display:none!important}
@@ -22,8 +44,10 @@
   .nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
   .nav-in{max-width:1080px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:18px}
   .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);flex:none}
-  .logo .mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 4px 12px rgba(232,119,74,.35)}
-  .logo b{display:block;font-size:16px;line-height:1.1}
+  .logo .mark{width:30px;height:36px;flex:none;color:var(--ink);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+  .logo:hover .mark{transform:rotate(-8deg) scale(1.06)}
+  .logo b{display:block;font-size:19px;line-height:1.1;direction:ltr;text-align:right;letter-spacing:-.3px;font-weight:700}
+  .logo b span{color:var(--brand)}
   .logo small{display:block;font-size:11px;color:var(--muted)}
   .links{display:flex;gap:4px;flex:1;height:100%;overflow-x:auto;scrollbar-width:none}
   .links::-webkit-scrollbar{display:none}
@@ -31,6 +55,12 @@
   .links button:hover{color:var(--ink)}
   .links button.on{color:var(--ink);font-weight:600}
   .links button.on:after{content:"";position:absolute;inset:auto 10px 0 10px;height:3px;border-radius:3px 3px 0 0;background:var(--brand)}
+  .theme-btn{flex:none;margin-inline-start:auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;overflow:hidden;transition:border-color .2s,transform .2s}
+  .theme-btn:hover{border-color:var(--brand);transform:rotate(-12deg)}
+  .theme-btn svg{width:18px;height:18px;grid-area:1/1;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+  .theme-btn .moon{transform:translateY(130%) rotate(-90deg);opacity:0}
+  [data-theme=dark] .theme-btn .sun{transform:translateY(-130%) rotate(90deg);opacity:0}
+  [data-theme=dark] .theme-btn .moon{transform:none;opacity:1}
   .acct{position:relative;flex:none}
   .acct-btn{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 10px 4px 4px;cursor:pointer}
   .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
@@ -46,7 +76,7 @@
   @media (max-width:760px){
     .nav-in{flex-wrap:wrap;height:auto;padding-top:10px;gap:10px}
     .logo small{display:none}
-    .acct{margin-inline-start:auto}
+    .theme-btn{margin-inline-start:auto}
     .acct-txt{display:none}
     .links{order:3;flex-basis:100%;height:44px}
   }
@@ -94,7 +124,7 @@
   th,td{padding:8px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}
   th{color:var(--muted);font-weight:600;font-size:12px}
   .table-wrap{overflow-x:auto}
-  .modal{position:fixed;inset:0;background:rgba(30,15,5,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:60}
+  .modal{position:fixed;inset:0;background:rgba(30,15,5,.45);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:60}
   .modal .card{width:100%;max-width:760px}
   .modal textarea{min-height:46vh}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;transition:transform .3s;z-index:70;max-width:90vw}
@@ -105,17 +135,139 @@
   .tip div{color:var(--muted);margin-top:4px}
   .tip b{color:var(--ink);font-weight:600}
   .badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:#fff1d6;color:#9a5b00;margin-inline-start:6px;vertical-align:1px}
-  @media (prefers-color-scheme: dark){.badge{background:#3d2c10;color:#f3c26b}}
+  [data-theme=dark] .badge{background:#3d2c10;color:#f3c26b}
   .banner{margin:0 0 16px;padding:12px 16px;border-radius:12px;font-size:14px;background:#fff1d6;color:#7a4700;border:1px solid #f3c26b}
   .banner.full{background:#fdecea;color:var(--err);border-color:#f1a7a0}
-  @media (prefers-color-scheme: dark){.banner{background:#3d2c10;color:#f3c26b;border-color:#6b4b14}.banner.full{background:#3a1d1b;color:#ffb4ab;border-color:#6b2a24}}
+  [data-theme=dark] .banner{background:#3d2c10;color:#f3c26b;border-color:#6b4b14}[data-theme=dark] .banner.full{background:#3a1d1b;color:#ffb4ab;border-color:#6b2a24}
 
-  /* ---------- auth ---------- */
-  .auth{max-width:440px;margin:40px auto}
+  /* ---------- auth (login / signup page) ---------- */
   .seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:4px;margin:12px 0 4px}
   .seg button{flex:1;border:0;background:none;padding:8px;border-radius:9px;cursor:pointer;color:var(--muted)}
   .seg button.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.08)}
   details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:12px}
+
+  .auth-page{position:relative;min-height:calc(100vh - 65px);min-height:calc(100dvh - 65px);display:flex;align-items:center;overflow:hidden;isolation:isolate}
+  .auth-bg{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+  .auth-bg:after{content:"";position:absolute;inset:0;background-image:radial-gradient(color-mix(in srgb,var(--ink) 9%,transparent) 1px,transparent 1px);background-size:22px 22px;
+    -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 20%,transparent 75%)}
+  .orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5}
+  .orb.o1{width:460px;height:460px;background:#f5a25d;top:-140px;right:-80px;animation:drift 18s ease-in-out infinite}
+  .orb.o2{width:380px;height:380px;background:#e8774a;bottom:-160px;left:-60px;opacity:.35;animation:drift 22s ease-in-out -6s infinite reverse}
+  .orb.o3{width:300px;height:300px;background:#f7c6a3;top:35%;left:38%;opacity:.35;animation:drift 26s ease-in-out -12s infinite}
+  [data-theme=dark] .orb{opacity:.16}[data-theme=dark] .orb.o3{opacity:.08}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-30px,25px) scale(.95)}}
+  .fb{position:absolute;bottom:-50px;left:var(--x);font-size:var(--z,20px);opacity:0;animation:rise var(--d) linear var(--s) infinite}
+  @keyframes rise{0%{transform:translateY(0) rotate(0);opacity:0}12%{opacity:.55}85%{opacity:.35}100%{transform:translateY(-105vh) rotate(28deg);opacity:0}}
+
+  .auth-grid{width:100%;max-width:1140px;margin:0 auto;padding:32px 20px;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+    grid-template-areas:"top card" "bot card";column-gap:64px;row-gap:0;align-items:center}
+  .hero-top{grid-area:top;align-self:end}
+  .hero-bot{grid-area:bot;align-self:start}
+  .auth-card{grid-area:card}
+  .hero-top>*,.hero-bot>*{animation:fadeUp .7s cubic-bezier(.2,.8,.2,1) both}
+  .hero-top>:nth-child(2){animation-delay:.08s}.hero-top>:nth-child(3){animation-delay:.16s}
+  .hero-bot>:nth-child(1){animation-delay:.26s}.hero-bot>:nth-child(2){animation-delay:.36s}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;padding:6px 14px 6px 12px;border-radius:999px;
+    background:color-mix(in srgb,var(--brand) 12%,var(--card));color:color-mix(in srgb,var(--brand) 80%,var(--ink));border:1px solid color-mix(in srgb,var(--brand) 25%,transparent)}
+  .eyebrow .pulse{width:8px;height:8px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 0 rgba(232,119,74,.6);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 8px rgba(232,119,74,0)}100%{box-shadow:0 0 0 0 rgba(232,119,74,0)}}
+  .hero-top h1{font-size:44px;line-height:1.25;margin:16px 0 12px;letter-spacing:-.5px;font-weight:700}
+  .rot{display:inline-block;background:linear-gradient(100deg,var(--brand),#f0a04b 60%,#e8574a);-webkit-background-clip:text;background-clip:text;color:transparent;
+    transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .35s,filter .35s}
+  .rot.out{transform:translateY(-45%);opacity:0;filter:blur(4px)}
+  .rot.pre{transform:translateY(45%);opacity:0;filter:blur(4px);transition:none}
+  .lead{font-size:17px;color:var(--muted);margin:0;max-width:520px}
+  .lead b{color:var(--ink);font-weight:600}
+
+  .demo{margin:22px 0 18px;max-width:430px;background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--lift);overflow:hidden}
+  .demo-wrap{animation:floatY 7s ease-in-out infinite}
+  @keyframes floatY{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(.4deg)}}
+  .demo-h{display:flex;align-items:center;gap:10px;padding:11px 14px;color:#fff;background:linear-gradient(120deg,#e8774a,#f5a25d,#e8774a);background-size:200% 100%;animation:sheen 8s linear infinite}
+  @keyframes sheen{to{background-position:200% 0}}
+  .demo-h .dav{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center}
+  .demo-h .dav svg{width:15px;height:18px}
+  .demo-h b{display:block;font-size:14px;line-height:1.2}
+  .demo-h small{display:flex;align-items:center;gap:5px;font-size:11px;opacity:.95}
+  .demo-h small i{width:7px;height:7px;border-radius:50%;background:#7CFFB2}
+  .demo-b{height:184px;padding:12px 14px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;overflow:hidden;background:linear-gradient(var(--card),var(--soft))}
+  .dm{max-width:84%;padding:8px 12px;border-radius:16px;font-size:13.5px;line-height:1.65;animation:dmIn .45s cubic-bezier(.34,1.56,.64,1) both;transition:opacity .4s,transform .4s}
+  .dm.u{align-self:flex-start;color:#fff;background:linear-gradient(135deg,#e8774a,#f5a25d);border-bottom-right-radius:5px}
+  .dm.b{align-self:flex-end;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .dm.b b{color:var(--brand)}
+  .dm.dots{display:flex;gap:4px;padding:12px 14px}
+  .dm.dots i{width:7px;height:7px;border-radius:50%;background:var(--brand);animation:dotb 1.1s infinite}
+  .dm.dots i:nth-child(2){animation-delay:.15s;background:var(--brand2)}.dm.dots i:nth-child(3){animation-delay:.3s}
+  .demo-b.clear .dm{opacity:0;transform:translateY(-14px)}
+  @keyframes dmIn{from{opacity:0;transform:translateY(12px) scale(.85)}to{opacity:1;transform:none}}
+  @keyframes dotb{0%,70%,100%{transform:translateY(0);opacity:.45}35%{transform:translateY(-6px);opacity:1}}
+
+  .feats{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:560px}
+  .feats li{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--card) 70%,transparent);border:1px solid var(--line);transition:transform .25s,border-color .25s}
+  .feats li:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}
+  .feats li>div{display:flex;flex-direction:column}
+  .feats .fi{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;background:color-mix(in srgb,var(--brand) 13%,var(--card))}
+  .feats b{font-size:14px;font-weight:600}
+  .feats small{font-size:12px;color:var(--muted);line-height:1.5}
+
+  .auth-card{position:relative;width:100%;max-width:440px;justify-self:center;padding:32px 30px 26px;border-radius:26px;
+    background:color-mix(in srgb,var(--card) 90%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+    border:1px solid var(--line);box-shadow:var(--lift);animation:cardIn .8s cubic-bezier(.34,1.4,.64,1) .1s both}
+  .auth-card:before{content:"";position:absolute;inset:0 30px auto;height:3px;border-radius:0 0 4px 4px;background:linear-gradient(90deg,transparent,var(--brand),var(--brand2),transparent)}
+  @keyframes cardIn{from{opacity:0;transform:translateY(26px) scale(.97)}to{opacity:1;transform:none}}
+  .auth-card.shake{animation:shakeX .45s}
+  @keyframes shakeX{20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+  .ac-mark{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;margin-bottom:14px;background:color-mix(in srgb,var(--brand) 12%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 22%,transparent)}
+  .ac-mark svg{width:24px;height:29px;color:var(--ink);animation:wob 5s ease-in-out infinite}
+  @keyframes wob{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}90%{transform:rotate(9deg)}95%{transform:rotate(-4deg)}}
+  .ac-head h2{margin:0;font-size:24px;font-weight:700}
+  .ac-head p{margin:2px 0 0;color:var(--muted);font-size:14px}
+  .auth-seg{position:relative;margin:18px 0 6px}
+  .auth-seg button{position:relative;z-index:1;font-weight:500;transition:color .25s}
+  .auth-seg button.on{background:none;box-shadow:none}
+  .auth-seg .pill{position:absolute;top:4px;bottom:4px;right:4px;width:calc(50% - 4px);border-radius:9px;background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,.1);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+  .auth-seg.sign .pill{transform:translateX(-100%)}
+  .auth-card form{animation:formIn .45s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes formIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+  .field{position:relative}
+  .field>svg{position:absolute;right:13px;top:50%;width:18px;height:18px;margin-top:-9px;color:var(--muted);pointer-events:none;transition:color .2s}
+  .field input{padding-right:42px!important;height:46px;border-radius:12px!important;transition:border-color .2s,box-shadow .2s,background .2s}
+  .field:focus-within>svg{color:var(--brand)}
+  .field .eye{position:absolute;left:6px;top:50%;margin-top:-17px;width:34px;height:34px;border:0;background:none;border-radius:8px;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+  .field .eye:hover{color:var(--ink);background:var(--soft)}
+  .field .eye svg{width:18px;height:18px}
+  .field.pw input{padding-left:44px!important}
+  .auth-card .btn.big{width:100%;height:48px;margin-top:10px;border-radius:12px;font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:linear-gradient(120deg,#e8774a,#f08a4f,#e8774a);background-size:200% 100%;transition:background-position .5s,transform .15s,box-shadow .2s}
+  .auth-card .btn.big:hover{background-position:100% 0;box-shadow:0 10px 24px rgba(232,119,74,.35)}
+  .auth-card .btn.big .arr{transition:transform .25s}
+  .auth-card .btn.big:hover .arr{transform:translateX(-5px)}
+  .btn.loading{pointer-events:none;opacity:.85}
+  .btn.loading .arr{display:none}
+  .btn.loading:after{content:"";width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .trust{display:flex;align-items:center;justify-content:center;gap:6px;margin:16px 0 0;font-size:12px;color:var(--muted)}
+  .trust svg{width:14px;height:14px}
+
+  @media (max-width:940px){
+    .auth-page{align-items:flex-start}
+    .auth-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "card" "bot";padding:28px 16px 40px;row-gap:26px;justify-items:center;text-align:center}
+    .hero-top h1{font-size:34px;margin:14px 0 10px}
+    .lead{font-size:15.5px;margin:0 auto}
+    .auth-card{text-align:right}
+    .demo{margin:0 auto 18px;text-align:right}
+    .feats{margin:0 auto;text-align:right}
+  }
+  @media (max-width:560px){
+    .hero-top h1{font-size:28px}
+    .lead{font-size:14.5px}
+    .auth-card{padding:24px 18px 20px;border-radius:22px}
+    .feats{grid-template-columns:minmax(0,1fr)}
+    .feats li{flex-direction:row;align-items:center;gap:12px}
+    .feats li>div{display:flex;flex-direction:column}
+    .demo-b{height:190px}
+  }
+  @media (prefers-reduced-motion:reduce){.auth-page *,.auth-page *:before,.auth-page *:after{animation:none!important;transition:none!important}}
 
   /* ---------- look ---------- */
   .look{display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start}
@@ -138,7 +290,7 @@
   .colorrow input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-radius:10px;padding:2px;background:var(--bg);cursor:pointer}
   .colorrow input[type=text]{max-width:130px}
   .phone{position:sticky;top:84px;background:#111;border-radius:34px;padding:10px;box-shadow:var(--shadow)}
-  .phone iframe{display:block;width:100%;height:620px;border:0;border-radius:26px;background:#f4f1ee}
+  .phone iframe{display:block;width:100%;height:620px;border:0;border-radius:26px;background:var(--soft)}
   .phone .seg{margin:0 0 10px;background:#222;border-color:#333}
   .phone .seg button{color:#aaa}
   .phone .seg button.on{background:#3a3a3a;color:#fff}
@@ -170,7 +322,7 @@
   .kbd{display:inline-block;direction:ltr;font:12px ui-monospace,Consolas,monospace;background:var(--soft);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:0 6px;color:var(--ink)}
   .ok-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#e6f6ec;color:#1f7a45}
   .warn-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px;border-radius:999px;background:#fff1d6;color:#8a5200}
-  @media (prefers-color-scheme: dark){.ok-pill{background:#173726;color:#8be0ad}.warn-pill{background:#3d2c10;color:#f3c26b}}
+  [data-theme=dark] .ok-pill{background:#173726;color:#8be0ad}[data-theme=dark] .warn-pill{background:#3d2c10;color:#f3c26b}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media (max-width:860px){.two{grid-template-columns:1fr}}
 
@@ -197,7 +349,15 @@
 
 <header class="nav">
   <div class="nav-in">
-    <a class="logo" href="dashboard.html"><span class="mark">🐻</span><span><b>دبدوب</b><small>لوحة تحكم المتجر</small></span></a>
+    <a class="logo" href="dashboard.html" aria-label="Sellybot">
+      <svg class="mark" viewBox="12 2 60 72" aria-hidden="true">
+        <path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/>
+        <path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+        <path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/>
+        <path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <span><b>Selly<span>bot</span></b><small>لوحة تحكم المتجر</small></span>
+    </a>
     <nav class="links" id="navLinks" hidden>
       <button data-tab="data" class="on">📚 داتا المتجر</button>
       <button data-tab="look">🎨 شكل الشات</button>
@@ -205,6 +365,10 @@
       <button data-tab="settings">⚙️ المساعد</button>
       <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
     </nav>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="غيّر الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+    </button>
     <div class="acct" id="acct" hidden>
       <button class="acct-btn" id="acctBtn" aria-haspopup="true">
         <span class="avatar" id="acctAvatar">م</span>
@@ -222,37 +386,102 @@
 </header>
 
 <!-- ================= login / signup ================= -->
-<div class="wrap" id="authView" hidden>
-  <div class="card auth">
-    <div style="text-align:center;font-size:46px">🐻</div>
-    <h2 style="text-align:center;margin:4px 0 0">أهلاً بيك</h2>
-    <p style="text-align:center;color:var(--muted);margin:2px 0 0">ضيف داتا متجرك ودبدوب يرد على زباينك</p>
-    <div class="seg">
-      <button class="on" data-auth="login">تسجيل دخول</button>
-      <button data-auth="signup">حساب جديد</button>
+<div class="auth-page" id="authView" hidden>
+  <div class="auth-bg" aria-hidden="true">
+    <i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i>
+    <span class="fb" style="--x:6%;--d:17s;--s:0s">💬</span>
+    <span class="fb" style="--x:22%;--d:21s;--s:-7s;--z:16px">🛍️</span>
+    <span class="fb" style="--x:47%;--d:19s;--s:-3s;--z:15px">✨</span>
+    <span class="fb" style="--x:66%;--d:23s;--s:-11s">💬</span>
+    <span class="fb" style="--x:84%;--d:18s;--s:-5s;--z:17px">🫧</span>
+    <span class="fb" style="--x:94%;--d:25s;--s:-15s;--z:14px">⭐</span>
+  </div>
+
+  <div class="auth-grid">
+    <div class="hero-top">
+      <span class="eyebrow"><i class="pulse"></i>مساعد مبيعات بالذكاء الاصطناعي لمتجرك</span>
+      <h1>خلّي متجرك يرد على كل زبون<br><span class="rot" id="rotWord">في ثانية واحدة ⚡</span></h1>
+      <p class="lead">ارفع منتجاتك وأسعارك مرة واحدة، و<b>Sellybot</b> يجاوب أسئلة زباينك، يرشّحلهم المنتج المناسب، ويساعدهم يكمّلوا الشراء، وانت مرتاح.</p>
     </div>
-    <form id="loginForm">
-      <label>الإيميل أو معرّف المتجر</label>
-      <input type="text" id="lEmail" class="ltr" required autocomplete="username" placeholder="riwaq">
-      <label>الباسورد</label>
-      <input type="password" id="lPass" class="ltr" required autocomplete="current-password">
-      <div class="msg" id="lMsg"></div>
-      <button class="btn" style="width:100%;margin-top:6px">دخول</button>
-    </form>
-    <form id="signupForm" hidden>
-      <label>اسم المتجر</label>
-      <input type="text" id="sName" required maxlength="100" placeholder="مثلًا: رِواق">
-      <label>معرّف المتجر (بيظهر في لينك الشات)</label>
-      <input type="text" id="sSlug" class="ltr" required maxlength="30" placeholder="my-store">
-      <div class="hint">حروف إنجليزي صغيرة وأرقام وشرطة (-) بس. مثال: <span class="ltr" id="slugPreview">…/?store=my-store</span></div>
-      <label>الإيميل</label>
-      <input type="email" id="sEmail" class="ltr" required autocomplete="email">
-      <label>الباسورد (8 حروف على الأقل)</label>
-      <input type="password" id="sPass" class="ltr" required minlength="8" autocomplete="new-password">
-      <details><summary>عندي كود أدمن</summary><input type="text" id="sCode" class="ltr" placeholder="كود الأدمن" style="margin-top:6px"></details>
-      <div class="msg" id="sMsg"></div>
-      <button class="btn" style="width:100%;margin-top:6px">إنشاء الحساب</button>
-    </form>
+
+    <div class="auth-card" id="authCard">
+      <div class="ac-mark" aria-hidden="true">
+        <svg viewBox="12 2 60 72">
+          <path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/>
+          <path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+          <path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/>
+          <path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="ac-head"><h2 id="authTitle">أهلاً بيك تاني 👋</h2><p id="authSub">ادخل على لوحة متجرك وتابع مساعدك</p></div>
+      <div class="seg auth-seg" id="authSeg">
+        <span class="pill" aria-hidden="true"></span>
+        <button class="on" type="button" data-auth="login">تسجيل دخول</button>
+        <button type="button" data-auth="signup">حساب جديد</button>
+      </div>
+
+      <form id="loginForm">
+        <label for="lEmail">الإيميل أو معرّف المتجر</label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+          <input type="text" id="lEmail" class="ltr" required autocomplete="username" placeholder="you@store.com">
+        </div>
+        <label for="lPass">الباسورد</label>
+        <div class="field pw">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+          <input type="password" id="lPass" class="ltr" required autocomplete="current-password" placeholder="••••••••">
+          <button type="button" class="eye" aria-label="اظهر الباسورد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+        <div class="msg" id="lMsg"></div>
+        <button class="btn big" id="lBtn">دخول <span class="arr">←</span></button>
+      </form>
+
+      <form id="signupForm" hidden>
+        <label for="sName">اسم المتجر</label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 4.5 4h15L21 9.5"/><path d="M3 9.5a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v8h14v-8"/></svg>
+          <input type="text" id="sName" required maxlength="100" placeholder="مثلًا: رِواق">
+        </div>
+        <label for="sSlug">معرّف المتجر (بيظهر في لينك الشات)</label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>
+          <input type="text" id="sSlug" class="ltr" required maxlength="30" placeholder="my-store">
+        </div>
+        <div class="hint">حروف إنجليزي صغيرة وأرقام وشرطة (-) بس. لينكك: <span class="ltr" id="slugPreview">…/?store=my-store</span></div>
+        <label for="sEmail">الإيميل</label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
+          <input type="email" id="sEmail" class="ltr" required autocomplete="email" placeholder="you@store.com">
+        </div>
+        <label for="sPass">الباسورد (8 حروف على الأقل)</label>
+        <div class="field pw">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+          <input type="password" id="sPass" class="ltr" required minlength="8" autocomplete="new-password" placeholder="••••••••">
+          <button type="button" class="eye" aria-label="اظهر الباسورد"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+        <details><summary>عندي كود أدمن</summary><input type="text" id="sCode" class="ltr" placeholder="كود الأدمن" style="margin-top:6px"></details>
+        <div class="msg" id="sMsg"></div>
+        <button class="btn big" id="sBtn">إنشاء الحساب <span class="arr">←</span></button>
+      </form>
+      <p class="trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>اتصال آمن، والباسورد بيتخزن متشفّر</p>
+    </div>
+
+    <div class="hero-bot">
+      <div class="demo-wrap" aria-hidden="true">
+        <div class="demo">
+          <div class="demo-h">
+            <span class="dav"><svg viewBox="12 2 60 72"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".75"/></svg></span>
+            <span><b>مساعد متجرك</b><small><i></i>بيرد دلوقتي</small></span>
+          </div>
+          <div class="demo-b" id="demoBody"></div>
+        </div>
+      </div>
+      <ul class="feats">
+        <li><span class="fi">📄</span><div><b>ارفع أي ملف</b><small>Excel أو PDF أو Word أو نص عادي</small></div></li>
+        <li><span class="fi">🎨</span><div><b>بشكل متجرك</b><small>20 شكل للفقاعة وأي لون تحبه</small></div></li>
+        <li><span class="fi">⚡</span><div><b>سطر كود واحد</b><small>في Shopify أو أي موقع</small></div></li>
+      </ul>
+    </div>
   </div>
 </div>
 
@@ -297,6 +526,12 @@
       <button class="btn" id="saveLook">حفظ الشكل</button></div>
     <div class="look">
       <div>
+        <div class="card" style="margin-bottom:12px">
+          <h3>اسم الشات</h3>
+          <p class="sub">الاسم اللي بيظهر فوق في الشات جنب صورة المساعد، وفي عنوان صفحة الشات.</p>
+          <input type="text" id="chatTitle" maxlength="80" aria-label="اسم الشات">
+          <div class="hint">سيبه فاضي عشان يظهر <b id="chatTitleDef"></b> (اسم المساعد · اسم المتجر). مثلًا: "خدمة عملاء رِواق" أو "اسأل رِواق 💬".</div>
+        </div>
         <div class="card">
           <h3>شكل الفقاعة</h3>
           <p class="sub">الفقاعة اللي بتظهر في ركن موقعك، والزبون بيدوس عليها عشان يفتح الشات.</p>
@@ -426,7 +661,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="widget.js?v=20261112131553" data-art-only="1"></script>
+<script src="widget.js?v=20261112135442" data-art-only="1"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -454,31 +689,123 @@
     return data;
   }
 
+  // ---------------- theme (light / dark) ----------------
+  $("themeBtn").onclick = function () {
+    var d = document.documentElement, next = theme() === "dark" ? "light" : "dark";
+    d.classList.add("theme-anim"); window.sbTheme(next);
+    clearTimeout(this.t); this.t = setTimeout(function () { d.classList.remove("theme-anim"); }, 450);
+    try { $("preview").contentWindow.postMessage({ type: "chat-look", theme: next }, location.origin); } catch (e) {}
+  };
+
   // ---------------- auth ----------------
+  var AUTH_TEXT = { login: ["أهلاً بيك تاني 👋", "ادخل على لوحة متجرك وتابع مساعدك"], signup: ["يلا نبدأ 🚀", "اعمل حساب لمتجرك في أقل من دقيقة"] };
   document.querySelectorAll("[data-auth]").forEach(function (b) {
     b.onclick = function () {
+      var mode = b.dataset.auth;
       document.querySelectorAll("[data-auth]").forEach(function (x) { x.classList.toggle("on", x === b); });
-      $("loginForm").hidden = b.dataset.auth !== "login"; $("signupForm").hidden = b.dataset.auth !== "signup";
+      $("authSeg").classList.toggle("sign", mode === "signup");
+      $("loginForm").hidden = mode !== "login"; $("signupForm").hidden = mode !== "signup";
+      $("authTitle").textContent = AUTH_TEXT[mode][0]; $("authSub").textContent = AUTH_TEXT[mode][1];
+      var first = (mode === "login" ? $("lEmail") : $("sName")); if (matchMedia("(hover:hover)").matches) first.focus();
     };
   });
+  document.querySelectorAll(".field .eye").forEach(function (b) {
+    b.onclick = function () {
+      var inp = b.parentNode.querySelector("input"), show = inp.type === "password";
+      inp.type = show ? "text" : "password"; b.setAttribute("aria-label", show ? "اخفي الباسورد" : "اظهر الباسورد");
+      b.style.color = show ? "var(--brand)" : ""; inp.focus();
+    };
+  });
+  function shake() { var c = $("authCard"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake"); }
   $("sSlug").addEventListener("input", function () { this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, ""); $("slugPreview").textContent = BASE + "?store=" + (this.value || "my-store"); });
   $("slugPreview").textContent = BASE + "?store=my-store";
   $("loginForm").onsubmit = async function (e) {
-    e.preventDefault(); setMsg("lMsg", "");
+    e.preventDefault(); setMsg("lMsg", ""); $("lBtn").classList.add("loading");
     try { me = await api("api/auth.ashx?action=login", { method: "POST", json: { email: $("lEmail").value, password: $("lPass").value } }); showApp(); }
-    catch (err) { setMsg("lMsg", err.message); }
+    catch (err) { setMsg("lMsg", err.message); shake(); }
+    finally { $("lBtn").classList.remove("loading"); }
   };
   $("signupForm").onsubmit = async function (e) {
-    e.preventDefault(); setMsg("sMsg", "");
+    e.preventDefault(); setMsg("sMsg", ""); $("sBtn").classList.add("loading");
     try {
       me = await api("api/auth.ashx?action=signup", { method: "POST", json: { name: $("sName").value, slug: $("sSlug").value, email: $("sEmail").value, password: $("sPass").value, adminCode: $("sCode").value } });
       showApp(); toast("تم إنشاء متجرك 🎉 ابدأ ضيف الداتا");
-    } catch (err) { setMsg("sMsg", err.message); }
+    } catch (err) { setMsg("sMsg", err.message); shake(); }
+    finally { $("sBtn").classList.remove("loading"); }
   };
-  async function logout() { try { await api("api/auth.ashx?action=logout", { method: "POST" }); } catch (e) {} me = null; showAuth(); }
+
+  // ---------------- login page animations (rotating words + live chat demo) ----------------
+  var ROT = ["في ثانية واحدة ⚡", "24 ساعة في اليوم 🌙", "بأسلوبك وباسم متجرك 🛍️", "وهو بيبيع عنك 💸"];
+  var DEMO = [
+    ["عندي بقعة قهوة على قميص أبيض 😩 أستخدم إيه؟", "ولا يهمك! 🫧 رشّ **مزيل البقع** عليها وسيبه 5 دقايق، وبعدين اغسله عادي. هيرجع زي الجديد ✨"],
+    ["المقاس L هيبقى مظبوط عليا؟ طولي 178 ووزني 80", "على طولك ووزنك الـ **L** هيبقى مظبوط 👌 ولو بتحب اللبس الواسع شوية خد **XL**."],
+    ["الأوردر بيوصل إسكندرية في قد إيه؟ 🚚", "من **يومين لـ 3 أيام** شغل 📦 وتقدر تدفع كاش عند الاستلام كمان."]
+  ];
+  var heroRun = 0, reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function wait(ms, run) { return new Promise(function (res, rej) { setTimeout(function () { run === heroRun ? res() : rej("stop"); }, ms); }); }
+  function bubble(cls) { var d = document.createElement("div"); d.className = "dm " + cls; $("demoBody").appendChild(d); return d; }
+  function richInto(el, text) {   // **bold** only, built from text nodes
+    el.textContent = "";
+    text.split("**").forEach(function (part, i) { if (!part) return; if (i % 2) { var b = document.createElement("b"); b.textContent = part; el.appendChild(b); } else el.appendChild(document.createTextNode(part)); });
+  }
+  async function rotLoop(run) {
+    var i = 0, el = $("rotWord");
+    while (true) {
+      await wait(2600, run);
+      el.classList.add("out"); await wait(350, run);
+      i = (i + 1) % ROT.length; el.textContent = ROT[i];
+      el.classList.remove("out"); el.classList.add("pre"); void el.offsetWidth; el.classList.remove("pre");
+    }
+  }
+  async function demoLoop(run) {
+    var body = $("demoBody"), n = 0;
+    while (true) {
+      var c = DEMO[n % DEMO.length]; n++;
+      body.classList.remove("clear"); body.textContent = "";
+      await wait(500, run);
+      bubble("u").textContent = c[0];
+      await wait(700, run);
+      var dots = bubble("b dots"); dots.innerHTML = "<i></i><i></i><i></i>";
+      await wait(1300, run);
+      dots.remove();
+      var b = bubble("b"), plain = c[1].replace(/\*\*/g, ""), shown = 0;
+      while (shown < plain.length) {   // type it out like a person, then swap in the bold version
+        shown = Math.min(plain.length, shown + 2 + Math.floor(Math.random() * 3));
+        b.textContent = plain.slice(0, shown); await wait(28, run);
+      }
+      richInto(b, c[1]);
+      await wait(3200, run);
+      body.classList.add("clear"); await wait(450, run);
+    }
+  }
+  function heroStart() {
+    var run = ++heroRun;
+    if (reduce) { $("demoBody").textContent = ""; bubble("u").textContent = DEMO[0][0]; richInto(bubble("b"), DEMO[0][1]); return; }
+    rotLoop(run).catch(function () {}); demoLoop(run).catch(function () {});
+  }
+  function heroStop() { heroRun++; }
+  async function logout() {
+    try { await api("api/auth.ashx?action=logout", { method: "POST" }); } catch (e) {}
+    if (liveChat) { location.replace(location.pathname); return; }   // fresh page, so the store's chat bubble goes away too
+    me = null; showAuth();
+  }
+
+  // ---------------- the owner's own chat, floating on the dashboard after login ----------------
+  var liveChat = null;
+  function mountLiveChat() {
+    if (liveChat || !me) return;
+    var art = document.querySelector("script[data-art-only]");
+    var s = document.createElement("script");
+    s.src = art ? art.getAttribute("src") : "widget.js";          // same file + version stamp the page already loaded
+    s.setAttribute("data-store", me.slug);
+    s.onload = function () { showLiveChat(current !== "look"); };
+    document.body.appendChild(s);
+    liveChat = "store-chat-" + me.slug;
+  }
+  function showLiveChat(on) { var h = liveChat && document.getElementById(liveChat); if (h) h.style.display = on ? "" : "none"; }
   $("logoutBtn").onclick = logout;
 
-  function showAuth() { $("authView").hidden = false; $("appView").hidden = true; $("navLinks").hidden = true; $("acct").hidden = true; }
+  function showAuth() { $("authView").hidden = false; $("appView").hidden = true; $("navLinks").hidden = true; $("acct").hidden = true; heroStart(); }
 
   // ---------------- navigation ----------------
   var current = "data";
@@ -489,6 +816,7 @@
     $("acctMenu").hidden = true;
     if (tab === "admin") loadAdmin();
     if (tab === "look") initLook();
+    showLiveChat(tab !== "look");   // the look tab has its own preview of the chat
     if (history.replaceState) history.replaceState(null, "", "#" + tab);
     window.scrollTo(0, 0);
   }
@@ -498,15 +826,16 @@
   document.addEventListener("click", function (e) { if (!e.target.closest("#acct")) $("acctMenu").hidden = true; });
 
   function showApp() {
-    $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("acct").hidden = false;
+    $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("acct").hidden = false; heroStop();
     $("adminTabBtn").hidden = !me.isAdmin;
-    render(); loadItems();
+    render(); loadItems(); mountLiveChat();
     var want = (location.hash || "").replace("#", "");
     go(["data", "look", "install", "settings"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "data");
   }
 
   function render() {
     var link = BASE + "?store=" + me.slug;
+    syncLiveChat();
     $("acctName").textContent = me.name; $("acctAvatar").textContent = (me.name || "م").trim().charAt(0);
     $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
     $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
@@ -535,6 +864,11 @@
     $("originsState").innerHTML = me.allowedOrigins
       ? '<span class="ok-pill">✅ مضاف ' + fmt(me.allowedOrigins.split(",").length) + " دومين</span>"
       : '<span class="warn-pill">⚠️ لسه مفيش دومين، الفقاعة مش هترد على موقعك لحد ما تضيفه</span>';
+  }
+  // keeps the floating chat on this page in step with what was just saved (look, title, names)
+  function syncLiveChat() {
+    if (!me) return;
+    document.dispatchEvent(new CustomEvent("sellybot:look", { detail: { store: me.slug, style: me.bubbleStyle, color: me.brandColor, title: me.chatTitle || "", name: me.name, botName: me.botName } }));
   }
   async function refreshMe() { try { me = await api("api/auth.ashx?action=me"); render(); } catch (e) {} }
   $("copyLink").onclick = function () { copy($("chatLink").value); toast("اتنسخ اللينك ✅"); };
@@ -633,14 +967,18 @@
   }
 
   // ---------------- look (bubble style + color) ----------------
-  var GROUPS = { stylesStd: ["classic", "pill", "agent", "minimal"], stylesFun: ["bear", "cat", "blob"], stylesAny: ["bag", "gift", "star"] };
-  var NOTES = { classic: "بسيط ومعروف", pill: "زرار فيه كلام", agent: "موظف خدمة عملاء", minimal: "هادي وشيك", bear: "بيتكلم وبيرش 🧽", cat: "بتهز ديلها", blob: "وحش لطيف", bag: "لأي متجر", gift: "هدايا وورد", star: "تجميل وموضة" };
+  var GROUPS = { stylesStd: ["classic", "pill", "agent", "minimal", "orb", "duo", "wave"], stylesFun: ["bear", "cat", "blob", "robot", "owl", "ghost", "bunny"], stylesAny: ["bag", "gift", "star", "heart", "cup", "cart"] };
+  var NOTES = { classic: "بسيط ومعروف", pill: "زرار فيه كلام", agent: "موظف خدمة عملاء", minimal: "هادي وشيك", bear: "بيتكلم وبيرش 🧽", cat: "بتهز ديلها", blob: "وحش لطيف", bag: "لأي متجر", gift: "هدايا وورد", star: "تجميل وموضة", orb: "شكل عصري ✦", duo: "رسايل رايحة جاية", wave: "بيسلّم على زباينك", robot: "إلكترونيات وتقنية", owl: "كتب وتعليم", ghost: "بيطير وبيهزّر", bunny: "أطفال وألعاب", heart: "تجميل وهدايا", cup: "كافيهات وأكل", cart: "سوبر ماركت وأي متجر" };
   var SWATCHES = ["#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222"];
-  var look = { style: "bear", color: "#e8774a" }, lookInit = false, pvView = "bubble";
+  var look = { style: "bear", color: "#e8774a", title: "" }, lookInit = false, pvView = "bubble";
   function initLook() {
-    look.style = me.bubbleStyle || "bear"; look.color = me.brandColor || "#e8774a";
+    look.style = me.bubbleStyle || "bear"; look.color = me.brandColor || "#e8774a"; look.title = me.chatTitle || "";
+    var def = (me.botName || "دبدوب") + (me.name ? " · " + me.name : "");
+    $("chatTitle").value = look.title; $("chatTitle").placeholder = def; $("chatTitleDef").textContent = def;
     if (!lookInit) {
       lookInit = true;
+      $("chatTitle").oninput = function () { look.title = this.value; updateLook(); };
+      $("preview").onload = postLook;   // a fresh preview gets the unsaved title/look too
       Object.keys(GROUPS).forEach(function (g) {
         GROUPS[g].forEach(function (id) {
           var name = (window.StoreChatArt.styles.filter(function (s) { return s.id === id; })[0] || {}).name || id;
@@ -662,19 +1000,27 @@
     }
     updateLook();
   }
-  function loadPreview() { $("preview").src = BASE + "?store=" + me.slug + "&preview=1&view=" + pvView + "&style=" + look.style + "&color=" + encodeURIComponent(look.color); }
+  function theme() { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; }
+  function loadPreview() { $("preview").src = BASE + "?store=" + me.slug + "&preview=1&view=" + pvView + "&style=" + look.style + "&color=" + encodeURIComponent(look.color) + "&theme=" + theme(); }
   function updateLook(fromPicker, fromHex) {
     document.querySelectorAll(".sty").forEach(function (c) { c.classList.toggle("on", c.dataset.style === look.style); window.StoreChatArt.render(c.querySelector(".art"), c.dataset.style, look.color); });
     document.querySelectorAll(".sw").forEach(function (s) { s.classList.toggle("on", s.dataset.color === look.color); });
     if (!fromPicker) $("colorPick").value = look.color;
     if (!fromHex) $("colorHex").value = look.color;
-    try { $("preview").contentWindow.postMessage({ type: "chat-look", style: look.style, color: look.color }, location.origin); } catch (e) {}
-    var changed = look.style !== me.bubbleStyle || look.color !== me.brandColor;
+    postLook();
+    var changed = look.style !== me.bubbleStyle || look.color !== me.brandColor || look.title.trim() !== (me.chatTitle || "");
     $("saveLook").textContent = changed ? "حفظ الشكل •" : "محفوظ ✓"; $("saveLook").disabled = !changed;
+  }
+  function postLook() {
+    try { $("preview").contentWindow.postMessage({ type: "chat-look", style: look.style, color: look.color, title: look.title.trim() }, location.origin); } catch (e) {}
   }
   $("saveLook").onclick = async function () {
     setMsg("lookMsg", "");
-    try { me = await api("api/store.ashx", { method: "POST", json: { bubbleStyle: look.style, brandColor: look.color } }); render(); updateLook(); toast("اتحفظ الشكل ✅ هيظهر لزباينك على طول"); }
+    try {
+      me = await api("api/store.ashx", { method: "POST", json: { bubbleStyle: look.style, brandColor: look.color, chatTitle: look.title.trim() } });
+      look.title = me.chatTitle || ""; $("chatTitle").value = look.title;
+      render(); updateLook(); toast("اتحفظ الشكل ✅ هيظهر لزباينك على طول");
+    }
     catch (err) { setMsg("lookMsg", err.message); }
   };
 

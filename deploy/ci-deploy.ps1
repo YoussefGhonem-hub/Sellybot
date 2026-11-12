@@ -24,7 +24,8 @@ $cfg = @{}
 $missing = @()
 foreach ($n in $names) {
   $v = [Environment]::GetEnvironmentVariable($n)
-  if ([string]::IsNullOrWhiteSpace($v)) { $missing += $n } else { $cfg[$n] = $v.Trim() }
+  if ($v) { $v = ($v -replace '[\x00-\x1F\x7F]', '').Trim() }   # e.g. a Ctrl+V typed into a hidden prompt (0x16) crashes Web Deploy
+  if ([string]::IsNullOrWhiteSpace($v)) { $missing += $n } else { $cfg[$n] = $v }
 }
 if ($DryRun) { foreach ($n in $missing) { $cfg[$n] = ("dry-run-" + $n.ToLower()).PadRight(40, "x") }; $missing = @() }
 if ($missing.Count -gt 0) {

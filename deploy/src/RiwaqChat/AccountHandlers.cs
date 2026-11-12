@@ -1,4 +1,4 @@
-﻿// Store owner accounts (sign up / log in), store settings, and the admin overview.
+// Store owner accounts (sign up / log in), store settings, and the admin overview.
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -22,7 +22,7 @@ namespace RiwaqChat
             {
                 { "id", s.Id }, { "slug", s.Slug }, { "name", s.Name }, { "email", s.OwnerEmail }, { "isAdmin", s.IsAdmin },
                 { "status", s.Status }, { "botName", s.BotName }, { "welcome", s.Welcome ?? "" }, { "instructions", s.Instructions ?? "" },
-                { "allowedOrigins", s.AllowedOrigins ?? "" }, { "bubbleStyle", s.BubbleStyle }, { "brandColor", s.BrandColor },
+                { "allowedOrigins", s.AllowedOrigins ?? "" }, { "bubbleStyle", s.BubbleStyle }, { "brandColor", s.BrandColor }, { "chatTitle", s.ChatTitle ?? "" },
                 { "usage", new Dictionary<string, object> { { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", s.MonthlyTokenLimit } } },
                 { "storage", storage },
                 { "knowledge", new Dictionary<string, object> { { "items", items }, { "chars", chars }, { "maxChars", KnowledgeHandler.MaxStoreChars },
@@ -162,6 +162,7 @@ namespace RiwaqChat
                     if (b.ContainsKey("welcome")) { sets.Add("Welcome=@welcome"); ps.Add("@welcome"); ps.Add(NullIfEmpty(Web.Str(b, "welcome", 600))); }
                     if (b.ContainsKey("instructions")) { sets.Add("Instructions=@ins"); ps.Add("@ins"); ps.Add(NullIfEmpty(Web.Str(b, "instructions", 20000))); }
                     if (b.ContainsKey("allowedOrigins")) { sets.Add("AllowedOrigins=@origins"); ps.Add("@origins"); ps.Add(NormalizeOrigins(Web.Str(b, "allowedOrigins", 1000))); }
+                    if (b.ContainsKey("chatTitle")) { sets.Add("ChatTitle=@title"); ps.Add("@title"); ps.Add(NullIfEmpty(Web.Str(b, "chatTitle", 80))); }
                     if (b.ContainsKey("bubbleStyle"))
                     {
                         var v = Web.Str(b, "bubbleStyle", 20);
@@ -190,7 +191,8 @@ namespace RiwaqChat
 
         public static readonly HashSet<string> BubbleStyles = new HashSet<string>
         {
-            "classic", "pill", "agent", "minimal", "bear", "cat", "blob", "bag", "gift", "star"
+            "classic", "pill", "agent", "minimal", "bear", "cat", "blob", "bag", "gift", "star",
+            "orb", "duo", "wave", "robot", "owl", "ghost", "bunny", "heart", "cup", "cart"
         };
 
         static string NullIfEmpty(string v) { return string.IsNullOrWhiteSpace(v) ? null : v; }

@@ -5,12 +5,22 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $here
 
 function Fail($t) { Write-Host ""; Write-Host "X $t" -ForegroundColor Red; exit 1 }
-function Plain($sec) { [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)) }
+# Hidden prompts in the Windows console don't paste with Ctrl+V: it types an invisible control character (0x16) instead,
+# which later crashes Web Deploy. So control characters are removed, and an empty answer is asked again with a hint.
+function CleanText($s) { if ($null -eq $s) { return "" }; ($s -replace '[\x00-\x1F\x7F]', '').Trim() }
+function Plain($sec) { CleanText ([Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec))) }
+function AskSecret($prompt) {
+  while ($true) {
+    $v = Plain (Read-Host $prompt -AsSecureString)
+    if ($v) { return $v }
+    Write-Host "   Nothing was entered. To paste here, RIGHT-CLICK in this window (Ctrl+V does not paste in this box), then press Enter." -ForegroundColor Yellow
+  }
+}
 function RandomToken($bytes) { $b = New-Object byte[] $bytes; (New-Object Security.Cryptography.RNGCryptoServiceProvider).GetBytes($b); ([BitConverter]::ToString($b)).Replace("-", "").ToLower() }
 function FromFileOrAsk($file, $prompt) {
   $path = Join-Path $here $file
-  if (Test-Path $path) { return (Get-Content -Raw $path).Trim() }
-  $v = (Plain (Read-Host $prompt -AsSecureString)).Trim()
+  if (Test-Path $path) { return CleanText (Get-Content -Raw $path) }
+  $v = AskSecret $prompt
   if ((Read-Host "Save it in $file on this PC so you are not asked next time? (Y/N)") -match '^[Yy]') { [IO.File]::WriteAllText($path, $v) }
   return $v
 }
@@ -31,7 +41,8 @@ $env:ANTHROPIC_API_KEY = FromFileOrAsk "anthropic-key.txt" "Paste your Anthropic
 $env:DB_PASSWORD       = FromFileOrAsk "db-password.txt" "Database password for $DbUser"
 $env:AUTH_SECRET       = Generated "auth-secret.txt" { RandomToken 32 }
 $env:ADMIN_SIGNUP_CODE = Generated "admin-code.txt" { "admin-" + (RandomToken 6) }
-$env:WEBDEPLOY_PASSWORD = Plain (Read-Host "SmarterASP Web Deploy password for $UserName" -AsSecureString)
+Write-Host "Tip: to paste the password, RIGHT-CLICK in this window (Ctrl+V does not paste here). Nothing shows while you type or paste." -ForegroundColor DarkGray
+$env:WEBDEPLOY_PASSWORD = AskSecret "SmarterASP Web Deploy password for $UserName"
 
 & (Join-Path $here "ci-deploy.ps1")
 $code = $LASTEXITCODE

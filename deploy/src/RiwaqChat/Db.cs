@@ -10,7 +10,7 @@ namespace RiwaqChat
     public class StoreInfo
     {
         public int Id;
-        public string Slug, Name, OwnerEmail, PasswordHash, Status, BotName, Welcome, Instructions, AllowedOrigins, BubbleStyle, BrandColor;
+        public string Slug, Name, OwnerEmail, PasswordHash, Status, BotName, Welcome, Instructions, AllowedOrigins, BubbleStyle, BrandColor, ChatTitle;
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -159,6 +159,7 @@ namespace RiwaqChat
                 AllowedOrigins = r["AllowedOrigins"] as string,
                 BubbleStyle = r["BubbleStyle"] as string ?? "bear",
                 BrandColor = r["BrandColor"] as string ?? "#e8774a",
+                ChatTitle = r["ChatTitle"] as string,
                 MonthlyTokenLimit = (int)r["MonthlyTokenLimit"],
                 DataVersion = (int)r["DataVersion"],
                 CreatedAt = (DateTime)r["CreatedAt"],
@@ -245,6 +246,7 @@ BEGIN
     PRIMARY KEY(StoreId, Month));
 END
 IF COL_LENGTH('dbo.Stores', 'BubbleStyle') IS NULL ALTER TABLE dbo.Stores ADD BubbleStyle NVARCHAR(20) NOT NULL CONSTRAINT DF_Stores_BubbleStyle DEFAULT 'bear';
-IF COL_LENGTH('dbo.Stores', 'BrandColor') IS NULL ALTER TABLE dbo.Stores ADD BrandColor NVARCHAR(9) NOT NULL CONSTRAINT DF_Stores_BrandColor DEFAULT '#e8774a';";
+IF COL_LENGTH('dbo.Stores', 'BrandColor') IS NULL ALTER TABLE dbo.Stores ADD BrandColor NVARCHAR(9) NOT NULL CONSTRAINT DF_Stores_BrandColor DEFAULT '#e8774a';
+IF COL_LENGTH('dbo.Stores', 'ChatTitle') IS NULL ALTER TABLE dbo.Stores ADD ChatTitle NVARCHAR(80) NULL;";
     }
 }

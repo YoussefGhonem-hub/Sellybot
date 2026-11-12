@@ -155,6 +155,131 @@
           '<path d="M60 12 L72 43 L106 45 L80 66 L89 100 L60 81 L31 100 L40 66 L14 45 L48 43 Z" fill="var(--c)" stroke="var(--c)" stroke-width="10" stroke-linejoin="round"/>' +
           eyes(51, 69, 58, 4.4) + cheeks(44, 76, 67, 4.5) + mouth(60, 68, 6), "face");
       }
+    },
+
+    // ---- 10 more (2026-11) ----
+    orb: {
+      name: "ذكاء اصطناعي", art: function () {
+        return svg("0 0 120 120",
+          '<circle class="ring" cx="60" cy="60" r="52" fill="none" stroke="var(--c)" stroke-width="3"/>' +
+          '<circle cx="60" cy="60" r="48" fill="var(--c)"/><circle cx="60" cy="60" r="48" fill="none" stroke="var(--c2)" stroke-width="5" opacity=".6"/>' +
+          '<ellipse cx="44" cy="38" rx="17" ry="10" fill="#fff" opacity=".22" transform="rotate(-30 44 38)"/>' +
+          '<path class="spark4" d="M60 30 C62 50 70 58 90 60 C70 62 62 70 60 90 C58 70 50 62 30 60 C50 58 58 50 60 30Z" fill="var(--on)"/>' +
+          '<path class="tw" d="M86 28 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="var(--on)" opacity=".85"/>' +
+          '<path class="tw t2" d="M34 82 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6z" fill="var(--on)" opacity=".8"/>');
+      }
+    },
+    duo: {
+      name: "محادثة", art: function () {
+        return svg("0 0 120 120",
+          '<g class="b1"><path d="M16 14 h50 a12 12 0 0 1 12 12 v22 a12 12 0 0 1 -12 12 H34 l-14 11 v-11 h-4 a12 12 0 0 1 -12 -12 V26 a12 12 0 0 1 12 -12z" fill="var(--c3)"/>' +
+            '<path d="M18 31 h40 M18 44 h24" stroke="var(--on)" stroke-width="6" stroke-linecap="round" opacity=".75"/></g>' +
+          '<g class="b2"><path d="M52 46 h52 a12 12 0 0 1 12 12 v24 a12 12 0 0 1 -12 12 h-4 v13 l-15 -13 H52 a12 12 0 0 1 -12 -12 V58 a12 12 0 0 1 12 -12z" fill="var(--c)"/>' +
+            '<circle class="tdot d1" cx="62" cy="70" r="5" fill="var(--on)"/><circle class="tdot d2" cx="78" cy="70" r="5" fill="var(--on)"/><circle class="tdot d3" cx="94" cy="70" r="5" fill="var(--on)"/></g>');
+      }
+    },
+    wave: {
+      name: "إيد بتسلّم", art: function () {
+        return svg("0 0 120 120",
+          '<circle cx="60" cy="60" r="56" fill="var(--c)"/>' +
+          '<g class="hand" fill="var(--on)">' +
+            '<rect x="42" y="30" width="9" height="34" rx="4.5"/><rect x="52" y="22" width="9" height="40" rx="4.5"/>' +
+            '<rect x="62" y="24" width="9" height="38" rx="4.5"/><rect x="72" y="32" width="8" height="32" rx="4"/>' +
+            '<rect x="28" y="58" width="24" height="10" rx="5" transform="rotate(38 40 63)"/>' +
+            '<path d="M42 56 h38 v14 a20 20 0 0 1 -20 20 h0 a18 18 0 0 1 -18 -18z"/>' +
+            '<rect x="49" y="86" width="24" height="12" rx="4"/></g>' +
+          '<path class="tw" d="M88 34 q6 4 6 12 M94 28 q9 6 9 18" stroke="var(--on)" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>');
+      }
+    },
+    robot: {
+      name: "روبوت", art: function () {
+        return svg("0 0 120 120",
+          '<path d="M60 22 V10" stroke="var(--c3)" stroke-width="4" stroke-linecap="round"/><circle class="bulb" cx="60" cy="9" r="6" fill="var(--c2)"/>' +
+          '<rect x="7" y="52" width="12" height="26" rx="5" fill="var(--c3)"/><rect x="101" y="52" width="12" height="26" rx="5" fill="var(--c3)"/>' +
+          '<rect x="16" y="22" width="88" height="84" rx="26" fill="var(--c)"/>' +
+          '<circle cx="28" cy="34" r="3" fill="var(--c3)"/><circle cx="92" cy="34" r="3" fill="var(--c3)"/>' +
+          '<rect x="27" y="40" width="66" height="50" rx="17" fill="#1d2433"/>' +
+          '<g class="eye"><rect x="39" y="51" width="13" height="15" rx="6.5" fill="#7CFFE0"/></g>' +
+          '<g class="eye r"><rect x="68" y="51" width="13" height="15" rx="6.5" fill="#7CFFE0"/></g>' +
+          '<g class="smile"><path d="M48 75 q12 8 24 0" stroke="#7CFFE0" stroke-width="4" fill="none" stroke-linecap="round"/></g>' +
+          '<g class="open"><rect x="49" y="72" width="22" height="10" rx="5" fill="#7CFFE0"/></g>', "face");
+      }
+    },
+    owl: {
+      name: "بومة", art: function () {
+        return svg("0 0 120 120",
+          '<g class="headG">' +
+          '<path class="wing" d="M20 60 q-14 22 4 42 q8 -20 -4 -42z" fill="var(--c3)"/><path class="wing r" d="M100 60 q14 22 -4 42 q-8 -20 4 -42z" fill="var(--c3)"/>' +
+          '<path d="M26 34 L20 8 L46 24Z" fill="var(--c3)"/><path d="M94 34 L100 8 L74 24Z" fill="var(--c3)"/>' +
+          '<ellipse cx="60" cy="66" rx="42" ry="46" fill="var(--c)"/>' +
+          '<ellipse cx="60" cy="88" rx="25" ry="20" fill="#fff" opacity=".85"/>' +
+          '<path d="M48 84 q6 6 12 0 q6 6 12 0 M42 96 q6 6 12 0 q6 6 12 0 q6 6 12 0" stroke="var(--c2)" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
+          '<circle cx="42" cy="52" r="17" fill="#fff" stroke="var(--c3)" stroke-width="3"/><circle cx="78" cy="52" r="17" fill="#fff" stroke="var(--c3)" stroke-width="3"/>' +
+          '<g class="eye"><circle cx="43" cy="53" r="8.5" fill="#1b1b1b"/><circle cx="46" cy="50" r="3" fill="#fff"/></g>' +
+          '<g class="eye r"><circle cx="79" cy="53" r="8.5" fill="#1b1b1b"/><circle cx="82" cy="50" r="3" fill="#fff"/></g>' +
+          '<g class="smile"><path d="M53 66 h14 l-7 9z" fill="#f6b73c"/></g>' +
+          '<g class="open"><path d="M53 65 h14 l-7 6z" fill="#f6b73c"/><path d="M55 73 h10 l-5 7z" fill="#e0902a"/></g></g>', "face");
+      }
+    },
+    ghost: {
+      name: "شبح لطيف", art: function () {
+        return svg("0 0 120 120",
+          '<g class="floaty">' +
+          '<path d="M18 64 q-12 2 -12 12 q9 0 14 -5z" fill="var(--c)"/><path d="M102 64 q12 2 12 12 q-9 0 -14 -5z" fill="var(--c)"/>' +
+          '<path d="M18 106 V56 C18 30 36 10 60 10 S102 30 102 56 V106 l-10.5 -8 -10.5 8 -10.5 -8 -10.5 8 -10.5 -8 -10.5 8 -10.5 -8 -10.5 8 Z" fill="var(--c)"/>' +
+          '<ellipse cx="40" cy="32" rx="7" ry="11" fill="#fff" opacity=".28" transform="rotate(25 40 32)"/>' +
+          eyes(46, 74, 54, 6) + cheeks(36, 84, 66, 6) + mouth(60, 68, 6) + "</g>", "face");
+      }
+    },
+    bunny: {
+      name: "أرنوب", art: function () {
+        return svg("0 0 120 120",
+          '<g class="ear"><ellipse cx="42" cy="28" rx="11" ry="26" fill="var(--c)"/><ellipse cx="42" cy="30" rx="5.5" ry="18" fill="#ffc2cf"/></g>' +
+          '<g class="ear r"><ellipse cx="78" cy="28" rx="11" ry="26" fill="var(--c)"/><ellipse cx="78" cy="30" rx="5.5" ry="18" fill="#ffc2cf"/></g>' +
+          '<ellipse cx="60" cy="74" rx="42" ry="37" fill="var(--c)"/>' +
+          '<ellipse cx="60" cy="88" rx="17" ry="12" fill="#fff" opacity=".9"/>' +
+          '<ellipse class="nose" cx="60" cy="81" rx="5" ry="3.6" fill="#ff7a9a"/>' +
+          eyes(45, 75, 70, 5.4) + cheeks(32, 88, 84, 6.5) +
+          '<g class="smile"><path d="M52 86 q4 5 8 0 q4 5 8 0" stroke="#3b2416" stroke-width="2.4" fill="none" stroke-linecap="round"/><rect x="56.5" y="89" width="7" height="7" rx="1.5" fill="#fff" stroke="#3b2416" stroke-width="1.2"/></g>' +
+          '<g class="open"><path d="M53 86 Q60 101 67 86 Z" fill="#5a1f1f"/><rect x="56.5" y="86" width="7" height="5" rx="1.2" fill="#fff"/></g>', "face");
+      }
+    },
+    heart: {
+      name: "قلب", art: function () {
+        return svg("0 0 120 120",
+          '<g class="pop"><path d="M18 22 c-3-4-9-1-6 4 l6 6 6-6 c3-5-3-8-6-4z" fill="var(--c2)"/><path d="M100 16 c-2-3-7-1-5 3 l5 5 5-5 c2-4-3-6-5-3z" fill="var(--c2)"/></g>' +
+          '<g class="beat">' +
+          '<path d="M60 106 C24 82 10 62 14 42 C18 22 42 14 60 34 C78 14 102 22 106 42 C110 62 96 82 60 106Z" fill="var(--c)"/>' +
+          '<ellipse cx="32" cy="40" rx="9" ry="5.5" fill="#fff" opacity=".35" transform="rotate(-35 32 40)"/>' +
+          eyes(47, 73, 58, 4.8) + cheeks(37, 83, 69, 5.5) + mouth(60, 69, 6.5) + "</g>", "face");
+      }
+    },
+    cup: {
+      name: "كوباية قهوة", art: function () {
+        return svg("0 0 120 120",
+          '<path class="steam" d="M44 32 q-6 -7 0 -14 q6 -7 0 -14" stroke="var(--c2)" stroke-width="4.5" fill="none" stroke-linecap="round"/>' +
+          '<path class="steam s2" d="M58 32 q-6 -7 0 -14 q6 -7 0 -14" stroke="var(--c2)" stroke-width="4.5" fill="none" stroke-linecap="round"/>' +
+          '<path class="steam s3" d="M72 32 q-6 -7 0 -14 q6 -7 0 -14" stroke="var(--c2)" stroke-width="4.5" fill="none" stroke-linecap="round"/>' +
+          '<ellipse cx="58" cy="110" rx="48" ry="7" fill="var(--c3)" opacity=".45"/>' +
+          '<path d="M91 52 h6 a13 13 0 0 1 0 26 h-9" stroke="var(--c3)" stroke-width="7.5" fill="none" stroke-linecap="round"/>' +
+          '<path d="M22 42 h72 v34 a30 30 0 0 1 -30 30 h-12 a30 30 0 0 1 -30 -30z" fill="var(--c)"/>' +
+          '<rect x="18" y="37" width="80" height="11" rx="5.5" fill="var(--c3)"/>' +
+          eyes(46, 70, 68, 4.8) + cheeks(37, 79, 79, 5.5) + mouth(58, 80, 6.5), "face");
+      }
+    },
+    cart: {
+      name: "عربية تسوق", art: function () {
+        return svg("0 0 120 120",
+          '<g class="cartB">' +
+          '<rect x="38" y="12" width="20" height="22" rx="4" fill="var(--c2)"/><path d="M38 20 h20" stroke="var(--c3)" stroke-width="3" opacity=".5"/>' +
+          '<circle cx="84" cy="22" r="11" fill="var(--c2)"/><path d="M84 11 q4 -6 9 -5" stroke="#4caf50" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+          '<path d="M6 20 h14 l7 12" stroke="var(--c3)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<path d="M22 32 h88 l-10 46 a9 9 0 0 1 -9 7 H40 a9 9 0 0 1 -9 -7z" fill="var(--c)"/>' +
+          eyes(55, 79, 52, 5) + cheeks(46, 88, 63, 5.5) + mouth(67, 63, 7) +
+          '<path d="M36 94 h60" stroke="var(--c3)" stroke-width="5" stroke-linecap="round"/>' +
+          '<g class="wheel"><circle cx="44" cy="105" r="9" fill="var(--c3)"/><path d="M44 97 v16 M36 105 h16" stroke="#fff" stroke-width="2.2" opacity=".7"/><circle cx="44" cy="105" r="3" fill="#fff"/></g>' +
+          '<g class="wheel"><circle cx="88" cy="105" r="9" fill="var(--c3)"/><path d="M88 97 v16 M80 105 h16" stroke="#fff" stroke-width="2.2" opacity=".7"/><circle cx="88" cy="105" r="3" fill="#fff"/></g></g>', "face");
+      }
     }
   };
   function styleOf(k) { return STYLES[k] ? k : "bear"; }
@@ -229,6 +354,40 @@ button{font:inherit;cursor:pointer;color:inherit}
 .art .tw{transform-box:fill-box;transform-origin:center;animation:twk 2.2s ease-in-out infinite}
 .art .t2{animation-delay:1.1s}
 @keyframes twk{0%,100%{transform:scale(.6) rotate(0);opacity:.6}50%{transform:scale(1.2) rotate(45deg);opacity:1}}
+/* orb, duo, wave, robot, owl, ghost, bunny, heart, cup, cart */
+.art .ring{transform-box:fill-box;transform-origin:center;animation:xRing 2.6s ease-out infinite}
+@keyframes xRing{0%{transform:scale(.9);opacity:.7}100%{transform:scale(1.16);opacity:0}}
+.art .spark4{transform-box:fill-box;transform-origin:center;animation:xSpk 4s ease-in-out infinite}
+.talking .art .spark4{animation-duration:.9s}
+@keyframes xSpk{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(90deg) scale(.8)}}
+.art .b1{animation:xBob 2.4s ease-in-out infinite}.art .b2{animation:xBob 2.4s ease-in-out 1.2s infinite}
+@keyframes xBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.art .hand{transform-box:view-box;transform-origin:60px 98px;animation:xWave 3s ease-in-out infinite}
+.talking .art .hand{animation-duration:1.1s}
+@keyframes xWave{0%,55%,100%{transform:rotate(0)}10%{transform:rotate(-18deg)}20%{transform:rotate(14deg)}30%{transform:rotate(-14deg)}40%{transform:rotate(10deg)}}
+.art .bulb{animation:xBulb 1.8s ease-in-out infinite}
+.talking .art .bulb{animation-duration:.45s}
+@keyframes xBulb{0%,100%{opacity:.4}50%{opacity:1}}
+.art .wing{transform-box:fill-box;transform-origin:50% 8%;animation:xFlap 3.4s ease-in-out infinite}
+.art .wing.r{animation-name:xFlapR}
+.talking .art .wing{animation-duration:.8s}
+@keyframes xFlap{0%,70%,100%{transform:rotate(0)}78%{transform:rotate(16deg)}86%{transform:rotate(-5deg)}}
+@keyframes xFlapR{0%,70%,100%{transform:rotate(0)}78%{transform:rotate(-16deg)}86%{transform:rotate(5deg)}}
+.art .floaty{animation:xFloat 3.2s ease-in-out infinite}
+@keyframes xFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.art .nose{transform-box:fill-box;transform-origin:center;animation:xTwitch 3s ease-in-out infinite}
+@keyframes xTwitch{0%,78%,100%{transform:scale(1)}82%{transform:scale(1.35,.75)}86%{transform:scale(1)}90%{transform:scale(1.35,.75)}94%{transform:scale(1)}}
+.art .beat{transform-box:fill-box;transform-origin:center;animation:xBeat 1.6s ease-in-out infinite}
+.talking .art .beat{animation-duration:.8s}
+@keyframes xBeat{0%,45%,100%{transform:scale(1)}12%{transform:scale(1.08)}24%{transform:scale(1)}34%{transform:scale(1.05)}}
+.art .steam{opacity:0;animation:xSteam 2.7s ease-in-out infinite}
+.art .s2{animation-delay:.7s}.art .s3{animation-delay:1.4s}
+@keyframes xSteam{0%{opacity:0;transform:translateY(7px)}40%{opacity:.9}100%{opacity:0;transform:translateY(-8px)}}
+.art .wheel{transform-box:fill-box;transform-origin:center;animation:xSpin 2.4s linear infinite}
+@keyframes xSpin{to{transform:rotate(360deg)}}
+.art .cartB{animation:xRoll 3s ease-in-out infinite}
+.talking .art .cartB{animation-duration:.9s}
+@keyframes xRoll{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
 
 /* ----- launcher (bubble mode) ----- */
 .launcher{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));z-index:2147483000;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}
@@ -287,7 +446,17 @@ button{font:inherit;cursor:pointer;color:inherit}
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(124,255,178,.7)}70%{box-shadow:0 0 0 7px rgba(124,255,178,0)}100%{box-shadow:0 0 0 0 rgba(124,255,178,0)}}
 .close{border:0;background:rgba(255,255,255,.2);color:var(--on);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;transition:transform .2s}
 @media (hover:hover){.close:hover{transform:rotate(90deg)}}
-.msgs{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.thm{flex:none;border:0;background:rgba(255,255,255,.2);color:var(--on);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;overflow:hidden;transition:background .2s}
+@media (hover:hover){.thm:hover{background:rgba(255,255,255,.32)}}
+.thm svg{width:17px;height:17px;grid-area:1/1;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+.thm .moon{transform:translateY(130%) rotate(-90deg);opacity:0}
+.w.dark .thm .sun{transform:translateY(-130%) rotate(90deg);opacity:0}
+.w.dark .thm .moon{transform:none;opacity:1}
+.w.page .chat,.w.page .msgs,.w.page form,.w.page .brand,.w.page .a,.w.page .chip,.w.page .q{transition:background-color .35s,border-color .35s,color .35s}
+.w.dark .err{background:#3a1d1b;color:#ffb4ab}
+.w.dark .a.done::before{background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.1) 50%,transparent 65%)}
+.w.dark .msgs{scrollbar-color:#4a3a2e transparent}
+.msgs{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:16px 14px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
 .row{display:flex;align-items:flex-end;gap:8px;position:relative}
 .row.me{justify-content:flex-start;animation:inMe .45s cubic-bezier(.34,1.56,.64,1) both}
 .row.bot{justify-content:flex-end;animation:inBot .5s cubic-bezier(.34,1.56,.64,1) both}
@@ -341,7 +510,8 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   .ch{padding:max(10px,env(safe-area-inset-top)) 12px 10px}
   .m{max-width:86%}
   .q{font-size:16px}
-  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .chips{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .chips::-webkit-scrollbar{display:none}
   .chip{flex:none}
   .bubbleBtn{width:60px;height:60px}
   .tall .bubbleBtn{width:78px;height:89px}
@@ -377,12 +547,25 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   var styleEl = document.createElement("style"); styleEl.textContent = CSS; root.appendChild(styleEl);
   var w = document.createElement("div");
   w.className = "w " + MODE + (PREVIEW && MODE === "bubble" ? " site" : "");
-  if (MODE === "page" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) w.classList.add("dark");
+  // Dark mode (chat link page only; on store websites the chat stays light): the dashboard preview sends ?theme=,
+  // otherwise the visitor's saved choice, otherwise the device setting.
+  var darkMq = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
+  function savedTheme() { if (PREVIEW) return qs.get("theme"); try { return localStorage.getItem("sb-theme"); } catch (e) { return null; } }
+  function setDark(on) {
+    if (MODE !== "page") return;
+    w.classList.toggle("dark", on);
+    document.documentElement.setAttribute("data-theme", on ? "dark" : "light");
+  }
+  var theme0 = savedTheme(); setDark(theme0 ? theme0 === "dark" : !!(darkMq && darkMq.matches));
+  if (darkMq && darkMq.addEventListener) darkMq.addEventListener("change", function (e) { if (!savedTheme()) setDark(e.matches); });
   w.innerHTML =
     '<div class="launcher"><div class="hello"><span class="helloTxt"></span><button class="x" aria-label="إخفاء">×</button></div>' +
     '<button class="lb bubbleBtn" aria-label="افتح الشات"></button></div>' +
     '<section class="chat' + (MODE === "page" ? "" : " closed") + '" aria-hidden="' + (MODE === "page" ? "false" : "true") + '">' +
       '<div class="ch"><div class="hdr"></div><div class="who"><b class="title"></b><span class="st"><i class="dot"></i><span class="stxt">بيجهّز…</span></span></div>' +
+      (MODE === "page" && !PREVIEW ? '<button class="thm" type="button" aria-label="الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق">' +
+        '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>' +
+        '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>' : "") +
       '<button class="close" aria-label="إغلاق">✕</button></div>' +
       '<div class="msgs"></div><div class="chips"></div>' +
       '<form><input class="q" autocomplete="off" maxlength="600" aria-label="رسالتك"><button class="send" aria-label="إرسال"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z"/></svg></button></form>' +
@@ -392,6 +575,8 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   (document.body || document.documentElement).appendChild(host);
 
   // ---------------------------------------------------------------- apply look
+  // Header title: the owner's own chat title if set, otherwise "assistant · store".
+  function chatTitle() { return (cfg.title || "").trim() || (cfg.botName + (cfg.name ? " · " + cfg.name : "")); }
   function applyLook() {
     var p = palette(cfg.color);
     w.style.setProperty("--c", p.c); w.style.setProperty("--c2", p.c2); w.style.setProperty("--c3", p.c3); w.style.setProperty("--on", p.on); w.style.setProperty("--soft", p.soft);
@@ -403,9 +588,9 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     if (!opened) btn.insertAdjacentHTML("beforeend", '<span class="badge">1</span>');
     $(".hdr").innerHTML = S.art();
     w.querySelectorAll(".row.bot .av").forEach(function (a) { a.innerHTML = S.art(); });
-    $(".title").textContent = cfg.botName + (cfg.name ? " · " + cfg.name : "");
+    $(".title").textContent = chatTitle();
     $(".q").placeholder = "اكتب سؤالك لـ" + cfg.botName + "...";
-    if (MODE === "page") document.title = cfg.botName + (cfg.name ? " · " + cfg.name : "");
+    if (MODE === "page") document.title = chatTitle();
   }
 
   // ---------------------------------------------------------------- helpers
@@ -492,7 +677,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
       var r = await fetch(API, { cache: "no-store" });
       if (r.ok) {
         var c = await r.json();
-        cfg.name = c.name || ""; cfg.botName = c.botName || "دبدوب"; cfg.welcome = c.welcome; cfg.style = c.bubbleStyle || "bear"; cfg.color = c.brandColor || "#e8774a";
+        cfg.name = c.name || ""; cfg.botName = c.botName || "دبدوب"; cfg.welcome = c.welcome; cfg.style = c.bubbleStyle || "bear"; cfg.color = c.brandColor || "#e8774a"; cfg.title = c.chatTitle || "";
         if (PREVIEW) { if (qs.get("style")) cfg.style = qs.get("style"); if (qs.get("color")) cfg.color = qs.get("color"); }
         applyLook(); setStatus("ok", "متصل وجاهز يساعدك");
         return true;
@@ -584,6 +769,11 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   $(".launcher").addEventListener("click", function (e) { if (e.target.closest(".x")) return; if (e.target.closest(".lb")) openChat(); });
   $(".x").onclick = function (e) { e.stopPropagation(); $(".hello").hidden = true; };
   $(".close").onclick = closeChat;
+  if ($(".thm")) $(".thm").onclick = function () {
+    var on = !w.classList.contains("dark");
+    try { localStorage.setItem("sb-theme", on ? "dark" : "light"); } catch (e) {}
+    setDark(on);
+  };
   $(".hdr").onclick = wiggle;
   $("form").onsubmit = function (e) { e.preventDefault(); var q = $(".q").value.trim(); $(".q").value = ""; ask(q); };
   var peekT; $(".q").addEventListener("input", function () { $(".hdr").classList.add("peek"); clearTimeout(peekT); peekT = setTimeout(function () { $(".hdr").classList.remove("peek"); }, 900); });
@@ -599,9 +789,21 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     }, 5000);
   }
 
+  // dashboard: after the owner saves, the store's own floating chat on the same page updates right away
+  document.addEventListener("sellybot:look", function (e) {
+    var d = e.detail || {};
+    if (d.store !== STORE) return;
+    if (d.style) cfg.style = d.style; if (d.color) cfg.color = d.color;
+    if (typeof d.title === "string") cfg.title = d.title;
+    if (d.name) cfg.name = d.name; if (d.botName) cfg.botName = d.botName;
+    applyLook();
+  });
+
   // dashboard preview: change style/color live without reloading
   if (PREVIEW) window.addEventListener("message", function (e) {
     if (e.origin !== location.origin || !e.data || e.data.type !== "chat-look") return;
+    if (e.data.theme) setDark(e.data.theme === "dark");
+    if (typeof e.data.title === "string") cfg.title = e.data.title;
     if (e.data.style) cfg.style = e.data.style; if (e.data.color) cfg.color = e.data.color;
     applyLook();
   });

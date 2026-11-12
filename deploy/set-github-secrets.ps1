@@ -4,9 +4,19 @@
 param([string]$Repo = "YoussefGhonem-hub/Sellybot")
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-function Plain($sec) { [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)) }
+# Ctrl+V in a hidden prompt types an invisible character (0x16) instead of pasting, so those are removed
+# and an empty answer is asked again. Paste with a RIGHT-CLICK in the window.
+function CleanText($s) { if ($null -eq $s) { return "" }; ($s -replace '[\x00-\x1F\x7F]', '').Trim() }
+function Plain($sec) { CleanText ([Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec))) }
+function AskSecret($prompt) {
+  while ($true) {
+    $v = Plain (Read-Host $prompt -AsSecureString)
+    if ($v) { return $v }
+    Write-Host "   Nothing was entered. To paste here, RIGHT-CLICK in this window (Ctrl+V does not paste in this box), then press Enter." -ForegroundColor Yellow
+  }
+}
 function RandomToken($bytes) { $b = New-Object byte[] $bytes; (New-Object Security.Cryptography.RNGCryptoServiceProvider).GetBytes($b); ([BitConverter]::ToString($b)).Replace("-", "").ToLower() }
-function FileOrAsk($file, $prompt) { $p = Join-Path $here $file; if (Test-Path $p) { return (Get-Content -Raw $p).Trim() }; return (Plain (Read-Host $prompt -AsSecureString)).Trim() }
+function FileOrAsk($file, $prompt) { $p = Join-Path $here $file; if (Test-Path $p) { return CleanText (Get-Content -Raw $p) }; return AskSecret $prompt }
 function Generated($file, $make) { $p = Join-Path $here $file; if (-not (Test-Path $p)) { [IO.File]::WriteAllText($p, (& $make)) }; (Get-Content -Raw $p).Trim() }
 function Put($name, $value) {
   if ([string]::IsNullOrWhiteSpace($value)) { Write-Host "skip $name (empty)" -ForegroundColor Yellow; return }
@@ -27,7 +37,8 @@ Put "AUTH_SECRET" (Generated "auth-secret.txt" { RandomToken 32 })
 Put "ADMIN_SIGNUP_CODE" (Generated "admin-code.txt" { "admin-" + (RandomToken 6) })
 Put "ANTHROPIC_API_KEY" (FileOrAsk "anthropic-key.txt" "Anthropic API key (sk-ant-...)")
 Put "DB_PASSWORD" (FileOrAsk "db-password.txt" "Database password for $DbUser")
-Put "WEBDEPLOY_PASSWORD" (Plain (Read-Host "SmarterASP Web Deploy password for $UserName" -AsSecureString))
+Write-Host "Tip: to paste the password, RIGHT-CLICK in this window (Ctrl+V does not paste here). Nothing shows while you type or paste." -ForegroundColor DarkGray
+Put "WEBDEPLOY_PASSWORD" (AskSecret "SmarterASP Web Deploy password for $UserName")
 Write-Host ""
 Write-Host "Done. Every push to the 'uat' branch now deploys automatically." -ForegroundColor Green
 Write-Host "To deploy right now without a new commit: GitHub > Actions > Deploy UAT > Run workflow." -ForegroundColor Gray

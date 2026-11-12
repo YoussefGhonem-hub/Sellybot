@@ -75,7 +75,7 @@ namespace RiwaqChat
                         { "botName", store == null ? "دبدوب" : store.BotName },
                         { "welcome", store == null ? null : store.Welcome },
                         { "bubbleStyle", store == null ? "bear" : store.BubbleStyle },
-                        { "brandColor", store == null ? "#e8774a" : store.BrandColor },
+                        { "brandColor", store == null ? "#e8774a" : store.BrandColor }, { "chatTitle", store == null ? null : store.ChatTitle },
                     });
                     return;
                 }

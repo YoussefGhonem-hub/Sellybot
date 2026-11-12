@@ -4,13 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>الشات</title>
+<script>
+  // The bare site address (no ?store=) is for store owners: go to the dashboard, which shows the login when not signed in.
+  // Chat links (/?store=<store id>) stay here and open the chat.
+  if (!new URLSearchParams(location.search).get("store")) location.replace("dashboard.html");
+</script>
+<script>
+  // Light / dark before the chat loads (saved choice first, then the device setting), so the page never flashes.
+  (function () {
+    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}
+    var dark = t ? t === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  })();
+</script>
 <style>
-  html,body{margin:0;height:100%;background:#fff7ef}
-  @media (prefers-color-scheme: dark){html,body{background:#1d1611}}
+  html,body{margin:0;height:100%;background:#fff7ef;color-scheme:light}
+  html[data-theme=dark],html[data-theme=dark] body{background:#1d1611;color-scheme:dark}
 </style>
 </head>
 <body>
 <!-- The chat opens right away on this page. The store comes from the link: ?store=<store id> -->
-<script src="widget.js?v=20261112131553" data-mode="page"></script>
+<script src="widget.js?v=20261112135442" data-mode="page"></script>
 </body>
 </html>
