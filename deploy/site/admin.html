@@ -335,6 +335,7 @@
       <button data-go="reqs"><span class="ic">📥</span>طلبات الاشتراك <span class="count" id="rqCount" hidden>0</span></button>
       <button data-go="subs"><span class="ic">🧾</span>الاشتراكات والإيرادات</button>
       <button data-go="support"><span class="ic">🎧</span>الدعم الفني <span class="count" id="tkCount" hidden>0</span></button>
+      <button data-go="wa"><span class="ic">💬</span>الواتساب <span class="count" id="waCount" hidden>0</span></button>
       <button data-go="settings"><span class="ic">⚙️</span>الإعدادات</button>
     </nav>
     <div class="side-foot">
@@ -447,6 +448,44 @@
         </div>
       </section>
 
+      <!-- WhatsApp: Sellybot's one Wapilot account, numbers -> stores -->
+      <section data-page="wa" hidden>
+        <div class="grid2b">
+          <form class="card anim" id="waTokForm">
+            <h3>حساب Wapilot بتاع Sellybot</h3>
+            <p class="sub">حساب واحد بتاعك، وكل متجر بياخد رقم (instance) منه. صاحب المتجر بيمسح الـ QR من لوحته ويبقى رقم متجره هو اللي بيرد.</p>
+            <div id="waTokState" class="hint" style="margin-bottom:6px"></div>
+            <label for="waTok">الـ API token (من Wapilot ← API tokens ← Create token)</label>
+            <input type="password" id="waTok" class="ltr" autocomplete="off" placeholder="الصق الـ token هنا">
+            <div class="msg" id="waTokMsg"></div>
+            <div class="row" style="margin-top:12px"><button class="btn" id="waTokBtn">حفظ والتأكد منه</button></div>
+            <div id="waHookBox" hidden style="margin-top:18px">
+              <h3>لينك الـ Webhook (واحد لكل الأرقام)</h3>
+              <p class="sub">في Wapilot، لكل رقم: Webhook URL = اللينك ده، والأحداث <b class="ltr">message</b> و <b class="ltr">message.any</b>.</p>
+              <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="waHook" class="ltr" readonly><button class="btn ghost sm" type="button" id="waHookCopy">نسخ</button></div>
+              <div class="row" style="margin-top:8px"><button class="btn ghost sm" type="button" id="waNewKey">لينك جديد</button><span class="hint">لو اللينك اتسرّب. هتحتاج تحطه تاني في كل الأرقام.</span></div>
+            </div>
+          </form>
+          <div class="card anim" style="animation-delay:.1s">
+            <h3>توزيع الأرقام على المتاجر</h3>
+            <p class="sub">لما صاحب متجر يدوس «اربط واتساب المتجر» بياخد أول رقم فاضي (مش متخصص لمتجر، ومفيش موبايل مربوط عليه، ومش محجوز).</p>
+            <div class="seg" id="waAuto">
+              <button data-f="paid">تلقائي للمشتركين بس</button><button data-f="all">تلقائي للكل</button><button data-f="off">أنا اللي بخصّص</button>
+            </div>
+            <div class="calc" style="margin-top:14px">
+              <div class="r"><span>إزاي تزوّد أرقام</span><b>من Wapilot ← Instances ← Create</b></div>
+              <div class="r"><span>كل رقم</span><b>بيتحاسب في Wapilot لوحده</b></div>
+            </div>
+            <div id="waWaiting" style="margin-top:14px"></div>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-top:16px"><h3 style="margin:0">الأرقام على الحساب</h3><span class="space"></span><button class="btn ghost sm" id="waReload">تحديث</button></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>الرقم (instance)</th><th>الموبايل المربوط</th><th>الحالة</th><th>المتجر</th><th></th></tr></thead>
+          <tbody id="waRows"></tbody>
+        </table></div>
+      </section>
+
       <!-- settings -->
       <section data-page="settings" hidden>
         <div class="grid2b">
@@ -555,7 +594,7 @@
     $("pwWarn").hidden = !defaultPw;
     $("meName").textContent = name; $("meAv").textContent = initial(name);
     var want = (location.hash || "#home").slice(1);
-    go(["home", "stores", "plans", "reqs", "subs", "support", "settings"].indexOf(want) >= 0 ? want : "home");
+    go(["home", "stores", "plans", "reqs", "subs", "support", "wa", "settings"].indexOf(want) >= 0 ? want : "home");
     api("requests", null, "&status=pending").then(function (d) { rqBadge(d.pending); }).catch(function () {});
   }
   $("pwEye").onclick = function () { var i = $("lPass"); i.type = i.type === "password" ? "text" : "password"; i.focus(); };
@@ -569,7 +608,7 @@
 
   // ---------- navigation ----------
   var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
-                 subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
+                 subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
     var on = document.querySelector("#nav button.on"); if (!on) return;
     $("navInd").style.transform = "translateY(" + (on.offsetTop) + "px)"; $("navInd").style.height = on.offsetHeight + "px";
@@ -582,8 +621,99 @@
     moveInd(); closeSide();
     if (history.replaceState) history.replaceState(null, "", "#" + page);
     window.scrollTo(0, 0);
-    ({ home: loadHome, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, settings: loadSettings })[page]();
+    ({ home: loadHome, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, settings: loadSettings })[page]();
   }
+
+  // ---------- WhatsApp: one Wapilot account for every store ----------
+  async function waApi(action, body) {
+    var init = { method: body ? "POST" : "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch" } };
+    if (body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
+    var r = await fetch("api/wa-admin.ashx" + (action ? "?action=" + action : ""), init), data = null;
+    try { data = await r.json(); } catch (e) {}
+    if (r.status === 401) { showLogin(); throw new Error("سجّل دخول تاني."); }
+    if (!r.ok) throw new Error((data && data.message) || "حصلت مشكلة، جرّب تاني.");
+    return data;
+  }
+  function waStatusPill(i) {
+    if (i.linked) return '<span class="pill ok">مربوط ✅</span>';
+    var s = String(i.status || "").toUpperCase();
+    if (s.indexOf("QR") >= 0 || s === "STARTING") return '<span class="pill warn">مستني مسح الـ QR</span>';
+    return '<span class="pill">' + esc(i.status || "مش شغال") + '</span>';
+  }
+  function renderWa(d) {
+    state.wa = d;
+    $("waTokState").innerHTML = d.tokenSet ? '<span class="pill ok">✓ الـ token محفوظ (متشفّر)</span> الصق token جديد بس لو عايز تغيّره.' : '<span class="pill warn">لسه مفيش token</span>';
+    $("waHookBox").hidden = !d.webhookUrl; $("waHook").value = d.webhookUrl || "";
+    document.querySelectorAll("#waAuto button").forEach(function (b) { b.classList.toggle("on", b.dataset.f === d.autoAssign); });
+    var waiting = d.waiting || [];
+    $("waCount").textContent = fmt(waiting.length); $("waCount").hidden = !waiting.length;
+    $("waWaiting").innerHTML = waiting.length ? '<h3>متاجر مستنية رقم</h3><div class="list">' + waiting.map(function (w) {
+      return '<div class="row" style="gap:8px"><b>' + esc(w.store) + '</b><span class="hint">' + ago(w.at) + '</span><span class="space"></span><button class="btn ghost sm" data-tk="' + w.ticketId + '">التذكرة</button></div>';
+    }).join("") + '</div><p class="hint">اعمل رقم جديد في Wapilot وخصّصه للمتجر من الجدول تحت.</p>' : '';
+    $("waWaiting").querySelectorAll("[data-tk]").forEach(function (b) { b.onclick = function () { state.tkFilter = "all"; go("support"); }; });
+    var stores = d.stores || [];
+    var opts = function (cur) {
+      return '<option value="">— مش متخصص —</option>' + stores.map(function (s) {
+        return '<option value="' + s.id + '"' + (s.id === cur ? " selected" : "") + '>' + esc(s.name) + (s.own ? " (حساب Wapilot بتاعه)" : s.instance && s.id !== cur ? " (معاه رقم)" : "") + (s.paid ? "" : " · بدون باقة") + '</option>';
+      }).join("");
+    };
+    var list = d.instances || [];
+    $("waRows").innerHTML = !d.tokenSet ? '<tr><td colspan="5"><div class="empty"><span class="e-ic">🔑</span>حط الـ API token الأول</div></td></tr>'
+      : d.error ? '<tr><td colspan="5"><div class="empty"><span class="e-ic">⚠️</span>' + esc(d.error) + '</div></td></tr>'
+      : !list.length ? '<tr><td colspan="5"><div class="empty"><span class="e-ic">📱</span>مفيش أرقام على الحساب. اعمل instance من Wapilot.</div></td></tr>'
+      : list.map(function (i, n) {
+        return '<tr style="animation-delay:' + Math.min(n * 0.03, 0.4) + 's"><td><b>' + esc(i.name) + '</b><div class="hint ltr" style="text-align:right">' + esc(i.id) + '</div>' + (i.reserved ? '<span class="pill brand">محجوز</span>' : '') + '</td>' +
+          '<td class="ltr">' + (i.number ? "+" + esc(i.number) : '<span class="hint">—</span>') + '</td>' +
+          '<td>' + waStatusPill(i) + '</td>' +
+          '<td><select data-as="' + esc(i.id) + '" style="min-width:180px">' + opts(i.storeId) + '</select></td>' +
+          '<td><div class="row" style="gap:6px;flex-wrap:nowrap">' +
+            (i.storeId ? '<button class="btn ghost sm" data-un="' + esc(i.id) + '">فك</button>' : '<button class="btn ghost sm" data-rs="' + esc(i.id) + '" data-on="' + (i.reserved ? 0 : 1) + '">' + (i.reserved ? "إلغاء الحجز" : "احجزه") + '</button>') +
+          '</div></td></tr>';
+      }).join("");
+    $("waRows").querySelectorAll("[data-as]").forEach(function (sel) {
+      var was = sel.value;
+      sel.onchange = async function () {
+        var id = sel.dataset.as, sid = +sel.value;
+        if (!sid) { sel.value = was; unassignWa(id); return; }
+        var s = stores.filter(function (x) { return x.id === sid; })[0];
+        if (s && s.own && !confirm(s.name + " مربوط بحساب Wapilot بتاعه. لو خصّصت له الرقم ده هيتفك من حسابه. أكمّل؟")) { sel.value = was; return; }
+        sel.disabled = true;
+        try { renderWa(await waApi("assign", { instance: id, storeId: sid })); toast("الرقم اتخصص للمتجر. صاحب المتجر هيلاقي الـ QR في لوحته."); }
+        catch (e) { toast(e.message, true); sel.value = was; sel.disabled = false; }
+      };
+    });
+    $("waRows").querySelectorAll("[data-un]").forEach(function (b) { b.onclick = function () { unassignWa(b.dataset.un); }; });
+    $("waRows").querySelectorAll("[data-rs]").forEach(function (b) {
+      b.onclick = async function () { busy(b, true); try { renderWa(await waApi("reserve", { instance: b.dataset.rs, reserved: b.dataset.on === "1" })); } catch (e) { toast(e.message, true); busy(b, false); } };
+    });
+  }
+  async function unassignWa(id) {
+    var i = (state.wa.instances || []).filter(function (x) { return x.id === id; })[0]; if (!i || !i.storeId) return;
+    var logout = i.linked && confirm("تفك الموبايل المربوط على الرقم ده كمان؟ (OK = يتفك ويرجع الرقم فاضي، Cancel = يفضل مربوط)");
+    if (!confirm("الرقم هيتشال من «" + i.store + "» والمساعد هيبطّل يرد عليه. أكمّل؟")) return;
+    try { renderWa(await waApi("unassign", { instance: id, logout: !!logout })); toast("الرقم اتشال من المتجر."); } catch (e) { toast(e.message, true); }
+  }
+  async function loadWa() {
+    $("waRows").innerHTML = '<tr><td colspan="5"><div class="skel"></div></td></tr>';
+    try { renderWa(await waApi("")); } catch (e) { toast(e.message, true); }
+  }
+  $("waTokForm").onsubmit = async function (e) {
+    e.preventDefault(); setMsg($("waTokMsg"), "");
+    var t = $("waTok").value.trim(); if (!t) { setMsg($("waTokMsg"), "الصق الـ token الأول."); return; }
+    busy($("waTokBtn"), true);
+    try { renderWa(await waApi("token", { token: t })); $("waTok").value = ""; setMsg($("waTokMsg"), "✓ الـ token شغال واتحفظ.", true); }
+    catch (err) { setMsg($("waTokMsg"), err.message); }
+    finally { busy($("waTokBtn"), false); }
+  };
+  $("waHookCopy").onclick = function () { $("waHook").select(); (navigator.clipboard ? navigator.clipboard.writeText($("waHook").value) : Promise.reject()).then(function () { toast("اتنسخ ✓"); }, function () { document.execCommand("copy"); toast("اتنسخ ✓"); }); };
+  $("waNewKey").onclick = async function () {
+    if (!confirm("اللينك القديم هيبطّل يشتغل فورًا، ولازم تحط الجديد في كل رقم على Wapilot. أكمّل؟")) return;
+    try { renderWa(await waApi("new-key", {})); toast("اتعمل لينك جديد، حطه في Wapilot."); } catch (e) { toast(e.message, true); }
+  };
+  document.querySelectorAll("#waAuto button").forEach(function (b) {
+    b.onclick = async function () { try { renderWa(await waApi("settings", { autoAssign: b.dataset.f })); toast("اتحفظ ✓"); } catch (e) { toast(e.message, true); } };
+  });
+  $("waReload").onclick = loadWa;
 
   // ---------- plan requests (owner pays, then asks; admin approves -> subscription, or rejects with a reason) ----------
   state.rqFilter = "pending"; state.reqs = [];

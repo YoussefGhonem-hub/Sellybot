@@ -1,11 +1,15 @@
 // WhatsApp through Wapilot (https://wapilot.net, API v2): the store's own WhatsApp number answers customers
 // with the same assistant as the site chat (same data, rules, Shopify tools and monthly quota).
 //
-// Setup (store owner): Wapilot account + API plan, link the store's number (QR), create an API token,
-// paste the token in the dashboard, then paste our webhook URL into Wapilot (events "message", and "message.any"
-// if they want the bot to step aside when they answer a customer themselves).
+// Two ways to connect (see WaAccount):
+// - Sellybot's account (default): the super admin saves ONE Wapilot token (admin.html → الواتساب) and creates numbers
+//   (instances) in the Wapilot app; the API can't create them. A store owner presses "اربط واتساب المتجر", gets a free
+//   number, and scans its QR (polled from Wapilot) with the store's phone. All numbers post to one webhook URL
+//   (api/wa-webhook.ashx?key=<platform secret>) and messages are routed to the store by instance_id.
+// - The owner's own Wapilot account: they paste their own API token, then paste our per-store webhook URL into Wapilot
+//   (events "message", and "message.any" if they want the bot to step aside when they answer a customer themselves).
 //
-// Flow: Wapilot -> api/wa-webhook.ashx?store=<slug>&key=<secret>  (Wapilot signs nothing, so the URL carries a secret)
+// Flow: Wapilot -> api/wa-webhook.ashx?[store=<slug>&]key=<secret>  (Wapilot signs nothing, so the URL carries a secret)
 //       -> message saved (duplicates dropped) -> 200 right away
 //       -> background: wait a few seconds (customers often send 2-3 short messages), answer the latest one with the
 //          whole recent conversation, send it with Wapilot's send-message.
@@ -119,6 +123,27 @@ namespace RiwaqChat
             }
         }
 
+        // QR to link a phone to the instance: a "data:image/png;base64,..." string, or null when none is available
+        // (already linked, or the session is stopped). Needs a QR instance (not Official).
+        public static async Task<string> Qr(string token, string instance)
+        {
+            try
+            {
+                var r = await Call(HttpMethod.Get, "instances/" + Uri.EscapeDataString(instance) + "/qr-code", token);
+                var qr = WaJson.S(r, "qr", "qr_code", "qrcode");
+                return string.IsNullOrEmpty(qr) ? null : (qr.StartsWith("data:image/") ? qr : "data:image/png;base64," + qr);
+            }
+            catch (WaException ex) when (ex.Status == 404) { return null; }
+            catch (WaException ex) when (ex.Status == 409 || (ex.Code ?? "").StartsWith("PASSKEY"))
+            {
+                throw new WaException("واتساب طالب تأكيد إضافي قبل الربط. كلّم الدعم يكمّله من حساب Wapilot.", ex.Status, ex.Code);
+            }
+        }
+
+        // Session controls for QR instances: start (so a QR is produced), logout (unlinks the phone).
+        public static Task Start(string token, string instance) { return Call(HttpMethod.Post, "instances/" + Uri.EscapeDataString(instance) + "/start", token, new Dictionary<string, object>()); }
+        public static Task Logout(string token, string instance) { return Call(HttpMethod.Post, "instances/" + Uri.EscapeDataString(instance) + "/logout", token, new Dictionary<string, object>()); }
+
         // Which send route works for an instance (QR "/{id}/send-message" or Official "/official/{id}/send-message"), learned on first use.
         static readonly ConcurrentDictionary<string, bool> Official = new ConcurrentDictionary<string, bool>();
 
@@ -168,6 +193,102 @@ namespace RiwaqChat
             }
             if (rest.Length > 0) parts.Add(rest);
             return parts;
+        }
+    }
+
+    // ---------- whose Wapilot account a store uses ----------
+    // "own": the store owner pasted their own Wapilot token (Stores.WaToken).
+    // "platform": Sellybot's single Wapilot account (token in AppSettings); the super admin assigned one of its numbers
+    //             (Stores.WaInstance, WaToken NULL) and the owner links the store's phone by scanning that number's QR.
+    public static class WaAccount
+    {
+        public static bool IsPlatform(StoreInfo s) { return s != null && string.IsNullOrEmpty(s.WaToken) && !string.IsNullOrEmpty(s.WaInstance); }
+
+        public static string PlatformToken(SqlConnection c) { var box = Billing.Get(c, "WaPlatformToken"); return string.IsNullOrEmpty(box) ? null : Secrets.Unprotect(box); }
+
+        public static string PlatformHookKey(SqlConnection c, bool create)
+        {
+            var k = Billing.Get(c, "WaPlatformHookKey");
+            if (string.IsNullOrEmpty(k) && create) { k = WhatsAppBot.NewKey(); Billing.Set(c, "WaPlatformHookKey", k); }
+            return k;
+        }
+
+        public static string Token(SqlConnection c, StoreInfo s) { return IsPlatform(s) ? PlatformToken(c) : Secrets.Unprotect(s.WaToken); }
+
+        public static string Origin(HttpRequest req)
+        {
+            string host = Web.Setting("CanonicalHost");
+            string origin = string.IsNullOrWhiteSpace(host) ? req.Url.Scheme + "://" + req.Url.Authority : "https://" + host.Trim();
+            return origin + req.ApplicationPath.TrimEnd('/');
+        }
+
+        // the one webhook URL for every number on the platform account (messages are routed by instance_id)
+        public static string PlatformHookUrl(HttpRequest req, SqlConnection c) { return Origin(req) + "/api/wa-webhook.ashx?key=" + PlatformHookKey(c, true); }
+
+        // Wapilot session states (WAHA-style): WORKING = a phone is linked; STOPPED/FAILED = needs a start to show a QR
+        public static bool Linked(string upper) { return upper == "WORKING" || upper == "CONNECTED" || upper == "AUTHENTICATED" || upper == "OPEN" || upper == "READY"; }
+        public static bool Stopped(string upper) { return upper == "STOPPED" || upper == "FAILED" || upper == "DISCONNECTED" || upper == "CLOSED" || upper == ""; }
+
+        // "paid" (default): only stores on an active paid plan get a number by themselves; "all"; "off": the admin assigns every number
+        public static string AutoAssign(SqlConnection c) { var v = (Billing.Get(c, "WaAutoAssign") ?? "paid").Trim().ToLowerInvariant(); return v == "all" || v == "off" ? v : "paid"; }
+
+        // numbers the admin keeps out of the pool (e.g. Sellybot's own support number), comma separated
+        public static HashSet<string> Reserved(SqlConnection c)
+        {
+            return new HashSet<string>((Billing.Get(c, "WaReserved") ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()), StringComparer.OrdinalIgnoreCase);
+        }
+
+        // null = the owner may take a number now; otherwise why not (shown in the dashboard)
+        public static string CanAutoAssign(SqlConnection c, StoreInfo s)
+        {
+            if (PlatformToken(c) == null) return "ربط الواتساب بالـ QR مش متاح لسه.";
+            if (AutoAssign(c) == "paid" && (!s.PlanId.HasValue || Billing.Expired(s))) return "ربط واتساب المتجر متاح مع الباقات المدفوعة. اشترك في باقة من تبويب «الباقة» وارجع هنا.";
+            return null;
+        }
+
+        // Takes the first free number of the platform account for the store. null = none free.
+        public static async Task<string> AssignFree(SqlConnection c, int storeId)
+        {
+            var token = PlatformToken(c);
+            if (token == null || AutoAssign(c) == "off") return null;
+            var all = await Wapilot.Instances(token);
+            var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var cmd = Db.Cmd(c, "SELECT WaInstance FROM dbo.Stores WHERE WaInstance IS NOT NULL"))
+            using (var r = cmd.ExecuteReader()) while (r.Read()) taken.Add((string)r[0]);
+            var reserved = Reserved(c);
+            foreach (var i in all.Where(x => !taken.Contains(x.Id) && !reserved.Contains(x.Id) && !Linked((x.Status ?? "").ToUpperInvariant())))
+            {
+                int n;
+                using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=@i, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=1, WaLastAt=NULL
+                    WHERE Id=@s AND WaInstance IS NULL AND NOT EXISTS (SELECT 1 FROM dbo.Stores WITH (UPDLOCK, HOLDLOCK) WHERE WaInstance=@i)", "@i", i.Id, "@s", storeId))
+                    n = cmd.ExecuteNonQuery();
+                if (n == 0) continue;   // someone else took it a moment ago
+                if (Stopped((i.Status ?? "").ToUpperInvariant())) try { await Wapilot.Start(token, i.Id); } catch (WaException ex) { Log.Error(ex); }
+                return i.Id;
+            }
+            return null;
+        }
+
+        // no free number: one support ticket per store so the admin creates a number in Wapilot and assigns it
+        public const string AskSubject = "طلب ربط واتساب المتجر";
+        public static void AskAdmin(SqlConnection c, StoreInfo s)
+        {
+            using (var cmd = Db.Cmd(c, @"IF NOT EXISTS (SELECT 1 FROM dbo.Tickets WHERE StoreId=@s AND Subject=@sub AND Status<>'closed')
+BEGIN
+  DECLARE @t INT;
+  INSERT INTO dbo.Tickets(StoreId, Subject, Category) VALUES (@s, @sub, 'technical'); SET @t = SCOPE_IDENTITY();
+  INSERT INTO dbo.TicketMessages(TicketId, FromAdmin, Body) VALUES (@t, 0, @b);
+END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) صاحب المتجر عايز يربط واتساب المتجر، ومفيش رقم فاضي على حساب Wapilot. اعمل رقم جديد (instance) في Wapilot، وبعدين من صفحة «الواتساب» في لوحة الأدمن خصّصه للمتجر ده."))
+                cmd.ExecuteNonQuery();
+        }
+
+        public static StoreInfo StoreForInstance(SqlConnection c, string instance)
+        {
+            if (string.IsNullOrEmpty(instance)) return null;
+            int id = 0;
+            using (var cmd = Db.Cmd(c, "SELECT TOP 1 Id FROM dbo.Stores WHERE WaInstance=@i AND WaToken IS NULL", "@i", instance))
+            { var v = cmd.ExecuteScalar(); if (v != null && v != DBNull.Value) id = (int)v; }
+            return id == 0 ? null : Db.StoreById(c, id);
         }
     }
 
@@ -291,7 +412,7 @@ namespace RiwaqChat
             {
                 if (!m.HasMedia) return true;   // reactions, receipts…
                 if (!s.WaEnabled || !Web.Allow("wa-media:" + s.Id + ":" + key, 1, TimeSpan.FromHours(1))) return true;
-                var token = Secrets.Unprotect(s.WaToken);
+                var token = WaAccount.Token(c, s);
                 if (token != null) HostingEnvironment.QueueBackgroundWorkItem(async ct =>
                 {
                     try { await Wapilot.Send(token, s.WaInstance, m.Chat, MediaReply, "sb-media-" + (m.Id ?? Guid.NewGuid().ToString("N"))); }
@@ -356,7 +477,7 @@ ELSE
 
                     var s = Db.StoreById(c, storeId);
                     if (s == null || s.Status != "active" || !s.WaEnabled || string.IsNullOrEmpty(s.WaInstance)) return;
-                    var token = Secrets.Unprotect(s.WaToken);
+                    var token = WaAccount.Token(c, s);
                     if (token == null) return;
                     if (Billing.Expired(s)) { SetStatus(c, s.Id, "⚠️ الباقة خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها."); return; }
                     if (Db.Usage(c, s.Id, Db.Month).Weighted >= Billing.TotalLimit(c, s)) { SetStatus(c, s.Id, "⚠️ رصيد الشهر خلص، فالمساعد مش بيرد على الواتساب لحد ما تزوّد الرصيد أو يبدأ شهر جديد."); return; }
@@ -457,9 +578,21 @@ ELSE
             {
                 using (var c = Db.Open())
                 {
-                    var s = Web.SlugRx.IsMatch(slug) ? Db.StoreBySlug(c, slug) : null;
-                    if (s == null || string.IsNullOrEmpty(s.WaHookKey) || !Secrets.Same(Encoding.UTF8.GetBytes(s.WaHookKey), Encoding.UTF8.GetBytes(key)))
-                    { res.StatusCode = 401; return; }
+                    // two kinds of URL: ?store=<slug>&key=<store secret> (owner's own Wapilot account),
+                    // or ?key=<platform secret> (Sellybot's account: every number posts here, routed by instance_id)
+                    bool platform = slug.Length == 0;
+                    StoreInfo s = null;
+                    if (platform)
+                    {
+                        var pk = WaAccount.PlatformHookKey(c, false);
+                        if (string.IsNullOrEmpty(pk) || !Secrets.Same(Encoding.UTF8.GetBytes(pk), Encoding.UTF8.GetBytes(key))) { res.StatusCode = 401; return; }
+                    }
+                    else
+                    {
+                        s = Web.SlugRx.IsMatch(slug) ? Db.StoreBySlug(c, slug) : null;
+                        if (s == null || string.IsNullOrEmpty(s.WaHookKey) || !Secrets.Same(Encoding.UTF8.GetBytes(s.WaHookKey), Encoding.UTF8.GetBytes(key)))
+                        { res.StatusCode = 401; return; }
+                    }
                     if (req.HttpMethod == "GET" || req.HttpMethod == "HEAD") { Web.Json(res, 200, new { ok = true }); return; }   // "test URL" buttons
                     if (req.HttpMethod != "POST") { res.StatusCode = 405; return; }
 
@@ -475,10 +608,16 @@ ELSE
                     foreach (var item in items)
                     {
                         var m = WhatsAppBot.Parse(item);
-                        if (!WhatsAppBot.Handle(c, s, m) && DateTime.UtcNow - lastShapeLog > TimeSpan.FromMinutes(10))
+                        var store = s;
+                        if (platform)
+                        {
+                            store = WaAccount.StoreForInstance(c, m.Instance);
+                            if (store == null) continue;   // a number not assigned to any store (yet)
+                        }
+                        if (!WhatsAppBot.Handle(c, store, m) && DateTime.UtcNow - lastShapeLog > TimeSpan.FromMinutes(10))
                         {
                             lastShapeLog = DateTime.UtcNow;
-                            Log.Error(new Exception("WhatsApp webhook not understood (store " + s.Slug + "): " + WaJson.Shape(item)));
+                            Log.Error(new Exception("WhatsApp webhook not understood (store " + store.Slug + "): " + WaJson.Shape(item)));
                         }
                     }
                     Web.Json(res, 200, new { ok = true });
@@ -535,13 +674,74 @@ ELSE
                                 { "id", i.Id }, { "name", i.Name }, { "number", i.Number ?? "" }, { "status", i.Status } }).ToList() } });
                             return;
                         }
+                        if (WaAccount.IsPlatform(s))   // moving from Sellybot's number to the owner's own account: free ours
+                            try { await Wapilot.Logout(WaAccount.PlatformToken(c), s.WaInstance); } catch (WaException) { }
                         string hookKey = string.IsNullOrEmpty(s.WaHookKey) ? WhatsAppBot.NewKey() : s.WaHookKey;   // same URL on reconnect
                         using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET WaInstance=@i, WaToken=@t, WaHookKey=@k, WaNumber=@n, WaEnabled=1, WaStatus=NULL WHERE Id=@s",
                             "@i", chosen.Id, "@t", Secrets.Protect(token), "@k", hookKey, "@n", chosen.Number, "@s", s.Id)) cmd.ExecuteNonQuery();
                         Web.Json(res, 200, await State(c, req, Db.StoreById(c, s.Id)));
                         return;
                     }
+                    if (action == "link")
+                    {
+                        // Sellybot's account: take a free number (not assigned, no phone linked) and start it so it shows a QR
+                        if (!string.IsNullOrEmpty(s.WaInstance)) { Web.Json(res, 200, await State(c, req, s)); return; }
+                        var why = WaAccount.CanAutoAssign(c, s);
+                        if (why != null) { Web.Error(res, 400, "not_available", why); return; }
+                        string picked;
+                        try { picked = await WaAccount.AssignFree(c, s.Id); }
+                        catch (WaException ex) { Log.Error(ex); Web.Error(res, 400, "wapilot", "مقدرناش نجهّز رقم دلوقتي، جرّب كمان شوية."); return; }
+                        if (picked == null)
+                        {
+                            WaAccount.AskAdmin(c, s);
+                            Web.Error(res, 409, "no_free_number", "كل الأرقام المتاحة مستخدمة دلوقتي. بعتنا للدعم وهنجهّزلك رقم في أقرب وقت، وهيظهرلك هنا الـ QR أول ما يجهز.");
+                            return;
+                        }
+                        Web.Json(res, 200, await State(c, req, Db.StoreById(c, s.Id)));
+                        return;
+                    }
                     if (string.IsNullOrEmpty(s.WaInstance)) { Web.Error(res, 400, "not_connected", "اربط الواتساب الأول."); return; }
+                    bool platformMode = WaAccount.IsPlatform(s);
+
+                    if (action == "qr")
+                    {
+                        if (!platformMode) { Web.Error(res, 400, "bad_action"); return; }
+                        var token = WaAccount.PlatformToken(c);
+                        if (token == null) { Web.Error(res, 400, "not_available", "الواتساب مش متاح دلوقتي، كلّم الدعم."); return; }
+                        var d = new Dictionary<string, object>();
+                        try
+                        {
+                            var st = await Wapilot.Status(token, s.WaInstance);
+                            string status = (st.Status ?? "").ToUpperInvariant();
+                            d["live"] = st.Status ?? "";
+                            if (WaAccount.Linked(status))
+                            {
+                                d["linked"] = true;
+                                if (!string.IsNullOrEmpty(st.Number) && st.Number != s.WaNumber)
+                                    using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET WaNumber=@n, WaStatus=NULL WHERE Id=@s", "@n", st.Number, "@s", s.Id)) cmd.ExecuteNonQuery();
+                                d["number"] = st.Number ?? s.WaNumber ?? "";
+                            }
+                            else
+                            {
+                                d["linked"] = false;
+                                if (WaAccount.Stopped(status) && Web.Allow("wa-start:" + s.Id, 6, TimeSpan.FromMinutes(10))) await Wapilot.Start(token, s.WaInstance);
+                                d["qr"] = await Wapilot.Qr(token, s.WaInstance) ?? "";
+                            }
+                        }
+                        catch (WaException ex) { d["error"] = ex.Message; }
+                        Web.Json(res, 200, d);
+                        return;
+                    }
+                    if (action == "unlink")
+                    {
+                        // logs the phone out of the number (to link a different phone); the number stays with the store
+                        if (!platformMode) { Web.Error(res, 400, "bad_action"); return; }
+                        try { await Wapilot.Logout(WaAccount.PlatformToken(c), s.WaInstance); }
+                        catch (WaException ex) { Web.Error(res, 400, "wapilot", ex.Message); return; }
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET WaNumber=NULL, WaStatus=NULL WHERE Id=@s", "@s", s.Id)) cmd.ExecuteNonQuery();
+                        Web.Json(res, 200, await State(c, req, Db.StoreById(c, s.Id)));
+                        return;
+                    }
 
                     if (action == "enable")
                     {
@@ -557,7 +757,7 @@ ELSE
                         if (phone == null) { Web.Error(res, 400, "bad_phone", "اكتب رقم موبايل صح بكود الدولة، مثلًا 201001234567."); return; }
                         string text = "✅ رسالة تجربة من " + s.Name + ": الواتساب مربوط بـ Sellybot. ابعت أي سؤال من رقم تاني والمساعد هيرد عليه.";
                         var mine = WhatsAppBot.Save(c, s.Id, phone, false, text, null);   // so the echo (message.any) isn't taken for the owner typing
-                        try { await Wapilot.Send(Secrets.Unprotect(s.WaToken), s.WaInstance, phone, text, null); }
+                        try { await Wapilot.Send(WaAccount.Token(c, s), s.WaInstance, phone, text, null); }
                         catch (WaException ex)
                         {
                             if (mine.HasValue) using (var cmd = Db.Cmd(c, "DELETE FROM dbo.WaMessages WHERE Id=@id", "@id", mine.Value)) cmd.ExecuteNonQuery();
@@ -568,12 +768,17 @@ ELSE
                     }
                     if (action == "new-key")
                     {
+                        if (platformMode) { Web.Error(res, 400, "bad_action"); return; }
                         using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET WaHookKey=@k WHERE Id=@s", "@k", WhatsAppBot.NewKey(), "@s", s.Id)) cmd.ExecuteNonQuery();
                         Web.Json(res, 200, await State(c, req, Db.StoreById(c, s.Id)));
                         return;
                     }
                     if (action == "disconnect")
                     {
+                        // on Sellybot's account the phone is logged out first, so the number goes back to the pool clean
+                        if (platformMode)
+                            try { await Wapilot.Logout(WaAccount.PlatformToken(c), s.WaInstance); }
+                            catch (WaException ex) { if (ex.Status != 404) Log.Error(ex); }
                         using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE Id=@s;
                             DELETE FROM dbo.WaMessages WHERE StoreId=@s;", "@s", s.Id)) cmd.ExecuteNonQuery();
                         Web.Json(res, 200, new { ok = true });
@@ -588,12 +793,19 @@ ELSE
 
         static async Task<Dictionary<string, object>> State(SqlConnection c, HttpRequest req, StoreInfo s)
         {
-            bool on = !string.IsNullOrEmpty(s.WaInstance);
-            var d = new Dictionary<string, object> { { "connected", on } };
-            if (!on) return d;
+            bool on = !string.IsNullOrEmpty(s.WaInstance), platform = WaAccount.IsPlatform(s);
+            var d = new Dictionary<string, object> { { "connected", on }, { "mode", on ? (platform ? "platform" : "own") : "" } };
+            if (!on)
+            {
+                // can the owner just scan a QR (Sellybot's account), or do they need their own Wapilot account?
+                d["platformAvailable"] = WaAccount.PlatformToken(c) != null;
+                d["platformBlocked"] = WaAccount.CanAutoAssign(c, s) ?? "";
+                return d;
+            }
             d["instance"] = s.WaInstance; d["number"] = s.WaNumber ?? ""; d["enabled"] = s.WaEnabled;
             d["status"] = s.WaStatus ?? ""; d["lastAt"] = s.WaLastAt.HasValue ? s.WaLastAt.Value.ToString("o") : "";
-            d["webhookUrl"] = HookUrl(req, s); d["pauseHours"] = WhatsAppBot.PauseHours;
+            if (!platform) d["webhookUrl"] = HookUrl(req, s);
+            d["pauseHours"] = WhatsAppBot.PauseHours;
             using (var cmd = Db.Cmd(c, @"SELECT COUNT(DISTINCT ChatId), ISNULL(SUM(CASE WHEN FromCustomer=0 AND MsgId IS NULL THEN 1 ELSE 0 END),0),
                     (SELECT MAX(CreatedAt) FROM dbo.WaMessages WHERE StoreId=@s AND FromCustomer=1)
                 FROM dbo.WaMessages WHERE StoreId=@s AND CreatedAt > DATEADD(DAY,-30,SYSUTCDATETIME())", "@s", s.Id))
@@ -606,11 +818,161 @@ ELSE
             // live state from Wapilot (is the phone still linked?)
             try
             {
-                var token = Secrets.Unprotect(s.WaToken);
+                var token = WaAccount.Token(c, s);
                 var st = token == null ? null : await Wapilot.Status(token, s.WaInstance);
                 d["live"] = st == null ? "" : st.Status; if (st != null && !string.IsNullOrEmpty(st.Number)) d["number"] = st.Number;
+                d["linked"] = st != null && WaAccount.Linked((st.Status ?? "").ToUpperInvariant());
             }
             catch (WaException ex) { d["live"] = ""; d["liveError"] = ex.Message; }
+            return d;
+        }
+    }
+
+    // api/wa-admin.ashx — super admin: Sellybot's Wapilot account (token, webhook) and which number belongs to which store.
+    public class WhatsAppAdminHandler : HttpTaskAsyncHandler
+    {
+        public override bool IsReusable { get { return true; } }
+
+        public override async Task ProcessRequestAsync(HttpContext ctx)
+        {
+            var req = ctx.Request; var res = ctx.Response;
+            res.Cache.SetCacheability(HttpCacheability.NoCache);
+            if (!Db.Configured) { Web.Error(res, 503, "not_configured"); return; }
+            try
+            {
+                using (var c = Db.Open())
+                {
+                    var adminId = AdminAuth.Current(ctx);
+                    bool ok = false;
+                    if (adminId.HasValue) using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.Admins WHERE Id=@id", "@id", adminId.Value)) ok = (int)cmd.ExecuteScalar() > 0;
+                    if (!ok) { Web.Error(res, 401, "not_logged_in"); return; }
+
+                    if (req.HttpMethod == "GET") { Web.Json(res, 200, await State(c, req)); return; }
+                    if (req.HttpMethod != "POST" || !Web.CsrfOk(req)) { Web.Error(res, 400, "bad_request"); return; }
+                    string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
+                    var b = Web.Body(req, 4000);
+
+                    if (action == "token")
+                    {
+                        string token = (Web.Str(b, "token", 600) ?? "").Trim();
+                        if (token.Length < 10 || token.Contains(" ")) { Web.Error(res, 400, "bad_token", "الـ API token مش مظبوط. انسخه زي ما هو من Wapilot (API tokens)."); return; }
+                        try { await Wapilot.Instances(token); }
+                        catch (WaException ex) { Web.Error(res, 400, "wapilot", ex.Message); return; }
+                        Billing.Set(c, "WaPlatformToken", Secrets.Protect(token));
+                        WaAccount.PlatformHookKey(c, true);
+                        Web.Json(res, 200, await State(c, req));
+                        return;
+                    }
+                    if (action == "settings")
+                    {
+                        var mode = (Web.Str(b, "autoAssign", 10) ?? "").ToLowerInvariant();
+                        if (mode != "paid" && mode != "all" && mode != "off") { Web.Error(res, 400, "bad_request"); return; }
+                        Billing.Set(c, "WaAutoAssign", mode);
+                        Web.Json(res, 200, await State(c, req));
+                        return;
+                    }
+                    if (action == "reserve")
+                    {
+                        var inst = (Web.Str(b, "instance", 150) ?? "").Trim();
+                        object on; bool reserve = b.TryGetValue("reserved", out on) && on is bool && (bool)on;
+                        if (inst.Length == 0) { Web.Error(res, 400, "bad_request"); return; }
+                        var set = WaAccount.Reserved(c);
+                        if (reserve) set.Add(inst); else set.Remove(inst);
+                        Billing.Set(c, "WaReserved", string.Join(",", set));
+                        Web.Json(res, 200, await State(c, req));
+                        return;
+                    }
+                    if (action == "new-key")
+                    {
+                        Billing.Set(c, "WaPlatformHookKey", WhatsAppBot.NewKey());
+                        Web.Json(res, 200, await State(c, req));
+                        return;
+                    }
+
+                    var token2 = WaAccount.PlatformToken(c);
+                    if (token2 == null) { Web.Error(res, 400, "no_token", "حط الـ API token بتاع حساب Wapilot الأول."); return; }
+
+                    if (action == "assign")
+                    {
+                        var inst = (Web.Str(b, "instance", 150) ?? "").Trim();
+                        var storeId = Web.Int(b, "storeId");
+                        var s = storeId.HasValue ? Db.StoreById(c, storeId.Value) : null;
+                        if (inst.Length == 0 || s == null) { Web.Error(res, 400, "bad_request"); return; }
+                        List<Wapilot.Instance> all;
+                        try { all = await Wapilot.Instances(token2); }
+                        catch (WaException ex) { Web.Error(res, 400, "wapilot", ex.Message); return; }
+                        var i = all.FirstOrDefault(x => string.Equals(x.Id, inst, StringComparison.OrdinalIgnoreCase));
+                        if (i == null) { Web.Error(res, 400, "not_found", "الرقم ده مش موجود على حساب Wapilot."); return; }
+                        bool linked = WaAccount.Linked((i.Status ?? "").ToUpperInvariant());
+                        // the number leaves whichever store had it; the store leaves whatever it had (incl. its own Wapilot account)
+                        using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE WaInstance=@i AND Id<>@s;
+                            UPDATE dbo.Stores SET WaInstance=@i, WaToken=NULL, WaHookKey=NULL, WaNumber=@n, WaStatus=NULL, WaEnabled=1 WHERE Id=@s;",
+                            "@i", i.Id, "@n", linked ? i.Number : null, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        if (WaAccount.Stopped((i.Status ?? "").ToUpperInvariant())) try { await Wapilot.Start(token2, i.Id); } catch (WaException ex) { Log.Error(ex); }
+                        Web.Json(res, 200, await State(c, req));
+                        return;
+                    }
+                    if (action == "unassign")
+                    {
+                        var inst = (Web.Str(b, "instance", 150) ?? "").Trim();
+                        object lo; bool logout = b.TryGetValue("logout", out lo) && lo is bool && (bool)lo;
+                        if (inst.Length == 0) { Web.Error(res, 400, "bad_request"); return; }
+                        using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE WaInstance=@i AND WaToken IS NULL", "@i", inst)) cmd.ExecuteNonQuery();
+                        if (logout) try { await Wapilot.Logout(token2, inst); } catch (WaException ex) { if (ex.Status != 404) { Web.Error(res, 400, "wapilot", ex.Message); return; } }
+                        Web.Json(res, 200, await State(c, req));
+                        return;
+                    }
+                    Web.Error(res, 400, "bad_action");
+                }
+            }
+            catch (BadRequestException ex) { Web.Error(res, 400, "bad_request", ex.Message); }
+            catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error", "حصلت مشكلة، جرّب تاني."); }
+        }
+
+        static async Task<Dictionary<string, object>> State(SqlConnection c, HttpRequest req)
+        {
+            var token = WaAccount.PlatformToken(c);
+            var d = new Dictionary<string, object> { { "tokenSet", token != null }, { "autoAssign", WaAccount.AutoAssign(c) } };
+            // every store, for the "assign to" list, with what it uses now
+            var stores = new List<Dictionary<string, object>>();
+            var byInstance = new Dictionary<string, Dictionary<string, object>>(StringComparer.OrdinalIgnoreCase);
+            using (var cmd = Db.Cmd(c, "SELECT Id, Slug, Name, WaInstance, CASE WHEN WaToken IS NULL THEN 0 ELSE 1 END AS Own, PlanId, PlanEndsAt FROM dbo.Stores ORDER BY Name"))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read())
+                {
+                    var st = new Dictionary<string, object> {
+                        { "id", (int)r["Id"] }, { "slug", (string)r["Slug"] }, { "name", (string)r["Name"] },
+                        { "instance", r["WaInstance"] as string ?? "" }, { "own", Convert.ToInt32(r["Own"]) == 1 && r["WaInstance"] != DBNull.Value },
+                        { "paid", r["PlanId"] != DBNull.Value && r["PlanEndsAt"] != DBNull.Value && (DateTime)r["PlanEndsAt"] >= DateTime.UtcNow } };
+                    stores.Add(st);
+                    if (r["WaInstance"] != DBNull.Value && Convert.ToInt32(r["Own"]) == 0) byInstance[(string)r["WaInstance"]] = st;
+                }
+            d["stores"] = stores;
+            if (token == null) return d;
+            d["webhookUrl"] = WaAccount.PlatformHookUrl(req, c);
+            // tickets from owners who found no free number
+            using (var cmd = Db.Cmd(c, @"SELECT t.Id, t.StoreId, s.Name, t.CreatedAt FROM dbo.Tickets t JOIN dbo.Stores s ON s.Id=t.StoreId
+                WHERE t.Subject=@sub AND t.Status<>'closed' AND s.WaInstance IS NULL ORDER BY t.Id", "@sub", WaAccount.AskSubject))
+            using (var r = cmd.ExecuteReader())
+            {
+                var waiting = new List<Dictionary<string, object>>();
+                while (r.Read()) waiting.Add(new Dictionary<string, object> { { "ticketId", (int)r[0] }, { "storeId", (int)r[1] }, { "store", (string)r[2] },
+                    { "at", DateTime.SpecifyKind((DateTime)r[3], DateTimeKind.Utc).ToString("o") } });
+                d["waiting"] = waiting;
+            }
+            try
+            {
+                var reserved = WaAccount.Reserved(c);
+                d["instances"] = (await Wapilot.Instances(token)).Select(i =>
+                {
+                    Dictionary<string, object> st; byInstance.TryGetValue(i.Id, out st);
+                    return new Dictionary<string, object> {
+                        { "id", i.Id }, { "name", i.Name }, { "status", i.Status ?? "" }, { "number", i.Number ?? "" },
+                        { "linked", WaAccount.Linked((i.Status ?? "").ToUpperInvariant()) }, { "reserved", reserved.Contains(i.Id) },
+                        { "storeId", st == null ? (object)null : st["id"] }, { "store", st == null ? "" : st["name"] } };
+                }).ToList();
+            }
+            catch (WaException ex) { d["instances"] = new List<object>(); d["error"] = ex.Message; }
             return d;
         }
     }
