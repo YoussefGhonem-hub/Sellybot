@@ -29,3 +29,6 @@ deploy/site/App_Data/products.txt
 *.user
 Thumbs.db
 .DS_Store
+
+# Let's Encrypt account key, certificate key and the certificate file (never commit)
+deploy/ssl/
