@@ -16,6 +16,11 @@ namespace RiwaqChat
         public string ShopifyShop, ShopifyClientId, ShopifySecret, ShopifyScopes;
         public bool ShopifyOrders;
         public int ShopifyWebhooks;
+        // WhatsApp through Wapilot: instance = Wapilot's instance_uniquename, token is encrypted (Secrets.Protect),
+        // hook key = the secret part of the webhook URL the owner pastes into Wapilot
+        public string WaInstance, WaToken, WaHookKey, WaNumber, WaStatus;
+        public bool WaEnabled;
+        public DateTime? WaLastAt;
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -178,6 +183,13 @@ namespace RiwaqChat
                 ShopifyScopes = r["ShopifyScopes"] as string,
                 ShopifyOrders = r["ShopifyOrders"] is bool && (bool)r["ShopifyOrders"],
                 ShopifyWebhooks = r["ShopifyWebhooks"] is int ? (int)r["ShopifyWebhooks"] : 0,
+                WaInstance = r["WaInstance"] as string,
+                WaToken = r["WaToken"] as string,
+                WaHookKey = r["WaHookKey"] as string,
+                WaNumber = r["WaNumber"] as string,
+                WaStatus = r["WaStatus"] as string,
+                WaEnabled = r["WaEnabled"] is bool && (bool)r["WaEnabled"],
+                WaLastAt = r["WaLastAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["WaLastAt"], DateTimeKind.Utc),
                 Suggestions = r["Suggestions"] as string,
                 MonthlyTokenLimit = (int)r["MonthlyTokenLimit"],
                 DataVersion = (int)r["DataVersion"],
@@ -274,6 +286,23 @@ IF COL_LENGTH('dbo.Stores', 'Suggestions') IS NULL ALTER TABLE dbo.Stores ADD Su
 IF COL_LENGTH('dbo.Stores', 'ShopifyDomain') IS NULL ALTER TABLE dbo.Stores ADD ShopifyDomain NVARCHAR(200) NULL, ShopifySyncedAt DATETIME2 NULL, ShopifyStatus NVARCHAR(400) NULL;
 IF COL_LENGTH('dbo.Stores', 'ShopifyShop') IS NULL ALTER TABLE dbo.Stores ADD ShopifyShop NVARCHAR(200) NULL, ShopifyClientId NVARCHAR(100) NULL, ShopifySecret NVARCHAR(1000) NULL,
   ShopifyScopes NVARCHAR(600) NULL, ShopifyOrders BIT NOT NULL CONSTRAINT DF_Stores_ShopifyOrders DEFAULT 0, ShopifyWebhooks INT NOT NULL CONSTRAINT DF_Stores_ShopifyWebhooks DEFAULT 0;
+-- WhatsApp (Wapilot): the connection on the store, and the conversation per customer (the bot needs the history; WhatsApp doesn't send it)
+IF COL_LENGTH('dbo.Stores', 'WaInstance') IS NULL ALTER TABLE dbo.Stores ADD WaInstance NVARCHAR(100) NULL, WaToken NVARCHAR(1000) NULL, WaHookKey NVARCHAR(64) NULL,
+  WaNumber NVARCHAR(60) NULL, WaStatus NVARCHAR(400) NULL, WaEnabled BIT NOT NULL CONSTRAINT DF_Stores_WaEnabled DEFAULT 0, WaLastAt DATETIME2 NULL;
+IF OBJECT_ID('dbo.WaMessages') IS NULL
+BEGIN
+  CREATE TABLE dbo.WaMessages(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    ChatId NVARCHAR(100) NOT NULL,
+    FromCustomer BIT NOT NULL,
+    Body NVARCHAR(4000) NOT NULL,
+    MsgId NVARCHAR(150) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_WaMessages_Chat ON dbo.WaMessages(StoreId, ChatId, Id);
+  -- Wapilot may deliver the same message twice: answer it once
+  CREATE UNIQUE INDEX UX_WaMessages_MsgId ON dbo.WaMessages(StoreId, MsgId) WHERE MsgId IS NOT NULL;
+END
 IF OBJECT_ID('dbo.Migrations') IS NULL CREATE TABLE dbo.Migrations(Name NVARCHAR(100) NOT NULL PRIMARY KEY, RanAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
 IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'drop-default-bot-name')
 BEGIN

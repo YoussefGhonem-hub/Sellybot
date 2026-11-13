@@ -73,12 +73,32 @@
   .menu a,.menu button{display:block;width:100%;text-align:right;padding:9px 12px;border:0;background:none;border-radius:10px;cursor:pointer;color:var(--ink);text-decoration:none;font-size:14px}
   .menu a:hover,.menu button:hover{background:var(--soft)}
   .menu .sep{height:1px;background:var(--line);margin:4px 6px}
+  /* mobile: the tabs live in a sidebar that slides in from the right */
+  .menu-btn,.nav-back,.side-head{display:none}
+  .menu-btn{flex:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);place-items:center;cursor:pointer}
+  .menu-btn svg{width:20px;height:20px}
   @media (max-width:760px){
-    .nav-in{flex-wrap:wrap;height:auto;padding-top:10px;gap:10px}
+    .nav{backdrop-filter:none;background:var(--card)}   /* a backdrop-filter would trap the fixed sidebar inside the header */
+    .nav-in{height:58px;gap:10px;padding:0 12px}
     .logo small{display:none}
     .theme-btn{margin-inline-start:auto}
     .acct-txt{display:none}
-    .links{order:3;flex-basis:100%;height:44px}
+    .menu-btn:not([hidden]){display:grid}
+    .links{position:fixed;top:0;right:0;bottom:0;width:min(290px,84vw);height:auto;flex-direction:column;gap:2px;padding:14px 12px 24px;
+      background:var(--card);border-left:1px solid var(--line);box-shadow:-12px 0 40px rgba(0,0,0,.18);z-index:60;overflow-y:auto;
+      transform:translateX(105%);visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s .3s}
+    body.nav-open .links{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+    .links button{height:auto;flex:none;padding:12px 14px;border-radius:12px;text-align:right;font-size:15px;color:var(--ink)}
+    .links button:hover{background:var(--soft)}
+    .links button.on{background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+    .links button.on:after{inset:10px 0 10px auto;width:3px;height:auto;border-radius:3px 0 0 3px}
+    .side-head{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+    .side-head b{font-size:16px}
+    .side-head button{width:36px;height:36px;padding:0;border-radius:10px;display:grid;place-items:center;font-size:18px;color:var(--muted)}
+    .side-head button:after{display:none}
+    .nav-back{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s;z-index:55}
+    body.nav-open .nav-back{opacity:1;pointer-events:auto}
+    body.nav-open{overflow:hidden}
   }
 
   /* ---------- layout ---------- */
@@ -445,6 +465,16 @@
   .shop-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
   .shop-fields label{margin-top:0}
   @media (max-width:860px){.shop-fields{grid-template-columns:minmax(0,1fr)}}
+  .wa-logo{background:linear-gradient(135deg,#1da851,#25d366)}
+  .wa-warn{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#fff1d6;color:#8a5200;font-size:13.5px;line-height:1.6}
+  [data-theme=dark] .wa-warn{background:#3d2c10;color:#f3c26b}
+  .wa-pick{margin-top:10px}
+  .wa-pick select{width:100%}
+  .wa-block{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .wa-block h4{margin:0 0 6px;font-size:15px}
+  .wa-block .codepre{white-space:pre-wrap;word-break:break-all}
+  .wa-stats{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+  .wa-stats span{font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--soft)}
   .feat-list{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
   .feat-list span{font-size:12.5px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--soft)}
   .feat-list span.no{opacity:.65;text-decoration:line-through}
@@ -484,6 +514,9 @@
 
 <header class="nav">
   <div class="nav-in">
+    <button class="menu-btn" id="menuBtn" type="button" aria-label="القائمة" aria-controls="navLinks" aria-expanded="false" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    </button>
     <a class="logo" href="dashboard.html" aria-label="Sellybot">
       <svg class="mark" viewBox="12 2 60 72" aria-hidden="true">
         <path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/>
@@ -493,10 +526,13 @@
       </svg>
       <span><b>Selly<span>bot</span></b><small>لوحة تحكم المتجر</small></span>
     </a>
+    <div class="nav-back" id="navBack"></div>
     <nav class="links" id="navLinks" hidden>
+      <div class="side-head"><b>القائمة</b><button type="button" id="navClose" aria-label="اقفل القائمة">✕</button></div>
       <button data-tab="data" class="on">📚 داتا المتجر</button>
       <button data-tab="look">🎨 شكل الشات</button>
       <button data-tab="install">🛍️ ضيفه لمتجرك</button>
+      <button data-tab="wa">💬 واتساب</button>
       <button data-tab="settings">⚙️ المساعد</button>
       <button data-tab="plan">💎 باقتي</button>
       <button data-tab="support">🎧 الدعم <span class="nb" id="supBadge" hidden></span></button>
@@ -852,6 +888,85 @@
     </div>
   </section>
 
+  <!-- WhatsApp (Wapilot) -->
+  <section data-panel="wa" hidden>
+    <div class="page-title"><div><h2>المساعد على الواتساب</h2><p>نفس المساعد، بنفس داتا متجرك وطريقة كلامه، يرد على زباينك على رقم واتساب المتجر 24 ساعة.</p></div></div>
+    <div class="card" style="max-width:880px">
+      <div class="shop-head">
+        <div class="shop-logo wa-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></div>
+        <div><h3 style="margin:0">ربط واتساب المتجر عن طريق Wapilot</h3>
+          <p class="sub" style="margin:2px 0 0">Wapilot بيوصّل رقم الواتساب بتاعك بـ Sellybot، فأي رسالة توصل للرقم المساعد يرد عليها.</p></div>
+      </div>
+
+      <div id="waOff">
+        <div class="why">
+          <b>إزاي بيشتغل؟</b>
+          <ul>
+            <li><span>💬</span><div><b>نفس ردود الموقع</b><small>نفس الداتا والتعليمات وتتبع الأوردرات، بس على رقم الواتساب بتاعك وبشكل رسايل الواتساب.</small></div></li>
+            <li><span>🧠</span><div><b>فاكر المحادثة</b><small>بيفتكر كلام الزبون في آخر 24 ساعة، ولو بعت كذا رسالة ورا بعض بيرد عليهم مرة واحدة.</small></div></li>
+            <li><span>🙋</span><div><b>لو رديت بنفسك بيسكت</b><small>لما ترد على زبون من موبايلك، المساعد يسيبلك المحادثة دي ساعتين.</small></div></li>
+            <li><span>📊</span><div><b>من نفس رصيدك</b><small>كل رد على الواتساب بيتحسب رسالة من رصيد باقتك، زي الموقع بالظبط. الجروبات مش بيرد فيها.</small></div></li>
+          </ul>
+        </div>
+        <h4 class="steps-title">الخطوات (حوالي 5 دقايق)</h4>
+        <ol class="steps shop-steps">
+          <li><b>اعمل حساب على Wapilot</b><span>ادخل على <a href="https://wapilot.net/en/" target="_blank" rel="noopener" class="ltr">wapilot.net</a> واشترك في باقة الـ <b style="display:inline">API</b> (اشتراكها بيتدفع لـ Wapilot مباشرة).</span></li>
+          <li><b>اربط رقم واتساب المتجر</b><span>من لوحة Wapilot ضيف رقم (Instance) وامسح الـ QR من موبايلك: واتساب ← الإعدادات ← <b style="display:inline">الأجهزة المرتبطة</b> ← ربط جهاز.</span></li>
+          <li><b>اعمل API token</b><span>من صفحة الـ API في Wapilot دوس <b style="display:inline">Create token</b> وانسخه.</span></li>
+          <li><b>الصقه هنا ودوس "اربط"</b><span>هنتأكد منه ونجيب رقمك من Wapilot. الـ token بيتحفظ متشفّر.</span></li>
+          <li><b>حط لينك الـ Webhook في Wapilot</b><span>بعد الربط هيظهرلك لينك خاص بمتجرك، حطه في إعدادات الـ Webhook بتاعة الرقم في Wapilot.</span></li>
+        </ol>
+        <label for="waToken">API token من Wapilot</label>
+        <div class="field pw" style="position:relative"><input type="password" id="waToken" class="ltr" maxlength="600" autocomplete="new-password" spellcheck="false" style="padding-right:12px!important">
+          <button type="button" class="eye" aria-label="اظهر الـ token"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+        <div class="wa-pick" id="waPick" hidden><label for="waInst">عندك أكتر من رقم على Wapilot، اختار رقم المتجر</label><select id="waInst" class="ltr"></select></div>
+        <button class="btn" id="waConnect" type="button" style="margin-top:12px">🔗 اربط الواتساب</button>
+        <p class="hint" style="margin:10px 0 0">💡 شكل الشاشات في Wapilot ممكن يختلف شوية عن الكلام ده. لو حاجة مش واضحة، كلّمنا ونساعدك.</p>
+      </div>
+
+      <div id="waOn" hidden>
+        <div class="shop-status"><span class="ok-pill" id="waPill">✅ مربوط</span><span class="hint" id="waInfo" style="margin:0"></span></div>
+        <div class="wa-warn" id="waWarn" hidden></div>
+        <label class="toggle"><input type="checkbox" id="waToggle"><span class="tg" aria-hidden="true"></span>
+          <span><b>المساعد بيرد على الواتساب</b><small>اقفله لو عايز ترد بنفسك على كل الرسايل لفترة. الرسايل بتتسجل برضه، فلما ترجّعه يفهم المحادثة.</small></span></label>
+        <div class="wa-stats" id="waStats"></div>
+
+        <div class="wa-block">
+          <h4>لينك الـ Webhook</h4>
+          <p class="sub">في Wapilot افتح إعدادات الرقم ← <b>Webhook</b>، الصق اللينك ده وفعّل event <span class="kbd ltr">message</span>. ولو عايز المساعد يسكت لما ترد على زبون بنفسك، فعّل كمان <span class="kbd ltr">message.any</span>.</p>
+          <div class="codebox">
+            <div class="codebar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="fname">Webhook URL</span>
+              <button class="copybtn" id="waCopy" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                <span class="lbl">نسخ اللينك</span>
+              </button>
+            </div>
+            <pre class="codepre ltr"><code id="waHook"></code></pre>
+          </div>
+          <div class="hint">🔒 اللينك فيه مفتاح سري خاص بمتجرك، ماتشاركهوش مع حد. لو اتسرّب <a href="#" id="waNewKey">اعمل لينك جديد</a> وحطه في Wapilot تاني.</div>
+        </div>
+
+        <div class="wa-block">
+          <h4>جرّب الربط</h4>
+          <div class="shop-form">
+            <input type="tel" id="waTestPhone" class="ltr" maxlength="25" placeholder="201001234567" aria-label="رقم موبايل للتجربة">
+            <button class="btn ghost" id="waTest" type="button">📤 ابعت رسالة تجربة</button>
+          </div>
+          <div class="hint">بنبعت رسالة من رقم متجرك للرقم ده، عشان تتأكد إن الإرسال شغال. وبعدين ابعت سؤال لرقم المتجر من موبايل تاني وشوف المساعد بيرد إزاي.</div>
+        </div>
+
+        <div class="row" style="margin-top:16px">
+          <button class="btn ghost sm" id="waRefresh" type="button">🔄 حدّث الحالة</button>
+          <span class="space"></span>
+          <button class="btn danger sm" id="waOffBtn" type="button">إلغاء الربط</button>
+        </div>
+      </div>
+      <div class="msg" id="waMsg"></div>
+    </div>
+  </section>
+
   <!-- settings -->
   <section data-panel="settings" hidden>
     <div class="page-title"><div><h2>إعدادات المساعد</h2><p>اسمه وطريقة كلامه وأول رسالة الزبون بيشوفها</p></div></div>
@@ -1120,7 +1235,18 @@
   function showLiveChat(on) { var h = liveChat && document.getElementById(liveChat); if (h) h.style.display = on ? "" : "none"; }
   $("logoutBtn").onclick = logout;
 
-  function showAuth() { $("authView").hidden = false; $("appView").hidden = true; $("navLinks").hidden = true; $("acct").hidden = true; heroStart(); }
+  function showAuth() { $("authView").hidden = false; $("appView").hidden = true; $("navLinks").hidden = true; $("menuBtn").hidden = true; $("acct").hidden = true; sideNav(false); heroStart(); }
+
+  // ---------------- mobile sidebar ----------------
+  function sideNav(open) {
+    document.body.classList.toggle("nav-open", open);
+    $("menuBtn").setAttribute("aria-expanded", open ? "true" : "false");
+    showLiveChat(!open && current !== "look");   // the chat bubble would sit on top of the menu
+  }
+  $("menuBtn").onclick = function () { sideNav(!document.body.classList.contains("nav-open")); };
+  $("navBack").onclick = $("navClose").onclick = function () { sideNav(false); };
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") sideNav(false); });
+  matchMedia("(min-width:761px)").addEventListener("change", function (m) { if (m.matches) sideNav(false); });
 
   // ---------------- navigation ----------------
   var current = "data";
@@ -1128,11 +1254,12 @@
     current = tab;
     document.querySelectorAll("[data-tab]").forEach(function (x) { x.classList.toggle("on", x.dataset.tab === tab); });
     document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== tab; });
-    $("acctMenu").hidden = true;
+    $("acctMenu").hidden = true; sideNav(false);
     if (tab === "admin") loadAdmin();
     if (tab === "look") initLook();
     if (tab === "plan") loadPlanTab();
     if (tab === "support") loadSupport();
+    if (tab === "wa") loadWa();
     showLiveChat(tab !== "look");   // the look tab has its own preview of the chat
     if (history.replaceState) history.replaceState(null, "", "#" + tab);
     window.scrollTo(0, 0);
@@ -1143,11 +1270,11 @@
   document.addEventListener("click", function (e) { if (!e.target.closest("#acct")) $("acctMenu").hidden = true; });
 
   function showApp() {
-    $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("acct").hidden = false; heroStop();
+    $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("menuBtn").hidden = false; $("acct").hidden = false; heroStop();
     $("adminTabBtn").hidden = !me.isAdmin;
     render(); loadItems(); mountLiveChat();
     var want = (location.hash || "").replace("#", "");
-    go(["data", "look", "install", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "data");
+    go(["data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "data");
   }
 
   // ---------------- my plan + support ----------------
@@ -1603,6 +1730,83 @@
     var r = await shopCall("shopify-disconnect", {}, this, "…");
     if (r) setMsg("shopMsg", "اتلغى الربط.", true);
   };
+  // ---------------- WhatsApp (Wapilot) ----------------
+  var wa = null;
+  var WA_LIVE = { WORKING: "متصل", CONNECTED: "متصل", ACTIVE: "متصل", SCAN_QR_CODE: "مستني مسح الـ QR", STARTING: "بيبدأ…", STOPPED: "متوقف", FAILED: "فيه مشكلة" };
+  async function loadWa() {
+    try { wa = await api("api/whatsapp.ashx"); renderWa(); }
+    catch (e) { setMsg("waMsg", e.message); }
+  }
+  function renderWa() {
+    var on = !!(wa && wa.connected);
+    $("waOff").hidden = on; $("waOn").hidden = !on;
+    if (!on) return;
+    var live = (wa.live || "").toUpperCase(), liveOk = !live || WA_LIVE[live] === "متصل";
+    var warn = wa.status || wa.liveError || (!liveOk ? "رقم الواتساب مش متصل على Wapilot دلوقتي (" + (WA_LIVE[live] || live) + "). افتح Wapilot واربط الرقم تاني بالـ QR." : "");
+    $("waPill").className = warn ? "warn-pill" : "ok-pill";
+    $("waPill").textContent = (warn ? "⚠️ " : "✅ ") + "⁦" + (wa.number ? "+" + wa.number : wa.instance) + "⁩" + (live ? " · " + (WA_LIVE[live] || live) : "");
+    $("waInfo").textContent = wa.lastIncoming ? "آخر رسالة من زبون وصلت " + ago(wa.lastIncoming) : "لسه ماوصلتش رسايل. اتأكد إنك حطيت لينك الـ Webhook في Wapilot.";
+    $("waWarn").hidden = !warn; $("waWarn").textContent = warn ? "⚠️ " + warn.replace(/^⚠️\s*/, "") : "";
+    $("waToggle").checked = !!wa.enabled;
+    $("waHook").textContent = wa.webhookUrl || "";
+    var st = $("waStats"); st.textContent = "";
+    [["💬", fmt(wa.chats30) + " محادثة في آخر 30 يوم"], ["🤖", fmt(wa.replies30) + " رد من المساعد"], ["⏸️", "بيسكت " + fmt(wa.pauseHours) + " ساعة لما ترد بنفسك"]]
+      .forEach(function (x) { var s = document.createElement("span"); s.textContent = x[0] + " " + x[1]; st.appendChild(s); });
+  }
+  async function waCall(action, body, btn, busy) {
+    var old = btn.innerHTML; btn.classList.add("loading-txt"); if (busy) btn.textContent = busy; setMsg("waMsg", "");
+    try { return await api("api/whatsapp.ashx?action=" + action, { method: "POST", json: body || {} }); }
+    catch (err) { setMsg("waMsg", err.message); return null; }
+    finally { btn.classList.remove("loading-txt"); btn.innerHTML = old; }
+  }
+  $("waConnect").onclick = async function () {
+    var token = $("waToken").value.trim(), inst = $("waPick").hidden ? "" : $("waInst").value;
+    if (!token) { setMsg("waMsg", "الصق الـ API token من Wapilot الأول."); $("waToken").focus(); return; }
+    var r = await waCall("connect", { token: token, instance: inst }, this, "⏳ بنتأكد من الـ token…");
+    if (!r) return;
+    if (r.choose) {
+      var sel = $("waInst"); sel.textContent = "";
+      r.choose.forEach(function (i) {
+        var o = document.createElement("option"); o.value = i.id;
+        o.textContent = i.name + (i.number ? " (⁦+" + i.number + "⁩)" : "") + (i.status ? " · " + (WA_LIVE[i.status] || i.status) : "");
+        sel.appendChild(o);
+      });
+      $("waPick").hidden = false; setMsg("waMsg", "اختار رقم المتجر من القايمة ودوس \"اربط\" تاني.", true); return;
+    }
+    wa = r; $("waToken").value = ""; $("waPick").hidden = true; renderWa();
+    setMsg("waMsg", "✅ اتربط! آخر خطوة: انسخ لينك الـ Webhook وحطه في Wapilot، وبعدين جرّب.", true);
+    toast("اتربط الواتساب 🎉");
+  };
+  $("waToken").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("waConnect").click(); } });
+  $("waToggle").onchange = async function () {
+    var t = this, want = t.checked;
+    try { await api("api/whatsapp.ashx?action=enable", { method: "POST", json: { enabled: want } }); wa.enabled = want; toast(want ? "المساعد رجع يرد على الواتساب ✅" : "المساعد وقف رد على الواتساب"); }
+    catch (err) { t.checked = !want; setMsg("waMsg", err.message); }
+  };
+  $("waCopy").onclick = function () {
+    copy(wa && wa.webhookUrl || "");
+    var b = this, l = b.querySelector(".lbl"); b.classList.add("done"); l.textContent = "✓ اتنسخ";
+    clearTimeout(b.t); b.t = setTimeout(function () { b.classList.remove("done"); l.textContent = "نسخ اللينك"; }, 2200);
+    toast("اتنسخ ✅ الصقه في إعدادات الـ Webhook في Wapilot");
+  };
+  $("waTest").onclick = async function () {
+    var p = $("waTestPhone").value.trim();
+    if (!p) { setMsg("waMsg", "اكتب رقم موبايل تبعتله رسالة التجربة."); $("waTestPhone").focus(); return; }
+    var r = await waCall("test", { phone: p }, this, "⏳ بنبعت…");
+    if (r) setMsg("waMsg", "✅ اتبعتت! لو ماوصلتش خلال دقيقة، اتأكد إن الرقم متصل على Wapilot.", true);
+  };
+  $("waNewKey").onclick = async function (e) {
+    e.preventDefault();
+    if (!confirm("هنعمل لينك جديد واللينك القديم هيبطّل يشتغل. لازم تحط الجديد في Wapilot بعدها. نكمّل؟")) return;
+    var r = await waCall("new-key", {}, this); if (r) { wa = r; renderWa(); setMsg("waMsg", "✅ اتعمل لينك جديد. انسخه وحطه في Wapilot مكان القديم.", true); }
+  };
+  $("waRefresh").onclick = async function () { var b = this; b.classList.add("loading-txt"); await loadWa(); b.classList.remove("loading-txt"); };
+  $("waOffBtn").onclick = async function () {
+    if (!confirm("متأكد؟ المساعد هيبطّل يرد على الواتساب وهنمسح المحادثات المحفوظة عندنا. رقمك على Wapilot مش هيتأثر، وتقدر تربط تاني في أي وقت.")) return;
+    var r = await waCall("disconnect", {}, this, "…");
+    if (r) { wa = { connected: false }; renderWa(); setMsg("waMsg", "اتلغى الربط. شيل لينك الـ Webhook من Wapilot كمان.", true); }
+  };
+
   $("edContent").addEventListener("input", updateCount);
   $("edCancel").onclick = function () { $("editor").hidden = true; };
   $("editor").addEventListener("click", function (e) { if (e.target === $("editor")) $("editor").hidden = true; });

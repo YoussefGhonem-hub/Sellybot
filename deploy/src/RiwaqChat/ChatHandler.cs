@@ -202,7 +202,31 @@ namespace RiwaqChat
             }
         }
 
-        class LoopResult { public string Text; public long In, CacheRead, CacheWrite, Out; }
+        public class LoopResult { public string Text; public long In, CacheRead, CacheWrite, Out; }
+
+        // The same assistant as the site chat, without streaming (WhatsApp and other channels).
+        // channelNote is added after the cached system prompt, so the prompt cache still works.
+        public static async Task<LoopResult> Answer(SqlConnection conn, StoreInfo store, List<MessageParam> messages, string ip, string channelNote)
+        {
+            int maxTokens;
+            if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
+            StoreIndex idx;
+            string system = Claude.StorePrompt(conn, store, out idx);
+            var sys = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
+            if (!string.IsNullOrEmpty(channelNote)) sys.Add(new TextBlockParam { Text = channelNote });
+            var parameters = new MessageCreateParams { Model = Claude.Model, MaxTokens = maxTokens, System = sys, Messages = messages };
+
+            bool orderTool = store.ShopifyOrders && ShopifyAdmin.For(store) != null;
+            if (Claude.UseSearch(idx) || orderTool)
+                return await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, ip);
+
+            Message resp = await Claude.Client().Messages.Create(parameters);
+            var r = new LoopResult { In = resp.Usage.InputTokens, CacheRead = resp.Usage.CacheReadInputTokens ?? 0, CacheWrite = resp.Usage.CacheCreationInputTokens ?? 0, Out = resp.Usage.OutputTokens };
+            var sb = new StringBuilder();
+            foreach (ContentBlock block in resp.Content) if (block.TryPickText(out TextBlock t)) sb.Append(t.Text);
+            r.Text = sb.ToString().Trim();
+            return r;
+        }
 
         // Up to 3 tool rounds (data search and/or order lookup), then the answer.
         // Thinking and tool calls are echoed back unchanged, as the API requires.

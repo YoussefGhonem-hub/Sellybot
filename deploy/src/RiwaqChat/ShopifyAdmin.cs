@@ -390,7 +390,7 @@ namespace RiwaqChat
             return false;
         }
 
-        static string ToLatinDigits(string s)
+        public static string ToLatinDigits(string s)
         {
             var sb = new StringBuilder(s.Length);
             foreach (var ch in s)
