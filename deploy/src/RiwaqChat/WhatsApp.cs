@@ -58,7 +58,7 @@ namespace RiwaqChat
             if (body != null) req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
             HttpResponseMessage resp;
             try { resp = await Http.SendAsync(req); }
-            catch (Exception ex) { Log.Error(ex); throw new WaException("مقدرناش نوصل لـ Wapilot دلوقتي. جرّب تاني كمان شوية."); }
+            catch (Exception ex) { Log.Error(ex); throw new WaException("مقدرناش نوصل لخدمة الواتساب دلوقتي. جرّب تاني كمان شوية."); }
             using (resp)
             {
                 string text = await resp.Content.ReadAsStringAsync();
@@ -81,18 +81,15 @@ namespace RiwaqChat
             if (status == 401 || code == "TOKEN_INVALID")
             {
                 var why = (msg ?? "").Trim(); if (why.Length > 120) why = why.Substring(0, 120);
-                text = "الـ API token مش صح أو انتهى. اعمل token جديد من Wapilot (Create token) والصقه هنا."
+                // Store owners can see these: never name the provider (Sellybot keeps it private)
+                text = "مفتاح خدمة الواتساب مش صح أو انتهى."
                      + " [" + status + (code.Length > 0 ? " " + code : "") + (why.Length > 0 ? ": " + why : "") + "]";
             }
-            else if (code == "INSTANCE_FORBIDDEN") text = "الرقم ده مش تبع الـ token بتاعك على Wapilot.";
-            else if (code == "INSTANCE_NOT_READY") text = "رقم الواتساب مش متصل على Wapilot دلوقتي. افتح Wapilot واتأكد إن الرقم متصل (WORKING).";
-            else if (status == 404) text = "Wapilot مالقاش الرقم ده. اتأكد إنه لسه موجود في حسابك.";
-            else if (status == 429) text = "Wapilot بيقول إن الطلبات كتير، هنحاول تاني بعد شوية.";
-            else
-            {
-                var m = (msg ?? "").Trim(); if (m.Length > 150) m = m.Substring(0, 150);
-                text = "Wapilot رفض الطلب (" + status + (code.Length > 0 ? " " + code : "") + ")" + (m.Length > 0 ? ": " + m : ".");
-            }
+            else if (code == "INSTANCE_FORBIDDEN") text = "رقم الربط ده مش تبع الحساب ده.";
+            else if (code == "INSTANCE_NOT_READY") text = "رقم الواتساب مش متصل دلوقتي. اربطه تاني بالـ QR.";
+            else if (status == 404) text = "رقم الربط مش موجود. كلّم الدعم.";
+            else if (status == 429) text = "الطلبات كتير دلوقتي، هنحاول تاني بعد شوية.";
+            else text = "خدمة الواتساب مش متاحة دلوقتي (" + status + (code.Length > 0 ? " " + code : "") + "). جرّب تاني كمان شوية.";
             return new WaException(text, status, code);
         }
 
@@ -145,7 +142,7 @@ namespace RiwaqChat
             catch (WaException ex) when (ex.Status == 404) { return null; }
             catch (WaException ex) when (ex.Status == 409 || (ex.Code ?? "").StartsWith("PASSKEY"))
             {
-                throw new WaException("واتساب طالب تأكيد إضافي قبل الربط. كلّم الدعم يكمّله من حساب Wapilot.", ex.Status, ex.Code);
+                throw new WaException("واتساب طالب تأكيد إضافي قبل الربط. كلّم الدعم وهنكمّله معاك.", ex.Status, ex.Code);
             }
         }
 
@@ -287,7 +284,7 @@ BEGIN
   DECLARE @t INT;
   INSERT INTO dbo.Tickets(StoreId, Subject, Category) VALUES (@s, @sub, 'technical'); SET @t = SCOPE_IDENTITY();
   INSERT INTO dbo.TicketMessages(TicketId, FromAdmin, Body) VALUES (@t, 0, @b);
-END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) صاحب المتجر عايز يربط واتساب المتجر، ومفيش رقم فاضي على حساب Wapilot. اعمل رقم جديد (instance) في Wapilot، وبعدين من صفحة «الواتساب» في لوحة الأدمن خصّصه للمتجر ده."))
+END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عايز أربط واتساب المتجر، ومفيش رقم ربط فاضي دلوقتي."))
                 cmd.ExecuteNonQuery();
         }
 

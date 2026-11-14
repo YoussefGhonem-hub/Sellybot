@@ -895,14 +895,14 @@
     </div>
   </section>
 
-  <!-- WhatsApp (Wapilot) -->
+  <!-- WhatsApp -->
   <section data-panel="wa" hidden>
     <div class="page-title"><div><h2>المساعد على الواتساب</h2><p>نفس المساعد، بنفس داتا متجرك وطريقة كلامه، يرد على زباينك على رقم واتساب المتجر 24 ساعة.</p></div></div>
     <div class="card" style="max-width:880px">
       <div class="shop-head">
         <div class="shop-logo wa-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></div>
-        <div><h3 style="margin:0">ربط واتساب المتجر عن طريق Wapilot</h3>
-          <p class="sub" style="margin:2px 0 0">Wapilot بيوصّل رقم الواتساب بتاعك بـ Sellybot، فأي رسالة توصل للرقم المساعد يرد عليها.</p></div>
+        <div><h3 style="margin:0">ربط واتساب المتجر</h3>
+          <p class="sub" style="margin:2px 0 0">اربط رقم واتساب متجرك بـ Sellybot، فأي رسالة توصل للرقم المساعد يرد عليها.</p></div>
       </div>
 
       <div id="waOff">
@@ -915,8 +915,7 @@
             <li><span>📊</span><div><b>من نفس رصيدك</b><small>كل رد على الواتساب بيتحسب رسالة من رصيد باقتك، زي الموقع بالظبط. الجروبات مش بيرد فيها.</small></div></li>
           </ul>
         </div>
-        <!-- Sellybot's own Wapilot account: the owner only scans a QR -->
-        <div id="waPlat" hidden>
+        <div id="waPlat">
           <h4 class="steps-title">الربط في دقيقة، من غير أي حسابات</h4>
           <ol class="steps shop-steps">
             <li><b>دوس "اربط واتساب المتجر"</b><span>هنجهّزلك رقم ربط ويظهرلك كود QR هنا.</span></li>
@@ -925,23 +924,6 @@
           </ol>
           <div class="wa-warn" id="waPlatBlocked" hidden></div>
           <button class="btn" id="waLink" type="button" style="margin-top:12px">📱 اربط واتساب المتجر</button>
-          <p class="hint" style="margin:12px 0 0">عندك حساب Wapilot بتاعك؟ <a href="#" id="waOwnShow">اربط بالـ API token بتاعك</a></p>
-        </div>
-        <div id="waOwn">
-        <h4 class="steps-title">الخطوات (حوالي 5 دقايق)</h4>
-        <ol class="steps shop-steps">
-          <li><b>اعمل حساب على Wapilot</b><span>ادخل على <a href="https://wapilot.net/en/" target="_blank" rel="noopener" class="ltr">wapilot.net</a> واشترك في باقة الـ <b style="display:inline">API</b> (اشتراكها بيتدفع لـ Wapilot مباشرة).</span></li>
-          <li><b>اربط رقم واتساب المتجر</b><span>من لوحة Wapilot ضيف رقم (Instance) وامسح الـ QR من موبايلك: واتساب ← الإعدادات ← <b style="display:inline">الأجهزة المرتبطة</b> ← ربط جهاز.</span></li>
-          <li><b>اعمل API token</b><span>من صفحة الـ API في Wapilot دوس <b style="display:inline">Create token</b> وانسخه.</span></li>
-          <li><b>الصقه هنا ودوس "اربط"</b><span>هنتأكد منه ونجيب رقمك من Wapilot. الـ token بيتحفظ متشفّر.</span></li>
-          <li><b>حط لينك الـ Webhook في Wapilot</b><span>بعد الربط هيظهرلك لينك خاص بمتجرك، حطه في إعدادات الـ Webhook بتاعة الرقم في Wapilot.</span></li>
-        </ol>
-        <label for="waToken">API token من Wapilot</label>
-        <div class="field pw" style="position:relative"><input type="password" id="waToken" class="ltr" maxlength="600" autocomplete="new-password" spellcheck="false" style="padding-right:12px!important">
-          <button type="button" class="eye" aria-label="اظهر الـ token"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-        <div class="wa-pick" id="waPick" hidden><label for="waInst">عندك أكتر من رقم على Wapilot، اختار رقم المتجر</label><select id="waInst" class="ltr"></select></div>
-        <button class="btn" id="waConnect" type="button" style="margin-top:12px">🔗 اربط الواتساب</button>
-        <p class="hint" style="margin:10px 0 0">💡 شكل الشاشات في Wapilot ممكن يختلف شوية عن الكلام ده. لو حاجة مش واضحة، كلّمنا ونساعدك.</p>
         </div>
       </div>
 
@@ -964,23 +946,6 @@
         <label class="toggle"><input type="checkbox" id="waToggle"><span class="tg" aria-hidden="true"></span>
           <span><b>المساعد بيرد على الواتساب</b><small>اقفله لو عايز ترد بنفسك على كل الرسايل لفترة. الرسايل بتتسجل برضه، فلما ترجّعه يفهم المحادثة.</small></span></label>
         <div class="wa-stats" id="waStats"></div>
-
-        <div class="wa-block" id="waHookBlock">
-          <h4>لينك الـ Webhook</h4>
-          <p class="sub">في Wapilot افتح إعدادات الرقم ← <b>Webhook</b>، الصق اللينك ده وفعّل event <span class="kbd ltr">message</span>. ولو عايز المساعد يسكت لما ترد على زبون بنفسك، فعّل كمان <span class="kbd ltr">message.any</span>.</p>
-          <div class="codebox">
-            <div class="codebar">
-              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span class="fname">Webhook URL</span>
-              <button class="copybtn" id="waCopy" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-                <span class="lbl">نسخ اللينك</span>
-              </button>
-            </div>
-            <pre class="codepre ltr"><code id="waHook"></code></pre>
-          </div>
-          <div class="hint">🔒 اللينك فيه مفتاح سري خاص بمتجرك، ماتشاركهوش مع حد. لو اتسرّب <a href="#" id="waNewKey">اعمل لينك جديد</a> وحطه في Wapilot تاني.</div>
-        </div>
 
         <div class="wa-block">
           <h4>جرّب الربط</h4>
@@ -1765,29 +1730,27 @@
     var r = await shopCall("shopify-disconnect", {}, this, "…");
     if (r) setMsg("shopMsg", "اتلغى الربط.", true);
   };
-  // ---------------- WhatsApp (Wapilot) ----------------
+  // ---------------- WhatsApp ----------------
+  // Owners only see "scan a QR". The provider behind it is never named on this page.
   var wa = null;
   var WA_LIVE = { WORKING: "متصل", CONNECTED: "متصل", ACTIVE: "متصل", SCAN_QR_CODE: "مستني مسح الـ QR", STARTING: "بيبدأ…", STOPPED: "متوقف", FAILED: "فيه مشكلة" };
   async function loadWa() {
     try { wa = await api("api/whatsapp.ashx"); renderWa(); }
     catch (e) { setMsg("waMsg", e.message); }
   }
-  var waOwnOpen = false;
   function renderWa() {
     var on = !!(wa && wa.connected);
     $("waOff").hidden = on; $("waOn").hidden = !on;
     if (!on) {
-      // Sellybot's account (scan a QR) when it's offered; the owner's own Wapilot account otherwise / on request
-      var plat = !!wa.platformAvailable;
-      $("waPlat").hidden = !plat; $("waOwn").hidden = plat && !waOwnOpen;
-      $("waPlatBlocked").hidden = !wa.platformBlocked; $("waPlatBlocked").textContent = wa.platformBlocked ? "ℹ️ " + wa.platformBlocked : "";
-      $("waLink").hidden = !!wa.platformBlocked;
+      var blocked = wa.platformAvailable ? wa.platformBlocked : "ربط الواتساب هيتفعّل قريب.";
+      $("waPlatBlocked").hidden = !blocked; $("waPlatBlocked").textContent = blocked ? "ℹ️ " + blocked : "";
+      $("waLink").hidden = !!blocked;
       stopQr(); return;
     }
     var platform = wa.mode === "platform", linked = !!wa.linked;
     var live = (wa.live || "").toUpperCase(), liveOk = !live || WA_LIVE[live] === "متصل";
-    var warn = wa.status || wa.liveError || (!liveOk && !platform ? "رقم الواتساب مش متصل على Wapilot دلوقتي (" + (WA_LIVE[live] || live) + "). افتح Wapilot واربط الرقم تاني بالـ QR." : "");
-    $("waHookBlock").hidden = platform; $("waUnlink").hidden = !(platform && linked);
+    var warn = wa.status || wa.liveError || (!liveOk && !platform ? "رقم الواتساب مش متصل دلوقتي (" + (WA_LIVE[live] || live) + ")." : "");
+    $("waUnlink").hidden = !(platform && linked);
     $("waQrBox").hidden = !(platform && !linked);
     if (platform && !linked) {
       $("waPill").className = "warn-pill"; $("waPill").textContent = "📱 مستني تمسح الـ QR";
@@ -1797,11 +1760,10 @@
       stopQr();
       $("waPill").className = warn ? "warn-pill" : "ok-pill";
       $("waPill").textContent = (warn ? "⚠️ " : "✅ ") + "⁦" + (wa.number ? "+" + wa.number : platform ? "رقم المتجر" : wa.instance) + "⁩" + (live ? " · " + (WA_LIVE[live] || live) : "");
-      $("waInfo").textContent = wa.lastIncoming ? "آخر رسالة من زبون وصلت " + ago(wa.lastIncoming) : (platform ? "مربوط ✅ ابعت سؤال لرقم المتجر من موبايل تاني وشوف المساعد بيرد إزاي." : "لسه ماوصلتش رسايل. اتأكد إنك حطيت لينك الـ Webhook في Wapilot.");
+      $("waInfo").textContent = wa.lastIncoming ? "آخر رسالة من زبون وصلت " + ago(wa.lastIncoming) : (platform ? "مربوط ✅ ابعت سؤال لرقم المتجر من موبايل تاني وشوف المساعد بيرد إزاي." : "لسه ماوصلتش رسايل.");
     }
     $("waWarn").hidden = !warn; $("waWarn").textContent = warn ? "⚠️ " + warn.replace(/^⚠️\s*/, "") : "";
     $("waToggle").checked = !!wa.enabled;
-    $("waHook").textContent = wa.webhookUrl || "";
     var st = $("waStats"); st.textContent = "";
     [["💬", fmt(wa.chats30) + " محادثة في آخر 30 يوم"], ["🤖", fmt(wa.replies30) + " رد من المساعد"], ["⏸️", "بيسكت " + fmt(wa.pauseHours) + " ساعة لما ترد بنفسك"]]
       .forEach(function (x) { var s = document.createElement("span"); s.textContent = x[0] + " " + x[1]; st.appendChild(s); });
@@ -1834,49 +1796,18 @@
     catch (err) { setMsg("waMsg", err.message); return null; }
     finally { btn.classList.remove("loading-txt"); btn.innerHTML = old; }
   }
-  $("waConnect").onclick = async function () {
-    var token = $("waToken").value.trim(), inst = $("waPick").hidden ? "" : $("waInst").value;
-    if (!token) { setMsg("waMsg", "الصق الـ API token من Wapilot الأول."); $("waToken").focus(); return; }
-    var r = await waCall("connect", { token: token, instance: inst }, this, "⏳ بنتأكد من الـ token…");
-    if (!r) return;
-    if (r.choose) {
-      var sel = $("waInst"); sel.textContent = "";
-      r.choose.forEach(function (i) {
-        var o = document.createElement("option"); o.value = i.id;
-        o.textContent = i.name + (i.number ? " (⁦+" + i.number + "⁩)" : "") + (i.status ? " · " + (WA_LIVE[i.status] || i.status) : "");
-        sel.appendChild(o);
-      });
-      $("waPick").hidden = false; setMsg("waMsg", "اختار رقم المتجر من القايمة ودوس \"اربط\" تاني.", true); return;
-    }
-    wa = r; $("waToken").value = ""; $("waPick").hidden = true; renderWa();
-    setMsg("waMsg", "✅ اتربط! آخر خطوة: انسخ لينك الـ Webhook وحطه في Wapilot، وبعدين جرّب.", true);
-    toast("اتربط الواتساب 🎉");
-  };
-  $("waToken").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("waConnect").click(); } });
   $("waToggle").onchange = async function () {
     var t = this, want = t.checked;
     try { await api("api/whatsapp.ashx?action=enable", { method: "POST", json: { enabled: want } }); wa.enabled = want; toast(want ? "المساعد رجع يرد على الواتساب ✅" : "المساعد وقف رد على الواتساب"); }
     catch (err) { t.checked = !want; setMsg("waMsg", err.message); }
   };
-  $("waCopy").onclick = function () {
-    copy(wa && wa.webhookUrl || "");
-    var b = this, l = b.querySelector(".lbl"); b.classList.add("done"); l.textContent = "✓ اتنسخ";
-    clearTimeout(b.t); b.t = setTimeout(function () { b.classList.remove("done"); l.textContent = "نسخ اللينك"; }, 2200);
-    toast("اتنسخ ✅ الصقه في إعدادات الـ Webhook في Wapilot");
-  };
   $("waTest").onclick = async function () {
     var p = $("waTestPhone").value.trim();
     if (!p) { setMsg("waMsg", "اكتب رقم موبايل تبعتله رسالة التجربة."); $("waTestPhone").focus(); return; }
     var r = await waCall("test", { phone: p }, this, "⏳ بنبعت…");
-    if (r) setMsg("waMsg", "✅ اتبعتت! لو ماوصلتش خلال دقيقة، اتأكد إن الرقم متصل على Wapilot.", true);
-  };
-  $("waNewKey").onclick = async function (e) {
-    e.preventDefault();
-    if (!confirm("هنعمل لينك جديد واللينك القديم هيبطّل يشتغل. لازم تحط الجديد في Wapilot بعدها. نكمّل؟")) return;
-    var r = await waCall("new-key", {}, this); if (r) { wa = r; renderWa(); setMsg("waMsg", "✅ اتعمل لينك جديد. انسخه وحطه في Wapilot مكان القديم.", true); }
+    if (r) setMsg("waMsg", "✅ اتبعتت! لو ماوصلتش خلال دقيقة، اتأكد إن موبايل المتجر متصل بالنت.", true);
   };
   $("waRefresh").onclick = async function () { var b = this; b.classList.add("loading-txt"); await loadWa(); b.classList.remove("loading-txt"); };
-  $("waOwnShow").onclick = function (e) { e.preventDefault(); waOwnOpen = true; $("waOwn").hidden = false; $("waToken").focus(); };
   $("waLink").onclick = async function () {
     var r = await waCall("link", {}, this, "⏳ بنجهّز رقم الربط…");
     if (r) { wa = r; renderWa(); setMsg("waMsg", ""); }
@@ -1889,9 +1820,9 @@
   $("waOffBtn").onclick = async function () {
     var platform = wa && wa.mode === "platform";
     if (!confirm(platform ? "متأكد؟ المساعد هيبطّل يرد على الواتساب، والموبايل هيتفك من الربط، وهنمسح المحادثات المحفوظة عندنا. تقدر تربط تاني في أي وقت."
-                          : "متأكد؟ المساعد هيبطّل يرد على الواتساب وهنمسح المحادثات المحفوظة عندنا. رقمك على Wapilot مش هيتأثر، وتقدر تربط تاني في أي وقت.")) return;
+                          : "متأكد؟ المساعد هيبطّل يرد على الواتساب وهنمسح المحادثات المحفوظة عندنا. وتقدر تربط تاني في أي وقت.")) return;
     var r = await waCall("disconnect", {}, this, "…");
-    if (r) { stopQr(); await loadWa(); setMsg("waMsg", platform ? "اتلغى الربط." : "اتلغى الربط. شيل لينك الـ Webhook من Wapilot كمان.", true); }
+    if (r) { stopQr(); await loadWa(); setMsg("waMsg", platform ? "اتلغى الربط." : "اتلغى الربط.", true); }
   };
 
   $("edContent").addEventListener("input", updateCount);
