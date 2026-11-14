@@ -482,6 +482,57 @@
   .wa-qr-wait{color:#6b5a4d;font-size:13.5px;text-align:center;padding:10px}
   .wa-qr-steps{margin:0 0 8px;padding-inline-start:20px;line-height:1.9;font-size:14px}
   @media (max-width:640px){.wa-qr{grid-template-columns:1fr;justify-items:center}.wa-qr-img{width:min(236px,100%);height:auto;aspect-ratio:1}}
+  /* upgrade card: shown instead of the QR steps when the store's plan doesn't include WhatsApp */
+  .wa-up{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:26px;align-items:center;margin:4px 0 6px;padding:26px;border-radius:22px;
+    border:1.5px solid color-mix(in srgb,#25d366 45%,var(--line));
+    background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,#25d366 16%,transparent),transparent 60%),radial-gradient(90% 80% at 100% 100%,color-mix(in srgb,var(--brand) 18%,transparent),transparent 60%),var(--card);
+    box-shadow:0 18px 50px -18px color-mix(in srgb,#25d366 45%,transparent);animation:upIn .7s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes upIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  .wa-up:before{content:"";position:absolute;inset:-40% -10% auto auto;width:260px;height:260px;border-radius:50%;background:conic-gradient(from 0deg,#25d36622,transparent,var(--brand),transparent,#25d36622);filter:blur(40px);opacity:.35;animation:upSpin 12s linear infinite;pointer-events:none}
+  @keyframes upSpin{to{transform:rotate(360deg)}}
+  .wa-up>*{position:relative}
+  .wa-up-badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#1fae55,#25d366);box-shadow:0 6px 16px -6px #25d366}
+  .wa-up h3{margin:12px 0 8px;font-size:clamp(20px,2.6vw,26px);line-height:1.35;letter-spacing:-.3px}
+  .wa-up h3 .g{background:linear-gradient(135deg,#1fae55,#25d366 60%,#7be495);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .wa-up p{margin:0 0 14px;color:var(--muted);font-size:14.5px;line-height:1.75}
+  .wa-up-list{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:8px}
+  .wa-up-list li{display:flex;align-items:center;gap:10px;font-size:14px}
+  .wa-up-list i{font-style:normal;flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:15px;background:color-mix(in srgb,#25d366 14%,var(--card));border:1px solid color-mix(in srgb,#25d366 25%,var(--line))}
+  .wa-up-price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .wa-up-price b{font-size:30px;letter-spacing:-.5px}
+  .wa-up-price small{color:var(--muted);font-size:13px}
+  .wa-up-price s{color:var(--muted);font-size:15px}
+  .wa-up-cta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .wa-up-btn{position:relative;overflow:hidden;border:0;color:#fff;font-weight:700;font-size:15.5px;padding:13px 22px;border-radius:14px;cursor:pointer;
+    background:linear-gradient(135deg,#1fae55,#25d366);box-shadow:0 12px 26px -10px #25d366;transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
+  .wa-up-btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 16px 30px -10px #25d366}
+  .wa-up-btn:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);animation:upShine 3.2s 1.2s ease-in-out infinite}
+  @keyframes upShine{0%,55%{transform:translateX(120%)}100%{transform:translateX(-120%)}}
+  .wa-up-more{border:0;background:none;color:var(--ink);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:4px;cursor:pointer;padding:6px 2px}
+  .wa-up-note{display:block;margin-top:12px;color:var(--muted);font-size:12.5px}
+  /* the phone: a tiny WhatsApp chat that plays on a loop */
+  .wa-ph{width:250px;height:430px;border-radius:34px;padding:9px;background:#111;box-shadow:0 30px 60px -20px rgba(0,0,0,.55),inset 0 0 0 2px #2a2a2a;transform:rotate(-3deg);animation:upFloat 6s ease-in-out infinite}
+  @keyframes upFloat{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(-3deg) translateY(-8px)}}
+  .wa-ph-in{height:100%;border-radius:26px;overflow:hidden;display:flex;flex-direction:column;background:#efeae2;color:#111;font-size:12.5px}
+  .wa-ph-top{display:flex;align-items:center;gap:8px;padding:12px 12px 10px;background:#075e54;color:#fff}
+  .wa-ph-top .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#25d366;font-size:14px}
+  .wa-ph-top b{display:block;font-size:13px}.wa-ph-top small{font-size:10.5px;opacity:.85}
+  .wa-ph-msgs{flex:1;display:flex;flex-direction:column;gap:7px;padding:12px 10px;
+    background-image:radial-gradient(#d8d0c4 1px,transparent 1.2px);background-size:14px 14px}
+  .wa-b{max-width:84%;padding:7px 9px 5px;border-radius:10px;line-height:1.55;box-shadow:0 1px .5px rgba(0,0,0,.13);opacity:0;transform:translateY(8px) scale(.96)}
+  .wa-b small{display:block;text-align:left;font-size:9.5px;color:#667781;margin-top:1px}
+  .wa-b.cu{align-self:flex-start;background:#fff;border-top-right-radius:3px}
+  .wa-b.bot{align-self:flex-end;background:#d9fdd3;border-top-left-radius:3px}
+  .wa-b.typing{padding:9px 12px}
+  .wa-b.typing span{display:inline-block;width:6px;height:6px;margin:0 1.5px;border-radius:50%;background:#8696a0;animation:upDot 1s infinite}
+  .wa-b.typing span:nth-child(2){animation-delay:.15s}.wa-b.typing span:nth-child(3){animation-delay:.3s}
+  @keyframes upDot{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-3px);opacity:1}}
+  .wa-ph.run .wa-b{animation:upMsg .45s cubic-bezier(.34,1.56,.64,1) forwards;animation-delay:var(--d)}
+  .wa-ph.run .wa-b.typing{animation:upMsg .3s forwards,upGone .2s forwards;animation-delay:var(--d),var(--e)}
+  @keyframes upMsg{to{opacity:1;transform:none}}
+  @keyframes upGone{to{opacity:0;height:0;padding:0;margin:-7px 0 0}}
+  @media (max-width:760px){.wa-up{grid-template-columns:1fr;padding:20px}.wa-ph{margin:0 auto;width:230px;height:400px}}
+  @media (prefers-reduced-motion:reduce){.wa-b{opacity:1;transform:none}.wa-b.typing{display:none}}
   .wa-stats{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
   .wa-stats span{font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--soft)}
   .feat-list{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
@@ -908,7 +959,8 @@
       </div>
 
       <div id="waOff">
-        <div class="why">
+        <div class="wa-up" id="waUp" hidden></div>
+        <div class="why" id="waWhy">
           <b>إزاي بيشتغل؟</b>
           <ul>
             <li><span>💬</span><div><b>نفس ردود الموقع</b><small>نفس الداتا والتعليمات وتتبع الأوردرات، بس على رقم الواتساب بتاعك وبشكل رسايل الواتساب.</small></div></li>
@@ -918,8 +970,8 @@
           </ul>
         </div>
         <div id="waPlat">
-          <h4 class="steps-title">الربط في دقيقة، من غير أي حسابات</h4>
-          <ol class="steps shop-steps">
+          <h4 class="steps-title" id="waStepsT">الربط في دقيقة، من غير أي حسابات</h4>
+          <ol class="steps shop-steps" id="waSteps">
             <li><b>دوس "اربط واتساب المتجر"</b><span>هنجهّزلك رقم ربط ويظهرلك كود QR هنا.</span></li>
             <li><b>امسح الكود من موبايل المتجر</b><span>واتساب ← الإعدادات ← <b style="display:inline">الأجهزة المرتبطة</b> ← ربط جهاز.</span></li>
             <li><b>خلاص!</b><span>المساعد هيبدأ يرد على الرسايل اللي بتوصل لرقم متجرك، وانت لسه تقدر تستخدم الواتساب عادي من موبايلك.</span></li>
@@ -1741,15 +1793,75 @@
     try { wa = await api("api/whatsapp.ashx"); renderWa(); }
     catch (e) { setMsg("waMsg", e.message); }
   }
+  // Upgrade card: the plan that includes WhatsApp, its price, and a little WhatsApp chat playing on a phone
+  var upTimer = null;
+  function stopUpsell() { clearInterval(upTimer); upTimer = null; }
+  function renderUpsell(up) {
+    var store = esc(me && me.name || "متجرك");
+    var per = up.days === 30 ? "في الشهر" : "لـ " + fmt(up.days) + " يوم";
+    var badge = up.renew ? "⏳ باقتك خلصت" : "🔒 ميزة باقة " + esc(up.name);
+    var head = up.renew ? 'جدّد باقتك ورجّع المساعد يرد على <span class="g">واتساب متجرك</span>'
+                        : 'خلّي المساعد يرد على <span class="g">واتساب متجرك</span> وإنت مرتاح';
+    var note = up.renew ? "باقة " + esc(up.name) + " فيها الواتساب، وبتكمّل من آخر يوم في اشتراكك."
+             : up.current ? "باقتك دلوقتي: " + esc(up.current) + " ← الترقية بتفتح الواتساب على طول، من غير عقود."
+             : "من غير عقود، وتقدر توقف وقت ما تحب.";
+    // one chat, timed with --d (when it shows) and --e (when the typing dots go away)
+    var chat = [
+      ["cu", "السلام عليكم، القميص الأبيض ده متوفر مقاس L؟", "10:41", 0.5],
+      ["typing", "", "", 1.6, 3.0],
+      ["bot", "وعليكم السلام 👋 أيوه متوفر مقاس L، سعره 450 ج.م والشحن خلال يومين 🚚 أأكدلك الطلب؟", "10:41", 3.0],
+      ["cu", "تمام، أكّده 👍", "10:42", 5.0],
+      ["typing", "", "", 5.9, 7.0],
+      ["bot", "اتأكد ✅ رقم طلبك #1048، وهيوصلك لحد البيت.", "10:42", 7.0]
+    ].map(function (m) {
+      return m[0] === "typing" ? '<div class="wa-b bot typing" style="--d:' + m[3] + 's;--e:' + m[4] + 's"><span></span><span></span><span></span></div>'
+        : '<div class="wa-b ' + m[0] + '" style="--d:' + m[3] + 's">' + esc(m[1]) + '<small>' + m[2] + (m[0] === "bot" ? " ✓✓" : "") + '</small></div>';
+    }).join("");
+    $("waUp").innerHTML =
+      '<div>' +
+        '<span class="wa-up-badge">' + badge + '</span>' +
+        '<h3>' + head + '</h3>' +
+        '<p>زباينك بيسألوا على واتساب أكتر من أي مكان. المساعد يرد عليهم في ثواني، بنفس داتا متجرك وطريقة كلامك، ليل ونهار، ومايسيبش زبون مستني.</p>' +
+        '<ul class="wa-up-list">' +
+          '<li><i>⚡</i>يرد في ثواني بدل ما الزبون يستنى ساعات ويمشي</li>' +
+          '<li><i>🛒</i>يجاوب على الأسعار والمقاسات والشحن ويتابع الأوردرات</li>' +
+          '<li><i>🙋</i>لو رديت إنت بنفسك، بيسكت ويسيبلك المحادثة</li>' +
+        '</ul>' +
+        '<div class="wa-up-price"><b>' + fmt(up.price) + '</b><small>ج.م ' + per + '</small>' + (up.listPrice > up.price ? '<s>' + fmt(up.listPrice) + '</s>' : '') + '</div>' +
+        '<div class="wa-up-cta"><button type="button" class="wa-up-btn" id="waUpGo">' + (up.renew ? "🔁 جدّد باقة " : "🚀 رقّي لباقة ") + esc(up.name) + '</button>' +
+          '<button type="button" class="wa-up-more" id="waUpPlans">قارن الباقات</button></div>' +
+        '<span class="wa-up-note">' + note + '</span>' +
+      '</div>' +
+      '<div class="wa-ph run" id="waPh" aria-hidden="true"><div class="wa-ph-in">' +
+        '<div class="wa-ph-top"><span class="av">🛍️</span><div><b>' + store + '</b><small>متصل الآن</small></div></div>' +
+        '<div class="wa-ph-msgs">' + chat + '</div>' +
+      '</div></div>';
+    $("waUpGo").onclick = function () { upgradeTo(up.id); };
+    $("waUpPlans").onclick = function () { go("plan"); };
+    stopUpsell();
+    upTimer = setInterval(function () {   // replay the chat every 11s while the tab is on screen
+      var ph = $("waPh"); if (!ph || current !== "wa" || document.hidden) return;
+      ph.classList.remove("run"); void ph.offsetWidth; ph.classList.add("run");
+    }, 11000);
+  }
+  async function upgradeTo(id) {
+    go("plan");
+    for (var i = 0; i < 60 && !(plansData && plansData.plans); i++) await new Promise(function (r) { setTimeout(r, 120); });
+    if (plansData && plansData.plans) openRequest(id);
+  }
   function renderWa() {
     var on = !!(wa && wa.connected);
     $("waOff").hidden = on; $("waOn").hidden = !on;
     if (!on) {
       var blocked = wa.platformAvailable ? wa.platformBlocked : "ربط الواتساب هيتفعّل قريب.";
+      var up = wa.platformAvailable && wa.upsell;   // the plan is what's in the way: sell the plan instead of a plain notice
+      $("waUp").hidden = !up; $("waWhy").hidden = $("waStepsT").hidden = $("waSteps").hidden = !!up;
+      if (up) { renderUpsell(up); blocked = ""; } else stopUpsell();
       $("waPlatBlocked").hidden = !blocked; $("waPlatBlocked").textContent = blocked ? "ℹ️ " + blocked : "";
-      $("waLink").hidden = !!blocked;
+      $("waLink").hidden = !!blocked || !!up;
       stopQr(); return;
     }
+    stopUpsell();
     var platform = wa.mode === "platform", linked = !!wa.linked;
     var live = (wa.live || "").toUpperCase(), liveOk = !live || WA_LIVE[live] === "متصل";
     var warn = wa.status || wa.liveError || (!liveOk && !platform ? "رقم الواتساب مش متصل دلوقتي (" + (WA_LIVE[live] || live) + ")." : "");

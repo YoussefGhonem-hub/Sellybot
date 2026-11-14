@@ -474,6 +474,11 @@
             <div class="seg" id="waAuto">
               <button data-f="paid">تلقائي للمشتركين بس</button><button data-f="all">تلقائي للكل</button><button data-f="off">أنا اللي بخصّص</button>
             </div>
+            <div style="margin-top:14px;max-width:420px">
+              <label for="waMinPlan">الواتساب متاح من باقة</label>
+              <select id="waMinPlan"></select>
+              <div class="hint" style="margin-top:4px">اللي على باقة أقل (أو من غير باقة) بيشوف كارت يعرض عليه يرقّي للباقة دي. ده ميزة تسويقية للباقات الأعلى.</div>
+            </div>
             <div class="calc" style="margin-top:14px">
               <div class="r"><span>إزاي تزوّد أرقام</span><b>من Wapilot ← Instances ← Create</b></div>
               <div class="r"><span>كل رقم</span><b>بيتحاسب في Wapilot لوحده</b></div>
@@ -648,6 +653,8 @@
     $("waTokState").innerHTML = d.tokenSet ? '<span class="pill ok">✓ الـ token محفوظ (متشفّر)</span> الصق token جديد بس لو عايز تغيّره.' : '<span class="pill warn">لسه مفيش token</span>';
     $("waHookBox").hidden = !d.webhookUrl; $("waHook").value = d.webhookUrl || "";
     document.querySelectorAll("#waAuto button").forEach(function (b) { b.classList.toggle("on", b.dataset.f === d.autoAssign); });
+    $("waMinPlan").innerHTML = '<option value="0">' + (d.autoAssign === "all" ? "كل المتاجر (حتى من غير باقة)" : "أي باقة مدفوعة") + '</option>' +
+      (d.plans || []).map(function (p) { return '<option value="' + p.id + '"' + (p.id === d.minPlan ? " selected" : "") + '>' + esc(p.name) + " أو أعلى — " + money(p.price) + '</option>'; }).join("");
     var waiting = d.waiting || [];
     $("waCount").textContent = fmt(waiting.length); $("waCount").hidden = !waiting.length;
     $("waWaiting").innerHTML = waiting.length ? '<h3>متاجر مستنية رقم</h3><div class="list">' + waiting.map(function (w) {
@@ -712,6 +719,9 @@
   $("waNewKey").onclick = async function () {
     if (!confirm("اللينك القديم هيبطّل يشتغل فورًا، ولازم تحط الجديد في كل رقم على Wapilot. أكمّل؟")) return;
     try { renderWa(await waApi("new-key", {})); toast("اتعمل لينك جديد، حطه في Wapilot."); } catch (e) { toast(e.message, true); }
+  };
+  $("waMinPlan").onchange = async function () {
+    try { renderWa(await waApi("settings", { minPlan: String(this.value) })); toast("اتحفظ ✓"); } catch (e) { toast(e.message, true); }
   };
   document.querySelectorAll("#waAuto button").forEach(function (b) {
     b.onclick = async function () { try { renderWa(await waApi("settings", { autoAssign: b.dataset.f })); toast("اتحفظ ✓"); } catch (e) { toast(e.message, true); } };

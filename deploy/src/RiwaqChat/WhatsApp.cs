@@ -248,8 +248,30 @@ namespace RiwaqChat
         public static string CanAutoAssign(SqlConnection c, StoreInfo s)
         {
             if (PlatformToken(c) == null) return "ربط الواتساب بالـ QR مش متاح لسه.";
-            if (AutoAssign(c) == "paid" && (!s.PlanId.HasValue || Billing.Expired(s))) return "ربط واتساب المتجر متاح مع الباقات المدفوعة. اشترك في باقة من تبويب «الباقة» وارجع هنا.";
+            PlanInfo offer;
+            if (!PlanAllows(c, s, out offer)) return offer != null ? "واتساب المتجر متاح من باقة «" + offer.Name + "»." : "ربط واتساب المتجر مش متاح في باقتك دلوقتي.";
             return null;
+        }
+
+        // The lowest plan that includes WhatsApp (admin setting; 0 = any paid plan when auto-assign is "paid")
+        public static int MinPlanId(SqlConnection c) { int id; return int.TryParse(Billing.Get(c, "WaMinPlan") ?? "", out id) && id > 0 ? id : 0; }
+
+        // Is the store's plan enough to link WhatsApp? When not, offer = the plan to suggest: its own plan to renew if that
+        // one qualifies, otherwise the first active plan from the minimum up (plans rank by SortOrder, then price).
+        public static bool PlanAllows(SqlConnection c, StoreInfo s, out PlanInfo offer)
+        {
+            offer = null;
+            var mode = AutoAssign(c); int minId = MinPlanId(c);
+            if (mode == "off" || (mode == "all" && minId == 0)) return true;
+            var all = Billing.Plans(c, true);
+            int minRank = minId > 0 ? all.FindIndex(p => p.Id == minId) : -1;   // a deleted minimum = any paid plan
+            int myRank = s.PlanId.HasValue ? all.FindIndex(p => p.Id == s.PlanId.Value) : -1;
+            bool paid = s.PlanId.HasValue && !Billing.Expired(s);
+            if (paid && (minRank < 0 || myRank >= minRank)) return true;
+            if (!paid && myRank >= 0 && myRank >= minRank && all[myRank].IsActive) { offer = all[myRank]; return false; }
+            for (int i = Math.Max(0, Math.Max(minRank, paid ? myRank + 1 : 0)); i < all.Count; i++)
+                if (all[i].IsActive) { offer = all[i]; break; }
+            return false;
         }
 
         // Takes the first free number of the platform account for the store. null = none free.
@@ -806,6 +828,15 @@ ELSE
                 // can the owner just scan a QR (Sellybot's account), or do they need their own Wapilot account?
                 d["platformAvailable"] = WaAccount.PlatformToken(c) != null;
                 d["platformBlocked"] = WaAccount.CanAutoAssign(c, s) ?? "";
+                // the plan is what's in the way: the dashboard shows an upgrade card for this plan
+                PlanInfo offer;
+                if (!WaAccount.PlanAllows(c, s, out offer) && offer != null)
+                {
+                    var cur = s.PlanId.HasValue ? Billing.Plan(c, s.PlanId.Value) : null;
+                    d["upsell"] = new Dictionary<string, object> {
+                        { "id", offer.Id }, { "name", offer.Name }, { "price", Billing.FinalPrice(offer) }, { "listPrice", offer.PriceEgp }, { "days", offer.DurationDays },
+                        { "renew", s.PlanId == offer.Id }, { "expired", Billing.Expired(s) }, { "current", cur != null ? cur.Name : "" } };
+                }
                 return d;
             }
             d["instance"] = s.WaInstance; d["number"] = s.WaNumber ?? ""; d["enabled"] = s.WaEnabled;
@@ -872,8 +903,14 @@ ELSE
                     if (action == "settings")
                     {
                         var mode = (Web.Str(b, "autoAssign", 10) ?? "").ToLowerInvariant();
-                        if (mode != "paid" && mode != "all" && mode != "off") { Web.Error(res, 400, "bad_request"); return; }
-                        Billing.Set(c, "WaAutoAssign", mode);
+                        var minPlan = Web.Str(b, "minPlan", 12);
+                        if (mode.Length == 0 && minPlan == null) { Web.Error(res, 400, "bad_request"); return; }
+                        if (mode.Length > 0)
+                        {
+                            if (mode != "paid" && mode != "all" && mode != "off") { Web.Error(res, 400, "bad_request"); return; }
+                            Billing.Set(c, "WaAutoAssign", mode);
+                        }
+                        if (minPlan != null) { int mp; Billing.Set(c, "WaMinPlan", int.TryParse(minPlan, out mp) && mp > 0 ? mp.ToString() : ""); }
                         Web.Json(res, 200, await State(c, req));
                         return;
                     }
@@ -938,7 +975,8 @@ ELSE
         static async Task<Dictionary<string, object>> State(SqlConnection c, HttpRequest req)
         {
             var token = WaAccount.PlatformToken(c);
-            var d = new Dictionary<string, object> { { "tokenSet", token != null }, { "autoAssign", WaAccount.AutoAssign(c) } };
+            var d = new Dictionary<string, object> { { "tokenSet", token != null }, { "autoAssign", WaAccount.AutoAssign(c) }, { "minPlan", WaAccount.MinPlanId(c) },
+                { "plans", Billing.Plans(c, false).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } }).ToList() } };
             // every store, for the "assign to" list, with what it uses now
             var stores = new List<Dictionary<string, object>>();
             var byInstance = new Dictionary<string, Dictionary<string, object>>(StringComparer.OrdinalIgnoreCase);
