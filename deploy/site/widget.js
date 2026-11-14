@@ -291,6 +291,147 @@
           '<g class="wheel"><circle cx="44" cy="105" r="9" fill="var(--c3)"/><path d="M44 97 v16 M36 105 h16" stroke="#fff" stroke-width="2.2" opacity=".7"/><circle cx="44" cy="105" r="3" fill="#fff"/></g>' +
           '<g class="wheel"><circle cx="88" cy="105" r="9" fill="var(--c3)"/><path d="M88 97 v16 M80 105 h16" stroke="#fff" stroke-width="2.2" opacity=".7"/><circle cx="88" cy="105" r="3" fill="#fff"/></g></g>', "face");
       }
+    },
+
+    // ---- 10 more (2026-11, second batch) ----
+    mail: {
+      name: "جواب", art: function () {
+        return svg("0 0 120 120",
+          '<circle cx="60" cy="60" r="56" fill="var(--c)"/>' +
+          '<rect x="24" y="46" width="72" height="46" rx="7" fill="var(--c3)"/>' +
+          '<g class="letter"><rect x="34" y="30" width="52" height="42" rx="5" fill="#fff"/>' +
+            '<path d="M42 41 h36 M42 50 h24" stroke="var(--c)" stroke-width="4.5" stroke-linecap="round"/></g>' +
+          '<path d="M24 58 L60 78 L96 58 V86 a6 6 0 0 1 -6 6 H30 a6 6 0 0 1 -6 -6 Z" fill="#fff"/>' +
+          '<path d="M24 58 L60 78 L96 58" stroke="var(--c3)" stroke-width="3" fill="none" stroke-linejoin="round"/>' +
+          '<g class="beat"><circle cx="92" cy="30" r="11" fill="#ff4d4f" stroke="var(--c)" stroke-width="3"/>' +
+            '<text x="92" y="34.5" font-size="13" font-weight="700" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif">1</text></g>');
+      }
+    },
+    phone: {
+      name: "موبايل", art: function () {
+        return svg("0 0 120 120",
+          '<g class="buzz">' +
+          '<rect x="26" y="4" width="68" height="112" rx="15" fill="var(--c)"/>' +
+          '<rect x="32" y="16" width="56" height="84" rx="7" fill="#fff"/>' +
+          '<rect x="51" y="8" width="18" height="4" rx="2" fill="var(--c3)"/><rect x="50" y="106" width="20" height="4" rx="2" fill="var(--on)" opacity=".7"/>' +
+          '<rect class="b1" x="37" y="24" width="34" height="14" rx="7" fill="#ececec"/>' +
+          '<rect class="b2" x="49" y="44" width="34" height="14" rx="7" fill="var(--c2)"/>' +
+          '<rect x="37" y="66" width="30" height="16" rx="8" fill="#ececec"/>' +
+          '<circle class="tdot d1" cx="45" cy="74" r="2.8" fill="#8f8f8f"/><circle class="tdot d2" cx="52" cy="74" r="2.8" fill="#8f8f8f"/><circle class="tdot d3" cx="59" cy="74" r="2.8" fill="#8f8f8f"/></g>');
+      }
+    },
+    penguin: {
+      name: "بطريق", art: function () {
+        return svg("0 0 120 120",
+          '<g class="waddle">' +
+          '<ellipse cx="46" cy="112" rx="11" ry="5" fill="#f6a33c"/><ellipse cx="74" cy="112" rx="11" ry="5" fill="#f6a33c"/>' +
+          '<path class="wing" d="M24 58 q-16 20 -4 40 q12 -14 4 -40z" fill="#2b3440"/><path class="wing r" d="M96 58 q16 20 4 40 q-12 -14 -4 -40z" fill="#2b3440"/>' +
+          '<ellipse cx="60" cy="64" rx="40" ry="48" fill="#2b3440"/>' +
+          '<ellipse cx="60" cy="76" rx="28" ry="32" fill="#fff"/>' +
+          '<circle cx="47" cy="47" r="14" fill="#fff"/><circle cx="73" cy="47" r="14" fill="#fff"/>' +
+          eyes(48, 72, 47, 5) + cheeks(37, 83, 59, 5) +
+          '<g class="smile"><path d="M53 56 h14 l-7 8z" fill="#f6a33c"/></g>' +
+          '<g class="open"><path d="M53 55 h14 l-7 5z" fill="#f6a33c"/><path d="M55 62 h10 l-5 6z" fill="#e0902a"/></g>' +
+          '<path d="M30 76 q30 14 60 0 v9 q-30 14 -60 0z" fill="var(--c)"/>' +
+          '<rect x="68" y="84" width="11" height="20" rx="4" fill="var(--c3)" transform="rotate(-12 73 84)"/></g>', "face");
+      }
+    },
+    fox: {
+      name: "ثعلوب", art: function (big) {
+        return svg("0 0 120 120",
+          (big ? '<g class="tail"><path d="M84 104 q32 0 30 -34 q-2 -14 -14 -14 q6 26 -16 36z" fill="var(--c3)"/><path d="M114 70 q-2 -14 -14 -14 q2 8 2 14z" fill="#fff"/></g>' : "") +
+          '<g class="ear"><path d="M20 50 L24 8 L52 30Z" fill="var(--c)"/><path d="M27 40 L29 19 L44 31Z" fill="#3b2416" opacity=".55"/></g>' +
+          '<g class="ear r"><path d="M100 50 L96 8 L68 30Z" fill="var(--c)"/><path d="M93 40 L91 19 L76 31Z" fill="#3b2416" opacity=".55"/></g>' +
+          '<path d="M60 26 C88 26 106 44 108 64 C100 84 80 100 60 106 C40 100 20 84 12 64 C14 44 32 26 60 26Z" fill="var(--c)"/>' +
+          '<path d="M14 66 Q36 64 60 80 Q84 64 106 66 Q98 88 60 106 Q22 88 14 66Z" fill="#fff" opacity=".95"/>' +
+          eyes(44, 76, 57, 5.6) + cheeks(30, 90, 74, 6) +
+          '<ellipse cx="60" cy="82" rx="6" ry="4.5" fill="#2a1a10"/>' +
+          '<g class="smile"><path d="M60 86 q-5 6 -10 2 M60 86 q5 6 10 2" stroke="#3b2416" stroke-width="2.4" fill="none" stroke-linecap="round"/></g>' +
+          '<g class="open"><path d="M52 88 Q60 100 68 88 Z" fill="#5a1f1f"/><ellipse cx="60" cy="93" rx="3.4" ry="2" fill="#ff6b81"/></g>', "face");
+      }
+    },
+    panda: {
+      name: "باندا", art: function () {
+        return svg("0 0 120 120",
+          '<g class="headG">' +
+          '<g class="ear"><circle cx="27" cy="25" r="15" fill="#2a2a2a"/></g><g class="ear r"><circle cx="93" cy="25" r="15" fill="#2a2a2a"/></g>' +
+          '<circle cx="60" cy="60" r="42" fill="#fdfcfb" stroke="#2a2a2a" stroke-opacity=".12" stroke-width="2"/>' +
+          '<ellipse cx="44" cy="57" rx="11" ry="14" fill="#2a2a2a" transform="rotate(30 44 57)"/><ellipse cx="76" cy="57" rx="11" ry="14" fill="#2a2a2a" transform="rotate(-30 76 57)"/>' +
+          '<g class="eye"><circle cx="45" cy="57" r="5" fill="#fff"/><circle cx="46" cy="56" r="2.6" fill="#1b1b1b"/></g>' +
+          '<g class="eye r"><circle cx="75" cy="57" r="5" fill="#fff"/><circle cx="74" cy="56" r="2.6" fill="#1b1b1b"/></g>' +
+          cheeks(31, 89, 76, 6) +
+          '<ellipse cx="60" cy="73" rx="6" ry="4" fill="#2a2a2a"/>' +
+          '<g class="smile"><path d="M60 77 q-5 6 -10 2 M60 77 q5 6 10 2" stroke="#2a2a2a" stroke-width="2.4" fill="none" stroke-linecap="round"/></g>' +
+          '<g class="open"><path d="M52 79 Q60 92 68 79 Z" fill="#5a1f1f"/><ellipse cx="60" cy="85" rx="3.4" ry="2" fill="#ff6b81"/></g></g>' +
+          '<path d="M60 108 l-17 -9 v18z M60 108 l17 -9 v18z" fill="var(--c)"/><circle cx="60" cy="108" r="4.5" fill="var(--c3)"/>', "face");
+      }
+    },
+    frog: {
+      name: "ضفدوع", art: function () {
+        return svg("0 0 120 120",
+          '<g class="hop">' +
+          '<circle cx="36" cy="36" r="20" fill="var(--c)"/><circle cx="84" cy="36" r="20" fill="var(--c)"/>' +
+          '<ellipse cx="60" cy="72" rx="50" ry="36" fill="var(--c)"/>' +
+          '<ellipse cx="60" cy="96" rx="30" ry="11" fill="var(--c2)"/>' +
+          '<circle cx="36" cy="34" r="13" fill="#fff"/><circle cx="84" cy="34" r="13" fill="#fff"/>' +
+          '<g class="eye"><circle cx="37" cy="35" r="7" fill="#1b1b1b"/><circle cx="39.5" cy="32.5" r="2.4" fill="#fff"/></g>' +
+          '<g class="eye r"><circle cx="85" cy="35" r="7" fill="#1b1b1b"/><circle cx="87.5" cy="32.5" r="2.4" fill="#fff"/></g>' +
+          '<circle cx="54" cy="58" r="1.8" fill="#3b2416" opacity=".5"/><circle cx="66" cy="58" r="1.8" fill="#3b2416" opacity=".5"/>' +
+          cheeks(26, 94, 78, 7) +
+          '<g class="smile"><path d="M32 68 q28 22 56 0" stroke="#3b2416" stroke-width="3.4" fill="none" stroke-linecap="round"/></g>' +
+          '<g class="open"><path d="M34 68 Q60 100 86 68 Z" fill="#5a1f1f"/><ellipse cx="60" cy="84" rx="10" ry="4" fill="#ff6b81"/></g></g>', "face");
+      }
+    },
+    shirt: {
+      name: "تيشيرت", art: function () {
+        return svg("0 0 120 120",
+          '<g class="swing">' +
+          '<path d="M60 21 V12 a5 5 0 1 1 5 -5" stroke="var(--c3)" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+          '<path d="M42 16 L20 26 L6 50 L24 60 L30 52 V108 a6 6 0 0 0 6 6 H84 a6 6 0 0 0 6 -6 V52 L96 60 L114 50 L100 26 L78 16 Q60 32 42 16Z" fill="var(--c)"/>' +
+          '<path d="M42 16 Q60 32 78 16" stroke="var(--c3)" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+          '<path d="M6 50 L24 60 M114 50 L96 60" stroke="var(--c3)" stroke-width="5" stroke-linecap="round"/>' +
+          eyes(48, 72, 62, 5) + cheeks(40, 80, 74, 5.5) + mouth(60, 74, 7) + "</g>", "face");
+      }
+    },
+    box: {
+      name: "كرتونة شحن", art: function () {
+        return svg("0 0 120 120",
+          '<path class="dash" d="M12 66 h-9 M14 80 h-12 M12 94 h-9" stroke="var(--c3)" stroke-width="4" stroke-linecap="round"/>' +
+          '<g class="hop">' +
+          '<path d="M18 46 L36 34 H106 L88 46Z" fill="var(--c2)"/>' +
+          '<path d="M88 46 L106 34 V92 L88 106Z" fill="var(--c3)"/>' +
+          '<rect x="18" y="46" width="70" height="60" rx="4" fill="var(--c)"/>' +
+          '<path d="M47 46 L65 34 h12 L59 46Z" fill="#fff" opacity=".55"/><rect x="47" y="46" width="12" height="20" fill="#fff" opacity=".45"/>' +
+          eyes(40, 66, 79, 5) + cheeks(31, 75, 90, 5.5) + mouth(53, 89, 7) + "</g>", "face");
+      }
+    },
+    diamond: {
+      name: "ألماظة", art: function () {
+        return svg("0 0 120 120",
+          '<path class="tw" d="M104 10 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="var(--c2)"/><path class="tw t2" d="M14 84 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="var(--c2)"/>' +
+          '<g class="floaty">' +
+          '<path d="M30 26 H90 L110 50 H10 Z" fill="var(--c2)"/>' +
+          '<path d="M10 50 H110 L60 112 Z" fill="var(--c)"/>' +
+          '<path d="M30 26 L44 50 L60 26 L76 50 L90 26" stroke="var(--c3)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>' +
+          '<path d="M10 50 H110" stroke="var(--c3)" stroke-width="2.5"/>' +
+          '<ellipse cx="34" cy="36" rx="7" ry="3.5" fill="#fff" opacity=".5" transform="rotate(-30 34 36)"/>' +
+          eyes(47, 73, 64, 4.8) + cheeks(39, 81, 74, 5) + mouth(60, 74, 6) + "</g>", "face");
+      }
+    },
+    cake: {
+      name: "تورتة", art: function () {
+        return svg("0 0 120 120",
+          '<ellipse cx="60" cy="110" rx="50" ry="7" fill="var(--c3)" opacity=".45"/>' +
+          '<rect x="16" y="66" width="88" height="42" rx="8" fill="var(--c)"/>' +
+          '<path d="M16 74 q0 -8 8 -8 h72 q8 0 8 8 v4 q-6 8 -11 0 q-6 8 -11 0 q-6 8 -11 0 q-6 8 -11 0 q-6 8 -11 0 q-6 8 -11 0 q-6 8 -11 0 q-6 8 -11 0 z" fill="#fff" opacity=".92"/>' +
+          '<rect x="32" y="40" width="56" height="28" rx="7" fill="var(--c2)"/>' +
+          '<path d="M32 48 q0 -8 8 -8 h40 q8 0 8 8 v2 q-7 7 -14 0 q-7 7 -14 0 q-7 7 -14 0 q-7 7 -14 0z" fill="#fff"/>' +
+          '<rect x="41" y="57" width="6" height="2.6" rx="1.3" fill="#ff8fa3" transform="rotate(30 44 58)"/><rect x="58" y="60" width="6" height="2.6" rx="1.3" fill="#7cc7ff" transform="rotate(-25 61 61)"/>' +
+          '<rect x="73" y="56" width="6" height="2.6" rx="1.3" fill="#ffd166" transform="rotate(15 76 57)"/>' +
+          '<rect x="56" y="20" width="8" height="20" rx="3" fill="#fff"/><path d="M56 27 l8 -3 M56 34 l8 -3" stroke="var(--c3)" stroke-width="2"/>' +
+          '<g class="flame"><path d="M60 5 q8 8 0 15 q-8 -7 0 -15z" fill="#ffb300"/><path d="M60 10 q3.5 4.5 0 8 q-3.5 -3.5 0 -8z" fill="#fff3c4"/></g>' +
+          eyes(46, 74, 87, 4.8) + cheeks(36, 84, 95, 5.5) + mouth(60, 95, 6), "face");
+      }
     }
   };
   function styleOf(k) { return STYLES[k] ? k : "bear"; }
@@ -403,6 +544,25 @@ button{font:inherit;cursor:pointer;color:inherit}
 .art .cartB{animation:xRoll 3s ease-in-out infinite}
 .talking .art .cartB{animation-duration:.9s}
 @keyframes xRoll{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
+/* mail, phone, penguin, frog, shirt, box, cake */
+.art .letter{animation:xLetter 2.8s ease-in-out infinite}
+.talking .art .letter{animation-duration:.9s}
+@keyframes xLetter{0%,100%{transform:translateY(5px)}50%{transform:translateY(-6px)}}
+.art .buzz{transform-box:fill-box;transform-origin:center;animation:xBuzz 4s ease-in-out infinite}
+@keyframes xBuzz{0%,78%,100%{transform:rotate(0)}81%{transform:rotate(-6deg)}84%{transform:rotate(6deg)}87%{transform:rotate(-4deg)}90%{transform:rotate(3deg)}93%{transform:rotate(0)}}
+.art .waddle{transform-box:fill-box;transform-origin:50% 100%;animation:xWaddle 2.4s ease-in-out infinite}
+.talking .art .waddle{animation-duration:.8s}
+@keyframes xWaddle{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.art .hop{transform-box:fill-box;transform-origin:50% 100%;animation:xHop 3.2s ease-in-out infinite}
+.talking .art .hop{animation-duration:1s}
+@keyframes xHop{0%,66%,100%{transform:translateY(0) scale(1,1)}72%{transform:translateY(2px) scale(1.06,.94)}82%{transform:translateY(-10px) scale(.96,1.05)}92%{transform:translateY(0) scale(1.04,.96)}}
+.art .swing{transform-box:view-box;transform-origin:60px 4px;animation:xSwing 3s ease-in-out infinite}
+.talking .art .swing{animation-duration:1s}
+@keyframes xSwing{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.art .dash{animation:xDash 3.2s ease-in-out infinite}
+@keyframes xDash{0%,66%,100%{opacity:0;transform:translateX(6px)}76%{opacity:.9}92%{opacity:0;transform:translateX(-6px)}}
+.art .flame{transform-box:fill-box;transform-origin:50% 100%;animation:xFlick .9s ease-in-out infinite}
+@keyframes xFlick{0%,100%{transform:scale(1) rotate(-4deg)}50%{transform:scale(.86,1.12) rotate(4deg)}}
 
 /* ----- launcher (bubble mode) ----- */
 .launcher{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));z-index:2147483000;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}

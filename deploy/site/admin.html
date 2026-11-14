@@ -584,6 +584,8 @@
     setTimeout(function () { el.textContent = fmtFn(to); }, dur + 60);   // frames pause in background tabs
   }
   function pct(used, limit) { return limit > 0 ? Math.min(100, Math.round(used * 100 / limit)) : (used > 0 ? 100 : 0); }
+  // a store's share of this month: the free trial counts messages (msgLimit), a plan counts units
+  function usePct(s) { return s.msgLimit > 0 ? pct(s.messages, s.msgLimit) : pct(s.used, s.limit); }
   function planPill(s) {
     if (!s.plan) return '<span class="pill">بدون باقة</span>';
     var d = daysLeft(s.planEndsAt);
@@ -835,7 +837,7 @@
     $("kpis").querySelectorAll(".k-val").forEach(function (el, i) { countUp(el, Number(el.dataset.v), K[i].f); });
     drawChart(o.series);
     $("topStores").innerHTML = o.topStores.length ? o.topStores.map(function (s) {
-      var p = pct(s.used, s.limit);
+      var p = usePct(s);
       return '<div class="li"><div class="mini-av">' + esc(initial(s.name)) + '</div><div class="grow"><div class="ttl">' + esc(s.name) + '</div>' +
         '<div class="ubar' + (p >= 85 ? " hot" : "") + '"><i data-w="' + p + '"></i></div><div class="meta">' + fmt(s.messages) + ' رسالة · ' + fmt(s.costEgp, 2) + ' ج.م · ' + p + '%</div></div></div>';
     }).join("") : '<div class="empty"><span class="e-ic">🌱</span>لسه مفيش استهلاك الشهر ده</div>';
@@ -889,7 +891,7 @@
   function renderStores() {
     var list = state.stores.filter(storeMatches);
     $("stRows").innerHTML = list.length ? list.map(function (s, i) {
-      var p = pct(s.used, s.limit);
+      var p = usePct(s);
       return '<tr class="click" data-id="' + s.id + '" style="animation-delay:' + Math.min(i * 0.03, 0.4) + 's">' +
         '<td><div class="row" style="flex-wrap:nowrap"><div class="mini-av">' + esc(initial(s.name)) + '</div><div style="min-width:0"><b>' + esc(s.name) + '</b>' +
           (s.isAdmin ? ' <span class="pill brand">أدمن</span>' : '') + (s.openTickets ? ' <span class="pill info">🎧 ' + fmt(s.openTickets) + '</span>' : '') +
@@ -926,7 +928,7 @@
     var d;
     try { d = await api("store", null, "&id=" + id); } catch (e) { toast(e.message, true); return; }
     if (!state.plansList.length) { try { state.plansList = (await api("stores")).plans; } catch (e) {} }
-    var s = d.store, dl = daysLeft(s.planEndsAt), p = pct(s.used, s.limit);
+    var s = d.store, dl = daysLeft(s.planEndsAt), p = usePct(s);
     var activePlans = state.plansList.filter(function (x) { return x.isActive; });
     var m = modal(
       '<div class="d-head"><div class="mini-av" style="width:46px;height:46px;font-size:20px">' + esc(initial(s.name)) + '</div><div><h2>' + esc(s.name) + '</h2>' +
@@ -939,7 +941,8 @@
       // subscription
       '<div class="tabpane" data-p="sub">' +
         (s.plan ? '<div class="calc" style="margin:0 0 14px"><div class="r"><span>الباقة الحالية</span><b>' + esc(s.plan) + '</b></div><div class="r"><span>' + (s.planExpired ? "خلصت يوم" : "بتخلص يوم") + '</span><b>' + date(s.planEndsAt) + (s.planExpired ? "" : " (فاضل " + fmt(dl) + " يوم)") + '</b></div>' +
-          '<div class="r"><span>حد الاستهلاك الشهري</span><b>' + fmt(s.limitUsd, 2) + '$ في Claude</b></div></div>' : '<div class="calc" style="margin:0 0 14px">المتجر ده مالوش باقة. حده الحالي ' + fmt(s.limitUsd, 2) + '$ في الشهر.</div>') +
+          '<div class="r"><span>حد الاستهلاك الشهري</span><b>' + fmt(s.limitUsd, 2) + '$ في Claude</b></div></div>' : '<div class="calc" style="margin:0 0 14px">' + (s.trial ? 'المتجر ده مالوش باقة، فهو على التجربة المجانية: ' + fmt(s.msgLimit) + ' رسالة في الشهر (استخدم منهم ' + fmt(s.messages) + ').'
+          : 'المتجر ده مالوش باقة. حده الحالي ' + fmt(s.limitUsd, 2) + '$ في الشهر.') + '</div>') +
         (activePlans.length ? '<form id="subF"><h3>' + (s.plan ? "تجديد أو تغيير الباقة" : "تسجيل اشتراك") + '</h3>' +
           '<div class="cols"><div><label>الباقة</label><select id="sbPlan">' + activePlans.map(function (x) { return '<option value="' + x.id + '"' + (x.id === s.planId ? " selected" : "") + '>' + esc(x.name) + ' — ' + money(x.finalPrice) + '</option>'; }).join("") + '</select></div>' +
           '<div><label>المدة</label><select id="sbMonths">' + [1, 2, 3, 6, 12].map(function (n) { return '<option value="' + n + '">' + (n === 1 ? "شهر" : fmt(n) + " شهور") + '</option>'; }).join("") + '</select></div></div>' +
@@ -1231,7 +1234,7 @@
       var s = await api("settings");
       $("sRate").value = s.usdRate; $("sWa").value = s.whatsapp; $("sUs").value = s.unitsSmall; $("sUm").value = s.unitsMedium; $("sUl").value = s.unitsLarge;
       $("sPay").value = s.paymentInfo || ""; var pd = s.periodDiscounts || {}; $("sD4").value = pd["4"] || 0; $("sD6").value = pd["6"] || 0; $("sD12").value = pd["12"] || 0;
-      $("sFree").textContent = fmt(s.freeLimitUsd, 3) + "$ (≈ " + fmt(s.freeLimitUsd * 10000000 / s.unitsSmall) + " رسالة)";
+      $("sFree").textContent = fmt(s.freeMessages) + " رسالة في الشهر";
     } catch (e) { toast(e.message, true); }
   }
   $("setForm").onsubmit = async function (e) {

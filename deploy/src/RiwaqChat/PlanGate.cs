@@ -20,7 +20,7 @@ namespace RiwaqChat
     public static class PlanGate
     {
         public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "bothstores" };
-        public static readonly HashSet<string> FreeStyles = new HashSet<string> { "classic", "pill", "agent", "minimal", "orb", "duo", "wave", "bear" };
+        public static readonly HashSet<string> FreeStyles = new HashSet<string> { "classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear" };
         public static readonly HashSet<string> FreeColors = new HashSet<string> { "#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222" };
         public static readonly HashSet<string> LockedFileTypes = new HashSet<string> { "pdf", "docx", "xlsx" };
         public const string DefaultStyle = "bear", DefaultColor = "#e8774a";

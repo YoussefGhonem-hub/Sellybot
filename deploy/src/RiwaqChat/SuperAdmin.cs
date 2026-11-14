@@ -38,6 +38,8 @@ namespace RiwaqChat
         {
             { "UsdRate", "50" }, { "WhatsApp", "01229391155" },
             { "UnitsSmall", "3700" }, { "UnitsMedium", "7000" }, { "UnitsLarge", "26000" },
+            // the free trial (a store with no plan): this many chat replies a month
+            { "FreeMessages", "500" },
             // discount % for paying several months at once ("months:percent")
             { "PeriodDiscounts", "4:5,6:10,12:20" },
             // shown to store owners in the plan request form
@@ -240,6 +242,44 @@ namespace RiwaqChat
             return s.MonthlyTokenLimit + TopupUnits(c, s.Id);
         }
 
+        // ---------- the free trial counts messages, a plan counts units ----------
+        public static int FreeMessages(SqlConnection c) { return Units(c, "FreeMessages"); }
+        // a store with no plan is on the free trial (the admin's own store keeps its unit limit)
+        public static bool OnTrial(StoreInfo s) { return !s.PlanId.HasValue && !s.IsAdmin; }
+
+        // Nothing left this month? Trial: FreeMessages replies. Plan: its monthly units + top-ups (0 once it ended).
+        public static bool LimitReached(SqlConnection c, StoreInfo s)
+        {
+            var u = Db.Usage(c, s.Id, Db.Month);
+            return OnTrial(s) ? u.Messages >= FreeMessages(c) : u.Weighted >= TotalLimit(c, s);
+        }
+
+        // This month for the dashboard, in messages. On a plan the units left are turned into messages at this store's
+        // own cost per message: its real average after 10 messages, before that by its data size (as on the plans tab).
+        public static Dictionary<string, object> UsageJson(SqlConnection c, StoreInfo s, UsageInfo u, long chars)
+        {
+            long limit = TotalLimit(c, s);
+            bool trial = OnTrial(s);
+            int msgLimit, left; double pct;
+            if (trial)
+            {
+                msgLimit = FreeMessages(c);
+                left = Math.Max(0, msgLimit - u.Messages);
+                pct = u.Messages * 100.0 / msgLimit;
+            }
+            else
+            {
+                double per = u.Messages >= 10 && u.Weighted > 0 ? (double)u.Weighted / u.Messages
+                    : Units(c, chars <= 40000 ? "UnitsSmall" : chars <= 150000 ? "UnitsMedium" : "UnitsLarge");
+                left = (int)Math.Floor(Math.Max(0, limit - u.Weighted) / per);
+                msgLimit = u.Messages + left;
+                pct = limit > 0 ? u.Weighted * 100.0 / limit : 100;
+            }
+            return new Dictionary<string, object> {
+                { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", limit }, { "extra", TopupUnits(c, s.Id) },
+                { "trial", trial }, { "msgLimit", msgLimit }, { "msgLeft", left }, { "pct", Math.Min(100, Math.Round(pct, 1)) } };
+        }
+
         public static Dictionary<string, object> RequestJson(SqlDataReader r)
         {
             return new Dictionary<string, object>
@@ -439,15 +479,17 @@ namespace RiwaqChat
             var thisMonth = usage[months[5]];
             var costUsd = Billing.UsdForUnits(thisMonth.Weighted);
 
-            var top = new List<Dictionary<string, object>>();
+            var top = new List<Dictionary<string, object>>(); int free = Billing.FreeMessages(c);
             using (var cmd = Db.Cmd(c, @"SELECT TOP 6 s.Id, s.Name, s.Slug, s.PlanName, s.MonthlyTokenLimit, u.Messages,
+                                           CAST(CASE WHEN s.PlanId IS NULL AND s.IsAdmin = 0 THEN 1 ELSE 0 END AS BIT) AS Trial,
                                            u.InputTokens + CAST(u.CacheWriteTokens * 1.25 AS BIGINT) + CAST(u.CacheReadTokens * 0.1 AS BIGINT) + u.OutputTokens * 5 AS W
                                          FROM dbo.UsageMonthly u JOIN dbo.Stores s ON s.Id = u.StoreId WHERE u.Month = @m ORDER BY W DESC", "@m", Db.Month))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                     top.Add(new Dictionary<string, object> {
                         { "id", r["Id"] }, { "name", r["Name"] }, { "slug", r["Slug"] }, { "plan", r["PlanName"] as string ?? "" }, { "messages", r["Messages"] },
-                        { "used", Convert.ToInt64(r["W"]) }, { "limit", r["MonthlyTokenLimit"] }, { "costEgp", Math.Round(Billing.UsdForUnits(Convert.ToInt64(r["W"])) * rate, 2) } });
+                        { "used", Convert.ToInt64(r["W"]) }, { "limit", r["MonthlyTokenLimit"] }, { "costEgp", Math.Round(Billing.UsdForUnits(Convert.ToInt64(r["W"])) * rate, 2) },
+                        { "msgLimit", (bool)r["Trial"] ? free : 0 } });
 
             var subs = new List<Dictionary<string, object>>();
             using (var cmd = Db.Cmd(c, "SELECT TOP 6 x.Id, x.PlanName, x.PaidEgp, x.CreatedAt, s.Name FROM dbo.Subscriptions x JOIN dbo.Stores s ON s.Id = x.StoreId ORDER BY x.CreatedAt DESC"))
@@ -526,17 +568,19 @@ namespace RiwaqChat
         }
 
         // ---------- stores ----------
-        static Dictionary<string, object> StoreRow(SqlDataReader r, decimal rate)
+        static Dictionary<string, object> StoreRow(SqlDataReader r, decimal rate, int freeMessages)
         {
             var u = new UsageInfo { Messages = Convert.ToInt32(r["Messages"]), InputTokens = Convert.ToInt64(r["I"]), CacheReadTokens = Convert.ToInt64(r["CR"]), CacheWriteTokens = Convert.ToInt64(r["CW"]), OutputTokens = Convert.ToInt64(r["O"]) };
             var ends = r["PlanEndsAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["PlanEndsAt"], DateTimeKind.Utc);
-            bool hasPlan = r["PlanId"] != DBNull.Value;
+            bool hasPlan = r["PlanId"] != DBNull.Value, trial = !hasPlan && !(bool)r["IsAdmin"];
             return new Dictionary<string, object>
             {
                 { "id", r["Id"] }, { "slug", r["Slug"] }, { "name", r["Name"] }, { "email", r["OwnerEmail"] }, { "status", r["Status"] }, { "isAdmin", r["IsAdmin"] },
                 { "limit", r["MonthlyTokenLimit"] }, { "limitUsd", Billing.UsdForUnits(Convert.ToInt64(r["MonthlyTokenLimit"])) },
                 { "plan", hasPlan ? r["PlanName"] as string : null }, { "planId", hasPlan ? r["PlanId"] : null }, { "planEndsAt", ends.HasValue ? ends.Value.ToString("o") : "" },
                 { "planExpired", hasPlan && ends.HasValue && ends.Value < DateTime.UtcNow },
+                // free trial: its allowance is a number of messages, not units
+                { "trial", trial }, { "msgLimit", trial ? freeMessages : 0 },
                 { "messages", u.Messages }, { "used", u.Weighted }, { "costEgp", Math.Round(Billing.UsdForUnits(u.Weighted) * rate, 2) },
                 { "chars", Convert.ToInt64(r["Chars"]) }, { "openTickets", r["OpenTickets"] }, { "created", Billing.Iso(r["CreatedAt"]) },
                 { "shopify", !string.IsNullOrEmpty(r["ShopifyDomain"] as string) || !string.IsNullOrEmpty(r["ShopifyShop"] as string) },
@@ -552,21 +596,21 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
 
         static Dictionary<string, object> Stores(SqlConnection c)
         {
-            var rate = Billing.UsdRate(c);
+            var rate = Billing.UsdRate(c); int free = Billing.FreeMessages(c);
             var list = new List<Dictionary<string, object>>();
             using (var cmd = Db.Cmd(c, StoreSelect + "ORDER BY s.CreatedAt DESC", "@m", Db.Month))
-            using (var r = cmd.ExecuteReader()) while (r.Read()) list.Add(StoreRow(r, rate));
+            using (var r = cmd.ExecuteReader()) while (r.Read()) list.Add(StoreRow(r, rate, free));
             return new Dictionary<string, object> { { "stores", list }, { "plans", Billing.Plans(c, true).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "finalPrice", Billing.FinalPrice(p) }, { "priceEgp", p.PriceEgp }, { "durationDays", p.DurationDays }, { "isActive", p.IsActive } }).ToList() } };
         }
 
         static void StoreDetail(SqlConnection c, HttpRequest req, HttpResponse res)
         {
             int id; if (!int.TryParse(req.QueryString["id"], out id)) { Web.Error(res, 400, "bad_request"); return; }
-            var rate = Billing.UsdRate(c);
+            var rate = Billing.UsdRate(c); int free = Billing.FreeMessages(c);
             Dictionary<string, object> store = null; string origins = null, style = null, color = null;
             using (var cmd = Db.Cmd(c, StoreSelect + "WHERE s.Id = @id", "@m", Db.Month, "@id", id))
             using (var r = cmd.ExecuteReader())
-                if (r.Read()) { store = StoreRow(r, rate); origins = r["AllowedOrigins"] as string; style = r["BubbleStyle"] as string; color = r["BrandColor"] as string; }
+                if (r.Read()) { store = StoreRow(r, rate, free); origins = r["AllowedOrigins"] as string; style = r["BubbleStyle"] as string; color = r["BrandColor"] as string; }
             if (store == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
             store["origins"] = origins ?? ""; store["bubbleStyle"] = style ?? ""; store["brandColor"] = color ?? "";
 
@@ -867,7 +911,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             {
                 { "usdRate", Billing.UsdRate(c) }, { "whatsapp", Billing.WhatsApp(c) },
                 { "unitsSmall", Billing.Units(c, "UnitsSmall") }, { "unitsMedium", Billing.Units(c, "UnitsMedium") }, { "unitsLarge", Billing.Units(c, "UnitsLarge") },
-                { "freeLimitUsd", Billing.UsdForUnits(FreeLimit()) },
+                { "freeLimitUsd", Billing.UsdForUnits(FreeLimit()) }, { "freeMessages", Billing.FreeMessages(c) },
                 { "paymentInfo", Billing.Get(c, "PaymentInfo") ?? "" },
                 { "periodDiscounts", Billing.PeriodDiscounts(c).Where(kv => kv.Key > 1).ToDictionary(kv => kv.Key.ToString(CultureInfo.InvariantCulture), kv => (object)kv.Value) },
             };

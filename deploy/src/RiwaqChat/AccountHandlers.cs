@@ -34,7 +34,7 @@ namespace RiwaqChat
                     { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
                     { "recent", s.OcOn || s.OcHooked ? (object)OrderConfirm.Recent(c, s.Id) : new object[0] } } },
                 { "easyorders", EasyOrders.Describe(c, s) },
-                { "usage", new Dictionary<string, object> { { "month", Db.Month }, { "messages", u.Messages }, { "used", u.Weighted }, { "limit", Billing.TotalLimit(c, s) }, { "extra", Billing.TopupUnits(c, s.Id) } } },
+                { "usage", Billing.UsageJson(c, s, u, chars) },
                 { "plan", Billing.StorePlan(s) }, { "whatsapp", Billing.WaNumber(Billing.WhatsApp(c)) },
                 { "supportAnswered", SupportAnswered(c, s.Id) },
                 { "storage", storage },
@@ -227,7 +227,8 @@ namespace RiwaqChat
         public static readonly HashSet<string> BubbleStyles = new HashSet<string>
         {
             "classic", "pill", "agent", "minimal", "bear", "cat", "blob", "bag", "gift", "star",
-            "orb", "duo", "wave", "robot", "owl", "ghost", "bunny", "heart", "cup", "cart"
+            "orb", "duo", "wave", "robot", "owl", "ghost", "bunny", "heart", "cup", "cart",
+            "mail", "phone", "penguin", "fox", "panda", "frog", "shirt", "box", "diamond", "cake"
         };
 
         static string NullIfEmpty(string v) { return string.IsNullOrWhiteSpace(v) ? null : v; }

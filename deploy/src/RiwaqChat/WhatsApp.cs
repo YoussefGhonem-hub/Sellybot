@@ -540,7 +540,7 @@ ELSE
                     var token = WaAccount.Token(c, s);
                     if (token == null) return;
                     if (Billing.Expired(s)) { SetStatus(c, s.Id, "⚠️ الباقة خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها."); return; }
-                    if (Db.Usage(c, s.Id, Db.Month).Weighted >= Billing.TotalLimit(c, s)) { SetStatus(c, s.Id, "⚠️ رصيد الشهر خلص، فالمساعد مش بيرد على الواتساب لحد ما تزوّد الرصيد أو يبدأ شهر جديد."); return; }
+                    if (Billing.LimitReached(c, s)) { SetStatus(c, s.Id, "⚠️ رصيد الشهر خلص، فالمساعد مش بيرد على الواتساب لحد ما تزوّد الرصيد أو يبدأ شهر جديد."); return; }
                     if (!Web.Allow("wa-chat:" + s.Id + ":" + chatKey, 30, TimeSpan.FromHours(1))) return;   // one customer can't burn the quota
                     try { Shopify.RefreshIfOld(s); } catch (Exception ex) { Log.Error(ex); }
                     try { EasyOrders.RefreshIfOld(s); } catch (Exception ex) { Log.Error(ex); }

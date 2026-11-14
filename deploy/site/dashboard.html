@@ -867,7 +867,7 @@
       <button data-tab="wa">💬 واتساب</button>
       <button data-tab="settings">⚙️ المساعد</button>
       <button data-tab="plan">💎 باقتي</button>
-      <button data-tab="support">🎧 الدعم <span class="nb" id="supBadge" hidden></span></button>
+      <button type="button" data-href="about.html">ℹ️ من نحن</button>
       <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
     </nav>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="غيّر الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق">
@@ -878,13 +878,13 @@
       <button class="acct-btn" id="acctBtn" aria-haspopup="true">
         <span class="avatar" id="acctAvatar">م</span>
         <span class="acct-txt"><b id="acctName"></b><small><i class="sdot" id="acctDot"></i><span id="acctStatus"></span></small></span>
-        <span aria-hidden="true">▾</span>
+        <span class="nb" id="supAcct" hidden title="رد جديد من الدعم"></span><span aria-hidden="true">▾</span>
       </button>
       <div class="menu" id="acctMenu" hidden>
         <a id="menuChat" target="_blank" rel="noopener">💬 افتح الشات ↗</a>
         <button data-goto="install">🛍️ كود الإضافة لمتجرك</button>
         <button data-goto="plan">💎 باقتي والاشتراك</button>
-        <button data-goto="support">🎧 الدعم الفني</button>
+        <button data-goto="support">🎧 الدعم الفني <span class="nb" id="supBadge" hidden></span></button>
         <a id="menuWa" target="_blank" rel="noopener">🟢 كلّمنا على واتساب ↗</a>
         <div class="sep"></div>
         <button id="logoutBtn">↩️ تسجيل خروج</button>
@@ -985,7 +985,7 @@
       </div>
       <ul class="feats">
         <li><span class="fi">📄</span><div><b>ارفع أي ملف</b><small>Excel أو PDF أو Word أو نص عادي</small></div></li>
-        <li><span class="fi">🎨</span><div><b>بشكل متجرك</b><small>20 شكل للفقاعة وأي لون تحبه</small></div></li>
+        <li><span class="fi">🎨</span><div><b>بشكل متجرك</b><small>30 شكل للفقاعة وأي لون تحبه</small></div></li>
         <li><span class="fi">⚡</span><div><b>سطر كود واحد</b><small>في Shopify أو أي موقع</small></div></li>
       </ul>
     </div>
@@ -1687,6 +1687,12 @@
   var BASE = location.origin + location.pathname.replace(/dashboard\.html$/, "");
 
   function fmt(n) { return Number(n || 0).toLocaleString("ar-EG"); }
+  // store data is saved as NVARCHAR, 2 bytes per character
+  function fmtSize(chars) {
+    var b = Number(chars || 0) * 2, u = ["بايت", "كيلوبايت", "ميجابايت", "جيجابايت"], i = 0;
+    while (b >= 1000 && i < u.length - 1) { b /= 1000; i++; }
+    return b.toLocaleString("ar-EG", { maximumFractionDigits: i > 0 && b < 10 ? 1 : 0 }) + " " + u[i];
+  }
   function toast(t) { var el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove("show"); }, 2600); }
   function setMsg(id, text, ok) { var el = $(id); el.textContent = text || ""; el.className = "msg " + (ok ? "ok" : "err"); }
   function vagueName(t) {
@@ -1859,6 +1865,7 @@
   }
   document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { go(b.dataset.tab); }; });
   document.querySelectorAll("[data-goto]").forEach(function (b) { b.onclick = function () { go(b.dataset.goto); }; });
+  document.querySelectorAll("[data-href]").forEach(function (b) { b.onclick = function () { location.href = b.dataset.href; }; });   // nav items that are their own page (من نحن)
   $("acctBtn").onclick = function (e) { e.stopPropagation(); $("acctMenu").hidden = !$("acctMenu").hidden; };
   document.addEventListener("click", function (e) { if (!e.target.closest("#acct")) $("acctMenu").hidden = true; });
 
@@ -1886,13 +1893,12 @@
   }
   var plansData = null;
   function renderMyPlan() {
-    var p = me.plan || {}, used = me.usage.used, limit = me.usage.limit, pct = limit > 0 ? Math.min(100, Math.round(used * 100 / limit)) : 100;
-    var per = plansData ? unitsPerMsg(plansData.units) : 0, left = per ? Math.max(0, Math.floor((limit - used) / per)) : null;
+    var p = me.plan || {}, pct = Math.round(me.usage.pct), left = me.usage.msgLeft;
     var status = !p.name ? '<span class="st-pill">تجربة مجانية</span>' : p.expired ? '<span class="st-pill" style="background:#fdecea;color:#b23324;border-color:transparent">الاشتراك خلص</span>'
       : '<span class="st-pill answered">شغالة · فاضل ' + fmt(p.daysLeft) + ' يوم</span>';
     $("myPlan").innerHTML =
       '<div><div class="hint">باقتك الحالية</div><div class="mp-name">' + esc(p.name || "التجربة المجانية") + '</div>' + status +
-      '<p class="hint" style="margin:10px 0 0">' + (p.name ? (p.expired ? "خلصت يوم " + dateAr(p.endsAt) + ". المساعد متوقف لحد ما تجدد." : "بتخلص يوم " + dateAr(p.endsAt) + "، وبعدها المساعد بيتوقف لحد ما تجدد.") : "رصيد تجربة عشان تختبر المساعد على داتا متجرك. اشترك في باقة عشان تكمّل من غير توقف.") + '</p>' +
+      '<p class="hint" style="margin:10px 0 0">' + (p.name ? (p.expired ? "خلصت يوم " + dateAr(p.endsAt) + ". المساعد متوقف لحد ما تجدد." : "بتخلص يوم " + dateAr(p.endsAt) + "، وبعدها المساعد بيتوقف لحد ما تجدد.") : fmt(me.usage.msgLimit) + " رسالة مجانية في الشهر عشان تختبر المساعد على داتا متجرك. اشترك في باقة عشان تكمّل من غير توقف.") + '</p>' +
       (p.name && !p.expired && pct >= 80 ? '<p class="hint" style="margin:8px 0 0;color:#b26b00">⚠️ رصيد الشهر ده قرب يخلص. زوّد الرصيد عشان المساعد مايقفش قبل آخر الشهر.</p>' : '') +
       // on the free trial the plans are right under this card, so no button here; a paid plan gets renew / top up
       (p.name ? '<div class="row" style="margin-top:14px"><button type="button" class="btn" id="mpRenew">' + (p.expired ? "🔁 جدّد الباقة" : "🔁 جدّد قبل ميعادها") + '</button>' +
@@ -1900,7 +1906,7 @@
       '<div class="row" style="justify-content:center;gap:18px"><div class="mp-ring" id="mpRing" style="--p:0"><b>' + pct + '%<small>من رصيد الشهر</small></b></div>' +
       '<div><div class="hint">الشهر ده</div><div style="font-size:20px;font-weight:700">' + fmt(me.usage.messages) + ' رسالة</div>' +
       (me.usage.extra > 0 ? '<div class="hint">➕ فيه رصيد إضافي الشهر ده</div>' : '') +
-      (left != null ? '<div class="hint">فاضل حوالي <b style="color:var(--ink)">' + fmt(left) + '</b> رسالة</div>' : '') + '</div></div>';
+      '<div class="hint">فاضل ' + (me.usage.trial ? "" : "حوالي ") + '<b style="color:var(--ink)">' + fmt(left) + '</b> رسالة' + (me.usage.trial ? " من " + fmt(me.usage.msgLimit) : "") + '</div></div></div>';
     requestAnimationFrame(function () { setTimeout(function () { var r = $("mpRing"); if (r) r.style.setProperty("--p", pct); }, 60); });
     if ($("mpRenew")) $("mpRenew").onclick = function () {
       var same = p.id && plansData && plansData.plans.some(function (x) { return x.id === p.id; });
@@ -2099,8 +2105,9 @@
     $("menuChat").href = link;
     $("menuWa").href = waLink("أهلاً 👋 أنا صاحب متجر " + me.name + " (" + me.slug + ") على Sellybot");
     $("supBadge").textContent = fmt(me.supportAnswered || 0); $("supBadge").hidden = !me.supportAnswered;
+    $("supAcct").textContent = fmt(me.supportAnswered || 0); $("supAcct").hidden = !me.supportAnswered;   // support lives in the account menu: show replies on its button too
     // subscription: ended, ending soon, or the month's allowance nearly used up
-    var pl = me.plan || {}, pb = $("planBanner"), upct = me.usage.limit > 0 ? me.usage.used * 100 / me.usage.limit : 100;
+    var pl = me.plan || {}, pb = $("planBanner"), upct = me.usage.pct;
     function bn(cls, ic, title, sub, cta, bar) {   // icon, message, a short line under it, (usage bar), and the button
       pb.className = "banner" + (cls ? " " + cls : "");
       pb.innerHTML = '<span class="bn-ic">' + ic + '</span><span class="bn-t"><b>' + title + '</b><small>' + sub + '</small>' +
@@ -2121,13 +2128,16 @@
     else if (st.nearlyFull) { bn.className = "banner"; bn.hidden = false; bn.textContent = "⚠️ مساحة التخزين على السيرفر قربت تخلص (" + st.percent + "%)" + mb + ". لو رفعت ملفات كبيرة ممكن الرفع يتوقف" + (me.isAdmin ? "، زوّد المساحة من لوحة SmarterASP." : "، امسح الملفات اللي مش محتاجها."); }
     else bn.hidden = true;
     // stats
-    var used = me.usage.used, limit = Math.max(1, me.usage.limit), pct = Math.min(100, Math.round(used * 100 / limit));
-    $("usageVal").textContent = pct + "%"; $("usageBar").querySelector("i").style.width = pct + "%"; $("usageBar").classList.toggle("hot", pct >= 85);
-    $("usageHint").textContent = fmt(me.usage.messages) + " رسالة · " + fmt(used) + " من " + fmt(me.usage.limit);
+    // messages used and left: the free trial has a fixed number, a plan's are estimated from its units (server side)
+    var mu = me.usage, pct = Math.round(mu.pct);
+    $("usageVal").textContent = "استخدمت " + fmt(mu.messages) + " رسالة";
+    $("usageBar").querySelector("i").style.width = Math.max(pct, mu.messages > 0 ? 1 : 0) + "%"; $("usageBar").classList.toggle("hot", pct >= 85);
+    $("usageHint").textContent = mu.trial ? "فاضل " + fmt(mu.msgLeft) + " رسالة من " + fmt(mu.msgLimit) + " في التجربة المجانية"
+      : (me.plan && me.plan.expired) ? "الباقة خلصت، جدّدها عشان المساعد يرجع يرد" : "فاضل حوالي " + fmt(mu.msgLeft) + " رسالة في باقتك";
     var dpct = Math.min(100, Math.round(me.knowledge.chars * 100 / me.knowledge.maxChars));
-    $("dataVal").textContent = fmt(me.knowledge.items) + " جزء";
+    $("dataVal").textContent = fmtSize(me.knowledge.chars);
     $("dataBar").querySelector("i").style.width = Math.max(dpct, me.knowledge.chars > 0 ? 1 : 0) + "%";
-    $("dataHint").textContent = fmt(me.knowledge.chars) + " حرف من " + fmt(me.knowledge.maxChars) + " · " +
+    $("dataHint").textContent = "من أصل " + fmtSize(me.knowledge.maxChars) + " · " +
       (me.knowledge.mode === "search" ? "🔎 وضع البحث: الداتا كبيرة، فالمساعد بيدوّر فيها مع كل سؤال" : "كل الداتا بتتقري مع كل سؤال");
     $("chatLink").value = link; $("openLink").href = link;
     // settings
@@ -2769,12 +2779,12 @@
         ["cu", "وسعر الغسالة 8 كيلو كام؟", "6:03", 5.0], ["typing", 5.9, 7.0], ["bot", "8,450 ج.م، ومتاح تقسيط على 6 شهور من غير فوايد 👌", "6:03", 7.0]] },
     styles: { ac: "#e84a8a", ac2: "#9b5de5", ph: "#6d3fc0", av: "🌐", what: "الأشكال والألوان", top: "موقعك", site: true,
       head: 'خلّي الشات <span class="g">شبه متجرك</span> ويلفت نظر كل زبون',
-      p: "أكتر من 20 شكل للفقاعة (دبدوب، قطة، روبوت، بومة، شنطة، هدية...) وأي لون تختاره بكود لون البراند بتاعك بالظبط.",
+      p: "30 شكل للفقاعة (دبدوب، قطة، باندا، بطريق، تيشيرت، تورتة...) وأي لون تختاره بكود لون البراند بتاعك بالظبط.",
       list: [["🎨", "أي لون بكود لون البراند بتاعك"], ["🐱", "أشكال مضحكة وأشكال لكل نوع متجر"], ["✨", "حركات بتشد الزبون يدوس ويسأل"]],
-      chips: ["🐱 قطة", "🤖 روبوت", "🎨 أي لون"] }
+      chips: ["🐱 قطة", "🐼 باندا", "🎨 أي لون"] }
   };
-  var FREE_STYLES = ["classic", "pill", "agent", "minimal", "orb", "duo", "wave", "bear"];
-  var BUB_EMO = ["🐻", "🐱", "🤖", "🦉", "👻", "🐰", "🎁", "⭐", "☕", "🛒"], BUB_COL = ["#e8774a", "#9b5de5", "#1a73e8", "#0ea5a4", "#e84a8a", "#2f8f5b", "#d64545", "#1f3a5f"];
+  var FREE_STYLES = ["classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear"];
+  var BUB_EMO = ["🐻", "🐱", "🐼", "🤖", "🐧", "🦉", "🦊", "👻", "🐸", "🐰", "🎁", "💎", "⭐", "🎂", "☕", "🛒"], BUB_COL = ["#e8774a", "#9b5de5", "#1a73e8", "#0ea5a4", "#e84a8a", "#2f8f5b", "#d64545", "#1f3a5f"];
   var locks = {}, lockTimers = {};
   function chatHtml(chat) {
     return chat.map(function (m) {   // --d: when it shows, --e: when the typing dots go away
@@ -3020,8 +3030,10 @@
   }
 
   // ---------------- look (bubble style + color) ----------------
-  var GROUPS = { stylesStd: ["classic", "pill", "agent", "minimal", "orb", "duo", "wave"], stylesFun: ["bear", "cat", "blob", "robot", "owl", "ghost", "bunny"], stylesAny: ["bag", "gift", "star", "heart", "cup", "cart"] };
-  var NOTES = { classic: "بسيط ومعروف", pill: "زرار فيه كلام", agent: "موظف خدمة عملاء", minimal: "هادي وشيك", bear: "بيتكلم وبيرش 🧽", cat: "بتهز ديلها", blob: "وحش لطيف", bag: "لأي متجر", gift: "هدايا وورد", star: "تجميل وموضة", orb: "شكل عصري ✦", duo: "رسايل رايحة جاية", wave: "بيسلّم على زباينك", robot: "إلكترونيات وتقنية", owl: "كتب وتعليم", ghost: "بيطير وبيهزّر", bunny: "أطفال وألعاب", heart: "تجميل وهدايا", cup: "كافيهات وأكل", cart: "سوبر ماركت وأي متجر" };
+  var GROUPS = { stylesStd: ["classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone"], stylesFun: ["bear", "cat", "blob", "robot", "owl", "ghost", "bunny", "penguin", "fox", "panda", "frog"], stylesAny: ["bag", "gift", "star", "heart", "cup", "cart", "shirt", "box", "diamond", "cake"] };
+  var NOTES = { classic: "بسيط ومعروف", pill: "زرار فيه كلام", agent: "موظف خدمة عملاء", minimal: "هادي وشيك", bear: "بيتكلم وبيرش 🧽", cat: "بتهز ديلها", blob: "وحش لطيف", bag: "لأي متجر", gift: "هدايا وورد", star: "تجميل وموضة", orb: "شكل عصري ✦", duo: "رسايل رايحة جاية", wave: "بيسلّم على زباينك", robot: "إلكترونيات وتقنية", owl: "كتب وتعليم", ghost: "بيطير وبيهزّر", bunny: "أطفال وألعاب", heart: "تجميل وهدايا", cup: "كافيهات وأكل", cart: "سوبر ماركت وأي متجر",
+    mail: "رسالة جديدة 📩", phone: "شات على الموبايل", penguin: "بيتمايل يمين وشمال", fox: "شقي وبيهز ديله", panda: "هادي وكيوت", frog: "بينطّ 🐸",
+    shirt: "ملابس وموضة", box: "شحن وتوصيل", diamond: "إكسسوارات ومجوهرات", cake: "حلويات ومخبوزات" };
   var SWATCHES = ["#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222"];
   var look = { style: "bear", color: "#e8774a", title: "" }, lookInit = false, pvView = "bubble";
   function initLook() {

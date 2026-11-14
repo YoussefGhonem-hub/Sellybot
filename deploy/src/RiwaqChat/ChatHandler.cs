@@ -90,7 +90,7 @@ namespace RiwaqChat
                 // (a plan whose end date passed allows nothing until the super admin renews it)
                 // subscription ended: the chat stops until the super admin renews it (the widget says "not available, contact the store")
                 if (store != null && Billing.Expired(store)) { Web.Error(res, 403, "plan_expired"); return; }
-                if (store != null && Db.Usage(conn, store.Id, Db.Month).Weighted >= Billing.TotalLimit(conn, store)) { Web.Error(res, 402, "limit_reached"); return; }
+                if (store != null && Billing.LimitReached(conn, store)) { Web.Error(res, 402, "limit_reached"); return; }
 
                 // keep the store's Shopify data fresh (refreshes in the background when it is older than a few hours)
                 if (store != null) { try { Shopify.RefreshIfOld(store); } catch (Exception ex) { Log.Error(ex); } }
