@@ -94,6 +94,7 @@ namespace RiwaqChat
 
                 // keep the store's Shopify data fresh (refreshes in the background when it is older than a few hours)
                 if (store != null) { try { Shopify.RefreshIfOld(store); } catch (Exception ex) { Log.Error(ex); } }
+                if (store != null) { try { EasyOrders.RefreshIfOld(store); } catch (Exception ex) { Log.Error(ex); } }
 
                 // ---- read the conversation ----
                 ArrayList incoming;
@@ -153,7 +154,7 @@ namespace RiwaqChat
                 bool wrote = false;
 
                 // ---- big store (search) and/or order tracking (Shopify): let Claude use its tools, then send the answer ----
-                bool orderTool = store != null && store.ShopifyOrders && ShopifyAdmin.For(store) != null;
+                bool orderTool = store != null && OrderTracking.On(store);   // Shopify or EasyOrders
                 if (Claude.UseSearch(idx) || orderTool || octx != null)
                 {
                     try
@@ -226,7 +227,7 @@ namespace RiwaqChat
             if (octx != null) sys.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
             var parameters = new MessageCreateParams { Model = Claude.Model, MaxTokens = maxTokens, System = sys, Messages = messages };
 
-            bool orderTool = store.ShopifyOrders && ShopifyAdmin.For(store) != null;
+            bool orderTool = OrderTracking.On(store);   // Shopify or EasyOrders
             if (Claude.UseSearch(idx) || orderTool || octx != null)
                 return await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, ip, octx);
 
@@ -297,7 +298,7 @@ namespace RiwaqChat
                         else if (octx != null && ChatOrders.ToolNames.Contains(tu.Name)) found = await ChatOrders.Run(tu.Name, tu.Input, octx);
                         else if (tu.Name == ShopifyAdmin.OrderToolName && orderStore != null)
                         {
-                            try { found = await ShopifyAdmin.LookupOrder(orderStore, ip, Arg(tu, "order_number"), Arg(tu, "contact")); }
+                            try { found = await OrderTracking.Lookup(orderStore, ip, Arg(tu, "order_number"), Arg(tu, "contact")); }
                             catch (Exception ex) { Log.Error(ex); found = "مقدرناش نوصل لبيانات الأوردرات دلوقتي. اعتذر للزبون وانصحه يكلّم المتجر."; }
                         }
                         else found = "أداة غير معروفة.";

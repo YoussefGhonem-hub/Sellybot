@@ -23,6 +23,13 @@ namespace RiwaqChat
         public DateTime? WaLastAt;
         public bool CoOn;                  // ordering from the chat (Shopify draft orders)
         public string CoPay;               // "cod", "card" or "both"
+        public bool OcOn, OcHooked;        // order confirmation on WhatsApp
+        public string OcScope;             // "all" or "cod" (cash on delivery only)
+        // EasyOrders (EasyOrders.cs): key = Public API key, encrypted (Secrets.Protect); mode "app" (install link) or "key" (pasted);
+        // hook key = the secret part of our webhook URL; EoOcOn/EoOcScope = order confirmation on WhatsApp
+        public string EoKey, EoMode, EoStoreId, EoUrl, EoStatus, EoOcScope, EoHookKey;
+        public DateTime? EoSyncedAt, EoHookAt;
+        public bool EoOrders, EoOcOn;
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -194,6 +201,20 @@ namespace RiwaqChat
                 WaLastAt = r["WaLastAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["WaLastAt"], DateTimeKind.Utc),
                 CoOn = r["CoOn"] is bool && (bool)r["CoOn"],
                 CoPay = r["CoPay"] as string ?? "cod",
+                OcOn = r["OcOn"] is bool && (bool)r["OcOn"],
+                OcScope = r["OcScope"] as string ?? "all",
+                OcHooked = r["OcHooked"] is bool && (bool)r["OcHooked"],
+                EoKey = r["EoKey"] as string,
+                EoMode = r["EoMode"] as string,
+                EoStoreId = r["EoStoreId"] as string,
+                EoUrl = r["EoUrl"] as string,
+                EoStatus = r["EoStatus"] as string,
+                EoSyncedAt = r["EoSyncedAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["EoSyncedAt"], DateTimeKind.Utc),
+                EoOrders = r["EoOrders"] is bool && (bool)r["EoOrders"],
+                EoOcOn = r["EoOcOn"] is bool && (bool)r["EoOcOn"],
+                EoOcScope = r["EoOcScope"] as string ?? "all",
+                EoHookKey = r["EoHookKey"] as string,
+                EoHookAt = r["EoHookAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["EoHookAt"], DateTimeKind.Utc),
                 Suggestions = r["Suggestions"] as string,
                 MonthlyTokenLimit = (int)r["MonthlyTokenLimit"],
                 DataVersion = (int)r["DataVersion"],
@@ -306,6 +327,26 @@ BEGIN
   CREATE INDEX IX_WaMessages_Chat ON dbo.WaMessages(StoreId, ChatId, Id);
   -- Wapilot may deliver the same message twice: answer it once
   CREATE UNIQUE INDEX UX_WaMessages_MsgId ON dbo.WaMessages(StoreId, MsgId) WHERE MsgId IS NOT NULL;
+END
+-- Order confirmation on WhatsApp: a new Shopify order -> a message to the customer; their answer confirms it or cancels it in Shopify
+IF COL_LENGTH('dbo.Stores', 'OcOn') IS NULL ALTER TABLE dbo.Stores ADD OcOn BIT NOT NULL CONSTRAINT DF_Stores_OcOn DEFAULT 0,
+  OcScope NVARCHAR(10) NOT NULL CONSTRAINT DF_Stores_OcScope DEFAULT 'all', OcHooked BIT NOT NULL CONSTRAINT DF_Stores_OcHooked DEFAULT 0;
+IF OBJECT_ID('dbo.OrderConfirms') IS NULL
+BEGIN
+  CREATE TABLE dbo.OrderConfirms(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    OrderId BIGINT NOT NULL,
+    OrderName NVARCHAR(40) NOT NULL,
+    Customer NVARCHAR(100) NULL,
+    Phone NVARCHAR(20) NULL,
+    Total NVARCHAR(40) NULL,
+    Status NVARCHAR(12) NOT NULL,          -- pending / confirmed / cancelled / failed / skipped
+    Note NVARCHAR(300) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    AnsweredAt DATETIME2 NULL);
+  CREATE UNIQUE INDEX UX_OrderConfirms_Order ON dbo.OrderConfirms(StoreId, OrderId);   -- Shopify may deliver a webhook twice
+  CREATE INDEX IX_OrderConfirms_Pending ON dbo.OrderConfirms(StoreId, Status, Id);
 END
 IF OBJECT_ID('dbo.Migrations') IS NULL CREATE TABLE dbo.Migrations(Name NVARCHAR(100) NOT NULL PRIMARY KEY, RanAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
 IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'drop-default-bot-name')
@@ -460,6 +501,23 @@ BEGIN
     DraftGid NVARCHAR(100) NULL, OrderName NVARCHAR(40) NULL, InvoiceUrl NVARCHAR(500) NULL, Note NVARCHAR(300) NULL, Ip NVARCHAR(60) NULL,
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
   CREATE INDEX IX_ChatOrders_Sid ON dbo.ChatOrders(StoreId, Sid, Id);
+END
+-- ---------- EasyOrders: connection, data sync, order tracking, order confirmation on WhatsApp (EasyOrders.cs) ----------
+IF COL_LENGTH('dbo.Stores', 'EoKey') IS NULL ALTER TABLE dbo.Stores ADD EoKey NVARCHAR(1000) NULL, EoMode NVARCHAR(10) NULL, EoStoreId NVARCHAR(64) NULL,
+  EoUrl NVARCHAR(200) NULL, EoStatus NVARCHAR(400) NULL, EoSyncedAt DATETIME2 NULL,
+  EoOrders BIT NOT NULL CONSTRAINT DF_Stores_EoOrders DEFAULT 0, EoOcOn BIT NOT NULL CONSTRAINT DF_Stores_EoOcOn DEFAULT 0,
+  EoOcScope NVARCHAR(10) NOT NULL CONSTRAINT DF_Stores_EoOcScope DEFAULT 'all', EoHookKey NVARCHAR(40) NULL, EoHookAt DATETIME2 NULL;
+IF OBJECT_ID('dbo.EoConfirms') IS NULL
+BEGIN
+  CREATE TABLE dbo.EoConfirms(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    OrderId NVARCHAR(64) NOT NULL,
+    OrderName NVARCHAR(40) NULL, Customer NVARCHAR(100) NULL, Phone NVARCHAR(20) NULL, Total NVARCHAR(40) NULL,
+    Status NVARCHAR(20) NOT NULL, Note NVARCHAR(300) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), AnsweredAt DATETIME2 NULL);
+  CREATE UNIQUE INDEX UX_EoConfirms_Order ON dbo.EoConfirms(StoreId, OrderId);   -- EasyOrders may deliver a webhook twice
+  CREATE INDEX IX_EoConfirms_Pending ON dbo.EoConfirms(StoreId, Status, Id);
 END";
     }
 }

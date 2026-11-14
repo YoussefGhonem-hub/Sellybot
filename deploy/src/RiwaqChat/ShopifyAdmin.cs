@@ -89,6 +89,9 @@ namespace RiwaqChat
 
         public class Creds { public int StoreId; public string Shop, ClientId, Secret, Slug; }
 
+        // https://<shop>; the "ShopifyTestBase" setting points every shop at a local fake Shopify (local tests only)
+        static string Base(Creds c) { var t = Web.Setting("ShopifyTestBase"); return string.IsNullOrEmpty(t) ? "https://" + c.Shop : t.TrimEnd('/'); }
+
         // "riwaq", "riwaq.myshopify.com", "https://admin.shopify.com/store/riwaq/..." -> "riwaq.myshopify.com"
         static readonly Regex ShopRx = new Regex(@"^[a-z0-9][a-z0-9-]{0,60}\.myshopify\.com$", RegexOptions.Compiled);
         public static string NormalizeShop(string input)
@@ -131,7 +134,7 @@ namespace RiwaqChat
             var form = new FormUrlEncodedContent(new Dictionary<string, string> {
                 { "grant_type", "client_credentials" }, { "client_id", c.ClientId }, { "client_secret", c.Secret } });
             HttpResponseMessage resp;
-            try { resp = await Http.PostAsync("https://" + c.Shop + "/admin/oauth/access_token", form); }
+            try { resp = await Http.PostAsync(Base(c) + "/admin/oauth/access_token", form); }
             catch (Exception ex) { Log.Error(ex); throw new ShopifyException("مقدرناش نوصل لـ Shopify. اتأكد من دومين المتجر (اللي آخره .myshopify.com) وجرّب تاني."); }
             using (resp)
             {
@@ -176,7 +179,7 @@ namespace RiwaqChat
             {
                 var tok = await Token(c);   // after a 401 the cached token is dropped, so this fetches a new one
                 var payload = JsonSerializer.Serialize(new { query, variables });
-                var req = new HttpRequestMessage(HttpMethod.Post, "https://" + c.Shop + "/admin/api/" + ApiVersion + "/graphql.json")
+                var req = new HttpRequestMessage(HttpMethod.Post, Base(c) + "/admin/api/" + ApiVersion + "/graphql.json")
                 { Content = new StringContent(payload, Encoding.UTF8, "application/json") };
                 req.Headers.Add("X-Shopify-Access-Token", tok.Token);
                 using (var resp = await Http.SendAsync(req, ct))
@@ -480,25 +483,62 @@ namespace RiwaqChat
         // Returns how many topics are subscribed. Skipped (0) when our site isn't reachable from the internet (local runs).
         public static async Task<int> RegisterWebhooks(Creds c, string siteBase, string scopes)
         {
-            Uri u;
-            if (!Uri.TryCreate(siteBase, UriKind.Absolute, out u) || u.Scheme != "https" || u.IsLoopback || u.Host.EndsWith(".localhost") || u.Host == "localhost") return 0;
-            string uri = siteBase.TrimEnd('/') + "/api/shopify-webhook.ashx?store=" + Uri.EscapeDataString(c.Slug);
-            const string m = "mutation($topic: WebhookSubscriptionTopic!, $sub: WebhookSubscriptionInput!) { webhookSubscriptionCreate(topic: $topic, webhookSubscription: $sub) { userErrors { field message } webhookSubscription { id } } }";
             int ok = 0;
             foreach (var topic in Topics)
             {
                 if (topic.StartsWith("INVENTORY") && !Has(scopes, "read_inventory")) continue;
-                try
-                {
-                    var g = await Query(c, m, new { topic, sub = new { uri } }, CancellationToken.None);
-                    var r = g.Data.GetProperty("webhookSubscriptionCreate");
-                    var errs = r.GetProperty("userErrors").EnumerateArray().Select(e => Str(e, "message") ?? "").ToList();
-                    if (errs.Count == 0 || errs.Any(e => e.Contains("already been taken") || e.Contains("already exists"))) ok++;
-                    else Log.Error(new Exception("Shopify webhook " + topic + ": " + string.Join("; ", errs)));
-                }
-                catch (Exception ex) { Log.Error(ex); }
+                if (await Subscribe(c, siteBase, topic)) ok++;
             }
             return ok;
+        }
+
+        // New orders -> order confirmation on WhatsApp. False when it couldn't subscribe (or the site isn't public).
+        public static Task<bool> RegisterOrderWebhook(Creds c, string siteBase) { return Subscribe(c, siteBase, "ORDERS_CREATE"); }
+
+        static async Task<bool> Subscribe(Creds c, string siteBase, string topic)
+        {
+            Uri u;
+            if (string.IsNullOrEmpty(Web.Setting("ShopifyTestBase")) &&
+                (!Uri.TryCreate(siteBase, UriKind.Absolute, out u) || u.Scheme != "https" || u.IsLoopback || u.Host.EndsWith(".localhost") || u.Host == "localhost")) return false;
+            string uri = siteBase.TrimEnd('/') + "/api/shopify-webhook.ashx?store=" + Uri.EscapeDataString(c.Slug);
+            const string m = "mutation($topic: WebhookSubscriptionTopic!, $sub: WebhookSubscriptionInput!) { webhookSubscriptionCreate(topic: $topic, webhookSubscription: $sub) { userErrors { field message } webhookSubscription { id } } }";
+            try
+            {
+                var g = await Query(c, m, new { topic, sub = new { uri } }, CancellationToken.None);
+                var r = g.Data.GetProperty("webhookSubscriptionCreate");
+                var errs = r.GetProperty("userErrors").EnumerateArray().Select(e => Str(e, "message") ?? "").ToList();
+                if (errs.Count == 0 || errs.Any(e => e.Contains("already been taken") || e.Contains("already exists"))) return true;
+                Log.Error(new Exception("Shopify webhook " + topic + ": " + string.Join("; ", errs)));
+            }
+            catch (Exception ex) { Log.Error(ex); }
+            return false;
+        }
+
+        // ---------- order confirmation: cancel / tag an order (needs write_orders) ----------
+        // Returns null when Shopify accepted the cancellation, otherwise the reason.
+        public static async Task<string> CancelOrder(Creds c, string orderGid, string staffNote)
+        {
+            const string m = "mutation($orderId: ID!, $refundMethod: OrderCancelRefundMethodInput, $restock: Boolean!, $reason: OrderCancelReason!, $notifyCustomer: Boolean, $staffNote: String) " +
+                             "{ orderCancel(orderId: $orderId, refundMethod: $refundMethod, restock: $restock, reason: $reason, notifyCustomer: $notifyCustomer, staffNote: $staffNote) " +
+                             "{ job { id } orderCancelUserErrors { field message code } } }";
+            try
+            {
+                var g = await Query(c, m, new { orderId = orderGid, refundMethod = new { originalPaymentMethodsRefund = true }, restock = true, reason = "CUSTOMER", notifyCustomer = false,
+                                                staffNote = staffNote.Length > 255 ? staffNote.Substring(0, 255) : staffNote }, CancellationToken.None);
+                var r = g.Data.GetProperty("orderCancel");
+                var errs = r.GetProperty("orderCancelUserErrors").EnumerateArray().Select(e => Str(e, "message") ?? "").ToList();
+                if (errs.Count == 0) return null;
+                return string.Join("; ", errs);
+            }
+            catch (ShopifyException ex) { return ex.Message; }
+            catch (Exception ex) { Log.Error(ex); return "Shopify مردّتش"; }
+        }
+
+        public static async Task AddTags(Creds c, string gid, params string[] tags)
+        {
+            const string m = "mutation($id: ID!, $tags: [String!]!) { tagsAdd(id: $id, tags: $tags) { userErrors { field message } } }";
+            try { await Query(c, m, new { id = gid, tags }, CancellationToken.None); }
+            catch (Exception ex) { Log.Error(ex); }
         }
 
         // Called by the webhook endpoint: refresh the store's data a little later, once per burst of changes.
@@ -557,7 +597,9 @@ namespace RiwaqChat
                     byte[] expect; using (var h = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(creds.Secret))) expect = h.ComputeHash(body);
                     byte[] got; try { got = Convert.FromBase64String(header); } catch { got = null; }
                     if (!Secrets.Same(expect, got)) { res.StatusCode = 401; return; }
-                    ShopifyAdmin.QueueResync(s.Id);
+                    string topic = (req.Headers["X-Shopify-Topic"] ?? "").ToLowerInvariant();
+                    if (topic == "orders/create") OrderConfirm.OnOrder(c, s, body);
+                    else ShopifyAdmin.QueueResync(s.Id);
                     res.StatusCode = 200;
                 }
             }

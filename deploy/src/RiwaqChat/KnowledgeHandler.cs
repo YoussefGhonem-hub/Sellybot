@@ -44,6 +44,7 @@ namespace RiwaqChat
 
                     string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
                     if ((action == "shopify-connect" || action == "shopify-sync" || action == "shopify-admin-connect") && !PlanGate.Allows(c, s, "shopify")) { PlanGate.Deny(res, c, s, "shopify"); return; }
+                    if ((action == "shopify-connect" || action == "shopify-admin-connect") && PlanGate.BothBlocked(c, s, "shopify")) { PlanGate.DenyBoth(res, c, s, "shopify"); return; }   // EasyOrders already linked
 
                     // ---- Shopify: connect (and sync now), sync again, disconnect ----
                     if (action == "shopify-connect" || action == "shopify-sync")
@@ -108,7 +109,8 @@ namespace RiwaqChat
                         // instant updates: Shopify calls us when a product or its stock changes (needs our site to be reachable over https)
                         string siteBase = "https://" + req.Url.Host + req.ApplicationPath;
                         int hooks = await ShopifyAdmin.RegisterWebhooks(creds, siteBase, tok.Scopes);
-                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyWebhooks=@w WHERE Id=@s", "@w", hooks, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        bool ocHooked = s.OcOn && ShopifyAdmin.Has(tok.Scopes, "read_orders") && await ShopifyAdmin.RegisterOrderWebhook(creds, siteBase);   // re-connecting keeps order confirmation going
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyWebhooks=@w, OcHooked=@oh WHERE Id=@s", "@w", hooks, "@oh", ocHooked, "@s", s.Id)) cmd.ExecuteNonQuery();
 
                         var missing = new List<string>();
                         foreach (var w in ShopifyAdmin.Wanted) if (!ShopifyAdmin.Has(tok.Scopes, w)) missing.Add(w);
@@ -125,6 +127,31 @@ namespace RiwaqChat
                         using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyOrders=@o WHERE Id=@s", "@o", on, "@s", s.Id)) cmd.ExecuteNonQuery();
                         Db.BumpVersion(c, s.Id);   // the assistant's instructions change with it
                         Web.Json(res, 200, new { ok = true, orders = on });
+                        return;
+                    }
+                    // Order confirmation on WhatsApp: on/off and which orders (all, or cash on delivery only)
+                    if (action == "order-confirm")
+                    {
+                        var body = Web.Body(req, 500);
+                        object en; bool on = body.TryGetValue("enabled", out en) && en is bool && (bool)en;
+                        string scope = Web.Str(body, "scope", 10) == "cod" ? "cod" : "all";
+                        var creds = ShopifyAdmin.For(s);
+                        bool hooked = s.OcHooked;
+                        if (on)
+                        {
+                            if (!PlanGate.Allows(c, s, "shopify")) { PlanGate.Deny(res, c, s, "shopify"); return; }
+                            if (creds == null) { Web.Error(res, 400, "no_shopify", "اعمل ربط كامل لمتجرك على Shopify الأول (بالـ Client ID والـ secret)."); return; }
+                            if (!ShopifyAdmin.Has(s.ShopifyScopes, "read_orders")) { Web.Error(res, 400, "no_scope", "التطبيق ناقصه صلاحية read_orders. ضيفها في Scopes واعمل Release للنسخة ووافق عليها، وبعدين اربط تاني."); return; }
+                            if (string.IsNullOrEmpty(s.WaInstance) || string.IsNullOrEmpty(s.WaNumber)) { Web.Error(res, 400, "no_whatsapp", "اربط واتساب المتجر الأول من صفحة الواتساب، عشان الرسايل تتبعت من رقمك."); return; }
+                            if (!hooked)
+                            {
+                                if (!Web.Allow("oc-hook:" + s.Id, 10, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "جرّبت كتير، استنى شوية وجرّب تاني."); return; }
+                                hooked = await ShopifyAdmin.RegisterOrderWebhook(creds, "https://" + req.Url.Host + req.ApplicationPath);
+                                if (!hooked) { Web.Error(res, 502, "hook_failed", "Shopify مارضيتش تبعتلنا الأوردرات الجديدة. اتأكد إن التطبيق فيه صلاحية read_orders واربط تاني، ولو فضلت كلّم الدعم."); return; }
+                            }
+                        }
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET OcOn=@o, OcScope=@sc, OcHooked=@h WHERE Id=@s", "@o", on, "@sc", scope, "@h", hooked, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        Web.Json(res, 200, new { ok = true, enabled = on, scope, canCancel = ShopifyAdmin.Has(s.ShopifyScopes, OrderConfirm.Scope) });
                         return;
                     }
                     if (action == "shopify-disconnect")
@@ -241,10 +268,11 @@ namespace RiwaqChat
             catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error", "حصلت مشكلة، جرّب تاني."); }
         }
 
-        const string ShopifyItemMessage = "الجزء ده بيتحدث تلقائيًا من Shopify، فمش بيتعدّل من هنا. عدّل المنتج على Shopify ودوس \"حدّث دلوقتي\"، ولو مش عايزه دوس \"إلغاء الربط\".";
+        const string ShopifyItemMessage = "الجزء ده بيتحدث تلقائيًا من متجرك (Shopify أو EasyOrders)، فمش بيتعدّل من هنا. عدّل المنتج من هناك ودوس \"حدّث دلوقتي\"، ولو مش عايزه دوس \"إلغاء الربط\".";
         static bool IsShopifyItem(SqlConnection c, int storeId, int id)
         {
-            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.KnowledgeItems WHERE Id=@id AND StoreId=@s AND SourceType=@t", "@id", id, "@s", storeId, "@t", Shopify.SourceType))
+            // synced parts (Shopify, EasyOrders) are rewritten by the next sync, so they aren't edited or deleted by hand
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.KnowledgeItems WHERE Id=@id AND StoreId=@s AND SourceType IN (@t, @t2)", "@id", id, "@s", storeId, "@t", Shopify.SourceType, "@t2", EasyOrders.SourceType))
                 return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
         }
 

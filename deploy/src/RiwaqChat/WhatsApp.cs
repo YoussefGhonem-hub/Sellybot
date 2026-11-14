@@ -167,6 +167,42 @@ namespace RiwaqChat
             }
         }
 
+        // Reply buttons exist only on Official (Meta) numbers. True when sent, false when the number is a QR one (send text instead).
+        public static async Task<bool> TrySendButtons(string token, string instance, string chatId, string body, string[][] buttons, string idem)
+        {
+            bool official;
+            if (!Official.TryGetValue(instance, out official) || !official) return false;
+            var btns = buttons.Select(b => new Dictionary<string, object> { { "id", b[0] }, { "title", b[1] } }).ToList();
+            var payload = new Dictionary<string, object> { { "chat_id", chatId }, { "interactive", new Dictionary<string, object> { { "body", body }, { "buttons", btns } } } };
+            try { await Call(HttpMethod.Post, "official/" + Uri.EscapeDataString(instance) + "/send-buttons", token, payload, idem); return true; }
+            catch (WaException ex) when (ex.Code == "MESSAGE_TYPE_UNSUPPORTED") { return false; }
+        }
+
+        // WhatsApp may hide a customer's number behind a "...@lid" id; Wapilot can map it back to the phone number.
+        static readonly ConcurrentDictionary<string, string> Lids = new ConcurrentDictionary<string, string>();
+        public static async Task<string> LidPhone(string token, string instance, string lid)
+        {
+            string hit;
+            if (Lids.TryGetValue(lid, out hit)) return hit;
+            try
+            {
+                var r = await Call(HttpMethod.Get, Uri.EscapeDataString(instance) + "/lids/" + Uri.EscapeDataString(lid), token);
+                string found = null;
+                Action<JsonElement> walk = null;
+                walk = e =>
+                {
+                    if (found != null) return;
+                    if (e.ValueKind == JsonValueKind.Object) foreach (var p in e.EnumerateObject()) walk(p.Value);
+                    else if (e.ValueKind == JsonValueKind.Array) foreach (var x in e.EnumerateArray()) walk(x);
+                    else if (e.ValueKind == JsonValueKind.String) { var d = WaChat.Digits(e.GetString()); if (d != null && !e.GetString().Contains("@lid")) found = d; }
+                };
+                walk(r);
+                if (found != null) Lids[lid] = found;
+                return found;
+            }
+            catch (WaException) { return null; }
+        }
+
         // The assistant writes light Markdown for the site; WhatsApp has its own: *bold*, _italic_, ~strike~.
         public static string Format(string md)
         {
@@ -442,7 +478,10 @@ END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عاي�
             }
 
             long? row = Save(c, s.Id, key, true, text, m.Id);
-            if (row == null || !s.WaEnabled) return true;   // duplicate delivery, or the bot is switched off (the message is still kept as context)
+            if (row == null) return true;                                                // duplicate delivery
+            if (OrderConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;   // "1"/"2" answering an order confirmation (works with the bot off too)
+            if (EoConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;      // the same for EasyOrders orders
+            if (!s.WaEnabled) return true;                                               // the bot is switched off (the message is still kept as context)
             long rowId = row.Value; int storeId = s.Id; string chat = m.Chat;
             HostingEnvironment.QueueBackgroundWorkItem(ct => Reply(storeId, key, chat, rowId, ct));
             return true;
@@ -477,7 +516,7 @@ ELSE
 
         class Row { public long Id; public bool Customer, Owner; public string Body; public DateTime At; }
 
-        static async Task Reply(int storeId, string chatKey, string chat, long rowId, CancellationToken ct)
+        internal static async Task Reply(int storeId, string chatKey, string chat, long rowId, CancellationToken ct)
         {
             try
             {
@@ -504,9 +543,11 @@ ELSE
                     if (Db.Usage(c, s.Id, Db.Month).Weighted >= Billing.TotalLimit(c, s)) { SetStatus(c, s.Id, "⚠️ رصيد الشهر خلص، فالمساعد مش بيرد على الواتساب لحد ما تزوّد الرصيد أو يبدأ شهر جديد."); return; }
                     if (!Web.Allow("wa-chat:" + s.Id + ":" + chatKey, 30, TimeSpan.FromHours(1))) return;   // one customer can't burn the quota
                     try { Shopify.RefreshIfOld(s); } catch (Exception ex) { Log.Error(ex); }
+                    try { EasyOrders.RefreshIfOld(s); } catch (Exception ex) { Log.Error(ex); }
 
                     ChatHandler.LoopResult res;
-                    try { res = await ChatHandler.Answer(c, s, History(rows), "wa:" + chatKey, ChannelNote(s, chatKey)); }
+                    try { res = await ChatHandler.Answer(c, s, History(rows), "wa:" + chatKey, ChannelNote(s, chatKey) + OrderConfirm.PendingNote(c, s.Id, chatKey)
+                        + EoConfirm.PendingNote(c, s.Id, chatKey)); }
                     catch (Exception ex) { Log.Error(ex); SetStatus(c, s.Id, "⚠️ حصلت مشكلة وإحنا بنجهّز رد على آخر رسالة. لو اتكررت كلّم الدعم."); return; }
                     Db.AddUsage(c, s.Id, 1, res.In, res.CacheRead, res.CacheWrite, res.Out);
 
@@ -560,7 +601,7 @@ ELSE
                 .Append("- اكتب اللينكات كاملة (https://...) مش [نص](لينك).\n")
                 .Append("- لو فيه رسايل في المحادثة من المتجر نفسه (صاحب المتجر رد بنفسه)، كمّل على كلامه وماتناقضهوش.");
             var phone = WaChat.Digits(chatKey);
-            if (phone != null && s.ShopifyOrders && !string.IsNullOrEmpty(s.ShopifyClientId))
+            if (phone != null && OrderTracking.On(s))
                 sb.Append("\n- رقم واتساب الزبون: +").Append(phone).Append(". لو سأل عن أوردر وقال إنه طلب بنفس الرقم ده، استخدمه كرقم الموبايل في أداة الأوردرات من غير ما تطلبه منه تاني.");
             return sb.ToString();
         }

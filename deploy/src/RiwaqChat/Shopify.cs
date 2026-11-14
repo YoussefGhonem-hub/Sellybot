@@ -387,7 +387,7 @@ namespace RiwaqChat
         public static void Disconnect(SqlConnection c, int storeId)
         {
             using (var cmd = Db.Cmd(c, "DELETE FROM dbo.KnowledgeItems WHERE StoreId=@s AND SourceType=@t", "@s", storeId, "@t", SourceType)) cmd.ExecuteNonQuery();
-            using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyDomain=NULL, ShopifySyncedAt=NULL, ShopifyStatus=NULL, ShopifyShop=NULL, ShopifyClientId=NULL, ShopifySecret=NULL, ShopifyScopes=NULL, ShopifyOrders=0, ShopifyWebhooks=0 WHERE Id=@s", "@s", storeId)) cmd.ExecuteNonQuery();
+            using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyDomain=NULL, ShopifySyncedAt=NULL, ShopifyStatus=NULL, ShopifyShop=NULL, ShopifyClientId=NULL, ShopifySecret=NULL, ShopifyScopes=NULL, ShopifyOrders=0, ShopifyWebhooks=0, OcOn=0, OcHooked=0 WHERE Id=@s", "@s", storeId)) cmd.ExecuteNonQuery();
             Db.BumpVersion(c, storeId);
         }
 

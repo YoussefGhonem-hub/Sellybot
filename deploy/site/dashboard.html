@@ -6,13 +6,11 @@
 <title>Sellybot · لوحة تحكم المتجر</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 2 60 72'%3E%3Cpath d='M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15' fill='none' stroke='%23E8774A' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15' fill='none' stroke='%233a2a20' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M58 22l8-6' stroke='%23E8774A' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M26 54l-8 6' stroke='%233a2a20' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
 <script>
-  // Theme: the saved choice (light / dark) wins, otherwise follow the device. Runs before the page paints, so no flash.
+  // Theme: the saved choice (light / dark) wins, otherwise light. Runs before the page paints, so no flash.
   (function () {
     var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}
-    var m = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
-    function apply() { document.documentElement.setAttribute("data-theme", t || (m && m.matches ? "dark" : "light")); }
+    function apply() { document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light"); }
     apply();
-    if (m && m.addEventListener) m.addEventListener("change", function () { if (!t) apply(); });
     window.sbTheme = function (v) { t = v; try { localStorage.setItem("sb-theme", v); } catch (e) {} apply(); };
   })();
 </script>
@@ -457,12 +455,182 @@
   [data-theme=dark] .ok-pill{background:#173726;color:#8be0ad}[data-theme=dark] .warn-pill{background:#3d2c10;color:#f3c26b}
   /* data tab: two sources */
   .sec-title{margin:6px 0 10px;font-size:16px}
-  .sources{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .sources{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
   .src{display:flex;align-items:center;gap:12px;text-align:right;padding:14px 16px;border-radius:16px;border:2px solid var(--line);background:var(--card);cursor:pointer;box-shadow:var(--shadow);transition:border-color .2s,transform .2s,background .2s}
   .src:hover{transform:translateY(-2px)}
   .src.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 6%,var(--card))}
   .src-ic{width:44px;height:44px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:22px;background:color-mix(in srgb,var(--brand) 12%,var(--card))}
   .src-ic.shop{background:color-mix(in srgb,#95bf47 22%,var(--card))}
+  .src-ic.eo,.shop-logo.eo-logo{background:color-mix(in srgb,#f26b1d 18%,var(--card));color:#f26b1d;font-size:22px}
+  /* EasyOrders: how the link works (live diagram), what the owner gives us, and what each platform offers */
+  .eo-flow{--eo:#f26b1d;--hk:#7c5cff;--wa:#25b862;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1fr);align-items:center;gap:8px;margin:2px 0 16px;padding:18px 14px 16px;border-radius:18px;border:1px solid var(--line);
+    background:radial-gradient(90% 120% at 100% 0,color-mix(in srgb,var(--eo) 10%,transparent),transparent 62%),radial-gradient(90% 120% at 0 100%,color-mix(in srgb,var(--wa) 8%,transparent),transparent 62%),var(--soft)}
+  .eo-node{display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0}
+  .eo-node .ic{width:54px;height:54px;flex:none;border-radius:17px;display:grid;place-items:center;font-size:25px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+  .eo-node .ic.eo{background:color-mix(in srgb,var(--eo) 16%,var(--card));border-color:color-mix(in srgb,var(--eo) 30%,var(--line))}
+  .eo-node.me .ic{width:62px;height:62px;border-radius:19px;padding:0;overflow:hidden;border:2px solid color-mix(in srgb,var(--brand) 45%,var(--line));box-shadow:0 0 0 0 rgba(232,119,74,.45);animation:pulse 2.4s infinite}
+  .eo-node.me .ic img{width:100%;height:100%;display:block}
+  .eo-node .tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .eo-node b{font-size:13.5px;line-height:1.35}
+  .eo-node small{font-size:11.5px;color:var(--muted);line-height:1.4}
+  .eo-link{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .eo-lane{--c:var(--eo);display:flex;flex-direction:column;gap:5px;min-width:0;text-align:center}
+  .eo-lane.hook{--c:var(--hk)}.eo-lane.cust{--c:var(--wa)}
+  .eo-lane .lb{font-size:11.5px;color:var(--muted);line-height:1.4}
+  .eo-lane .lb b{display:block;color:var(--ink);font-size:12.5px}
+  .eo-lane .st{font-size:11.5px;font-weight:600;color:var(--c);line-height:1.35}
+  .eo-lane .st:empty{display:none}
+  .eo-wire{position:relative;height:2px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--muted) 0 5px,transparent 5px 11px);opacity:.45}
+  .eo-lane.on .eo-wire{opacity:1;background:color-mix(in srgb,var(--c) 40%,var(--line))}
+  .eo-wire i{display:none;position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent);animation:eoToL 2.6s linear infinite}
+  .eo-lane.on .eo-wire i{display:block}
+  .eo-wire i+i{animation-delay:1.3s}
+  .eo-lane.both .eo-wire i:first-child{animation-name:eoToR}
+  .eo-lane.warn{--c:#d98a1c}
+  @keyframes eoToL{0%{right:0;opacity:0}12%,88%{opacity:1}100%{right:calc(100% - 8px);opacity:0}}
+  @keyframes eoToR{0%{left:0;opacity:0}12%,88%{opacity:1}100%{left:calc(100% - 8px);opacity:0}}
+  @keyframes eoDown{0%{top:0;opacity:0}12%,88%{opacity:1}100%{top:calc(100% - 8px);opacity:0}}
+  @keyframes eoUp{0%{bottom:0;opacity:0}12%,88%{opacity:1}100%{bottom:calc(100% - 8px);opacity:0}}
+  @media (max-width:720px){
+    .eo-flow{grid-template-columns:minmax(0,1fr);gap:2px;padding:14px}
+    .eo-node{flex-direction:row;text-align:right;gap:12px}
+    .eo-node .ic,.eo-node.me .ic{width:46px;height:46px;border-radius:14px;font-size:22px}
+    .eo-link{flex-direction:row;gap:12px;padding-right:22px}
+    .eo-lane{flex:1;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:center;text-align:right;padding:4px 0}
+    .eo-wire{grid-row:1/3;width:2px;height:50px;background:repeating-linear-gradient(180deg,var(--muted) 0 5px,transparent 5px 11px)}
+    .eo-wire i{top:auto;left:-3px;animation-name:eoDown}
+    .eo-lane.both .eo-wire i:first-child{animation-name:eoUp}
+  }
+  @media (prefers-reduced-motion:reduce){.eo-wire i{display:none!important}.eo-node.me .ic{animation:none}}
+  .eo-needs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:10px}
+  .eo-need{position:relative;padding:16px;border-radius:16px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+  .eo-need:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,#f5a25d,#f26b1d)}
+  .eo-need.hook:before{background:linear-gradient(90deg,#a993ff,#7c5cff)}
+  .eo-need-top{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+  .eo-need-ic{width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,#f26b1d 14%,var(--card))}
+  .eo-need.hook .eo-need-ic{background:color-mix(in srgb,#7c5cff 14%,var(--card))}
+  .eo-need-top .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+  .eo-need-top b{font-size:15.5px}
+  .eo-need-top small{font-size:12px;color:var(--muted)}
+  .eo-tag{flex:none;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,#f26b1d 14%,var(--card));color:#b9500f}
+  .eo-tag.opt{background:color-mix(in srgb,#7c5cff 13%,var(--card));color:#5a3fd0}
+  [data-theme=dark] .eo-tag{color:#ffa66e}[data-theme=dark] .eo-tag.opt{color:#bba9ff}
+  .eo-need p{margin:0 0 10px;font-size:13px;line-height:1.7;color:var(--muted)}
+  .eo-gets{list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.5}
+  .eo-perms{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+  .eo-without{display:block;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--muted);line-height:1.65}
+  .eo-howto{display:flex;gap:10px;align-items:center;padding:11px 14px;border-radius:12px;background:color-mix(in srgb,var(--brand) 9%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 22%,var(--line));margin-bottom:8px}
+  .eo-howto>span{font-size:20px}
+  .eo-howto b{display:block;font-size:13.5px}.eo-howto small{font-size:12.5px;color:var(--muted)}
+  .eo-safe{margin:0 0 16px;font-size:12.5px;color:var(--muted);line-height:1.65}
+  @media (max-width:640px){.eo-needs{grid-template-columns:minmax(0,1fr)}}
+  .eo-cmp{padding:0;overflow:hidden;margin-bottom:12px}
+  .eo-cmp>summary{list-style:none;display:flex;gap:12px;align-items:center;padding:16px 18px;margin:0;color:var(--ink);font-size:inherit}
+  .eo-cmp>summary::-webkit-details-marker{display:none}
+  .eo-cmp-ic{width:44px;height:44px;flex:none;border-radius:13px;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,color-mix(in srgb,#f26b1d 24%,var(--card)),color-mix(in srgb,#95bf47 26%,var(--card)))}
+  .eo-cmp>summary .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .eo-cmp>summary b{font-size:15px}
+  .eo-cmp>summary small{font-size:12.5px;color:var(--muted);line-height:1.6}
+  .eo-chev{width:9px;height:9px;flex:none;border-left:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);margin-top:-5px;transition:transform .25s}
+  .eo-cmp[open] .eo-chev{transform:rotate(135deg);margin-top:5px}
+  .eo-cmp-body{padding:0 18px 18px}
+  .eo-score{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+  .eo-sc{--c:#f26b1d;padding:11px 13px;border-radius:13px;border:1px solid var(--line);background:var(--soft)}
+  .eo-sc.sh{--c:#6f9e35}
+  .eo-sc b{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;font-size:13px}
+  .eo-sc b span{white-space:nowrap}
+  .eo-sc b span:last-child{color:var(--c)}
+  .eo-bar{height:7px;border-radius:7px;background:var(--line);margin-top:8px;overflow:hidden}
+  .eo-bar i{display:block;height:100%;width:0;border-radius:7px;background:var(--c);transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+  .eo-cmp-t{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .eo-cr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);font-size:13.5px}
+  .eo-cr:first-child{border-top:0}
+  .eo-ch{background:var(--soft);font-size:12.5px;font-weight:700;color:var(--muted)}
+  .eo-cr.gap{background:color-mix(in srgb,#f26b1d 4%,transparent)}
+  .eo-cr .f{display:flex;gap:9px;align-items:center;font-weight:600;line-height:1.45}
+  .eo-cr .f>span{font-size:17px;flex:none}
+  .eo-cell{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+  .eo-cell small{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .eo-cell .pf{display:none;font-size:11.5px;color:var(--muted)}
+  .eo-y,.eo-n{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;white-space:nowrap}
+  .eo-y{background:#e6f6ec;color:#1f7a45}
+  .eo-n{background:transparent;color:#a3561c;border:1px dashed color-mix(in srgb,#f26b1d 45%,var(--line))}
+  [data-theme=dark] .eo-y{background:#173726;color:#8be0ad}[data-theme=dark] .eo-n{color:#ffa66e}
+  @media (max-width:560px){
+    .eo-cr{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px}
+    .eo-cr .f{grid-column:1/-1}
+    .eo-ch{display:none}
+    .eo-cell .pf{display:block}
+  }
+  .eo-why{display:flex;gap:12px;margin-top:14px;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,#f26b1d 7%,var(--card));border:1px solid color-mix(in srgb,#f26b1d 24%,var(--line))}
+  .eo-why>span{font-size:22px;line-height:1.3}
+  .eo-why b{display:block;font-size:14px;margin-bottom:4px}
+  .eo-why p{margin:0;font-size:13px;line-height:1.75}
+  .eo-fill{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:14px 16px;border-radius:14px;border:1.5px dashed var(--line);background:var(--soft)}
+  .eo-fill>span{font-size:22px}
+  .eo-fill .tx{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
+  .eo-fill b{font-size:14px}
+  .eo-fill small{font-size:12.5px;color:var(--muted);line-height:1.6}
+  /* install tab: the whole picture (data in → assistant → where it answers), then steps per platform */
+  .hub-card{background:radial-gradient(70% 90% at 100% 0,color-mix(in srgb,#f26b1d 7%,transparent),transparent 60%),radial-gradient(70% 90% at 0 100%,color-mix(in srgb,#7c5cff 7%,transparent),transparent 60%),var(--card)}
+  .hub-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .hub-head h3{margin:0}
+  .hub{display:grid;grid-template-columns:minmax(0,1fr) minmax(30px,.42fr) minmax(150px,.62fr) minmax(30px,.42fr) minmax(0,1fr);grid-template-rows:auto repeat(3,minmax(66px,auto));row-gap:10px;align-items:center}
+  .hub-cap{font-size:12.5px;font-weight:700;color:var(--muted);padding:0 4px}
+  .hub-cap.s{grid-area:1/1}.hub-cap.o{grid-area:1/5}
+  .hub-item.s.r1{grid-area:2/1}.hub-item.s.r2{grid-area:3/1}.hub-item.s.r3{grid-area:4/1}
+  .hub-w.s.r1{grid-area:2/2}.hub-w.s.r2{grid-area:3/2}.hub-w.s.r3{grid-area:4/2}
+  .hub-core{grid-area:2/3/5/4}
+  .hub-w.o.r1{grid-area:2/4}.hub-w.o.r2{grid-area:3/4}.hub-w.o.r3{grid-area:4/4}
+  .hub-item.o.r1{grid-area:2/5}.hub-item.o.r2{grid-area:3/5}.hub-item.o.r3{grid-area:4/5}
+  .hub-w{padding:0 3px}
+  .hub-item{--c:var(--brand);display:flex;align-items:center;gap:10px;width:100%;height:100%;text-align:right;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);cursor:pointer;font:inherit;color:inherit;transition:transform .2s,border-color .2s}
+  .hub-item:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--c) 55%,var(--line))}
+  .hub-item:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+  .hi-ic{width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;font-size:19px;background:color-mix(in srgb,var(--c) 15%,var(--card))}
+  .hi-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .hi-tx b{font-size:14px}
+  .hi-tx small{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .hi-st{flex:none;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;color:var(--c);background:color-mix(in srgb,var(--c) 12%,var(--card))}
+  .hi-st.ok{background:#e6f6ec;color:#1f7a45}
+  [data-theme=dark] .hi-st.ok{background:#173726;color:#8be0ad}
+  .hub-core{align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:16px 10px;border-radius:22px;
+    background:radial-gradient(circle at 50% 32%,color-mix(in srgb,var(--brand) 15%,var(--card)),var(--card) 72%);border:1.5px solid color-mix(in srgb,var(--brand) 35%,var(--line));box-shadow:var(--shadow)}
+  .hub-logo{width:66px;height:66px;border-radius:20px;overflow:hidden;box-shadow:0 0 0 0 rgba(232,119,74,.45);animation:pulse 2.4s infinite}
+  .hub-logo img{width:100%;height:100%;display:block}
+  .hub-core .tx{display:flex;flex-direction:column;gap:2px}
+  .hub-core b{font-size:15px}
+  .hub-core small{font-size:11.5px;color:var(--muted);line-height:1.5}
+  @media (max-width:760px){
+    .hub{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+    .hub-w{display:none}
+    .hub-cap.o{margin-top:6px}
+    .hub-core{position:relative;flex-direction:row;justify-content:flex-start;text-align:right;gap:12px;padding:12px 14px;margin:16px 0 10px}
+    .hub-core:before,.hub-core:after{content:"";position:absolute;right:50%;width:2px;height:16px;background:linear-gradient(var(--line),color-mix(in srgb,var(--brand) 60%,var(--line)))}
+    .hub-core:before{top:-18px}.hub-core:after{bottom:-18px}
+    .hub-logo{width:50px;height:50px;border-radius:15px;flex:none}
+  }
+  @media (prefers-reduced-motion:reduce){.hub-logo{animation:none}}
+  .plat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 12px}
+  .plat button{--c:var(--brand);position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px 12px;border-radius:16px;border:2px solid var(--line);background:var(--card);cursor:pointer;font:inherit;color:inherit;text-align:center;transition:border-color .2s,transform .2s,background .2s}
+  .plat button:hover{transform:translateY(-2px)}
+  .plat button.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 7%,var(--card))}
+  .plat button.on:after{content:"✓";position:absolute;top:8px;left:8px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;background:var(--c)}
+  .pl-ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:22px;background:color-mix(in srgb,var(--c) 14%,var(--card))}
+  .plat b{font-size:14.5px}
+  .plat small{font-size:11.5px;color:var(--muted)}
+  @media (max-width:640px){.plat{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .plat-gets{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}
+  .plat-gets .chip-g{font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
+  .plat-gets .space{flex:1}
+  .plat-gets .lk{font-size:12.5px;color:var(--muted);text-decoration:underline;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+  .two.solo{grid-template-columns:minmax(0,1fr)}
+  .o-sugg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 2px;font-size:12px;color:var(--muted)}
+  .o-sugg button{font:12px ui-monospace,Consolas,monospace;padding:4px 10px;border-radius:999px;border:1px dashed color-mix(in srgb,var(--brand) 55%,var(--line));background:color-mix(in srgb,var(--brand) 7%,var(--card));color:var(--ink);cursor:pointer;direction:ltr}
+  .both-alt{margin:12px 0 0;font-size:13px;line-height:1.7;opacity:.9}
+  .both-alt button{background:none;border:0;padding:0;color:inherit;font:inherit;font-weight:700;cursor:pointer;text-decoration:underline}
+  .link-box{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 16px}
+  .link-box input{flex:1;min-width:220px;margin:0}
   .src-txt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
   .src-txt b{font-size:15px}
   .src-txt small{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -620,6 +788,31 @@
   .toggle input:focus-visible+.tg{box-shadow:0 0 0 3px rgba(232,119,74,.3)}
   .toggle input:disabled+.tg{opacity:.5}
   .toggle small{display:block;color:var(--muted);font-size:12.5px}
+  /* order confirmation on WhatsApp */
+  .oc-box{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+  .oc-box .seg{max-width:420px}
+  .oc-warn{margin:8px 0 0;padding:8px 12px;border-radius:10px;background:#fff1d6;color:#8a5200;font-size:13px;line-height:1.6}
+  .oc-list{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .oc-list .oc-row{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);font-size:13.5px}
+  .oc-list .oc-row:first-child{border-top:0}
+  .oc-list .oc-row b{font-family:inherit}
+  .oc-list .oc-row small{grid-column:1/-1;color:var(--muted);font-size:12px}
+  .oc-st{font-size:12.5px;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--soft);border:1px solid var(--line)}
+  .oc-st.confirmed{background:#e6f6ec;color:#1f7a45;border-color:transparent}
+  .oc-st.cancelled{background:#fde8e8;color:#a12a2a;border-color:transparent}
+  .oc-st.failed{background:#fff1d6;color:#8a5200;border-color:transparent}
+  .oc-empty{padding:12px;color:var(--muted);font-size:13px;text-align:center}
+  .oc-need{margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--soft);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .oc-need span{font-size:13px;color:var(--muted);line-height:1.7}
+  .oc-need .btn{margin-top:4px;text-decoration:none}
+  /* plan tab: the "message counts are estimates" note */
+  .est-note{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}
+  .est-note .ic{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:18px;background:linear-gradient(135deg,rgba(232,119,74,.16),rgba(245,162,93,.16))}
+  .est-note .grow{flex:1;min-width:0}
+  .est-note b{display:block;font-size:14px}
+  .est-note span{display:block;font-size:13px;color:var(--muted);line-height:1.6}
+  .est-note .btn{flex:none;text-decoration:none;white-space:nowrap}
+  @media (max-width:560px){.est-note{flex-wrap:wrap}.est-note .btn{width:100%;text-align:center}}
   .sugg-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media (max-width:860px){.two{grid-template-columns:1fr}}
@@ -822,8 +1015,14 @@
         <span class="src-txt"><b>متجرك على Shopify</b><small id="srcShopInfo">…</small></span>
         <span class="src-dot" id="srcShopDot" aria-hidden="true"></span>
       </button>
+      <button class="src" type="button" role="tab" data-src="easyorders" aria-selected="false">
+        <span class="src-ic eo">🧡</span>
+        <span class="src-txt"><b>متجرك على EasyOrders</b><small id="srcEoInfo">…</small></span>
+        <span class="src-dot" id="srcEoDot" aria-hidden="true"></span>
+      </button>
     </div>
-    <p class="src-rule">⚖️ لو نفس المعلومة موجودة في ملفاتك وفي Shopify ومختلفة، المساعد بياخد بكلام <b>ملفاتك</b>. ولو مش موجودة في ملفاتك، بياخدها من Shopify.</p>
+    <div class="wa-warn" id="bothWarn" hidden style="margin:12px 2px 0">⚠️ متجرك مربوط بـ Shopify و EasyOrders، وباقتك دلوقتي بتسمح بمتجر واحد بس. الاتنين هيفضلوا شغالين، بس داتا المتجرين بتستهلك من رصيد رسايلك أكتر. رقّي باقتك من «باقتي»، أو ألغي ربط واحد منهم.</div>
+    <p class="src-rule">⚖️ لو نفس المعلومة موجودة في ملفاتك وفي متجرك (Shopify أو EasyOrders) ومختلفة، المساعد بياخد بكلام <b>ملفاتك</b>. ولو مش موجودة في ملفاتك، بياخدها من متجرك.</p>
 
     <!-- source 1: the owner's own files and texts -->
     <div class="src-panel" id="srcFiles" role="tabpanel">
@@ -873,7 +1072,8 @@
               <li><span>📦</span><div><b>الكمية بالظبط</b><small>المساعد يقول للزبون "فاضل 3 قطع من مقاس 42" بدل "متاح" بس، فيشجّعه يطلب.</small></div></li>
               <li><span>🚚</span><div><b>"الأوردر بتاعي فين؟"</b><small>الزبون يعرف حالة أوردره وشركة الشحن ولينك التتبع من الشات، بدل ما يكلّمك. بعد ما يأكد رقم الأوردر والإيميل أو الموبايل اللي طلب بيه.</small></div></li>
               <li><span>⚡</span><div><b>تحديث فوري</b><small>أول ما تغيّر سعر أو منتج يخلص، المساعد يعرف في ثواني.</small></div></li>
-              <li><span>🔒</span><div><b>قراية بس، وتحت سيطرتك</b><small>مش بنعدّل أي حاجة في متجرك، ومش بنشوف بيانات الدفع، والمساعد مابيقولش عنوان أي زبون. المفتاح بيتحفظ متشفّر، وتقدر توقفه من Shopify في أي وقت.</small></div></li>
+              <li><span>📲</span><div><b>تأكيد الطلبات على واتساب</b><small>كل طلب جديد يوصل للزبون على واتساب يأكده أو يلغيه، والإلغاء بيتنفذ في Shopify لوحده. أقل أوردرات وهمية ومرتجعات. <b style="display:inline">متاحة مع الربط الكامل بس.</b></small></div></li>
+              <li><span>🔒</span><div><b>تحت سيطرتك</b><small>مش بنعدّل حاجة في متجرك، غير إننا نلغي الأوردر اللي الزبون نفسه رفضه (لو فعّلت تأكيد الطلبات). مش بنشوف بيانات الدفع، والمفتاح بيتحفظ متشفّر، وتقدر توقفه من Shopify في أي وقت.</small></div></li>
             </ul>
           </div>
 
@@ -908,7 +1108,7 @@
             <input type="text" id="shopDomain" class="ltr" maxlength="200" placeholder="my-shop.myshopify.com" aria-label="دومين متجرك على Shopify">
             <button class="btn" id="shopConnect" type="button">🔗 اربط واسحب الداتا</button>
           </div>
-          <div class="hint">اكتب دومين متجرك (نفس اللينك اللي زباينك بيدخلوا منه). مش محتاج أي مفاتيح: بنسحب بس اللي أي زبون بيشوفه (المنتجات والأسعار ومتاح ولا خلصان والسياسات)، ونحدّثه كل 6 ساعات. مافيهوش الكمية بالظبط ولا تتبع الأوردرات.</div>
+          <div class="hint">اكتب دومين متجرك (نفس اللينك اللي زباينك بيدخلوا منه). مش محتاج أي مفاتيح: بنسحب بس اللي أي زبون بيشوفه (المنتجات والأسعار ومتاح ولا خلصان والسياسات)، ونحدّثه كل 6 ساعات. مافيهوش الكمية بالظبط ولا تتبع الأوردرات، ولا <b>تأكيد الطلبات على واتساب</b> (دي محتاجة الربط الكامل).</div>
         </div>
       </div>
 
@@ -933,8 +1133,25 @@
               <div class="oc-list" id="coList"></div>
             </div>
           </div>
+          <div class="oc-box">
+            <label class="toggle"><input type="checkbox" id="ocToggle"><span class="tg" aria-hidden="true"></span>
+              <span><b>📲 تأكيد الطلبات على واتساب</b><small>أول ما زبون يطلب، يوصله من رقم متجرك رسالة فيها تفاصيل طلبه. يرد بـ <b style="display:inline">1</b> يأكد أو <b style="display:inline">2</b> يلغي، والإلغاء بيتنفذ في Shopify على طول.</small></span></label>
+            <div id="ocOpts" hidden>
+              <div class="seg" id="ocScope" role="tablist">
+                <button type="button" data-v="all">كل الطلبات</button>
+                <button type="button" data-v="cod">الدفع عند الاستلام بس</button>
+              </div>
+              <div class="oc-warn" id="ocWarn" hidden></div>
+              <div class="oc-list" id="ocList"></div>
+            </div>
+          </div>
         </div>
-        <p class="hint" id="shopUpgrade" hidden>عايز المساعد يعرف الكمية بالظبط ويرد على "الأوردر بتاعي فين؟"؟ <a href="#" id="shopUpgradeLink">اعمل ربط كامل</a>.</p>
+        <div class="oc-need" id="shopUpgrade" hidden>
+          <b>📲 عايز تأكيد الطلبات على واتساب؟</b>
+          <span>الميزة دي محتاجة <b>الربط الكامل</b> مع Shopify، لأنها بتعرف الطلبات الجديدة أول بأول وبتلغي الأوردر اللي الزبون يرفضه. الربط السريع بيقرا المنتجات والأسعار بس.
+          ومع الربط الكامل كمان المساعد يعرف الكمية بالظبط ويرد على "الأوردر بتاعي فين؟".</span>
+          <a href="#" id="shopUpgradeLink" class="btn sm">🔐 اعمل ربط كامل</a>
+        </div>
         <div class="row" style="margin-top:10px">
           <button class="btn sm" id="shopSync" type="button">🔄 حدّث دلوقتي</button>
           <a class="btn ghost sm" id="shopOpen" target="_blank" rel="noopener">افتح المتجر ↗</a>
@@ -947,6 +1164,151 @@
       <div id="shopDataWrap" hidden>
         <div class="list-head"><h3>🛍️ الداتا اللي اتسحبت من Shopify</h3><span class="hint" style="margin:0">بتتحدث لوحدها، ومش بتتعدّل من هنا</span></div>
         <div id="shopData"></div>
+      </div>
+    </div>
+
+    <!-- source 3: EasyOrders -->
+    <div class="src-panel" id="srcEo" role="tabpanel" hidden>
+    <div class="wa-up" id="lockEo" hidden></div>
+    <div class="card shop-card" id="eoCard" style="margin-bottom:12px">
+      <div class="shop-head">
+        <span class="shop-logo eo-logo" aria-hidden="true">🧡</span>
+        <div style="flex:1;min-width:0"><h3>اربط متجرك على EasyOrders</h3>
+          <p class="sub" style="margin:0">المساعد يقرا منتجاتك وأسعارها واختياراتها (المقاس، اللون…) والمخزون من متجرك على EasyOrders على طول، ويتابع أوردرات زباينك. ملفاتك ليها الأولوية دايمًا لو فيها معلومة مختلفة.</p></div>
+      </div>
+
+      <div class="eo-flow" id="eoFlow" role="img" aria-label="إزاي الربط بيشتغل: متجرك على EasyOrders بيتكلم مع المساعد بالـ API Key والـ Webhook، والمساعد بيرد على زبونك في الشات والواتساب">
+        <div class="eo-node"><span class="ic eo" aria-hidden="true">🧡</span><span class="tx"><b>متجرك على EasyOrders</b><small>المنتجات والأوردرات</small></span></div>
+        <div class="eo-link">
+          <div class="eo-lane both on" id="eoLaneKey"><span class="lb"><b>🔑 API Key</b>بنقرا منتجاتك ونحدّث حالة الأوردر</span><span class="eo-wire"><i></i><i></i></span><small class="st"></small></div>
+          <div class="eo-lane hook on" id="eoLaneHook"><span class="lb"><b>📬 Webhook</b>EasyOrders بتبلّغنا بكل طلب جديد</span><span class="eo-wire"><i></i><i></i></span><small class="st"></small></div>
+        </div>
+        <div class="eo-node me"><span class="ic"><img src="sellybot-icon.svg" alt=""></span><span class="tx"><b>المساعد</b><small>Sellybot</small></span></div>
+        <div class="eo-link">
+          <div class="eo-lane cust both on" id="eoLaneCust"><span class="lb"><b>💬 الشات و 📲 واتساب</b>بيرد ويتابع ويأكد الطلب</span><span class="eo-wire"><i></i><i></i></span><small class="st"></small></div>
+        </div>
+        <div class="eo-node"><span class="ic" aria-hidden="true">🙋</span><span class="tx"><b>زبونك</b><small>بيسأل ويطلب ويأكد</small></span></div>
+      </div>
+
+      <div id="eoOff">
+        <h4 class="steps-title">محتاجين منك حاجتين بس</h4>
+        <div class="eo-needs">
+          <div class="eo-need">
+            <div class="eo-need-top"><span class="eo-need-ic" aria-hidden="true">🔑</span><span class="tx"><b>API Key</b><small>«المفتاح» اللي بيخلّينا نقرا من متجرك</small></span><span class="eo-tag">لازم</span></div>
+            <p>تصريح منك لـ Sellybot يدخل متجرك على EasyOrders. من غيره مفيش ربط.</p>
+            <ul class="eo-gets">
+              <li>📦 المنتجات والأسعار والمقاسات والمخزون</li>
+              <li>🚚 حالة الأوردر لما الزبون يسأل «طلبي فين؟»</li>
+              <li>✅ تغيير حالة الأوردر لما الزبون يأكد أو يلغي</li>
+            </ul>
+            <div class="eo-perms"><span>الصلاحيات:</span><span class="kbd">Read Products</span><span class="kbd">Read Orders</span><span class="kbd">Update Orders</span></div>
+          </div>
+          <div class="eo-need hook">
+            <div class="eo-need-top"><span class="eo-need-ic" aria-hidden="true">📬</span><span class="tx"><b>Webhook</b><small>«جرس» بيرن عندنا مع كل طلب</small></span><span class="eo-tag opt">عشان تأكيد واتساب</span></div>
+            <p>لينك من عندنا بيتحط في EasyOrders. أول ما زبون يطلب، EasyOrders بتبلّغنا في نفس الثانية.</p>
+            <ul class="eo-gets">
+              <li>📲 رسالة التأكيد توصل للزبون على واتساب على طول</li>
+              <li>🔄 المخزون يتحدث بعد كل طلب</li>
+            </ul>
+            <div class="eo-perms"><span>نوعين:</span><span class="kbd">Orders</span><span class="kbd">Order Status Update</span></div>
+            <small class="eo-without">من غيره: المنتجات بتتحدث كل 6 ساعات، وتتبع الأوردر شغال عادي، بس مفيش تأكيد للطلبات على واتساب.</small>
+          </div>
+        </div>
+        <div class="eo-howto"><span aria-hidden="true">⚡</span><div><b>مع «ربط بضغطة»، EasyOrders بتعمل الاتنين لوحدها.</b><small>ومع «ربط بـ API Key» بتعملهم بإيدك في دقيقتين، والخطوات تحت.</small></div></div>
+        <p class="eo-safe">🔒 بنقرا بس، ومش بنغيّر غير حالة الأوردر اللي الزبون نفسه أكده أو لغاه. المفتاح بيتحفظ متشفّر، وتقدر توقفه من EasyOrders في أي وقت.</p>
+        <div class="seg shop-seg" id="eoModes" role="tablist">
+          <button class="on" type="button" data-mode="app">⚡ ربط بضغطة <small>(الأسهل)</small></button>
+          <button type="button" data-mode="key">🔑 ربط بـ API Key</button>
+        </div>
+        <div id="eoApp">
+          <p class="hint" style="margin:0 0 12px">دوس الزرار، وهتفتحلك صفحة من EasyOrders فيها الصلاحيات اللي محتاجينها (قراءة المنتجات، وقراءة وتعديل حالة الأوردرات). وافق، وارجع هنا هتلاقي الربط شغال. EasyOrders هتبعتلنا الطلبات الجديدة لوحدها.</p>
+          <a class="btn" id="eoInstall" href="#" target="_blank" rel="noopener" style="text-decoration:none">🧡 اربط بـ EasyOrders</a>
+          <p class="hint" style="margin:10px 0 0">لو الصفحة دي ماشتغلتش معاك، استخدم «ربط بـ API Key».</p>
+        </div>
+        <div id="eoKeyBox" hidden>
+          <h4 class="steps-title">الخطوات (حوالي دقيقتين)</h4>
+          <ol class="steps shop-steps">
+            <li><b>افتح إعدادات EasyOrders</b><span>من لوحة متجرك على EasyOrders ادخل على <b style="display:inline">Settings ← Public API</b>.</span></li>
+            <li><b>اعمل مفتاح جديد</b><span>دوس <b style="display:inline">Create New API Key</b>، وعلّم على <b style="display:inline">Read Products</b> و<b style="display:inline">Read Orders</b> و<b style="display:inline">Update Orders</b>، وخلّي <b style="display:inline">Is Active</b> شغال، ودوس <b style="display:inline">Save</b>.</span></li>
+            <li><b>انسخ المفتاح وحطه هنا</b><span>المفتاح بيظهر مرة واحدة بس، فانسخه على طول.</span></li>
+            <li><b>خلّي EasyOrders تبعتلنا الطلبات</b><span>بعد ما تربط، هيظهرلك لينك تحطه في <b style="display:inline">Webhooks</b> في نفس الصفحة.</span></li>
+          </ol>
+          <div class="shop-fields">
+            <div><label for="eoKey">API Key</label>
+              <div class="field pw" style="position:relative"><input type="password" id="eoKey" class="ltr" maxlength="300" autocomplete="new-password" spellcheck="false" style="padding-right:12px!important">
+                <button type="button" class="eye" aria-label="اظهر المفتاح"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+            <div><label for="eoUrlIn">لينك متجرك (اختياري)</label>
+              <input type="text" id="eoUrlIn" class="ltr" maxlength="200" placeholder="mystore.myeasyorders.com" autocomplete="off"></div>
+          </div>
+          <p class="hint" style="margin:6px 0 0">لينك المتجر عشان المساعد يبعت للزبون لينك المنتج اللي بيسأل عليه.</p>
+          <button class="btn" id="eoConnect" type="button" style="margin-top:12px">🔐 احفظ واختبر الربط</button>
+        </div>
+      </div>
+
+      <div id="eoOn" hidden>
+        <div class="shop-status"><span class="ok-pill" id="eoPill">✅ مربوط</span><span class="hint" id="eoInfo" style="margin:0"></span></div>
+        <div class="oc-need" id="eoHookBox" hidden>
+          <b id="eoHookTitle">📬 خطوة أخيرة: خلّي EasyOrders تبعتلنا الطلبات الجديدة</b>
+          <span>عشان تأكيد الطلبات على واتساب، ونحدّث المخزون بعد كل طلب. في EasyOrders ادخل على <b>Settings ← Public API ← Webhooks</b> ودوس <b>Create Webhook</b>: الصق اللينك ده في <b>URL</b>، واختار في <b>Type</b> «Orders»، ودوس Save. واعمل واحد كمان بنفس اللينك ونوعه «Order Status Update».</span>
+          <span class="scope-box"><code class="ltr" id="eoHookUrl"></code><button type="button" class="btn ghost sm" id="eoCopyHook">نسخ</button></span>
+        </div>
+        <p class="hint" id="eoHookState" style="margin:8px 0"></p>
+        <label class="toggle"><input type="checkbox" id="eoOrdersToggle"><span class="tg" aria-hidden="true"></span>
+          <span><b>تتبع الأوردرات في الشات</b><small>الزبون يسأل عن أوردره ويعرف حالته بعد ما يأكد رقم الأوردر والموبايل اللي طلب بيه.</small></span></label>
+        <div class="oc-box">
+          <label class="toggle"><input type="checkbox" id="eoOcToggle"><span class="tg" aria-hidden="true"></span>
+            <span><b>📲 تأكيد الطلبات على واتساب</b><small>أول ما زبون يطلب، يوصله من رقم متجرك رسالة فيها تفاصيل طلبه. يرد بـ <b style="display:inline">1</b> يأكد أو <b style="display:inline">2</b> يلغي، وحالة الأوردر بتتغيّر في EasyOrders لوحدها.</small></span></label>
+          <div id="eoOcOpts" hidden>
+            <div class="seg" id="eoOcScope" role="tablist">
+              <button type="button" data-v="all">كل الطلبات</button>
+              <button type="button" data-v="cod">الدفع عند الاستلام بس</button>
+            </div>
+            <div class="oc-warn" id="eoOcWarn" hidden></div>
+            <div class="oc-list" id="eoOcList"></div>
+          </div>
+        </div>
+        <div class="shop-fields" style="margin-top:12px">
+          <div><label for="eoUrlOn">لينك متجرك (عشان لينكات المنتجات)</label>
+            <input type="text" id="eoUrlOn" class="ltr" maxlength="200" placeholder="mystore.myeasyorders.com" autocomplete="off"></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="eoSync" type="button">🔄 حدّث دلوقتي</button>
+          <a class="btn ghost sm" id="eoOpen" target="_blank" rel="noopener" hidden>افتح المتجر ↗</a>
+          <span class="space"></span>
+          <button class="btn danger sm" id="eoOffBtn" type="button">إلغاء الربط</button>
+        </div>
+      </div>
+      <div class="msg" id="eoMsg"></div>
+    </div>
+    <details class="card eo-cmp" id="eoCmp">
+      <summary>
+        <span class="eo-cmp-ic" aria-hidden="true">⚖️</span>
+        <span class="tx"><b>هتاخد إيه من EasyOrders، وإيه اللي في Shopify بس؟</b><small>بصراحة: EasyOrders بتدّينا بيانات أقل من Shopify، فشوية حاجات مش هتبقى متاحة. اعرفهم من الأول.</small></span>
+        <span class="eo-chev" aria-hidden="true"></span>
+      </summary>
+      <div class="eo-cmp-body">
+        <div class="eo-score">
+          <div class="eo-sc"><b><span>🧡 EasyOrders</span><span id="eoScEo"></span></b><div class="eo-bar"><i id="eoBarEo"></i></div></div>
+          <div class="eo-sc sh"><b><span>🛍️ Shopify</span><span id="eoScSh"></span></b><div class="eo-bar"><i id="eoBarSh"></i></div></div>
+        </div>
+        <div class="eo-cmp-t" id="eoCmpT" role="table" aria-label="مقارنة اللي المساعد يقدر يعمله مع EasyOrders ومع Shopify">
+          <div class="eo-cr eo-ch" role="row"><span role="columnheader">الميزة</span><span role="columnheader">🧡 EasyOrders</span><span role="columnheader">🛍️ Shopify</span></div>
+        </div>
+        <div class="eo-why">
+          <span aria-hidden="true">💡</span>
+          <div><b>ليه EasyOrders أقل؟</b>
+            <p>الفرق مش من عندنا. EasyOrders بتدّي البرامج اللي بتتربط بيها، زي Sellybot، بيانات أقل من Shopify: مفيهاش اسم شركة الشحن، ولا رقم التتبع، ولا ميعاد التوصيل، ولا سياسات المتجر، ومفيهاش طريقة نعمل بيها أوردر جديد من الشات. ولو EasyOrders ضافت أي حاجة منهم، هنضيفها عندك على طول.</p></div>
+        </div>
+        <div class="eo-fill">
+          <span aria-hidden="true">✍️</span>
+          <div class="tx"><b>كمّل الناقص في دقيقة</b><small>اكتب أسعار الشحن لكل محافظة، ومدة التوصيل، وشركة الشحن، وسياسة الاسترجاع، والمساعد هيرد بيهم على طول. جهزنالك قالب تملاه.</small></div>
+          <button type="button" class="btn sm" id="eoShipTpl">✍️ اكتب معلومات الشحن</button>
+        </div>
+      </div>
+    </details>
+      <div id="eoDataWrap" hidden>
+        <div class="list-head"><h3>🧡 الداتا اللي اتسحبت من EasyOrders</h3><span class="hint" style="margin:0">بتتحدث لوحدها، ومش بتتعدّل من هنا</span></div>
+        <div id="eoData"></div>
       </div>
     </div>
   </section>
@@ -992,14 +1354,48 @@
 
   <!-- install -->
   <section data-panel="install" hidden>
-    <div class="page-title"><div><h2>ضيف الشات لمتجرك</h2><p>انسخ الكود ده وحطه في متجرك على Shopify (أو أي موقع)، والفقاعة هتظهر لكل زباينك.</p></div></div>
-    <div class="card" style="margin-bottom:12px">
+    <div class="page-title"><div><h2>ضيف الشات لمتجرك</h2><p>على Shopify أو EasyOrders أو أي موقع: كود واحد بتحطه مرة، والمساعد يرد على زباينك من الداتا اللي بتوصله بأكتر من طريقة.</p></div></div>
+
+    <div class="card hub-card" style="margin-bottom:12px">
+      <div class="hub-head"><h3>الصورة كاملة</h3><span class="hint" style="margin:0">دوس على أي حاجة عشان تروحلها</span></div>
+      <div class="hub" id="hub">
+        <span class="hub-cap s">📥 الداتا بتوصل للمساعد منين</span>
+        <button type="button" class="hub-item s r1" data-hub="shopify" style="--c:#6f9e35"><span class="hi-ic" aria-hidden="true">🛍️</span><span class="hi-tx"><b>Shopify</b><small>بلينك متجرك أو ربط كامل · المنتجات والسياسات والأوردرات</small></span><span class="hi-st" id="hubShop"></span></button>
+        <button type="button" class="hub-item s r2" data-hub="easyorders" style="--c:#f26b1d"><span class="hi-ic" aria-hidden="true">🧡</span><span class="hi-tx"><b>EasyOrders</b><small>بضغطة أو بـ API Key · المنتجات والأوردرات وتأكيدها</small></span><span class="hi-st" id="hubEo"></span></button>
+        <button type="button" class="hub-item s r3" data-hub="files" style="--c:#e8774a"><span class="hi-ic" aria-hidden="true">📄</span><span class="hi-tx"><b>ملفاتك ونصوصك</b><small>PDF · Word · Excel · CSV، أو نص تكتبه</small></span><span class="hi-st" id="hubFiles"></span></button>
+        <span class="eo-lane hub-w s r1" id="hwShop" style="--c:#6f9e35" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <span class="eo-lane hub-w s r2" id="hwEo" style="--c:#f26b1d" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <span class="eo-lane hub-w s r3" id="hwFiles" style="--c:#e8774a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <div class="hub-core"><span class="hub-logo"><img src="sellybot-icon.svg" alt=""></span><span class="tx"><b>المساعد</b><small>بيقرا كل ده ويرد في ثانية، 24 ساعة</small></span></div>
+        <span class="eo-lane hub-w o r1" id="hwBubble" style="--c:#e8774a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <span class="eo-lane hub-w o r2" id="hwWa" style="--c:#25b862" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <span class="eo-lane hub-w o r3" id="hwLink" style="--c:#7c5cff" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <span class="hub-cap o">📤 وبيرد على زباينك فين</span>
+        <button type="button" class="hub-item o r1" data-hub="bubble" style="--c:#e8774a"><span class="hi-ic" aria-hidden="true">💬</span><span class="hi-tx"><b>فقاعة في متجرك</b><small>بالكود اللي تحت</small></span><span class="hi-st" id="hubBubble"></span></button>
+        <button type="button" class="hub-item o r2" data-hub="wa" style="--c:#25b862"><span class="hi-ic" aria-hidden="true">📲</span><span class="hi-tx"><b>واتساب متجرك</b><small>نفس المساعد على رقمك</small></span><span class="hi-st" id="hubWa"></span></button>
+        <button type="button" class="hub-item o r3" data-hub="link" style="--c:#7c5cff"><span class="hi-ic" aria-hidden="true">🔗</span><span class="hi-tx"><b>لينك الشات</b><small>للبايو والإعلانات والواتساب</small></span><span class="hi-st" id="hubLink">نسخ</span></button>
+      </div>
+    </div>
+
+    <div class="card" id="instPick" style="margin-bottom:12px">
+      <h3>متجرك على إيه؟</h3>
+      <p class="sub">اختار، وهنوريك الخطوات بالظبط.</p>
+      <div class="plat" role="tablist" aria-label="متجرك على إيه">
+        <button type="button" role="tab" data-plat="shopify" style="--c:#6f9e35"><span class="pl-ic" aria-hidden="true">🛍️</span><b>Shopify</b><small>الشات + ربط الداتا</small></button>
+        <button type="button" role="tab" data-plat="easyorders" style="--c:#f26b1d"><span class="pl-ic" aria-hidden="true">🧡</span><b>EasyOrders</b><small>الشات + ربط الداتا</small></button>
+        <button type="button" role="tab" data-plat="site" style="--c:#3b82c4"><span class="pl-ic" aria-hidden="true">🌐</span><b>موقع تاني</b><small>WordPress، سلة، زد…</small></button>
+        <button type="button" role="tab" data-plat="link" style="--c:#7c5cff"><span class="pl-ic" aria-hidden="true">🔗</span><b>من غير موقع</b><small>لينك تشاركه</small></button>
+      </div>
+      <div class="plat-gets" id="platGets"></div>
+    </div>
+
+    <div class="card" id="instCode" style="margin-bottom:12px">
       <h3>1. الكود بتاعك</h3>
       <p class="sub">ده كود متجرك بالظبط، انسخه زي ما هو.</p>
       <div class="codebox">
         <div class="codebar">
           <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span class="fname">theme.liquid — before &lt;/body&gt;</span>
+          <span class="fname" id="codeFname">theme.liquid — before &lt;/body&gt;</span>
           <button class="copybtn" id="copyCode" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
             <span class="lbl">نسخ الكود</span>
@@ -1009,8 +1405,8 @@
       </div>
       <div class="codenote">💡 <span>الجزء <code id="slugNote">data-store="…"</code> ده معرّف متجرك، ماتغيرهوش. انسخ الكود كله زي ما هو.</span></div>
     </div>
-    <div class="two">
-      <div class="card">
+    <div class="two" id="instTwo">
+      <div class="card" data-plat-steps="shopify">
         <h3>2. حطه في Shopify</h3>
         <p class="sub">بياخد دقيقتين:</p>
         <ol class="steps">
@@ -1024,18 +1420,49 @@
           <li><b>جرّب</b><span>افتح متجرك، هتلاقي الفقاعة في الركن. ممكن تاخد دقيقة لحد ما تظهر.</span></li>
         </ol>
       </div>
-      <div class="card">
+      <div class="card" data-plat-steps="easyorders" hidden>
+        <h3>2. حطه في EasyOrders</h3>
+        <p class="sub">بياخد دقيقة:</p>
+        <ol class="steps">
+          <li><b>افتح «إضافة كود مخصص»</b><span>من لوحة EasyOrders افتح صفحة <b style="display:inline">Add Custom Code</b> (إضافة كود للهيدر)، أو <a href="https://app.easy-orders.net/#/header-code" target="_blank" rel="noopener">افتحها من هنا ↗</a>.</span></li>
+          <li><b>الصق الكود</b><span>الصقه في المربع زي ما هو. هو أصلًا جوه <span class="kbd">&lt;script&gt;</span>، فمش محتاج تزود حاجة.</span></li>
+          <li><b>احفظ</b><span>دوس <b style="display:inline">Save</b>.</span></li>
+          <li><b>ضيف دومين متجرك هنا</b><span>لينك متجرك على EasyOrders، في خانة الدومينات، عشان الشات يقبل يشتغل عليه.</span></li>
+          <li><b>جرّب</b><span>افتح متجرك، هتلاقي الفقاعة في الركن. ممكن تاخد دقيقة لحد ما تظهر.</span></li>
+        </ol>
+        <div class="tip" style="margin:14px 0 0"><strong>🧡 الكود بيحط الشات بس</strong><div>عشان المساعد يعرف منتجاتك وأوردراتك ويأكد الطلبات على واتساب، اربط داتا EasyOrders من صفحة الداتا، بضغطة واحدة.</div></div>
+      </div>
+      <div class="card" data-plat-steps="site" hidden>
+        <h3>2. حطه في موقعك</h3>
+        <p class="sub">نفس الكود بيشتغل على أي موقع:</p>
+        <ol class="steps">
+          <li><b>افتح مكان الأكواد المخصصة</b><span>في WordPress استخدم إضافة زي <b style="display:inline">WPCode</b>. وفي أي منصة تانية دوّر في الإعدادات على <b style="display:inline">Custom Code</b> أو «أكواد مخصصة».</span></li>
+          <li><b>الصق الكود</b><span>قبل <span class="kbd">&lt;/body&gt;</span>، أو في الهيدر لو ده المتاح. الاتنين شغالين.</span></li>
+          <li><b>احفظ وضيف الدومين</b><span>ضيف دومين موقعك في خانة الدومينات.</span></li>
+          <li><b>جرّب</b><span>افتح موقعك، هتلاقي الفقاعة في الركن.</span></li>
+        </ol>
+        <div class="tip" style="margin:14px 0 0"><strong>📄 الداتا من ملفاتك</strong><div>ارفع كتالوج المنتجات والأسعار والشحن (PDF أو Excel أو Word) من صفحة الداتا، والمساعد يرد منه.</div></div>
+      </div>
+      <div class="card" data-plat-steps="link" hidden>
+        <h3>شارك لينك الشات</h3>
+        <p class="sub">صفحة شات كاملة باسم متجرك، من غير ما تركّب أي حاجة:</p>
+        <div class="link-box"><input type="text" id="instLink" class="ltr" readonly aria-label="لينك الشات"><button type="button" class="btn sm" id="instCopyLink">نسخ اللينك</button><a class="btn ghost sm" id="instOpenLink" target="_blank" rel="noopener">افتحه ↗</a></div>
+        <ol class="steps">
+          <li><b>حطه في البايو</b><span>انستجرام وتيك توك وفيسبوك: الزبون يدوس ويسأل على طول.</span></li>
+          <li><b>ابعته على الواتساب</b><span>في الرد السريع أو رسالة الترحيب في واتساب بيزنس.</span></li>
+          <li><b>حطه في إعلاناتك</b><span>زرار «اسألنا» يفتح الشات، بدل ما الزبون يستنى رد.</span></li>
+        </ol>
+        <div class="tip" style="margin:14px 0 0"><strong>💡 عايز المساعد يرد على الواتساب نفسه؟</strong><div>اربط رقمك من <a href="#wa" data-goto="wa">صفحة الواتساب</a>، ويرد على زباينك هناك من غير لينك.</div></div>
+      </div>
+      <div class="card" id="instDomains">
         <h3>3. دومينات متجرك</h3>
         <p class="sub">الشات مش هيشتغل غير على المواقع اللي هنا (عشان محدش ياخد الكود ويستخدمه على حسابك).</p>
         <div id="originsState" style="margin-bottom:8px"></div>
         <textarea id="stOrigins" class="ltr" style="min-height:90px" placeholder="my-shop.myshopify.com, www.mystore.com"></textarea>
-        <div class="hint">حط دومين Shopify بتاعك (اللي آخره <span class="ltr">.myshopify.com</span>) وكمان دومينك الخاص لو عندك. افصل بينهم بفاصلة.</div>
+        <div class="o-sugg" id="originSugg" hidden></div>
+        <div class="hint" id="originsHint">حط دومين Shopify بتاعك (اللي آخره <span class="ltr">.myshopify.com</span>) وكمان دومينك الخاص لو عندك. افصل بينهم بفاصلة.</div>
         <div class="msg" id="orMsg"></div>
         <button class="btn" id="saveOrigins">حفظ الدومينات</button>
-        <div class="tip" style="margin-top:16px;margin-bottom:0">
-          <strong>🌐 مش على Shopify؟</strong>
-          <div>نفس الكود بيشتغل على أي موقع (WordPress، سلة، زد، أو موقع خاص): الصقه قبل <span class="kbd">&lt;/body&gt;</span> وضيف الدومين هنا. ولو مش عايز تركّب حاجة، شارك <b>لينك الشات</b> مع زباينك على الواتساب أو انستجرام.</div>
-        </div>
       </div>
     </div>
   </section>
@@ -1172,7 +1599,11 @@
 
     <h3 class="sec-title" style="margin-top:22px">الباقات المتاحة <span class="hint" id="plansFor"></span></h3>
     <div class="pl-grid" id="plGrid"><div class="card"><div class="hint">بنحمّل الباقات…</div></div></div>
-    <p class="hint" style="margin-top:10px">عدد الرسايل تقديري على حسب حجم داتا متجرك واستهلاكك الحقيقي. <a href="pricing.html" target="_blank" rel="noopener">صفحة الأسعار ↗</a></p>
+    <div class="est-note">
+      <span class="ic" aria-hidden="true">💡</span>
+      <div class="grow"><b>عدد الرسايل تقديري</b><span>بيعتمد على حجم داتا متجرك واستهلاكك الحقيقي، وهتشوف استهلاكك أول بأول في الصفحة دي.</span></div>
+      <a class="btn ghost sm" href="pricing.html" target="_blank" rel="noopener">تفاصيل الأسعار ↗</a>
+    </div>
 
     <div class="hist-grid">
       <div><h3 class="sec-title">📨 طلباتي</h3><div id="reqList"></div></div>
@@ -1244,7 +1675,8 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var me = null, editingId = null;
-  var ICON = { text: "📝", txt: "📄", pdf: "📕", docx: "📘", xlsx: "📗", shopify: "🛍️" };
+  var ICON = { text: "📝", txt: "📄", pdf: "📕", docx: "📘", xlsx: "📗", shopify: "🛍️", easyorders: "🧡" };
+  var SYNCED = { shopify: true, easyorders: true };   // parts pulled from a store system: view only
   var BASE = location.origin + location.pathname.replace(/dashboard\.html$/, "");
 
   function fmt(n) { return Number(n || 0).toLocaleString("ar-EG"); }
@@ -1412,7 +1844,7 @@
     if (tab === "plan") loadPlanTab();
     if (tab === "support") loadSupport();
     if (tab === "wa") loadWa();
-    if (tab === "data" || tab === "look") loadLocks();   // which features this store's plan doesn't include
+    if (tab === "data" || tab === "look" || tab === "install") loadLocks();   // which features this store's plan doesn't include
     if (tab !== "wa") stopUpsell();
     showLiveChat(tab !== "look");   // the look tab has its own preview of the chat
     if (history.replaceState) history.replaceState(null, "", "#" + tab);
@@ -1653,7 +2085,7 @@
 
   function render() {
     var link = BASE + "?store=" + me.slug;
-    syncLiveChat(); renderShop(); applyLocks();
+    syncLiveChat(); renderShop(); renderEo(); applyLocks();
     $("acctName").textContent = me.name; $("acctAvatar").textContent = (me.name || "م").trim().charAt(0);
     $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
     $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
@@ -1694,7 +2126,7 @@
     // settings
     $("stName").value = me.name; $("stBot").value = me.botName; $("stWelcome").value = me.welcome; $("stIns").value = me.instructions; $("stSugg").value = me.suggestions || "";
     // install
-    renderCode();
+    renderCode(); renderInstall();
     $("stOrigins").value = (me.allowedOrigins || "").split(",").filter(Boolean).join(", ");
     $("originsState").innerHTML = me.allowedOrigins
       ? '<span class="ok-pill">✅ مضاف ' + fmt(me.allowedOrigins.split(",").length) + " دومين</span>"
@@ -1725,8 +2157,98 @@
     var b = $("copyCode"), l = b.querySelector(".lbl");
     b.classList.add("done"); l.textContent = "✓ اتنسخ";
     clearTimeout(b.t); b.t = setTimeout(function () { b.classList.remove("done"); l.textContent = "نسخ الكود"; }, 2200);
-    toast("اتنسخ الكود ✅ الصقه في Shopify");
+    toast("اتنسخ الكود ✅ " + (PLAT[plat] || PLAT.shopify).paste);
   };
+  // ---------------- install tab: the whole picture, and steps for the owner's platform ----------------
+  var PLAT = {
+    shopify: { name: "Shopify", src: "shopify", paste: "الصقه في Shopify", fname: "theme.liquid — before </body>",
+      gets: ["💬 الشات في متجرك", "📦 المنتجات والسياسات بتتسحب لوحدها", "🚚 تتبع وتأكيد الأوردرات", "🛒 الطلب من جوه الشات"],
+      ph: "my-shop.myshopify.com, www.mystore.com", hint: ["حط دومين Shopify بتاعك (اللي آخره ", ".myshopify.com", ") وكمان دومينك الخاص لو عندك. افصل بينهم بفاصلة."] },
+    easyorders: { name: "EasyOrders", src: "easyorders", paste: "الصقه في EasyOrders", fname: "EasyOrders — Add Custom Code",
+      gets: ["💬 الشات في متجرك", "📦 المنتجات والمخزون بيتسحبوا لوحدهم", "🚚 تتبع وتأكيد الأوردرات"],
+      ph: "my-shop.myeasyorders.com, www.mystore.com", hint: ["حط لينك متجرك على EasyOrders (اللي آخره ", ".myeasyorders.com", ") وكمان دومينك الخاص لو مربوط. افصل بينهم بفاصلة."] },
+    site: { name: "", src: "files", paste: "الصقه في موقعك", fname: "before </body>",
+      gets: ["💬 الشات في موقعك", "📄 الداتا من ملفاتك ونصوصك", "📲 وكمان على واتساب"],
+      ph: "mystore.com, www.mystore.com", hint: ["حط دومين موقعك، ولو بيفتح بـ ", "www", " ومن غيرها حط الاتنين. افصل بينهم بفاصلة."] },
+    link: { paste: "", gets: ["🔗 صفحة شات كاملة باسم متجرك", "🚫 مش محتاج موقع ولا كود", "📱 بتفتح من أي موبايل"] }
+  };
+  var plat = null;
+  function renderInstall() {
+    if (!me) return;
+    var sh = me.shopify || {}, eo = eoState(), kn = me.knowledge || {};
+    if (!plat) { try { plat = localStorage.getItem("sb-plat"); } catch (e) {} }
+    if (!PLAT[plat]) plat = eo.connected ? "easyorders" : "shopify";
+    // the picture: each source / channel says whether it's live, and its wire runs only when it is
+    var origins = (me.allowedOrigins || "").split(",").filter(Boolean).length;
+    var shL = storeLock("shopify"), eoL = storeLock("easyorders");   // locked by plan, or by "one store per plan"
+    hubState("hubShop", "hwShop", shopLinked(), "✓ مربوط", shL ? "🔒 باقة أعلى" : "اربطه ←");
+    hubState("hubEo", "hwEo", !!eo.connected, "✓ مربوط", eoL ? "🔒 باقة أعلى" : "اربطه ←");
+    hubState("hubFiles", "hwFiles", (kn.items || 0) > 0, "✓ فيه داتا", "ضيف ←");
+    hubState("hubBubble", "hwBubble", origins > 0, "✓ " + fmt(origins) + " دومين", "⏳ ضيف الكود");
+    hubState("hubWa", "hwWa", !!(me.orderConfirm || {}).whatsapp, "✓ مربوط", "اربطه ←");
+    $("hwLink").classList.add("on");
+    // the platform: what it gives, then only its own steps
+    var P = PLAT[plat];
+    document.querySelectorAll("#instPick .plat button").forEach(function (b) { var on = b.dataset.plat === plat; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+    var g = $("platGets"); g.textContent = "";
+    P.gets.forEach(function (t) { var c = document.createElement("span"); c.className = "chip-g"; c.textContent = t; g.appendChild(c); });
+    var sp = document.createElement("span"); sp.className = "space"; g.appendChild(sp);
+    if (plat === "easyorders") {
+      var cmp = document.createElement("button"); cmp.type = "button"; cmp.className = "lk"; cmp.textContent = "⚖️ إيه الفرق بينها وبين Shopify؟";
+      cmp.onclick = function () { go("data"); showSource("easyorders"); $("eoCmp").open = true; setTimeout(function () { $("eoCmp").scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); };
+      g.appendChild(cmp);
+    }
+    if (P.src) {
+      var linked = P.src === "shopify" ? shopLinked() : P.src === "easyorders" ? !!eo.connected : (kn.items || 0) > 0;
+      var cta = document.createElement("button"); cta.type = "button"; cta.className = "btn sm" + (linked ? " ghost" : "");
+      cta.textContent = P.src === "files" ? (linked ? "📄 ملفاتك وداتا متجرك" : "📄 ارفع ملفاتك ←") : linked ? "✓ داتا " + P.name + " مربوطة · افتحها"
+        : storeLock(P.src) ? "🔒 ربط " + P.name + " من باقة أعلى ←" : "اربط داتا " + P.name + " ←";
+      cta.onclick = function () { go("data"); showSource(P.src); };
+      g.appendChild(cta);
+    }
+    document.querySelectorAll("[data-plat-steps]").forEach(function (x) { x.hidden = x.dataset.platSteps !== plat; });
+    var noSite = plat === "link";
+    $("instCode").hidden = noSite; $("instDomains").hidden = noSite; $("instTwo").classList.toggle("solo", noSite);
+    $("instLink").value = $("chatLink").value; $("instOpenLink").href = $("chatLink").value || "#";
+    if (noSite) return;
+    $("codeFname").textContent = P.fname;
+    $("stOrigins").placeholder = P.ph;
+    var h = $("originsHint"); h.textContent = "";
+    h.appendChild(document.createTextNode(P.hint[0])); var l = document.createElement("bdi"); l.dir = "ltr"; l.textContent = P.hint[1]; h.appendChild(l); h.appendChild(document.createTextNode(P.hint[2]));
+    renderOriginSugg();
+  }
+  function hubState(stId, wireId, live, onText, offText) {
+    var st = $(stId); st.textContent = live ? onText : offText; st.classList.toggle("ok", live);
+    $(wireId).classList.toggle("on", live);
+  }
+  // domains we already know from the store links (Shopify, EasyOrders): one tap adds and saves them
+  function hostOf(u) { u = String(u || "").trim().toLowerCase().replace(/^https?:\/\//, "").split(/[\/?#:]/)[0]; return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(u) ? u : ""; }
+  function renderOriginSugg() {
+    var have = $("stOrigins").value.split(/[\s,]+/).map(hostOf), sh = me.shopify || {}, eo = eoState();
+    var want = [sh.domain, sh.shop, eo.url].map(hostOf).filter(function (x, i, a) { return x && a.indexOf(x) === i && have.indexOf(x) < 0; });
+    var box = $("originSugg"); box.textContent = ""; box.hidden = !want.length;
+    if (!want.length) return;
+    box.appendChild(document.createTextNode("عرفناهم من ربط متجرك، دوس عشان تضيفه:"));
+    want.forEach(function (x) {
+      var b = document.createElement("button"); b.type = "button"; b.textContent = "+ " + x;
+      b.onclick = function () { var v = $("stOrigins").value.trim().replace(/[,\s]+$/, ""); $("stOrigins").value = v ? v + ", " + x : x; $("saveOrigins").click(); };
+      box.appendChild(b);
+    });
+  }
+  $("stOrigins").addEventListener("input", function () { if (me) renderOriginSugg(); });
+  document.querySelectorAll("#instPick .plat button").forEach(function (b) {
+    b.onclick = function () { plat = b.dataset.plat; try { localStorage.setItem("sb-plat", plat); } catch (e) {} renderInstall(); };
+  });
+  document.querySelectorAll("[data-hub]").forEach(function (b) {
+    b.onclick = function () {
+      var k = b.dataset.hub;
+      if (k === "shopify" || k === "easyorders" || k === "files") { go("data"); showSource(k); }
+      else if (k === "wa") go("wa");
+      else if (k === "link") { copy($("chatLink").value); toast("اتنسخ لينك الشات ✅"); }
+      else $("instPick").scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  });
+  $("instCopyLink").onclick = function () { copy($("instLink").value); toast("اتنسخ اللينك ✅"); };
   function copy(t) { try { navigator.clipboard.writeText(t); } catch (e) { var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } }
 
   // ---------------- knowledge ----------------
@@ -1734,21 +2256,24 @@
   function showSource(src) {
     document.querySelectorAll(".sources .src").forEach(function (b) { var on = b.dataset.src === src; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
     $("srcFiles").hidden = src !== "files"; $("srcShop").hidden = src !== "shopify";
+    $("srcEo").hidden = src !== "easyorders";
     try { localStorage.setItem("sb-data-src", src); } catch (e) {}
   }
   document.querySelectorAll(".sources .src").forEach(function (b) { b.onclick = function () { showSource(b.dataset.src); }; });
-  try { if (localStorage.getItem("sb-data-src") === "shopify") showSource("shopify"); } catch (e) {}
+  try { var lastSrc = localStorage.getItem("sb-data-src"); if (lastSrc === "shopify" || lastSrc === "easyorders") showSource(lastSrc); } catch (e) {}
+  // back from EasyOrders' "install app" page (redirect_url = dashboard.html?eo=1)
+  if (/[?&]eo=1\b/.test(location.search)) { showSource("easyorders"); try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) {} }
 
   function itemRow(it) {
     var row = document.createElement("div"); row.className = "item"; row.tabIndex = 0; row.style.cursor = "pointer";
     var ic = document.createElement("div"); ic.className = "ic"; ic.textContent = ICON[it.type] || "📄";
     var meta = document.createElement("div"); meta.className = "meta";
     var t = document.createElement("div"); t.className = "t"; t.textContent = it.title;
-    if (it.type !== "shopify" && vagueName(it.title)) { var bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚠️ غيّر الاسم لاسم أوضح"; t.appendChild(bd); }
+    if (!SYNCED[it.type] && vagueName(it.title)) { var bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚠️ غيّر الاسم لاسم أوضح"; t.appendChild(bd); }
     var s = document.createElement("div"); s.className = "s";
-    s.textContent = fmt(it.chars) + " حرف · " + (it.fileName ? it.fileName + " · " : "") + (it.type === "shopify" ? "اتحدثت " : "آخر تعديل ") + it.updated;
+    s.textContent = fmt(it.chars) + " حرف · " + (it.fileName ? it.fileName + " · " : "") + (SYNCED[it.type] ? "اتحدثت " : "آخر تعديل ") + it.updated;
     meta.appendChild(t); meta.appendChild(s);
-    var edit = document.createElement("button"); edit.className = "btn ghost sm"; edit.type = "button"; edit.textContent = it.type === "shopify" ? "عرض" : "عرض / تعديل";
+    var edit = document.createElement("button"); edit.className = "btn ghost sm"; edit.type = "button"; edit.textContent = SYNCED[it.type] ? "عرض" : "عرض / تعديل";
     function open(e) { if (e) e.stopPropagation(); openEditor(it.id); }
     edit.onclick = open; row.onclick = function () { open(); };
     row.onkeydown = function (e) { if (e.key === "Enter") open(); };
@@ -1759,9 +2284,10 @@
     var box = $("items"), shopBox = $("shopData");
     try {
       var data = await api("api/knowledge.ashx");
-      var files = data.items.filter(function (it) { return it.type !== "shopify"; });
+      var files = data.items.filter(function (it) { return !SYNCED[it.type]; });
       var synced = data.items.filter(function (it) { return it.type === "shopify"; });
-      box.textContent = ""; shopBox.textContent = "";
+      var eoItems = data.items.filter(function (it) { return it.type === "easyorders"; });
+      box.textContent = ""; shopBox.textContent = ""; $("eoData").textContent = "";
       // files
       $("srcFilesCount").textContent = fmt(files.length);
       $("filesN").textContent = files.length ? "(" + fmt(files.length) + ")" : "";
@@ -1771,12 +2297,15 @@
       if (!files.length) {
         var e = document.createElement("div"); e.className = "card empty";
         e.textContent = "لسه مفيش ملفات. ارفع ملف أو اكتب نص فيه المنتجات والأسعار والشحن والأسئلة الشائعة، والمساعد هيرد منها." +
-          (synced.length ? " (المساعد بيرد دلوقتي من داتا Shopify بس.)" : "");
+          (synced.length ? " (المساعد بيرد دلوقتي من داتا Shopify بس.)" : eoItems.length ? " (المساعد بيرد دلوقتي من داتا EasyOrders بس.)" : "");
         box.appendChild(e);
       } else files.forEach(function (it) { box.appendChild(itemRow(it)); });
       // Shopify
       synced.forEach(function (it) { shopBox.appendChild(itemRow(it)); });
       $("shopDataWrap").hidden = synced.length === 0;
+      // EasyOrders
+      eoItems.forEach(function (it) { $("eoData").appendChild(itemRow(it)); });
+      $("eoDataWrap").hidden = eoItems.length === 0;
     } catch (err) { if (err.status === 401) showAuth(); else toast(err.message); }
   }
   $("addTextBtn").onclick = function () { openEditor(null); };
@@ -1791,6 +2320,9 @@
         if (it.type === "shopify") {   // synced from Shopify: view only (the next sync would overwrite edits)
           readOnlyEditor(true); $("edTitleLbl").textContent = "داتا Shopify";
           setMsg("edMsg", "🛍️ الجزء ده بيتسحب من متجرك على Shopify وبيتحدث لوحده. عدّل منتجاتك على Shopify ودوس \"حدّث دلوقتي\".", true);
+        } else if (it.type === "easyorders") {   // synced from EasyOrders: view only, the same way
+          readOnlyEditor(true); $("edTitleLbl").textContent = "داتا EasyOrders";
+          setMsg("edMsg", "🧡 الجزء ده بيتسحب من متجرك على EasyOrders وبيتحدث لوحده. عدّل منتجاتك على EasyOrders ودوس \"حدّث دلوقتي\".", true);
         }
       } catch (err) { setMsg("edMsg", err.message); }
     }
@@ -1840,6 +2372,7 @@
           ? "الزبون يسأل عن أوردره ويعرف حالته بعد ما يأكد رقم الأوردر والإيميل أو الموبايل."
           : "محتاج صلاحية read_orders: ضيفها في Scopes، اعمل Release ووافق عليها في متجرك، وبعدين اربط تاني.";
         loadCo();
+        renderOc();
       }
     } else {
       // suggest the Shopify domain from the domains the owner already added
@@ -1871,6 +2404,45 @@
     try { await api("api/knowledge.ashx?action=shopify-orders", { method: "POST", json: { enabled: want } }); await refreshMe(); toast(want ? "تتبع الأوردرات اتفعّل ✅" : "تتبع الأوردرات اتقفل"); }
     catch (err) { t.checked = !want; setMsg("shopMsg", err.message); }
   };
+  // ---------- order confirmation on WhatsApp ----------
+  var OC_STATUS = { pending: "⏳ مستني رد الزبون", confirmed: "✅ اتأكد", cancelled: "❌ الزبون لغاه", failed: "⚠️ محتاج تبص عليه", skipped: "— ماتبعتلوش" };
+  function renderOc() {
+    var oc = (me && me.orderConfirm) || {};
+    $("ocToggle").checked = !!oc.on; $("ocOpts").hidden = !oc.on;
+    document.querySelectorAll("#ocScope button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === (oc.scope || "all")); });
+    var warn = [];
+    if (oc.on && !oc.whatsapp) warn.push("⚠️ واتساب المتجر مش مربوط، فالرسايل مش هتتبعت. اربطه من صفحة الواتساب.");
+    if (oc.on && !oc.canCancel) warn.push("⚠️ التطبيق ناقصه صلاحية write_orders، فلما الزبون يلغي هنعلّم الأوردر عندك بس، ومش هنقدر نلغيه في Shopify. ضيفها في Scopes واعمل Release ووافق عليها، وبعدين اربط تاني.");
+    $("ocWarn").hidden = !warn.length; $("ocWarn").textContent = warn.join("\n"); $("ocWarn").style.whiteSpace = "pre-line";
+    var list = $("ocList"); list.textContent = "";
+    var rows = oc.recent || [];
+    if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = "لسه مفيش طلبات جديدة من ساعة ما فعّلته. أول طلب هيظهر هنا."; list.appendChild(e); return; }
+    rows.forEach(function (r) {
+      var row = document.createElement("div"); row.className = "oc-row";
+      var b = document.createElement("b"); b.className = "ltr"; b.textContent = r.order;
+      var who = document.createElement("span"); who.textContent = [r.customer, r.total].filter(Boolean).join(" · ");
+      var st = document.createElement("span"); st.className = "oc-st " + r.status; st.textContent = OC_STATUS[r.status] || r.status;
+      var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "");
+      row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
+    });
+  }
+  async function saveOc(enabled, scope, btn) {
+    setMsg("shopMsg", "");
+    try {
+      await api("api/knowledge.ashx?action=order-confirm", { method: "POST", json: { enabled: enabled, scope: scope } });
+      await refreshMe(); renderShop();
+      return true;
+    } catch (err) { setMsg("shopMsg", err.message); renderOc(); return false; }
+  }
+  $("ocToggle").onchange = async function () {
+    var want = this.checked, oc = (me && me.orderConfirm) || {};
+    this.disabled = true;
+    if (await saveOc(want, oc.scope || "all")) toast(want ? "تأكيد الطلبات على واتساب اتفعّل ✅" : "تأكيد الطلبات اتقفل");
+    this.disabled = false;
+  };
+  document.querySelectorAll("#ocScope button").forEach(function (b) {
+    b.onclick = async function () { if (b.classList.contains("on")) return; if (await saveOc(true, b.dataset.v)) toast("اتحفظ ✓"); };
+  });
   // ---------- ordering from the chat ----------
   var co = null;
   var CO_STATUS = { placed: "✅ اتعمل في Shopify", awaiting_payment: "💳 مستني الدفع", failed: "⚠️ محتاج تبص عليه" };
@@ -1948,6 +2520,192 @@
     var r = await shopCall("shopify-disconnect", {}, this, "…");
     if (r) setMsg("shopMsg", "اتلغى الربط.", true);
   };
+  // ---------------- EasyOrders ----------------
+  var EO_STATUS = { pending: "⏳ مستني رد الزبون", confirmed: "✅ اتأكد", cancelled: "❌ الزبون لغاه", failed: "⚠️ محتاج تبص عليه", skipped: "— ماتبعتلوش" };
+  var eoPoll = null, eoHookOpen = false, eoCmpSet = false;
+  function eoState() { return (me && me.easyorders) || {}; }
+  // the diagram: before linking every lane runs (how it will work); after linking each lane shows what's really live
+  function renderEoFlow(eo, on, bad) {
+    function lane(id, live, text, warn) { var l = $(id); l.classList.toggle("on", live); l.classList.toggle("warn", !!warn); l.querySelector(".st").textContent = text || ""; }
+    if (!on) { lane("eoLaneKey", true); lane("eoLaneHook", true); lane("eoLaneCust", true); return; }
+    var uses = [eo.orders ? "التتبع" : "", (eo.confirm || {}).on ? "التأكيد" : ""].filter(Boolean);
+    lane("eoLaneKey", true, bad ? "⚠️ آخر تحديث فشل" : "✅ شغال", bad);
+    lane("eoLaneHook", !!eo.hookAt, eo.hookAt ? "✅ آخر طلب وصل " + ago(eo.hookAt) : "⏳ لسه مستنيين أول طلب");
+    lane("eoLaneCust", uses.length > 0, uses.length ? "✅ شغال: " + uses.join(" و") : "⏸️ التتبع والتأكيد مقفولين، شغّلهم تحت");
+  }
+  function renderEo() {
+    var eo = eoState(), on = !!eo.connected;
+    $("eoOff").hidden = on; $("eoOn").hidden = !on;
+    var bad = on && /^⚠️/.test(eo.status || "");
+    renderEoFlow(eo, on, bad);
+    if (!eoCmpSet && me) { eoCmpSet = true; $("eoCmp").open = !on; }   // open for someone deciding; closed once linked
+    $("srcEoDot").className = "src-dot" + (on ? (bad ? " warn" : " ok") : "");
+    $("srcEoInfo").textContent = !on ? "مش مربوط · اربطه بضغطة"
+      : bad ? "⚠️ مربوط، بس آخر تحديث فشل"
+      : (eo.status || "مربوط") + (eo.syncedAt ? " · " + ago(eo.syncedAt) : "");
+    if (!on) { $("eoInstall").href = eo.installUrl || "#"; return; }
+    $("eoPill").className = bad ? "warn-pill" : "ok-pill";
+    $("eoPill").textContent = bad ? "⚠️ مربوط، بس آخر تحديث فشل" : "✅ مربوط بـ EasyOrders";
+    $("eoInfo").textContent = (bad ? eo.status.replace(/^⚠️\s*/, "") : (eo.status || "")) + (eo.syncedAt ? " · آخر تحديث " + ago(eo.syncedAt) : "");
+    $("eoOpen").hidden = !eo.url; if (eo.url) $("eoOpen").href = eo.url;
+    if (document.activeElement !== $("eoUrlOn")) $("eoUrlOn").value = (eo.url || "").replace(/^https:\/\//, "");
+    // the order webhook: EasyOrders adds it by itself with the one-click link; with a pasted key the owner adds it
+    var manual = eo.mode !== "app";
+    $("eoHookUrl").textContent = eo.hookUrl || "";
+    $("eoHookTitle").textContent = manual ? "📬 خطوة أخيرة: خلّي EasyOrders تبعتلنا الطلبات الجديدة" : "📬 اعمل الـ Webhook بإيدك";
+    $("eoHookBox").hidden = !!eo.hookAt || (!manual && !eoHookOpen);
+    var st = $("eoHookState");
+    st.textContent = eo.hookAt ? "✅ EasyOrders بتبعتلنا الطلبات الجديدة · آخر واحد وصل " + ago(eo.hookAt)
+      : manual ? "⏳ لسه ماوصلناش أي طلب من EasyOrders. بعد ما تعمل الـ Webhook، أول طلب جديد هيأكد إنه شغال."
+      : "⏳ لسه ماوصلناش أي طلب من EasyOrders. المفروض EasyOrders تبعتهم لوحدها، وأول طلب جديد هيأكد ده. ";
+    if (!eo.hookAt && !manual && !eoHookOpen) {
+      var a = document.createElement("a"); a.href = "#"; a.textContent = "لو الطلبات ماوصلتش، اعمله بإيدك ←";
+      a.onclick = function (e) { e.preventDefault(); eoHookOpen = true; renderEo(); };
+      st.appendChild(a);
+    }
+    $("eoOrdersToggle").checked = !!eo.orders;
+    renderEoOc(eo.confirm || {});
+  }
+  function renderEoOc(oc) {
+    $("eoOcToggle").checked = !!oc.on; $("eoOcOpts").hidden = !oc.on;
+    document.querySelectorAll("#eoOcScope button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === (oc.scope || "all")); });
+    var warn = [];
+    if (oc.on && !oc.whatsapp) warn.push("⚠️ واتساب المتجر مش مربوط، فالرسايل مش هتتبعت. اربطه من صفحة الواتساب.");
+    if (oc.on && !eoState().hookAt) warn.push("⚠️ لسه ماوصلناش أي طلب من EasyOrders. اتأكد إن الـ Webhook معمول.");
+    $("eoOcWarn").hidden = !warn.length; $("eoOcWarn").textContent = warn.join("\n"); $("eoOcWarn").style.whiteSpace = "pre-line";
+    var list = $("eoOcList"); list.textContent = "";
+    var rows = oc.recent || [];
+    if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = "لسه مفيش طلبات جديدة من ساعة ما فعّلته. أول طلب هيظهر هنا."; list.appendChild(e); return; }
+    rows.forEach(function (r) {
+      var row = document.createElement("div"); row.className = "oc-row";
+      var b = document.createElement("b"); b.className = "ltr"; b.textContent = r.order;
+      var who = document.createElement("span"); who.textContent = [r.customer, r.total].filter(Boolean).join(" · ");
+      var stx = document.createElement("span"); stx.className = "oc-st " + r.status; stx.textContent = EO_STATUS[r.status] || r.status;
+      var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "");
+      row.appendChild(b); row.appendChild(who); row.appendChild(stx); row.appendChild(sm); list.appendChild(row);
+    });
+  }
+  async function eoCall(action, body, btn, busyText) {
+    var old = btn.innerHTML; btn.classList.add("loading-txt"); btn.textContent = busyText; setMsg("eoMsg", "");
+    try {
+      var r = await api("api/easyorders.ashx?action=" + action, { method: "POST", json: body || {} });
+      await refreshMe(); loadItems();
+      return r;
+    } catch (err) { setMsg("eoMsg", err.message); if (err.status === 507) refreshMe(); return null; }
+    finally { btn.classList.remove("loading-txt"); btn.innerHTML = old; }
+  }
+  document.querySelectorAll("#eoModes button").forEach(function (b) {
+    b.onclick = function () {
+      document.querySelectorAll("#eoModes button").forEach(function (x) { x.classList.toggle("on", x === b); });
+      $("eoApp").hidden = b.dataset.mode !== "app"; $("eoKeyBox").hidden = b.dataset.mode !== "key";
+    };
+  });
+  $("eoInstall").onclick = function (e) {
+    if (!eoState().installUrl) { e.preventDefault(); return; }
+    // the owner approves in EasyOrders' tab: check back here until the key has arrived and the products are in
+    if (eoPoll) clearInterval(eoPoll);
+    var n = 0;
+    eoPoll = setInterval(async function () {
+      if (++n > 72) { clearInterval(eoPoll); eoPoll = null; return; }
+      var was = !!eoState().connected;
+      await refreshMe();
+      var eo = eoState();
+      if (eo.connected && !was) toast("اتربط متجرك على EasyOrders 🎉");
+      if (eo.connected && !/^⏳/.test(eo.status || "")) { clearInterval(eoPoll); eoPoll = null; loadItems(); }
+    }, 5000);
+  };
+  $("eoConnect").onclick = async function () {
+    var key = $("eoKey").value.trim();
+    if (!key) { setMsg("eoMsg", "الصق الـ API Key الأول."); $("eoKey").focus(); return; }
+    var r = await eoCall("connect", { key: key, url: $("eoUrlIn").value.trim() }, this, "⏳ بنختبر الربط ونسحب منتجاتك…");
+    if (r) {
+      $("eoKey").value = "";
+      setMsg("eoMsg", "✅ الربط شغال! سحبنا " + fmt(r.products) + " منتج. فاضل خطوة الـ Webhook اللي فوق عشان الطلبات الجديدة توصلنا.", true);
+      toast("اتربط متجرك على EasyOrders 🎉");
+    }
+  };
+  $("eoSync").onclick = async function () {
+    var body = {}, u = $("eoUrlOn").value.trim();
+    if (u !== (eoState().url || "").replace(/^https:\/\//, "")) body.url = u;
+    var r = await eoCall("sync", body, this, "⏳ بنحدّث…");
+    if (r) setMsg("eoMsg", "✅ اتحدثت: " + fmt(r.products) + " منتج.", true);
+  };
+  $("eoUrlOn").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("eoSync").click(); } });
+  $("eoCopyHook").onclick = function () { copy($("eoHookUrl").textContent); this.textContent = "✓ اتنسخ"; var b = this; setTimeout(function () { b.textContent = "نسخ"; }, 1800); };
+  $("eoOffBtn").onclick = async function () {
+    if (!confirm("متأكد؟ هنمسح داتا EasyOrders اللي اتسحبت، ونوقف تتبع الأوردرات وتأكيدها على واتساب. ملفاتك التانية مش هتتأثر، وتقدر تربط تاني في أي وقت.")) return;
+    var r = await eoCall("disconnect", {}, this, "…");
+    if (r) { eoHookOpen = false; setMsg("eoMsg", "اتلغى الربط.", true); }
+  };
+  $("eoOrdersToggle").onchange = async function () {
+    var t = this, want = t.checked;
+    try { await api("api/easyorders.ashx?action=orders", { method: "POST", json: { enabled: want } }); await refreshMe(); toast(want ? "تتبع الأوردرات اتفعّل ✅" : "تتبع الأوردرات اتقفل"); }
+    catch (err) { t.checked = !want; setMsg("eoMsg", err.message); }
+  };
+  async function saveEoOc(enabled, scope) {
+    setMsg("eoMsg", "");
+    try { await api("api/easyorders.ashx?action=confirm", { method: "POST", json: { enabled: enabled, scope: scope } }); await refreshMe(); return true; }
+    catch (err) { setMsg("eoMsg", err.message); renderEo(); return false; }
+  }
+  $("eoOcToggle").onchange = async function () {
+    var want = this.checked, oc = eoState().confirm || {};
+    this.disabled = true;
+    if (await saveEoOc(want, oc.scope || "all")) toast(want ? "تأكيد الطلبات على واتساب اتفعّل ✅" : "تأكيد الطلبات اتقفل");
+    this.disabled = false;
+  };
+  document.querySelectorAll("#eoOcScope button").forEach(function (b) {
+    b.onclick = async function () { if (b.classList.contains("on")) return; if (await saveEoOc(true, b.dataset.v)) toast("اتحفظ ✓"); };
+  });
+  // EasyOrders vs Shopify, said plainly: [icon, feature, EasyOrders has it, EasyOrders note, Shopify note].
+  // The gaps are EasyOrders' public API (no courier, tracking number, delivery date, policies or create-order), not ours.
+  var EO_CMP = [
+    ["📦", "المنتجات والأسعار والخصومات", 1, "", ""],
+    ["🎨", "المقاسات والألوان والمخزون", 1, "", ""],
+    ["🔄", "التحديث لوحده", 1, "بعد كل طلب، وكل 6 ساعات", ""],
+    ["🚚", "«طلبي فين؟» وحالة الأوردر", 1, "", ""],
+    ["📲", "تأكيد الطلبات على واتساب", 1, "والحالة بتتغيّر في EasyOrders لوحدها", ""],
+    ["🏷️", "اسم شركة الشحن ورقم ولينك التتبع", 0, "المساعد بيقول الحالة بس، زي «خرج مع شركة الشحن»", ""],
+    ["📅", "ميعاد التوصيل المتوقع", 0, "اكتب مدة التوصيل في معلومات الشحن", "لو شركة الشحن بتدّيه"],
+    ["📜", "سياسة الشحن والاسترجاع", 0, "اكتبها في معلومات الشحن", "بتتسحب من متجرك"],
+    ["🛒", "الطلب من جوه الشات", 0, "المساعد بيبعت لينك المنتج والزبون يطلب من متجرك", ""]
+  ];
+  (function () {
+    var t = $("eoCmpT"), has = 0;
+    function cell(ok, note, who) {
+      var c = document.createElement("span"); c.className = "eo-cell"; c.setAttribute("role", "cell");
+      var pf = document.createElement("span"); pf.className = "pf"; pf.textContent = who; c.appendChild(pf);   // phone layout has no header row
+      var tag = document.createElement("span"); tag.className = ok ? "eo-y" : "eo-n"; tag.textContent = ok ? "✓ متاح" : "✕ مش متاح"; c.appendChild(tag);
+      if (note) { var s = document.createElement("small"); s.textContent = note; c.appendChild(s); }
+      return c;
+    }
+    EO_CMP.forEach(function (r) {
+      var row = document.createElement("div"); row.className = "eo-cr" + (r[2] ? "" : " gap"); row.setAttribute("role", "row");
+      var f = document.createElement("span"); f.className = "f"; f.setAttribute("role", "rowheader");
+      var ic = document.createElement("span"); ic.setAttribute("aria-hidden", "true"); ic.textContent = r[0];
+      f.appendChild(ic); f.appendChild(document.createTextNode(r[1]));
+      row.appendChild(f); row.appendChild(cell(r[2], r[3], "🧡 EasyOrders")); row.appendChild(cell(1, r[4], "🛍️ Shopify"));
+      t.appendChild(row); if (r[2]) has++;
+    });
+    $("eoScEo").textContent = has + " من " + EO_CMP.length; $("eoScSh").textContent = EO_CMP.length + " من " + EO_CMP.length;
+    $("eoCmp").addEventListener("toggle", function () {
+      var open = this.open;
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        $("eoBarEo").style.width = open ? Math.round(100 * has / EO_CMP.length) + "%" : "0";
+        $("eoBarSh").style.width = open ? "100%" : "0";
+      }); });
+    });
+  })();
+  // what EasyOrders can't give us, the owner writes once: a ready template in the text editor, first blank selected
+  var EO_SHIP_TPL = "أسعار الشحن:\n- القاهرة والجيزة: ___\n- الإسكندرية: ___\n- الدلتا والقناة: ___\n- الصعيد: ___\n\n" +
+    "مدة التوصيل:\n- القاهرة والجيزة: من ___ لـ ___ أيام\n- باقي المحافظات: من ___ لـ ___ أيام\n\n" +
+    "شركة الشحن: ___\nلو الزبون عايز يتابع شحنته: ___\n\n" +
+    "الاسترجاع والاستبدال:\n- خلال ___ يوم من الاستلام\n- شرط المنتج: ___\n- مصاريف الشحن في الاسترجاع على: ___\n";
+  $("eoShipTpl").onclick = function () {
+    showSource("files"); openEditor(null);
+    $("edTitle").value = "معلومات الشحن والتوصيل والاسترجاع";
+    var ed = $("edContent"), i = EO_SHIP_TPL.indexOf("___");
+    ed.value = EO_SHIP_TPL; updateCount(); ed.focus(); ed.setSelectionRange(i, i + 3); ed.scrollTop = 0;
+  };
   // ---------------- WhatsApp ----------------
   // Owners only see "scan a QR". The provider behind it is never named on this page.
   var wa = null;
@@ -1976,6 +2734,22 @@
       chat: [["cu", "طلبي رقم #1048 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
         ["bot", "طلبك اتشحن امبارح 🚚 وهيوصلك بكرة إن شاء الله. تحب أبعتلك رقم التتبع؟", "8:15", 3.0],
         ["cu", "والجاكيت الأسود لسه موجود؟", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه 🔥 فاضل 3 قطع بس، سعره 890 ج.م. أحجزهولك؟", "8:16", 7.0]] },
+    easyorders: { ac: "#f26b1d", ac2: "#c9520f", ph: "#8a3a0c", av: "🧡", what: "ربط EasyOrders",
+      head: 'المساعد يعرف <span class="g">كل منتج في متجرك على EasyOrders</span> ويتابع أوردرات زباينك',
+      p: "اربط متجرك على EasyOrders بضغطة، والمساعد يقرا منتجاتك وأسعارها والمخزون، ويرد على «طلبي فين؟»، ويأكد الطلبات الجديدة مع الزبون على واتساب.",
+      list: [["🔄", "المنتجات والأسعار والمخزون بتتحدث لوحدها"], ["📦", "الزبون يسأل على أوردره ويعرف حالته في ثانية"], ["📲", "تأكيد الطلبات على واتساب، وحالتها بتتغيّر في EasyOrders لوحدها"]],
+      chips: ["🧡 EasyOrders", "📦 #46", "📲 تأكيد الطلب"],
+      chat: [["cu", "طلبي رقم 46 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "طلبك خرج مع شركة الشحن النهارده 🚚 وهيوصلك خلال يومين إن شاء الله.", "8:15", 3.0],
+        ["cu", "والطقم الأزرق مقاس L لسه موجود؟", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه 🔥 فاضل قطعتين بس، سعره 650 ج.م. تحب أبعتلك لينكه؟", "8:16", 7.0]] },
+    bothstores: { ac: "#f26b1d", ac2: "#6f9e35", ph: "#5a3a14", av: "🔗", what: "Shopify و EasyOrders مع بعض",
+      head: 'اربط <span class="g">Shopify و EasyOrders</span> مع بعض',
+      p: "باقتك بتسمح بمتجر واحد. لو بتبيع على الاتنين (مثلًا Shopify للبراند و EasyOrders لصفحات الطلب)، رقّي باقتك والمساعد يرد من منتجات المتجرين ويتابع أوردراتهم. داتا متجرين في كل رد بتستهلك من الرصيد أكتر، عشان كده الميزة دي في باقة أعلى.",
+      list: [["🛍️", "منتجات Shopify و EasyOrders في مساعد واحد"], ["📦", "«طلبي فين؟» بيدوّر في المتجرين"], ["📲", "تأكيد الطلبات على واتساب من المتجرين"]],
+      chips: ["🛍️ Shopify", "🧡 EasyOrders", "🔗 مع بعض"],
+      chat: [["cu", "طلبي رقم 46 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "طلبك خرج مع شركة الشحن النهارده 🚚 وهيوصلك خلال يومين إن شاء الله.", "8:15", 3.0],
+        ["cu", "والجاكيت الأسود اللي على موقعكم التاني لسه موجود؟", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه 🔥 فاضل 3 قطع، سعره 890 ج.م. أبعتلك لينكه؟", "8:16", 7.0]] },
     files: { ac: "#5b5bd6", ac2: "#3f3fb8", ph: "#34349a", av: "🤖", what: "رفع الملفات",
       head: 'ارفع <span class="g">كتالوجك وملفاتك</span> زي ما هي، والمساعد يحفظها صم',
       p: "قوايم الأسعار، الكتالوج، سياسة الضمان والاسترجاع: ارفعها PDF أو Word أو Excel، والمساعد يقراها كلها ويرد منها بالظبط.",
@@ -2068,10 +2842,34 @@
     el.innerHTML = '<span>' + html.replace("{plan}", '<b>' + esc(up.name) + '</b>') + '</span><span class="go">اعرف أكتر ←</span>';
     el.onclick = function () { openLock(key); };
   }
+  // one store system per plan: with Shopify linked, EasyOrders needs the "bothstores" plan, and the other way round
+  function shopLinked() { return !!(me && me.shopify && (me.shopify.domain || me.shopify.full)); }
+  function storeLock(which) {
+    if (locks[which]) return { key: which, up: locks[which] };
+    var mine = which === "shopify" ? shopLinked() : !!eoState().connected, other = which === "shopify" ? !!eoState().connected : shopLinked();
+    return other && !mine && locks.bothstores ? { key: "bothstores", up: locks.bothstores } : null;
+  }
+  function storeLockInfo(L, infoId) {
+    if (L && L.up.name) $(infoId).textContent = L.key === "bothstores" ? "🔒 باقتك فيها متجر واحد بس" : "🔒 متاح من باقة " + L.up.name;
+  }
+  // under the "both stores" upgrade card: the way to stay on one plan (unlink the other store first)
+  function bothAlt(box, key, which) {
+    if (key !== "bothstores" || !box.firstChild) return;
+    var other = which === "shopify" ? "easyorders" : "shopify", otherName = other === "shopify" ? "Shopify" : "EasyOrders", myName = which === "shopify" ? "Shopify" : "EasyOrders";
+    var p = document.createElement("p"); p.className = "both-alt";
+    p.appendChild(document.createTextNode("أو خليك على متجر واحد: ألغي ربط " + otherName + " الأول، وبعدها اربط " + myName + " بداله. "));
+    var b = document.createElement("button"); b.type = "button"; b.textContent = "افتح " + otherName + " ←"; b.onclick = function () { showSource(other); };
+    p.appendChild(b); box.firstChild.appendChild(p);
+  }
   function applyLocks() {
-    var sh = locks.shopify;
+    var sh = storeLock("shopify");
     $("lockShop").hidden = !sh; $("shopCard").hidden = !!sh;
-    if (sh) { renderLock($("lockShop"), "shopify", sh); if (sh.name) $("srcShopInfo").textContent = "🔒 متاح من باقة " + sh.name; } else stopLock($("lockShop"));
+    if (sh) { renderLock($("lockShop"), sh.key, sh.up); bothAlt($("lockShop"), sh.key, "shopify"); storeLockInfo(sh, "srcShopInfo"); } else stopLock($("lockShop"));
+    var eol = storeLock("easyorders");
+    $("lockEo").hidden = !eol; $("eoCard").hidden = !!eol;
+    if (eol) { renderLock($("lockEo"), eol.key, eol.up); bothAlt($("lockEo"), eol.key, "easyorders"); storeLockInfo(eol, "srcEoInfo"); } else stopLock($("lockEo"));
+    $("bothWarn").hidden = !(locks.bothstores && shopLinked() && eoState().connected);   // linked both, then moved to a plan without it
+    if (me) renderInstall();
     lockStrip($("lockFiles"), "files", "🔒 ارفع ملفات <b>PDF و Word و Excel</b> زي ما هي مع باقة {plan}. ملفات TXT و CSV والنص متاحين ليك دلوقتي.");
     lockStrip($("lockLook"), "styles", "✨ الأشكال اللي عليها 🔒 وأي لون خاص متاحين مع باقة {plan}. جرّبهم في المعاينة دلوقتي، واحفظهم بعد الترقية.");
     document.querySelectorAll(".sty").forEach(function (c) { c.classList.toggle("locked", !!locks.styles && FREE_STYLES.indexOf(c.dataset.style) < 0); });

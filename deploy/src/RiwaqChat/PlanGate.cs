@@ -2,6 +2,9 @@
 // (AppSettings "MinPlan_<feature>"; WhatsApp keeps its own "WaMinPlan" and its auto-assign rule in WaAccount).
 // No minimum set = the feature is open to every store, which is how everything worked before.
 //   shopify : linking a Shopify store (quick or full) and order tracking in the chat
+//   easyorders : linking an EasyOrders store, its order tracking and order confirmation (follows shopify's minimum until set)
+//   bothstores : Shopify AND EasyOrders linked together (one of them is the norm: two catalogs cost more of the quota);
+//                until the super admin picks a minimum it's the top active plan, never "open to everyone"
 //   files   : uploading PDF, Word and Excel files (typed text, .txt, .csv and .md stay open)
 //   styles  : the fun and "any store" bubble styles and custom colors (classic styles, the bear and the 12 swatches stay open)
 // The dashboard asks api/locks.ashx which features are locked and shows an upgrade card with the plan to suggest.
@@ -16,18 +19,46 @@ namespace RiwaqChat
 {
     public static class PlanGate
     {
-        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders" };
+        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "bothstores" };
         public static readonly HashSet<string> FreeStyles = new HashSet<string> { "classic", "pill", "agent", "minimal", "orb", "duo", "wave", "bear" };
         public static readonly HashSet<string> FreeColors = new HashSet<string> { "#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222" };
         public static readonly HashSet<string> LockedFileTypes = new HashSet<string> { "pdf", "docx", "xlsx" };
         public const string DefaultStyle = "bear", DefaultColor = "#e8774a";
 
         static readonly Dictionary<string, string> Names = new Dictionary<string, string> {
-            { "shopify", "ربط Shopify وتتبع الأوردرات" }, { "files", "رفع ملفات PDF و Word و Excel" }, { "styles", "أشكال الشات والألوان" }, { "chatorders", "الطلب من الشات" } };
+            { "shopify", "ربط Shopify وتتبع الأوردرات" }, { "files", "رفع ملفات PDF و Word و Excel" }, { "styles", "أشكال الشات والألوان" }, { "chatorders", "الطلب من الشات" },
+            { "easyorders", "ربط EasyOrders وتتبع الأوردرات" },
+            { "bothstores", "ربط Shopify و EasyOrders مع بعض" } };
 
         public static int MinPlanId(SqlConnection c, string feature)
         {
-            int id; return int.TryParse(Billing.Get(c, "MinPlan_" + feature) ?? "", out id) && id > 0 ? id : 0;
+            int id;
+            if (int.TryParse(Billing.Get(c, "MinPlan_" + feature) ?? "", out id) && id > 0) return id;
+            // EasyOrders is the same kind of feature as Shopify: until the super admin picks its own minimum, it follows Shopify's
+            if (feature == "easyorders") return MinPlanId(c, "shopify");
+            // both stores at once is an upsell: until a minimum is picked, only the top active plan has it
+            if (feature == "bothstores") { var top = Billing.Plans(c, true).LastOrDefault(p => p.IsActive); return top != null ? top.Id : 0; }
+            return 0;
+        }
+
+        // ---- one store system per plan: Shopify or EasyOrders; both together need "bothstores" ----
+        public static bool ShopifyLinked(StoreInfo s) { return !string.IsNullOrEmpty(s.ShopifyDomain) || !string.IsNullOrEmpty(s.ShopifyClientId); }
+
+        // The system already linked that stands in the way of linking `linking` ("shopify" / "easyorders"), or null
+        public static string OtherStore(StoreInfo s, string linking)
+        {
+            if (linking == "shopify") return EasyOrders.Connected(s) ? "EasyOrders" : null;
+            return ShopifyLinked(s) ? "Shopify" : null;
+        }
+
+        public static bool BothBlocked(SqlConnection c, StoreInfo s, string linking) { return OtherStore(s, linking) != null && !Allows(c, s, "bothstores"); }
+
+        public static void DenyBoth(HttpResponse res, SqlConnection c, StoreInfo s, string linking)
+        {
+            PlanInfo offer; Allows(c, s, "bothstores", out offer);
+            string other = OtherStore(s, linking), mine = linking == "shopify" ? "Shopify" : "EasyOrders";
+            Web.Error(res, 403, "plan_locked", "متجرك مربوط بـ " + other + "، وباقتك بتسمح بمتجر واحد بس. ربط " + mine + " و " + other + " مع بعض"
+                + (offer != null ? " متاح من باقة «" + offer.Name + "». رقّي باقتك من «باقتي»، أو ألغي ربط " + other + " الأول." : " مش متاح في باقتك. ألغي ربط " + other + " الأول."));
         }
 
         public static bool Allows(SqlConnection c, StoreInfo s, string feature) { PlanInfo o; return Allows(c, s, feature, out o); }
@@ -94,6 +125,7 @@ namespace RiwaqChat
             try
             {
                 if (s.ShopifyOrders && !Allows(c, s, "shopify")) s.ShopifyOrders = false;
+                if (s.EoOrders && !Allows(c, s, "easyorders")) s.EoOrders = false;
                 bool lockedStyle = !FreeStyles.Contains(s.BubbleStyle ?? ""), lockedColor = !FreeColors.Contains((s.BrandColor ?? "").ToLowerInvariant());
                 if ((lockedStyle || lockedColor) && !Allows(c, s, "styles"))
                 {
@@ -150,7 +182,7 @@ namespace RiwaqChat
 
         static Dictionary<string, object> AdminState(SqlConnection c)
         {
-            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify وتتبع الأوردرات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" } };
+            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify وتتبع الأوردرات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتتبع الأوردرات" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" } };
             return new Dictionary<string, object> {
                 { "features", PlanGate.Features.Select(f => new Dictionary<string, object> { { "key", f }, { "name", names[f] }, { "minPlan", PlanGate.MinPlanId(c, f) } }).ToList() },
                 { "plans", Billing.Plans(c, false).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } }).ToList() } };

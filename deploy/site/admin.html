@@ -8,11 +8,9 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 2 60 72'%3E%3Cpath d='M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15' fill='none' stroke='%23E8774A' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15' fill='none' stroke='%233a2a20' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
 <script>
   (function () {
-    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}
-    var m = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
-    function apply() { document.documentElement.setAttribute("data-theme", t || (m && m.matches ? "dark" : "light")); }
+    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}   // the saved choice, otherwise light
+    function apply() { document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light"); }
     apply();
-    if (m && m.addEventListener) m.addEventListener("change", function () { if (!t) apply(); });
     window.sbTheme = function (v) { t = v; try { localStorage.setItem("sb-theme", v); } catch (e) {} apply(); };
   })();
 </script>
@@ -519,7 +517,7 @@
             <h3 style="margin-top:18px">الدفع وخصومات المدة</h3>
             <p class="sub">بيظهروا لصاحب المتجر وهو بيطلب باقة.</p>
             <label for="sPay">طريقة الدفع (اللي هيحوّل عليها)</label>
-            <textarea id="sPay" maxlength="400" style="min-height:70px" placeholder="مثلًا: InstaPay على youssef@instapay أو فودافون كاش على 010…"></textarea>
+            <textarea id="sPay" maxlength="400" style="min-height:70px" placeholder="مثلًا: InstaPay على youssef@instapay أو أورانج كاش على 012…"></textarea>
             <div class="cols3">
               <div><label for="sD4">خصم 4 شهور %</label><input type="number" id="sD4" class="ltr" min="0" max="89" step="0.5"></div>
               <div><label for="sD6">خصم 6 شهور %</label><input type="number" id="sD6" class="ltr" min="0" max="89" step="0.5"></div>
@@ -946,7 +944,7 @@
           '<div class="cols"><div><label>الباقة</label><select id="sbPlan">' + activePlans.map(function (x) { return '<option value="' + x.id + '"' + (x.id === s.planId ? " selected" : "") + '>' + esc(x.name) + ' — ' + money(x.finalPrice) + '</option>'; }).join("") + '</select></div>' +
           '<div><label>المدة</label><select id="sbMonths">' + [1, 2, 3, 6, 12].map(function (n) { return '<option value="' + n + '">' + (n === 1 ? "شهر" : fmt(n) + " شهور") + '</option>'; }).join("") + '</select></div></div>' +
           '<div class="cols"><div><label>المبلغ المدفوع (ج.م)</label><input type="number" id="sbPaid" class="ltr" min="0" step="1"><div class="hint" id="sbHint"></div></div>' +
-          '<div><label>طريقة الدفع</label><select id="sbMethod"><option>كاش</option><option>InstaPay</option><option>فودافون كاش</option><option>تحويل بنكي</option><option>أخرى</option></select></div></div>' +
+          '<div><label>طريقة الدفع</label><select id="sbMethod"><option>كاش</option><option>InstaPay</option><option>أورانج كاش</option></select></div></div>' +
           '<label>ملاحظات (اختياري)</label><input type="text" id="sbNotes" maxlength="500" placeholder="مثلًا: رقم التحويل">' +
           '<div class="msg" id="sbMsg"></div><div class="row" style="margin-top:14px"><button class="btn ok" id="sbBtn">✓ تسجيل الاشتراك</button>' +
           (s.plan ? '<span class="space"></span><button type="button" class="btn danger sm" id="sbCancel">إلغاء الباقة</button>' : '') + '</div></form>'

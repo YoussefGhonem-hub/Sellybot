@@ -8,11 +8,9 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 2 60 72'%3E%3Cpath d='M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15' fill='none' stroke='%23E8774A' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15' fill='none' stroke='%233a2a20' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
 <script>
   (function () {
-    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}
-    var m = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
-    function apply() { document.documentElement.setAttribute("data-theme", t || (m && m.matches ? "dark" : "light")); }
+    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}   // the saved choice, otherwise light
+    function apply() { document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light"); }
     apply();
-    if (m && m.addEventListener) m.addEventListener("change", function () { if (!t) apply(); });
     window.sbTheme = function (v) { t = v; try { localStorage.setItem("sb-theme", v); } catch (e) {} apply(); };
   })();
 </script>
@@ -97,7 +95,11 @@
   .seg button{position:relative;z-index:1;border:0;background:none;padding:9px 18px;border-radius:12px;cursor:pointer;color:var(--muted);transition:color .25s;font-size:15px}
   .seg button.on{color:#fff;font-weight:600}
   .seg .ind{position:absolute;top:5px;bottom:5px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(232,119,74,.35);transition:all .4s cubic-bezier(.34,1.3,.64,1)}
-  .seg-hint{font-size:13px;color:var(--muted);min-height:20px}
+  .seg-hint{display:inline-flex;align-items:center;gap:10px;min-height:46px;padding:7px 8px;padding-inline-end:16px;border-radius:15px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);font-size:13.5px;color:var(--muted);text-align:start;max-width:min(92vw,440px);line-height:1.45}
+  .seg-hint .ic{flex:none;width:32px;height:32px;border-radius:11px;display:grid;place-items:center;font-size:17px;background:linear-gradient(135deg,rgba(232,119,74,.16),rgba(245,162,93,.16))}
+  .seg-hint b{display:block;color:var(--ink);font-weight:600;font-size:14px}
+  .seg-hint.swap{animation:hintIn .35s ease both}
+  @keyframes hintIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
   /* plans */
   .plans{max-width:1160px;margin:26px auto 0;padding:0 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;align-items:stretch}
@@ -295,6 +297,26 @@
     .nav .btn.ghost{display:none}
     .seg button{font-size:13px}
   }
+  /* about us: what else we build */
+  .svc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .svc{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow);transition:transform .3s}
+  .svc:hover{transform:translateY(-4px)}
+  .svc .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,rgba(232,119,74,.15),rgba(245,162,93,.15));margin-bottom:10px}
+  .svc h3{margin:0 0 4px;font-size:17px}
+  .svc p{margin:0;color:var(--muted);font-size:14.5px}
+  .about-cta{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 22px;border-radius:20px;background:var(--soft);border:1px dashed var(--line)}
+  .about-cta b{font-size:17px}
+  .about-cta p{margin:2px 0 0;color:var(--muted);font-size:14.5px}
+  .about-cta .btn{display:inline-flex;align-items:center;gap:8px}
+  @media (max-width:900px){.svc-grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:560px){
+    .svc-grid{grid-template-columns:1fr;gap:12px}
+    .svc{padding:16px;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:center}
+    .svc .ic{grid-row:span 2;margin:0}
+    .svc p{grid-column:2;font-size:14px}
+    .about-cta{padding:16px}
+    .about-cta .btn{width:100%;justify-content:center}
+  }
 </style>
 </head>
 <body>
@@ -312,6 +334,7 @@
     <span class="space"></span>
     <a class="link" href="#how">إزاي بنحسب</a>
     <a class="link" href="#faq">أسئلة شائعة</a>
+    <a class="link" href="#about">من نحن</a>
     <button class="icon-btn" id="themeBtn" aria-label="الوضع الفاتح / الغامق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
     <a class="btn ghost" href="dashboard.html">دخول / حساب جديد</a>
   </div>
@@ -387,6 +410,21 @@
   </div>
 </section>
 
+<section class="blk reveal" id="about">
+  <h2>من نحن</h2>
+  <p class="lead">Sellybot منتج مصري بيخلّي متجرك يرد على زباينه 24 ساعة بالذكاء الاصطناعي. وإحنا مش بنعمل Sellybot بس: بنبني <b>أي سيستم أو موقع</b> تحتاجه، من الفكرة لحد ما يشتغل عندك.</p>
+  <div class="svc-grid">
+    <div class="svc"><span class="ic" aria-hidden="true">🌐</span><h3>مواقع ومتاجر إلكترونية</h3><p>موقع لشركتك أو متجر كامل بالدفع والشحن، سريع وشكله حلو على الموبايل.</p></div>
+    <div class="svc"><span class="ic" aria-hidden="true">🧩</span><h3>أنظمة إدارة</h3><p>مخازن، حسابات، مبيعات، عملاء، حجوزات… أي سيستم على مقاس شغلك.</p></div>
+    <div class="svc"><span class="ic" aria-hidden="true">📱</span><h3>تطبيقات ولوحات تحكم</h3><p>تطبيقات ويب وموبايل، ولوحات تحكم بتقارير تتابع بيها شغلك لحظة بلحظة.</p></div>
+    <div class="svc"><span class="ic" aria-hidden="true">🤖</span><h3>ذكاء اصطناعي وأتمتة</h3><p>بوتات واتساب، ربط مع Shopify وأي نظام تاني، وأتمتة الشغل اللي بيتكرر كل يوم.</p></div>
+  </div>
+  <div class="about-cta">
+    <div><b>عندك فكرة سيستم أو موقع؟</b><p>ابعتلنا على واتساب واحكيلنا عنها، وهنرد عليك بالتفاصيل.</p></div>
+    <a class="btn wa" id="aboutWa" target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>كلّمنا على واتساب</a>
+  </div>
+</section>
+
 <section class="cta reveal">
   <div class="cta-in">
     <h2>جاهز تخلّي متجرك يرد لوحده؟</h2>
@@ -397,7 +435,7 @@
 
 <footer>
   <span>© <span id="yr"></span> Sellybot</span><span class="space"></span>
-  <a href="dashboard.html">لوحة المتجر</a><a href="#faq">أسئلة شائعة</a><a id="footWa" target="_blank" rel="noopener">واتساب</a>
+  <a href="dashboard.html">لوحة المتجر</a><a href="#faq">أسئلة شائعة</a><a href="#about">من نحن</a><a id="footWa" target="_blank" rel="noopener">واتساب</a>
 </footer>
 
 <!-- phones: a bottom bar instead of the floating button -->
@@ -433,6 +471,7 @@
   function setWa() {
     var general = waLink("أهلاً 👋 عايز أعرف أكتر عن باقات Sellybot");
     $("waFloat").href = general; $("ctaWa").href = general; $("footWa").href = general; $("mWa").href = general;
+    $("aboutWa").href = waLink("أهلاً 👋 عايز أعمل سيستم / موقع، وحابب أحكيلكم عن الفكرة");
   }
   setWa();
   setTimeout(function () { $("waFloat").classList.add("peek"); setTimeout(function () { $("waFloat").classList.remove("peek"); }, 4000); }, 2500);
@@ -442,10 +481,19 @@
   $("sizeSeg").onclick = function (e) {
     var b = e.target.closest("button"); if (!b) return;
     size = b.dataset.s; this.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); });
-    moveInd(); $("segHint").textContent = HINT[size]; updateMsgs(true);
+    moveInd(); setHint(true); updateMsgs(true);
   };
   window.addEventListener("resize", moveInd);
-  requestAnimationFrame(moveInd); $("segHint").textContent = HINT[size];
+  // what each size means: an icon, a short title and an example, under the size buttons
+  var SIZE = { small: ["📄", "صفحات قليلة", "قايمة منتجات وأسعار وسياسة الشحن"],
+               medium: ["📚", "حوالي 15 صفحة", "منتجات بتفاصيلها وأسئلة شائعة وسياسات"],
+               large: ["🗂️", "كتالوج كبير", "مئات المنتجات بأوصافها ومقاساتها"] };
+  function setHint(anim) {
+    var s = SIZE[size], h = $("segHint");
+    h.innerHTML = '<span class="ic" aria-hidden="true">' + s[0] + '</span><span><b>' + esc(s[1]) + '</b>' + esc(s[2]) + '</span>';
+    if (anim) { h.classList.remove("swap"); void h.offsetWidth; h.classList.add("swap"); }
+  }
+  requestAnimationFrame(moveInd); setHint(false);
 
   // period picker (1, 4, 6 or 12 months): changes the price on every card
   var period = 1;
@@ -519,6 +567,8 @@
     { k: ["shopify", "whatsapp"], ic: "✅", t: "تأكيد الطلبات على واتساب", d: "كل طلب جديد يوصل للزبون رسالة بتفاصيله: يرد 1 يأكد أو 2 يلغي، والإلغاء بيتنفذ في Shopify لوحده.", isNew: true },
     { k: ["shopify"], ic: "📦", t: "تتبع الأوردرات", d: "الزبون يسأل «طلبي فين؟» ويعرف حالة الشحن ولينك التتبع، بعد ما يأكد رقم الأوردر." },
     { k: ["shopify"], ic: "🛍️", t: "ربط Shopify", d: "المنتجات والأسعار والكميات المتاحة بتتسحب من متجرك وبتتحدث لوحدها." },
+    { k: ["easyorders"], ic: "🧡", t: "ربط EasyOrders", d: "اربط متجرك على EasyOrders بضغطة: المنتجات والمخزون بيتحدثوا لوحدهم، والزبون يتابع أوردره، والطلبات الجديدة بتتأكد على واتساب.", isNew: true },
+    { k: ["bothstores"], ic: "🔗", t: "Shopify و EasyOrders مع بعض", d: "كل باقة فيها ربط متجر واحد. مع الميزة دي تربط متجرك على Shopify ومتجرك على EasyOrders في نفس الوقت، والمساعد يرد من منتجات الاتنين ويتابع أوردراتهم.", isNew: true },
     { k: ["files"], ic: "📄", t: "ملفات PDF و Word و Excel", d: "ارفع الكتالوج أو قايمة الأسعار زي ما هي، والمساعد يقراها ويرد منها." },
     { k: ["styles"], ic: "🎨", t: "20 شكل للشات وأي لون", d: "اختار الشكل اللي يناسب براندك. الشات بيتبع الوضع الفاتح والداكن بتاع موقعك، والزبون يقدر يسحبه لأي جنب." },
     { k: [], ic: "🧠", t: "أسئلة مقترحة من داتاك", d: "أزرار أسئلة جاهزة تحت أول رسالة، بتتعمل من داتا متجرك عشان الزبون يبدأ بسرعة." },

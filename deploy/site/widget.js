@@ -576,7 +576,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   // Light / dark:
   //  - on a website: the chat follows the website itself (its dark/light class or data-theme, otherwise how dark its
   //    background is) and switches live when the website switches. data-theme="light" or "dark" on the script tag forces one.
-  //  - chat link page: the visitor's saved choice (sun/moon button), otherwise the device setting.
+  //  - chat link page: the visitor's saved choice (sun/moon button), otherwise light.
   //  - dashboard preview: ?theme= and live messages from the dashboard.
   var darkMq = window.matchMedia && matchMedia("(prefers-color-scheme: dark)");
   var FORCED = (me.getAttribute("data-theme") || "").toLowerCase();
@@ -636,8 +636,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   }
   if (FORCED) setDark(FORCED === "dark");
   else if (PREVIEW || MODE === "page") {
-    var theme0 = savedTheme(); setDark(theme0 ? theme0 === "dark" : !!(darkMq && darkMq.matches));
-    if (darkMq && darkMq.addEventListener) darkMq.addEventListener("change", function (e) { if (!savedTheme()) setDark(e.matches); });
+    setDark(savedTheme() === "dark");   // the saved choice (or the dashboard's ?theme=), otherwise light
   }
   else followHost();
   w.innerHTML =
