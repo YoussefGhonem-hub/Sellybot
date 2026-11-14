@@ -160,18 +160,47 @@
   .pl{position:relative;display:flex;flex-direction:column;gap:4px;animation:fadeUp .45s both;transition:transform .25s,box-shadow .25s;overflow:hidden}
   .pl:hover{transform:translateY(-4px);box-shadow:var(--lift)}
   .pl.cur{border:2px solid var(--brand)}
-  .pl .pr{font-size:28px;font-weight:700;letter-spacing:-.5px}
+  .pl{padding:20px 18px 18px;border-radius:20px}
+  .pl.feat:not(.cur){border-color:color-mix(in srgb,var(--brand) 55%,var(--line))}
+  .pl.feat:after{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .pl-top{display:flex;align-items:flex-start;gap:10px;justify-content:space-between}
+  .pl-top h3{margin:0;font-size:19px}
+  .pl .pr{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin:14px 0 4px;padding-bottom:14px;border-bottom:1px dashed var(--line)}
+  .pl .pr b{font-size:34px;line-height:1;letter-spacing:-.5px}
   .pl .pr small{font-size:13px;color:var(--muted);font-weight:500}
-  .pl .pr s{font-size:15px;color:var(--muted);font-weight:400;margin-inline-start:6px}
-  .pl .tagx{position:absolute;top:12px;left:12px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#e8394a,#ff6b5c)}
+  .pl .pr s{font-size:15px;color:var(--muted);font-weight:400}
+  .pl .tagx{flex:none;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#e8394a,#ff6b5c);white-space:nowrap}
+  .soon-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);background:var(--soft);border:1px dashed var(--line);border-radius:12px;padding:8px 10px;margin:0 0 12px}
+  .soon{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#7a5cff,#a58bff);white-space:nowrap}
+  .per.locked{cursor:not-allowed;border-style:dashed;background:var(--soft);opacity:.75}
+  .per.locked:hover{transform:none}
+  .per.locked .pp{font-size:16px;opacity:.7}
+  .per.locked .soon{position:absolute;top:-10px;left:8px}
   .pl .tagf{background:linear-gradient(135deg,var(--brand),var(--brand2))}
   .pl ul{list-style:none;padding:0;margin:6px 0 12px;font-size:13.5px}
   .pl li{display:flex;gap:8px;align-items:center;padding:3px 0}
   .pl li .fic{flex:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--card))}
   .pl li .fic svg{width:14px;height:14px}
   .pl .btn{margin-top:auto;text-align:center;text-decoration:none}
-  .pl .est{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;margin:6px 0}
-  .pl .est b{font-size:18px}
+  .pl .est{display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--brand) 7%,var(--soft));border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:13px;margin:10px 0 6px}
+  .pl .est .ei{font-size:22px}
+  .pl .est b{font-size:20px}
+  .pl .est small{display:block;font-size:11.5px;color:var(--muted)}
+  .new-tag{display:inline-block;vertical-align:middle;font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:999px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));margin-inline-start:4px}
+  .co-lock{margin-top:8px;font-size:13px;padding:9px 12px;border-radius:12px;background:var(--soft);border:1px dashed var(--line)}
+  .co-lock a{font-weight:700}
+  .co-box .seg{max-width:520px}
+  /* ordering from the chat (its own copy of the list styles, so it works without the order-confirmation box) */
+  .co-box{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+  .co-box .oc-warn{margin:8px 0 0;padding:8px 12px;border-radius:10px;background:#fff1d6;color:#8a5200;font-size:13px;line-height:1.6}
+  .co-box .oc-list{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .co-box .oc-row{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);font-size:13.5px}
+  .co-box .oc-row:first-child{border-top:0}
+  .co-box .oc-row small{grid-column:1/-1;color:var(--muted);font-size:12px}
+  .co-box .oc-st{font-size:12.5px;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--soft);border:1px solid var(--line)}
+  .co-box .oc-st.confirmed{background:#e6f6ec;color:#1f7a45;border-color:transparent}
+  .co-box .oc-st.failed{background:#fff1d6;color:#8a5200;border-color:transparent}
+  .co-box .oc-empty{padding:12px;color:var(--muted);font-size:13px;text-align:center}
   .sup-grid{display:grid;grid-template-columns:380px 1fr;gap:14px;align-items:start}
   @media (max-width:860px){.sup-grid{grid-template-columns:1fr}}
   .tk{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);margin-bottom:8px;cursor:pointer;transition:border-color .2s,transform .2s;animation:fadeUp .35s both}
@@ -852,9 +881,10 @@
           <ol class="steps shop-steps">
             <li><b>افتح Dev Dashboard بتاع Shopify</b><span>ادخل على <a href="https://dev.shopify.com/dashboard/" target="_blank" rel="noopener" class="ltr">dev.shopify.com/dashboard</a> بنفس حساب متجرك.</span></li>
             <li><b>اعمل تطبيق جديد</b><span>دوس <b style="display:inline">Create app</b> وسمّيه <span class="kbd">Sellybot</span>. ده مش برنامج ولا كود: ده "إذن دخول" بتديه لـ Sellybot عشان يقرا داتا متجرك.</span></li>
-            <li><b>اختار الصلاحيات (قراية بس)</b><span>في إعدادات النسخة (Version) حط دول في خانة <b style="display:inline">Scopes</b>:
-              <span class="scope-box"><code class="ltr" id="scopeText">read_products,read_inventory,read_orders</code><button type="button" class="btn ghost sm" id="copyScopes">نسخ</button></span>
-              <small class="scope-why"><span class="ltr">read_products</span>: المنتجات والأسعار · <span class="ltr">read_inventory</span>: الكمية المتاحة · <span class="ltr">read_orders</span>: حالة الأوردرات (لو مش عايز تتبع الأوردرات شيلها)</small></span></li>
+            <li><b>اختار الصلاحيات</b><span>في إعدادات النسخة (Version) حط دول في خانة <b style="display:inline">Scopes</b>:
+              <span class="scope-box"><code class="ltr" id="scopeText">read_products,read_inventory,read_orders,write_orders,write_draft_orders</code><button type="button" class="btn ghost sm" id="copyScopes">نسخ</button></span>
+              <small class="scope-why"><span class="ltr">read_products</span>: المنتجات والأسعار · <span class="ltr">read_inventory</span>: الكمية المتاحة · <span class="ltr">read_orders</span>: حالة الأوردرات · <span class="ltr">write_orders</span>: إلغاء الأوردر لما الزبون يرفضه على واتساب (لو مش هتستخدم تأكيد الطلبات شيلها) · <span class="ltr">write_draft_orders</span>: الزبون يطلب من الشات على طول (لو مش هتستخدم الطلب من الشات شيلها)</small></span></li>
+            <li><b>اسمح ببيانات الزبون</b><span>في صفحة التطبيق افتح <b style="display:inline">API access requests</b> ← <b style="display:inline">Protected customer data</b>، اطلب الوصول واختار <b style="display:inline">Name</b> و<b style="display:inline">Email</b> و<b style="display:inline">Phone</b> و<b style="display:inline">Address</b>. من غيرها Shopify بيخفي موبايل الزبون، فتتبع الأوردرات وتأكيدها على واتساب مش هيشتغلوا.</span></li>
             <li><b>احفظ وركّبه على متجرك</b><span>دوس <b style="display:inline">Release</b> عشان تحفظ النسخة، وبعدين <b style="display:inline">Install</b> واختار متجرك ووافق.</span></li>
             <li><b>انسخ المفاتيح وحطها هنا</b><span>من <b style="display:inline">Settings</b> بتاع التطبيق انسخ <b style="display:inline">Client ID</b> و<b style="display:inline">Client secret</b>.</span></li>
           </ol>
@@ -888,6 +918,21 @@
           <div class="feat-list" id="shopFeats"></div>
           <label class="toggle" id="ordersRow"><input type="checkbox" id="ordersToggle"><span class="tg" aria-hidden="true"></span>
             <span><b>تتبع الأوردرات في الشات</b><small id="ordersHint">الزبون يسأل عن أوردره ويعرف حالته بعد ما يأكد رقم الأوردر والإيميل أو الموبايل.</small></span></label>
+          <div class="oc-box co-box">
+            <label class="toggle"><input type="checkbox" id="coToggle"><span class="tg" aria-hidden="true"></span>
+              <span><b>🛒 الطلب من الشات <span class="new-tag">جديد</span></b><small>الزبون يطلب من جوه الشات من غير ما يفتح الموقع: المساعد يسأله عن اختيارات المنتج (المقاس، اللون…) والكمية وعنوانه وطريقة الشحن، Shopify يحسب الإجمالي، والزبون يأكد برقمه على واتساب، والأوردر ينزل عندك في Shopify.</small></span></label>
+            <div class="co-lock" id="coLock" hidden></div>
+            <div id="coOpts" hidden>
+              <div class="hint" style="margin:8px 0 6px">طريقة الدفع اللي الزبون يختار منها:</div>
+              <div class="seg" id="coPay" role="tablist">
+                <button type="button" data-v="cod">💵 كاش عند الاستلام</button>
+                <button type="button" data-v="card">💳 أونلاين (لينك دفع)</button>
+                <button type="button" data-v="both">الاتنين</button>
+              </div>
+              <div class="oc-warn" id="coWarn" hidden></div>
+              <div class="oc-list" id="coList"></div>
+            </div>
+          </div>
         </div>
         <p class="hint" id="shopUpgrade" hidden>عايز المساعد يعرف الكمية بالظبط ويرد على "الأوردر بتاعي فين؟"؟ <a href="#" id="shopUpgradeLink">اعمل ربط كامل</a>.</p>
         <div class="row" style="margin-top:10px">
@@ -1435,14 +1480,14 @@
       var cur = me.plan && me.plan.id === p.id, d = p.discount;
       var msgs = Math.floor(p.messages.small * plansData.units.small / per);
       var label = d ? (d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "وفّر " + fmt(d.value) + " ج.م")) : "";
-      return '<div class="card pl' + (cur ? " cur" : "") + '" style="animation-delay:' + (i * 0.07) + 's">' +
-        (d ? '<span class="tagx">🔥 ' + esc(label) + '</span>' : p.isFeatured ? '<span class="tagx tagf">⭐ الأكثر طلبًا</span>' : '') +
-        '<h3>' + esc(p.name) + (cur ? ' <span class="st-pill answered">باقتك</span>' : '') + '</h3><div class="hint">' + esc(p.description) + '</div>' +
-        '<div class="pr">' + fmt(p.finalPrice) + ' <small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' + (d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
-        '<div class="est">💬 حوالي <b>' + fmt(msgs) + '</b> رسالة في الشهر لمتجرك</div>' +
-        '<div class="hint" style="margin:6px 0 2px">' + (p.periods || []).filter(function (q) { return q.months > 1; }).map(function (q) {
-          return monthsAr(q.months) + ' <b style="color:var(--ink)">' + fmt(q.total) + '</b>' + (q.pct ? ' <span style="color:var(--ok)">(-' + fmt(q.pct) + '%)</span>' : ''); }).join(" · ") + '</div>' +
+      var maxPct = Math.max.apply(null, (p.periods || []).map(function (q) { return q.pct || 0; }).concat([0]));
+      return '<div class="card pl' + (cur ? " cur" : "") + (p.isFeatured ? " feat" : "") + '" style="animation-delay:' + (i * 0.07) + 's">' +
+        '<div class="pl-top"><div><h3>' + esc(p.name) + '</h3><div class="hint">' + esc(p.description) + '</div></div>' +
+          (cur ? '<span class="st-pill answered">باقتك</span>' : d ? '<span class="tagx">🔥 ' + esc(label) + '</span>' : p.isFeatured ? '<span class="tagx tagf">⭐ الأكثر طلبًا</span>' : '') + '</div>' +
+        '<div class="pr"><b>' + fmt(p.finalPrice) + '</b><small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' + (d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
+        '<div class="est"><span class="ei">💬</span><div><b>' + fmt(msgs) + '</b> رسالة في الشهر<small>تقريبًا، محسوبة على داتا متجرك</small></div></div>' +
         '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
+        (maxPct > 0 ? '<div class="soon-row">🔒 اشتراك 4 و 6 شهور وسنة بخصم لحد ' + fmt(maxPct) + '% <span class="soon">قريبًا</span></div>' : '') +
         '<button type="button" class="btn' + (cur ? " ghost" : "") + '" data-req="' + p.id + '">' + (cur ? "🔁 جدّد الباقة" : "📨 اطلب الباقة") + '</button></div>';
     }).join("") : '<div class="card hint">مفيش باقات متاحة دلوقتي. كلّمنا على واتساب.</div>';
     $("plGrid").querySelectorAll("[data-req]").forEach(function (b) { b.onclick = function () { openRequest(+b.dataset.req); }; });
@@ -1527,12 +1572,15 @@
     $("rqPlanName").textContent = rq.plan.name;
     fillPayFields();
     $("rqPeriods").innerHTML = rq.plan.periods.map(function (q) {
+      if (q.soon) return '<button type="button" class="per locked" disabled aria-disabled="true" title="هيكون متاح قريب"><span class="soon">قريبًا</span>' +
+        '<b>' + monthsAr(q.months) + '</b><div class="pp">🔒</div><small>' + (q.pct ? "بخصم " + fmt(q.pct) + "%" : "") + '</small></button>';
       return '<button type="button" class="per" role="radio" data-m="' + q.months + '">' + (q.pct ? '<span class="off">وفّر ' + fmt(q.pct) + '%</span>' : '') +
         '<b>' + monthsAr(q.months) + '</b><div class="pp">' + fmt(q.total) + ' <small style="display:inline">ج.م</small></div>' +
         '<small>' + (q.months > 1 ? "≈ " + fmt(q.perMonth) + " ج.م في الشهر" : "بتتجدد كل شهر") + '</small></button>';
     }).join("");
-    $("rqPeriods").querySelectorAll(".per").forEach(function (b) { b.onclick = function () { pickPeriod(+b.dataset.m); }; });
-    pickPeriod(rq.plan.periods.some(function (q) { return q.months === rq.months; }) ? rq.months : 1);
+    $("rqPeriods").querySelectorAll(".per:not(.locked)").forEach(function (b) { b.onclick = function () { pickPeriod(+b.dataset.m); }; });
+    var openQs = rq.plan.periods.filter(function (q) { return !q.soon; });
+    pickPeriod(openQs.some(function (q) { return q.months === rq.months; }) ? rq.months : (openQs[0] ? openQs[0].months : 1));
     $("reqForm").hidden = false; $("reqForm").scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function pickPeriod(m) {
@@ -1791,6 +1839,7 @@
         $("ordersHint").textContent = sh.ordersAvailable
           ? "الزبون يسأل عن أوردره ويعرف حالته بعد ما يأكد رقم الأوردر والإيميل أو الموبايل."
           : "محتاج صلاحية read_orders: ضيفها في Scopes، اعمل Release ووافق عليها في متجرك، وبعدين اربط تاني.";
+        loadCo();
       }
     } else {
       // suggest the Shopify domain from the domains the owner already added
@@ -1822,6 +1871,58 @@
     try { await api("api/knowledge.ashx?action=shopify-orders", { method: "POST", json: { enabled: want } }); await refreshMe(); toast(want ? "تتبع الأوردرات اتفعّل ✅" : "تتبع الأوردرات اتقفل"); }
     catch (err) { t.checked = !want; setMsg("shopMsg", err.message); }
   };
+  // ---------- ordering from the chat ----------
+  var co = null;
+  var CO_STATUS = { placed: "✅ اتعمل في Shopify", awaiting_payment: "💳 مستني الدفع", failed: "⚠️ محتاج تبص عليه" };
+  async function loadCo() {
+    try { co = await api("api/chatorders.ashx"); } catch (e) { return; }
+    renderCo();
+  }
+  function renderCo() {
+    if (!co) return;
+    var locked = !!co.locked;
+    $("coToggle").checked = !!co.enabled && !locked; $("coToggle").disabled = locked && !co.enabled;
+    $("coOpts").hidden = !co.enabled || locked;
+    $("coLock").hidden = !locked;
+    if (locked) {
+      $("coLock").textContent = "";
+      var t = document.createElement("span");
+      t.textContent = "🔒 الطلب من الشات متاح من باقة «" + (co.locked.name || "أعلى") + "». ";
+      var a = document.createElement("a"); a.href = "#plan"; a.textContent = "رقّي باقتك ←";
+      a.onclick = function (e) { e.preventDefault(); if (co.locked.id && typeof upgradeTo === "function") upgradeTo(co.locked.id); else go("plan"); };
+      $("coLock").appendChild(t); $("coLock").appendChild(a);
+    }
+    document.querySelectorAll("#coPay button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === (co.pay || "cod")); });
+    var warn = [];
+    if (co.missing && co.missing.length) warn.push("⚠️ التطبيق ناقصه صلاحية " + co.missing.join(" و ") + ". ضيفها في Scopes واعمل Release ووافق عليها، وبعدين اربط تاني.");
+    if (co.enabled && !co.whatsapp) warn.push("⚠️ واتساب المتجر مش مربوط، فمش هنقدر نبعت للزبون كود تأكيد. الطلبات هتنزل عندك بعلامة «رقم غير مؤكد». اربط الواتساب من صفحته.");
+    $("coWarn").hidden = !warn.length; $("coWarn").textContent = warn.join("\n"); $("coWarn").style.whiteSpace = "pre-line";
+    var list = $("coList"); list.textContent = "";
+    var rows = co.recent || [];
+    if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = "لسه مفيش طلبات من الشات. أول طلب هيظهر هنا وفي Shopify."; list.appendChild(e); return; }
+    rows.forEach(function (r) {
+      var row = document.createElement("div"); row.className = "oc-row";
+      var b = document.createElement("b"); b.className = "ltr"; b.textContent = r.order || "—";
+      var who = document.createElement("span"); who.textContent = [r.customer, r.total, r.channel === "whatsapp" ? "واتساب" : "الموقع"].filter(Boolean).join(" · ");
+      var st = document.createElement("span"); st.className = "oc-st " + (r.status === "placed" ? "confirmed" : r.status === "failed" ? "failed" : "pending"); st.textContent = CO_STATUS[r.status] || r.status;
+      var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "");
+      row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
+    });
+  }
+  async function saveCo(enabled, pay) {
+    setMsg("shopMsg", "");
+    try { co = await api("api/chatorders.ashx", { method: "POST", json: { enabled: enabled, pay: pay } }); renderCo(); return true; }
+    catch (err) { setMsg("shopMsg", err.message); renderCo(); return false; }
+  }
+  $("coToggle").onchange = async function () {
+    var want = this.checked; this.disabled = true;
+    if (await saveCo(want, (co && co.pay) || "cod")) toast(want ? "الطلب من الشات اتفعّل 🛒" : "الطلب من الشات اتقفل");
+    this.disabled = false;
+  };
+  document.querySelectorAll("#coPay button").forEach(function (b) {
+    b.onclick = async function () { if (b.classList.contains("on")) return; if (await saveCo(true, b.dataset.v)) toast("اتحفظ ✓"); };
+  });
+
   async function shopCall(action, body, btn, busyText) {
     var old = btn.innerHTML; btn.classList.add("loading-txt"); btn.textContent = busyText; setMsg("shopMsg", "");
     try {

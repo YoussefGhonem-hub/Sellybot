@@ -17,6 +17,17 @@
   var PREVIEW = qs.get("preview") === "1";                          // dashboard preview: style/color come from the link
   if (PREVIEW && qs.get("view") === "bubble") MODE = "bubble";
   var API = BASE + "api/chat.ashx?store=" + encodeURIComponent(STORE);
+  // this visitor's chat session (kept per store): ordering from the chat remembers the cart between messages and visits
+  var SID = (function () {
+    var key = "sb-sid-" + STORE, v = null;
+    try { v = localStorage.getItem(key); } catch (e) {}
+    if (!v || !/^[A-Za-z0-9_-]{16,64}$/.test(v)) {
+      var a = new Uint8Array(16); (window.crypto || window.msCrypto).getRandomValues(a);
+      v = Array.prototype.map.call(a, function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+      try { localStorage.setItem(key, v); } catch (e) {}
+    }
+    return v;
+  })();
 
   var cfg = { name: "", botName: "", welcome: null, style: "bear", color: "#e8774a" };
   var history = [], busy = false, opened = false, storeMissing = false;
@@ -785,7 +796,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     addMe(q); history.push({ role: "user", content: q });
     var bot = addBot(), tw = typer(bot.bubble, function () { talk(bot, true); });
     try {
-      var r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-12) }) });
+      var r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-12), sid: SID }) });
       if (!r.ok) { var e = new Error("http"); e.status = r.status; throw e; }
       if ((r.headers.get("content-type") || "").indexOf("text/event-stream") !== -1 && r.body) {
         var reader = r.body.getReader(), dec = new TextDecoder(), buf = "", evt = "";

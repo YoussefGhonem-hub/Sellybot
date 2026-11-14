@@ -97,12 +97,14 @@ namespace RiwaqChat
 
                 // ---- read the conversation ----
                 ArrayList incoming;
+                string chatSid = null;   // the widget's chat session (ordering from the chat keeps its cart per session)
                 try
                 {
                     var input = Web.Body(req, 20000);
                     object m;
                     if (!input.TryGetValue("messages", out m) || !(m is ArrayList)) throw new Exception();
                     incoming = (ArrayList)m;
+                    object sidVal; if (input.TryGetValue("sid", out sidVal)) chatSid = ChatOrders.WebSid(sidVal as string);
                 }
                 catch { Web.Error(res, 400, "bad_request"); return; }
 
@@ -130,11 +132,15 @@ namespace RiwaqChat
                 if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
                 StoreIndex idx = null;
                 string system = store == null ? Claude.LegacyPrompt() : Claude.StorePrompt(conn, store, out idx);
+                var sysBlocks = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
+                // ordering from the chat: its instructions + this chat's order so far, after the cached prompt
+                var octx = store == null ? null : ChatOrders.ForChannel(conn, store, chatSid, Web.Ip(req));
+                if (octx != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
                 var parameters = new MessageCreateParams
                 {
                     Model = Claude.Model,
                     MaxTokens = maxTokens,
-                    System = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } },
+                    System = sysBlocks,
                     Messages = messages,
                 };
 
@@ -148,11 +154,11 @@ namespace RiwaqChat
 
                 // ---- big store (search) and/or order tracking (Shopify): let Claude use its tools, then send the answer ----
                 bool orderTool = store != null && store.ShopifyOrders && ShopifyAdmin.For(store) != null;
-                if (Claude.UseSearch(idx) || orderTool)
+                if (Claude.UseSearch(idx) || orderTool || octx != null)
                 {
                     try
                     {
-                        var u = await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, Web.Ip(req));
+                        var u = await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, Web.Ip(req), octx);
                         inTok = u.In; cacheRead = u.CacheRead; cacheWrite = u.CacheWrite; outTok = u.Out;
                         string answer = string.IsNullOrWhiteSpace(u.Text) ? Fallback : u.Text;
                         for (int i = 0; i < answer.Length; i += 60) Send(res, answer.Substring(i, Math.Min(60, answer.Length - i)));
@@ -215,11 +221,14 @@ namespace RiwaqChat
             string system = Claude.StorePrompt(conn, store, out idx);
             var sys = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
             if (!string.IsNullOrEmpty(channelNote)) sys.Add(new TextBlockParam { Text = channelNote });
+            // WhatsApp ("wa:<chat>"): the chat is the customer's own number, so ordering needs no extra code
+            var octx = ip != null && ip.StartsWith("wa:") ? ChatOrders.ForChannel(conn, store, ip, ip) : null;
+            if (octx != null) sys.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
             var parameters = new MessageCreateParams { Model = Claude.Model, MaxTokens = maxTokens, System = sys, Messages = messages };
 
             bool orderTool = store.ShopifyOrders && ShopifyAdmin.For(store) != null;
-            if (Claude.UseSearch(idx) || orderTool)
-                return await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, ip);
+            if (Claude.UseSearch(idx) || orderTool || octx != null)
+                return await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, ip, octx);
 
             Message resp = await Claude.Client().Messages.Create(parameters);
             var r = new LoopResult { In = resp.Usage.InputTokens, CacheRead = resp.Usage.CacheReadInputTokens ?? 0, CacheWrite = resp.Usage.CacheCreationInputTokens ?? 0, Out = resp.Usage.OutputTokens };
@@ -231,9 +240,10 @@ namespace RiwaqChat
 
         // Up to 3 tool rounds (data search and/or order lookup), then the answer.
         // Thinking and tool calls are echoed back unchanged, as the API requires.
-        static async Task<LoopResult> ToolLoop(MessageCreateParams first, List<MessageParam> conversation, StoreIndex idx, StoreInfo orderStore, string ip)
+        static async Task<LoopResult> ToolLoop(MessageCreateParams first, List<MessageParam> conversation, StoreIndex idx, StoreInfo orderStore, string ip, OrderCtx octx = null)
         {
             var tools = new List<ToolUnion>();
+            if (octx != null) foreach (var t in ChatOrders.Tools(octx)) tools.Add(t);
             if (idx != null) tools.Add(SearchTool());
             if (orderStore != null) tools.Add(new Tool
             {
@@ -252,7 +262,7 @@ namespace RiwaqChat
             });
             var result = new LoopResult();
             var msgs = new List<MessageParam>(conversation);
-            const int maxRounds = 4; // up to 3 tool rounds + the final answer
+            int maxRounds = octx != null ? 5 : 4; // up to 3 tool rounds (4 while ordering) + the final answer
             for (int round = 0; round < maxRounds; round++)
             {
                 bool last = round == maxRounds - 1;
@@ -284,6 +294,7 @@ namespace RiwaqChat
                         assistant.Add(new ToolUseBlockParam { ID = tu.ID, Name = tu.Name, Input = tu.Input });
                         string found;
                         if (tu.Name == Claude.SearchToolName && idx != null) found = Search.Run(idx, Arg(tu, "query"));
+                        else if (octx != null && ChatOrders.ToolNames.Contains(tu.Name)) found = await ChatOrders.Run(tu.Name, tu.Input, octx);
                         else if (tu.Name == ShopifyAdmin.OrderToolName && orderStore != null)
                         {
                             try { found = await ShopifyAdmin.LookupOrder(orderStore, ip, Arg(tu, "order_number"), Arg(tu, "contact")); }

@@ -178,6 +178,123 @@
   .wa-float .bubble{background:var(--card);color:var(--ink);border:1px solid var(--line);padding:8px 14px;border-radius:14px;font-size:14px;box-shadow:var(--shadow);opacity:0;transform:translateX(-8px);transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap}
   .wa-float:hover .bubble,.wa-float.peek .bubble{opacity:1;transform:none}
   @media (max-width:520px){.wa-float .bubble{display:none}}
+
+  /* periods that are coming soon */
+  .seg button.soon-b{cursor:not-allowed;opacity:.55;display:inline-flex;flex-direction:column;align-items:center;line-height:1.25}
+  .seg button.soon-b i{font-style:normal;font-size:10px;font-weight:700;color:#7a5cff}
+  [data-theme=dark] .seg button.soon-b i{color:#b4a2ff}
+  .soon-card{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,color-mix(in srgb,#7a5cff 10%,var(--card)),var(--card));border:1px dashed color-mix(in srgb,#7a5cff 45%,var(--line));border-radius:22px;padding:20px 22px;box-shadow:var(--shadow)}
+  .soon-card .soon-ic{font-size:38px;animation:floatY 3.5s ease-in-out infinite}
+  .soon-card .grow{flex:1;min-width:0}
+  .soon-card b{font-size:18px}
+  .soon-card p{margin:4px 0 0;color:var(--muted);font-size:14.5px}
+  .soon-tag{font-style:normal;display:inline-block;vertical-align:middle;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#7a5cff,#a58bff);margin-inline-start:6px}
+  section.blk#periodsBlk{margin-top:40px}
+
+  /* all features */
+  .feat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  @media (max-width:960px){.feat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .fcard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s}
+  .fcard:hover{transform:translateY(-5px);box-shadow:var(--lift);border-color:color-mix(in srgb,var(--brand) 40%,var(--line))}
+  .fcard.hot{border-color:color-mix(in srgb,var(--brand) 55%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--brand) 8%,var(--card)),var(--card) 55%)}
+  .fcard .f-ic{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-size:24px;background:color-mix(in srgb,var(--brand) 13%,var(--card));margin-bottom:6px;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+  .fcard:hover .f-ic{transform:rotate(-8deg) scale(1.08)}
+  .fcard h3{margin:0;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .fcard p{margin:0;color:var(--muted);font-size:14.5px;flex:1}
+  .f-new{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .f-plan{align-self:flex-start;margin-top:8px;font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--ink)}
+  .f-plan.all{color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--card));border-color:transparent}
+
+  /* swipe dots (phones only) + bottom bar (phones only) */
+  .dots{display:none}
+  .m-bar{display:none}
+
+  /* ================= phones ================= */
+  @media (max-width:700px){
+    body{font-size:15px;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+    .nav-in{height:58px;padding:0 14px;gap:8px}
+    .logo b{font-size:19px}
+    .nav .btn.ghost{padding:8px 12px;font-size:13.5px}
+    .icon-btn{width:36px;height:36px}
+    .hero{padding:34px 16px 6px}
+    .eyebrow{font-size:12.5px;padding:5px 12px}
+    .hero h1{font-size:30px;margin:14px auto 10px}
+    .hero h1 br{display:none}
+    .hero p{font-size:15px}
+    /* feature chips: one swipeable line */
+    .chip-row{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;margin:18px -16px 0;padding:2px 16px;scroll-snap-type:x proximity}
+    .chip-row::-webkit-scrollbar{display:none}
+    .chip{flex:none;font-size:13px;scroll-snap-align:start}
+    /* pickers: full-width segmented controls */
+    .picker{margin-top:22px;gap:8px;width:100%}
+    .picker .q{font-size:13.5px}
+    .seg{display:flex;width:100%}
+    .seg button{flex:1;padding:9px 4px;font-size:14px}
+    /* plans: a horizontal carousel, one card at a time */
+    .plans{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:18px 7vw 8px;margin-top:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .plans::-webkit-scrollbar{display:none}
+    .plan{flex:0 0 86vw;max-width:380px;scroll-snap-align:center;padding:24px 18px 18px;border-radius:24px}
+    .plan:hover{transform:none}
+    .plan.feat{scale:1}
+    .plan h3{font-size:20px}
+    .price{margin-top:14px}
+    .price b{font-size:40px}
+    .msgs-box{padding:12px 14px;margin-top:12px}
+    .msgs-box .n{font-size:23px}
+    .plan ul{font-size:14px;gap:7px;margin-bottom:18px}
+    .skel{flex:0 0 86vw;height:420px}
+    .dots{display:flex;justify-content:center;gap:7px;margin:12px 0 0}
+    .dots button{width:8px;height:8px;border-radius:999px;border:0;padding:0;background:var(--line);cursor:pointer;transition:width .3s,background .3s}
+    .dots button.on{width:24px;background:var(--brand)}
+    .note{padding:0 16px;font-size:13px}
+    section.blk{margin-top:56px;padding:0 14px}
+    section.blk#periodsBlk{margin-top:28px}
+    .soon-card{padding:16px;gap:12px;border-radius:18px}
+    .soon-card .soon-ic{font-size:30px}
+    .soon-card b{font-size:16px}
+    .soon-card p{font-size:13.5px}
+    .blk h2{font-size:24px}
+    .feat-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+    .fcard{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;padding:14px;border-radius:18px}
+    .fcard .f-ic{grid-row:span 3;width:42px;height:42px;font-size:21px;margin:0}
+    .fcard h3{font-size:15.5px}
+    .fcard p{font-size:13.5px}
+    .fcard .f-plan{margin-top:4px;font-size:12px;justify-self:start}
+    .fcard:hover{transform:none}
+    .blk .lead{font-size:14.5px;margin-bottom:20px}
+    /* comparison table -> one card per data size */
+    .tbl{background:none;border:0;box-shadow:none;border-radius:0}
+    .tbl table{min-width:0}
+    .tbl thead{display:none}
+    .tbl tr{display:block;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
+    .tbl td{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border:0;text-align:left}
+    .tbl td:first-child{display:block;text-align:right;padding-bottom:9px;margin-bottom:4px;border-bottom:1px dashed var(--line)}
+    .tbl td[data-label]:before{content:attr(data-label);color:var(--muted);font-size:13.5px}
+    .step{padding:18px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center}
+    .step .num{margin:0;grid-row:span 2;width:40px;height:40px;font-size:18px}
+    .step h3{font-size:16.5px;margin:0}
+    .step p{font-size:14px;grid-column:2}
+    .faq details{padding:2px 16px;border-radius:16px}
+    .faq summary{font-size:15px;padding:13px 0}
+    .cta{margin-top:56px;padding:0 14px}
+    .cta-in{padding:30px 18px;border-radius:24px}
+    .cta-in .btn{width:100%;font-size:16px}
+    footer{margin-top:44px;padding:20px 16px 26px;justify-content:center;text-align:center}
+    footer .space{display:none}
+    /* bottom bar replaces the floating WhatsApp button */
+    .wa-float{display:none}
+    .m-bar{display:flex;align-items:center;gap:10px;position:fixed;inset:auto 0 0 0;z-index:60;padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+      background:color-mix(in srgb,var(--card) 90%,transparent);backdrop-filter:blur(14px);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.08);animation:fadeUp .5s .6s both}
+    .m-bar .btn{flex:1;padding:12px;font-size:15.5px}
+    .m-wa{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--wa);color:#fff;box-shadow:0 6px 16px rgba(37,211,102,.35)}
+    .m-wa svg{width:26px;height:26px}
+  }
+  @media (max-width:360px){
+    .hero h1{font-size:26px}
+    .nav .btn.ghost{display:none}
+    .seg button{font-size:13px}
+  }
 </style>
 </head>
 <body>
@@ -203,8 +320,8 @@
 <section class="hero">
   <div class="blob a"></div><div class="blob b"></div><div class="blob c"></div>
   <span class="eyebrow"><i></i>جرّبه مجانًا قبل ما تشترك</span>
-  <h1>مساعد ذكي بيرد على زباينك <span class="grad">24 ساعة</span><br>بأسعار تناسب متجرك</h1>
-  <p>Sellybot بيقرا داتا متجرك (منتجات، أسعار، شحن، سياسات) ويجاوب زباينك على طول بأسلوبك. اختار باقتك، واشترك في دقيقة على واتساب.</p>
+  <h1>مساعد ذكي بيرد على زباينك <span class="grad">24 ساعة</span> <br>بأسعار تناسب متجرك</h1>
+  <p>Sellybot بيقرا داتا متجرك (منتجات، أسعار، شحن، سياسات) ويجاوب زباينك على طول بأسلوبك. اختار باقتك، واشترك من لوحة متجرك في دقيقة.</p>
   <div class="chip-row"><span class="chip">⚡ ردود فورية</span><span class="chip">🛍️ Shopify وأي موقع</span><span class="chip">📄 PDF و Word و Excel</span><span class="chip">🌙 فاتح وداكن</span></div>
 
   <div class="picker">
@@ -215,20 +332,29 @@
     <span class="seg-hint" id="segHint"></span>
   </div>
   <div class="picker" style="margin-top:14px">
-    <span class="q">هتدفع لمدة قد إيه؟ (كل ما المدة تطول توفّر أكتر)</span>
+    <span class="q">مدة الاشتراك</span>
     <div class="seg" id="perSeg"><span class="ind" id="perInd"></span>
-      <button data-m="1" class="on">شهر</button><button data-m="4">4 شهور</button><button data-m="6">6 شهور</button><button data-m="12">سنة</button>
+      <button data-m="1" class="on">شهر</button><button data-m="4" class="soon-b" disabled title="قريبًا">4 شهور<i>قريبًا</i></button><button data-m="6" class="soon-b" disabled title="قريبًا">6 شهور<i>قريبًا</i></button><button data-m="12" class="soon-b" disabled title="قريبًا">سنة<i>قريبًا</i></button>
     </div>
   </div>
 </section>
 
 <div class="plans" id="plans"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+<div class="dots" id="planDots" aria-hidden="false"></div>
 <p class="note" id="plansNote"></p>
 
 <section class="blk reveal" id="periodsBlk">
-  <h2>كل الباقات والمدد</h2>
-  <p class="lead">الرصيد بيتجدد كل شهر طول مدة الاشتراك. عدد الرسايل تقريبي: المتجر الصغير (نصوص وكام ملف) والمتجر الكبير أو المربوط بـ Shopify.</p>
-  <div class="tbl"><div class="wrap"><table id="perTable"><thead><tr><th>الباقة</th><th>المدة</th><th>السعر</th><th>في الشهر</th><th>رسايل المدة (متجر صغير)</th><th>رسايل المدة (متجر كبير / Shopify)</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="soon-card">
+    <span class="soon-ic">🎁</span>
+    <div class="grow"><b>اشتراك 4 و 6 شهور وسنة <i class="soon-tag">قريبًا</i></b>
+      <p id="soonTxt">قريب هتقدر تدفع لمدة أطول وتوفّر. دلوقتي الاشتراك شهري ومن غير أي عقود.</p></div>
+  </div>
+</section>
+
+<section class="blk reveal" id="features">
+  <h2>كل اللي Sellybot بيعمله لمتجرك</h2>
+  <p class="lead">من أول سؤال لحد ما الأوردر ينزل عندك. وجنب كل ميزة الباقة اللي فيها.</p>
+  <div class="feat-grid" id="featGrid"></div>
 </section>
 
 <section class="blk reveal" id="how">
@@ -240,11 +366,11 @@
 
 <section class="blk reveal">
   <h2>تشترك إزاي؟</h2>
-  <p class="lead">من غير كروت ولا دفع أونلاين. كلّمنا، ادفع بالطريقة اللي تريحك، وباقتك تشتغل في نفس اليوم.</p>
+  <p class="lead">من غير كروت ولا دفع أونلاين. حوّل بالطريقة اللي تريحك، وباقتك تشتغل في نفس اليوم.</p>
   <div class="steps">
     <div class="step"><div class="num">١</div><h3>اعمل حسابك</h3><p>سجّل متجرك مجانًا، ارفع داتاتك، وجرّب المساعد بنفسك.</p></div>
-    <div class="step"><div class="num">٢</div><h3>كلّمنا على واتساب</h3><p>اختار باقتك ودوس "اشترك"، هتفتح محادثة واتساب جاهزة باسم الباقة.</p></div>
-    <div class="step"><div class="num">٣</div><h3>ادفع وابدأ</h3><p>كاش، InstaPay أو فودافون كاش. بنفعّل الباقة على حسابك على طول.</p></div>
+    <div class="step"><div class="num">٢</div><h3>حوّل واطلب الباقة</h3><p>من تاب «باقتي» اختار الباقة، حوّل المبلغ (InstaPay أو أورانج كاش) واكتب رقم العملية.</p></div>
+    <div class="step"><div class="num">٣</div><h3>بنفعّلها على طول</h3><p>بنراجع التحويل ونفعّل الباقة على حسابك، وهتشوف رصيدك في لوحتك.</p></div>
   </div>
 </section>
 
@@ -256,7 +382,7 @@
     <details><summary>يعني إيه داتا صغيرة ومتوسطة وكبيرة؟</summary><p>صغيرة: صفحات قليلة (زي قايمة منتجات وأسعار وسياسة الشحن). متوسطة: حوالي 15 صفحة. كبيرة: كتالوج كبير بمئات المنتجات. لوحة متجرك بتوريك حجم داتاتك بالظبط.</p></details>
     <details><summary>أقدر أجرّب قبل ما أدفع؟</summary><p>أيوه. أي حساب جديد بياخد رصيد تجربة مجاني تقدر تختبر بيه المساعد على داتا متجرك.</p></details>
     <details><summary>بيشتغل مع Shopify؟</summary><p>أيوه، ومع أي موقع تاني. سطر كود واحد بيتحط في موقعك، وكمان تقدر تربط متجر Shopify عشان المنتجات والأسعار تتسحب لوحدها.</p></details>
-    <details><summary>بدفع إزاي؟</summary><p>مفيش دفع أونلاين. بتدفع كاش أو InstaPay أو فودافون كاش أو تحويل بنكي، وإحنا بنفعّل الباقة على حسابك.</p></details>
+    <details><summary>بدفع إزاي؟</summary><p>مفيش دفع أونلاين. بتدفع كاش أو InstaPay أو أورانج كاش، وإحنا بنفعّل الباقة على حسابك.</p></details>
     <details><summary>أقدر أغيّر الباقة أو ألغيها؟</summary><p>طبعًا، في أي وقت. كلّمنا على واتساب ونغيّرها لك.</p></details>
   </div>
 </section>
@@ -273,6 +399,12 @@
   <span>© <span id="yr"></span> Sellybot</span><span class="space"></span>
   <a href="dashboard.html">لوحة المتجر</a><a href="#faq">أسئلة شائعة</a><a id="footWa" target="_blank" rel="noopener">واتساب</a>
 </footer>
+
+<!-- phones: a bottom bar instead of the floating button -->
+<div class="m-bar" id="mBar">
+  <a class="btn" href="dashboard.html">🚀 ابدأ مجانًا</a>
+  <a class="m-wa" id="mWa" target="_blank" rel="noopener" aria-label="كلّمنا على واتساب"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.300-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></a>
+</div>
 
 <a class="wa-float" id="waFloat" target="_blank" rel="noopener" aria-label="كلّمنا على واتساب">
   <span class="circle"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></span>
@@ -300,7 +432,7 @@
 
   function setWa() {
     var general = waLink("أهلاً 👋 عايز أعرف أكتر عن باقات Sellybot");
-    $("waFloat").href = general; $("ctaWa").href = general; $("footWa").href = general;
+    $("waFloat").href = general; $("ctaWa").href = general; $("footWa").href = general; $("mWa").href = general;
   }
   setWa();
   setTimeout(function () { $("waFloat").classList.add("peek"); setTimeout(function () { $("waFloat").classList.remove("peek"); }, 4000); }, 2500);
@@ -320,7 +452,7 @@
   function qOf(p) { return (p.periods || []).filter(function (q) { return q.months === period; })[0] || { total: p.finalPrice, price: p.priceEgp, save: 0, perMonth: p.finalPrice }; }
   function movePer() { var on = document.querySelector("#perSeg button.on"); var ind = $("perInd"); ind.style.width = on.offsetWidth + "px"; ind.style.left = on.offsetLeft + "px"; }
   $("perSeg").onclick = function (e) {
-    var b = e.target.closest("button"); if (!b) return;
+    var b = e.target.closest("button"); if (!b || b.disabled) return;
     period = +b.dataset.m; this.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); });
     movePer(); if (data) render();
   };
@@ -361,19 +493,13 @@
         '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
         '<a class="btn' + (p.isFeatured ? "" : " ghost") + '" href="dashboard.html">ابدأ واشترك من لوحتك</a></div>';
     }).join("");
-    $("plansNote").textContent = "الأسعار بالجنيه المصري. اعمل حساب لمتجرك، واطلب الباقة من تاب \"باقتي\" بعد ما تحوّل (InstaPay أو فودافون كاش)، ومن غير أي عقود.";
-    // every plan x every period
-    var U2 = data.units;
-    $("perTable").querySelector("tbody").innerHTML = plans.map(function (p) {
-      return (p.periods || []).map(function (q, j) {
-        var units = p.messages.small * U2.small * q.months;   // total units for the period (monthly quota x months)
-        return "<tr>" + (j === 0 ? "<td rowspan='" + p.periods.length + "'><b>" + esc(p.name) + "</b></td>" : "") +
-          "<td>" + (q.months === 1 ? "شهر" : q.months === 12 ? "سنة" : fmt(q.months) + " شهور") + "</td>" +
-          "<td><b>" + fmt(q.total) + " ج.م</b>" + (q.pct ? "<div style='font-size:12px;color:var(--ok)'>وفّر " + fmt(q.pct) + "%</div>" : "") + "</td>" +
-          "<td>" + fmt(q.perMonth) + " ج.م</td>" +
-          "<td>~" + fmt(Math.round(units / U2.small / 100) * 100) + "</td><td>~" + fmt(Math.round(units / U2.large / 50) * 50) + "</td></tr>";
-      }).join("");
-    }).join("");
+    $("plansNote").textContent = "الأسعار بالجنيه المصري. اعمل حساب لمتجرك، واطلب الباقة من تاب \"باقتي\" بعد ما تحوّل (InstaPay أو أورانج كاش)، ومن غير أي عقود.";
+    // longer periods are coming soon: tell visitors how much they'll save
+    var maxPct = 0;
+    plans.forEach(function (p) { (p.periods || []).forEach(function (q) { if (q.pct > maxPct) maxPct = q.pct; }); });
+    if (maxPct > 0) $("soonTxt").textContent = "قريب هتقدر تدفع لمدة أطول وتوفّر لحد " + fmt(maxPct) + "% من السعر. دلوقتي الاشتراك شهري ومن غير أي عقود.";
+    buildDots();
+    renderFeats();
     observe();
     updateMsgs(false);
     tickEnds(); if (!render.ticking) { render.ticking = true; setInterval(tickEnds, 1000); }
@@ -381,8 +507,60 @@
     var U = data.units, rows = [["صغيرة", "small"], ["متوسطة", "medium"], ["كبيرة", "large"]];
     $("cmpTable").querySelector("thead tr").innerHTML = "<th>حجم داتا المتجر</th>" + plans.map(function (p) { return "<th>" + esc(p.name) + "</th>"; }).join("");
     $("cmpTable").querySelector("tbody").innerHTML = rows.map(function (r) {
-      return "<tr><td><b>" + r[0] + "</b><div style='font-size:12.5px;color:var(--muted)'>" + HINT[r[1]] + "</div></td>" + plans.map(function (p) { return "<td>~" + fmt(p.messages[r[1]]) + " رسالة</td>"; }).join("") + "</tr>";
+      return "<tr><td><b>" + r[0] + "</b><div style='font-size:12.5px;color:var(--muted)'>" + HINT[r[1]] + "</div></td>" + plans.map(function (p) { return "<td data-label='" + esc(p.name) + "'>~" + fmt(p.messages[r[1]]) + " رسالة</td>"; }).join("") + "</tr>";
     }).join("");
+  }
+
+  // ---------- everything Sellybot does, with the plan that includes each feature ----------
+  var FEATS = [
+    { k: [], ic: "💬", t: "مساعد ذكي بيرد 24 ساعة", d: "بيقرا داتا متجرك ويرد على زباينك بأسلوبك وبلهجتهم، في ثانية وفي أي وقت." },
+    { k: ["chatorders"], ic: "🛒", t: "الطلب من الشات", d: "الزبون يطلب من جوه الشات من غير ما يفتح الموقع: المقاس واللون والكمية والعنوان والشحن، والأوردر ينزل عندك في Shopify على طول.", isNew: true, hot: true },
+    { k: ["whatsapp"], ic: "📲", t: "المساعد على واتساب", d: "نفس المساعد بيرد على رقم واتساب متجرك كمان. بتربطه بمسح QR في دقيقة.", isNew: true },
+    { k: ["shopify", "whatsapp"], ic: "✅", t: "تأكيد الطلبات على واتساب", d: "كل طلب جديد يوصل للزبون رسالة بتفاصيله: يرد 1 يأكد أو 2 يلغي، والإلغاء بيتنفذ في Shopify لوحده.", isNew: true },
+    { k: ["shopify"], ic: "📦", t: "تتبع الأوردرات", d: "الزبون يسأل «طلبي فين؟» ويعرف حالة الشحن ولينك التتبع، بعد ما يأكد رقم الأوردر." },
+    { k: ["shopify"], ic: "🛍️", t: "ربط Shopify", d: "المنتجات والأسعار والكميات المتاحة بتتسحب من متجرك وبتتحدث لوحدها." },
+    { k: ["files"], ic: "📄", t: "ملفات PDF و Word و Excel", d: "ارفع الكتالوج أو قايمة الأسعار زي ما هي، والمساعد يقراها ويرد منها." },
+    { k: ["styles"], ic: "🎨", t: "20 شكل للشات وأي لون", d: "اختار الشكل اللي يناسب براندك. الشات بيتبع الوضع الفاتح والداكن بتاع موقعك، والزبون يقدر يسحبه لأي جنب." },
+    { k: [], ic: "🧠", t: "أسئلة مقترحة من داتاك", d: "أزرار أسئلة جاهزة تحت أول رسالة، بتتعمل من داتا متجرك عشان الزبون يبدأ بسرعة." },
+    { k: [], ic: "➕", t: "رصيد إضافي وقت ما تحتاج", d: "لو الرسايل قربت تخلص قبل آخر الشهر، اطلب رصيد زيادة من لوحتك." },
+    { k: [], ic: "🎧", t: "دعم فني حقيقي", d: "تذاكر دعم من لوحة متجرك، وتواصل مباشر معانا على واتساب." }
+  ];
+  function featPlan(keys) {
+    var plans = data.plans, gates = data.gates || {}, rank = -1;
+    keys.forEach(function (k) {
+      var id = +(gates[k] || 0); if (!id) return;
+      var i = plans.findIndex(function (p) { return p.id === id; });
+      if (i < 0) i = 0;   // a minimum that's hidden now: from the first paid plan
+      if (i > rank) rank = i;
+    });
+    return rank < 0 ? null : plans[rank];
+  }
+  function renderFeats() {
+    if (!data || !data.plans.length) return;
+    $("featGrid").innerHTML = FEATS.map(function (f, i) {
+      var p = featPlan(f.k);
+      return '<div class="fcard' + (f.hot ? " hot" : "") + '"><span class="f-ic">' + f.ic + '</span>' +
+        '<h3>' + esc(f.t) + (f.isNew ? '<span class="f-new">جديد</span>' : '') + '</h3><p>' + esc(f.d) + '</p>' +
+        (p ? '<span class="f-plan">💎 من باقة ' + esc(p.name) + '</span>' : '<span class="f-plan all">✓ في كل الباقات</span>') + '</div>';
+    }).join("");
+  }
+
+  // phones: the plans are a swipeable row with dots under it
+  function buildDots() {
+    var row = $("plans"), dots = $("planDots"); if (!dots) return;
+    var cards = row.querySelectorAll(".plan");
+    dots.innerHTML = Array.prototype.map.call(cards, function (c, i) { return '<button type="button" aria-label="باقة ' + (i + 1) + '"></button>'; }).join("");
+    function sync() {
+      var mid = row.getBoundingClientRect().left + row.clientWidth / 2, best = 0, bestD = 1e9;
+      cards.forEach(function (c, i) { var r = c.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - mid); if (d < bestD) { bestD = d; best = i; } });
+      dots.querySelectorAll("button").forEach(function (b, i) { b.classList.toggle("on", i === best); });
+    }
+    dots.querySelectorAll("button").forEach(function (b, i) { b.onclick = function () { cards[i].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" }); }; });
+    row.onscroll = function () { cancelAnimationFrame(sync.f); sync.f = requestAnimationFrame(sync); };
+    // start on the featured plan
+    var f = row.querySelector(".plan.feat");
+    if (f && matchMedia("(max-width:700px)").matches) row.scrollLeft += f.getBoundingClientRect().left + f.offsetWidth / 2 - (row.getBoundingClientRect().left + row.clientWidth / 2);
+    sync();
   }
 
   function tickEnds() {

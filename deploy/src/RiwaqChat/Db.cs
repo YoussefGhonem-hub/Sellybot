@@ -21,6 +21,8 @@ namespace RiwaqChat
         public string WaInstance, WaToken, WaHookKey, WaNumber, WaStatus;
         public bool WaEnabled;
         public DateTime? WaLastAt;
+        public bool CoOn;                  // ordering from the chat (Shopify draft orders)
+        public string CoPay;               // "cod", "card" or "both"
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -190,6 +192,8 @@ namespace RiwaqChat
                 WaStatus = r["WaStatus"] as string,
                 WaEnabled = r["WaEnabled"] is bool && (bool)r["WaEnabled"],
                 WaLastAt = r["WaLastAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["WaLastAt"], DateTimeKind.Utc),
+                CoOn = r["CoOn"] is bool && (bool)r["CoOn"],
+                CoPay = r["CoPay"] as string ?? "cod",
                 Suggestions = r["Suggestions"] as string,
                 MonthlyTokenLimit = (int)r["MonthlyTokenLimit"],
                 DataVersion = (int)r["DataVersion"],
@@ -436,6 +440,26 @@ BEGIN
     (N'المتقدمة', N'الأنسب لأغلب المتاجر', N'كل مميزات الأساسية' + NCHAR(10) + N'رسايل أكتر بـ 50%' + NCHAR(10) + N'ربط متجر Shopify' + NCHAR(10) + N'أولوية في الدعم', 1300, 3, 30000000, 30, 1, 2),
     (N'الاحترافية', N'للمتاجر الكبيرة والزحمة', N'كل مميزات المتقدمة' + NCHAR(10) + N'أكبر عدد رسايل' + NCHAR(10) + N'تتبع الأوردرات في الشات' + NCHAR(10) + N'دعم مباشر على واتساب', 1600, 5, 50000000, 30, 0, 3);
   INSERT INTO dbo.Migrations(Name) VALUES ('seed-plans');
+END
+-- ---------- ordering from the chat (Shopify draft orders), one row per order being built in a chat ----------
+IF COL_LENGTH('dbo.Stores', 'CoOn') IS NULL ALTER TABLE dbo.Stores ADD CoOn BIT NOT NULL CONSTRAINT DF_Stores_CoOn DEFAULT 0,
+  CoPay NVARCHAR(10) NOT NULL CONSTRAINT DF_Stores_CoPay DEFAULT 'cod';
+IF OBJECT_ID('dbo.ChatOrders') IS NULL
+BEGIN
+  CREATE TABLE dbo.ChatOrders(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Sid NVARCHAR(110) NOT NULL,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'draft',
+    Items NVARCHAR(MAX) NULL,
+    Name NVARCHAR(120) NULL, Phone NVARCHAR(20) NULL, Province NVARCHAR(60) NULL, ProvinceCode NVARCHAR(5) NULL,
+    City NVARCHAR(80) NULL, Address NVARCHAR(300) NULL,
+    Rates NVARCHAR(MAX) NULL, ShipTitle NVARCHAR(150) NULL, ShipPrice DECIMAL(12,2) NULL, Payment NVARCHAR(10) NULL, Currency NVARCHAR(5) NULL,
+    Subtotal DECIMAL(12,2) NULL, Shipping DECIMAL(12,2) NULL, Discounts DECIMAL(12,2) NULL, Tax DECIMAL(12,2) NULL, Total DECIMAL(12,2) NULL,
+    CodeHash NVARCHAR(100) NULL, CodeExpires DATETIME2 NULL, CodeTries INT NOT NULL DEFAULT 0, CodeSends INT NOT NULL DEFAULT 0,
+    DraftGid NVARCHAR(100) NULL, OrderName NVARCHAR(40) NULL, InvoiceUrl NVARCHAR(500) NULL, Note NVARCHAR(300) NULL, Ip NVARCHAR(60) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_ChatOrders_Sid ON dbo.ChatOrders(StoreId, Sid, Id);
 END";
     }
 }

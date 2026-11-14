@@ -41,7 +41,7 @@ namespace RiwaqChat
             // discount % for paying several months at once ("months:percent")
             { "PeriodDiscounts", "4:5,6:10,12:20" },
             // shown to store owners in the plan request form
-            { "PaymentInfo", "حوّل المبلغ على InstaPay أو فودافون كاش على رقم الواتساب بتاعنا، وبعدين اكتب رقم العملية (أو الرقم اللي حوّلت منه) في الطلب." },
+            { "PaymentInfo", "حوّل المبلغ على InstaPay أو أورانج كاش على رقم الواتساب بتاعنا، وبعدين اكتب رقم العملية (أو الرقم اللي حوّلت منه) في الطلب." },
         };
 
         public static string Get(SqlConnection c, string key)
@@ -159,6 +159,8 @@ namespace RiwaqChat
 
         // ---------- paying for several months at once: 1, 4, 6 or 12 months, with a discount per period ----------
         public static readonly int[] Periods = { 1, 4, 6, 12 };
+        // Periods owners can request right now; the others show as "قريبًا" (coming soon). The super admin can still record any period by hand.
+        public static readonly int[] OpenPeriods = { 1 };
 
         public static Dictionary<int, decimal> PeriodDiscounts(SqlConnection c)
         {
@@ -187,7 +189,8 @@ namespace RiwaqChat
         public static List<Dictionary<string, object>> QuotesJson(SqlConnection c, PlanInfo p)
         {
             return Periods.Select(m => { var q = QuoteFor(c, p, m); return new Dictionary<string, object> {
-                { "months", m }, { "total", q.Total }, { "perMonth", Math.Round(q.Total / m, 0) }, { "pct", q.Pct }, { "price", q.Price }, { "save", q.Discount } }; }).ToList();
+                { "months", m }, { "total", q.Total }, { "perMonth", Math.Round(q.Total / m, 0) }, { "pct", q.Pct }, { "price", q.Price }, { "save", q.Discount },
+                { "soon", !OpenPeriods.Contains(m) } }; }).ToList();
         }
 
         // Starts (or extends) a subscription: history row + the store's plan, end date and monthly limit. Returns the new end date.
@@ -948,6 +951,8 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                         { "whatsapp", wa }, { "wa", Billing.WaNumber(wa) },
                         { "units", new Dictionary<string, object> { { "small", Billing.Units(c, "UnitsSmall") }, { "medium", Billing.Units(c, "UnitsMedium") }, { "large", Billing.Units(c, "UnitsLarge") } } },
                         { "paymentInfo", Billing.Get(c, "PaymentInfo") ?? "" },
+                        // the lowest plan that includes each locked feature (0 = every plan), for the features list on the pricing page
+                        { "gates", PlanGate.Features.ToDictionary(f => f, f => (object)PlanGate.MinPlanId(c, f)).Concat(new[] { new KeyValuePair<string, object>("whatsapp", WaAccount.MinPlanId(c)) }).ToDictionary(kv => kv.Key, kv => kv.Value) },
                     });
                 }
             }
@@ -955,7 +960,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error"); }
         }
 
-        static readonly string[] Methods = { "InstaPay", "فودافون كاش", "تحويل بنكي", "كاش", "تاني" };
+        static readonly string[] Methods = { "InstaPay", "أورانج كاش", "كاش" };
 
         static void Mine(HttpContext ctx, SqlConnection c, bool post)
         {
@@ -1020,6 +1025,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 p = planId.HasValue ? Billing.Plan(c, planId.Value) : null;
                 if (p == null || !p.IsActive) { Web.Error(res, 404, "no_plan", "الباقة دي مش متاحة دلوقتي."); return; }
                 if (!Billing.Periods.Contains(months)) { Web.Error(res, 400, "bad_months", "اختار مدة: شهر أو 4 أو 6 أو 12 شهر."); return; }
+                if (!Billing.OpenPeriods.Contains(months)) { Web.Error(res, 400, "period_soon", "الاشتراك لأكتر من شهر هيكون متاح قريب. اختار شهر دلوقتي."); return; }
                 q = Billing.QuoteFor(c, p, months);
             }
             string method = (Web.Str(b, "method", 40) ?? "").Trim();
