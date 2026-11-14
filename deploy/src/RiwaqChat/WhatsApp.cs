@@ -50,6 +50,8 @@ namespace RiwaqChat
         static async Task<JsonElement> Call(HttpMethod method, string path, string token, object body = null, string idem = null)
         {
             var req = new HttpRequestMessage(method, Base + path);
+            // Wapilot reads either header (Authorization wins). Both go out, so a host that strips the non-standard "token" header still authenticates.
+            req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
             req.Headers.TryAddWithoutValidation("token", token);
             req.Headers.TryAddWithoutValidation("Accept", "application/json");
             if (idem != null) req.Headers.TryAddWithoutValidation("Idempotency-Key", idem);
@@ -66,6 +68,8 @@ namespace RiwaqChat
                 int status = (int)resp.StatusCode;
                 if (status >= 200 && status < 300 && parsed) return root;
                 string code = parsed ? WaJson.S(root, "code") : null, msg = parsed ? WaJson.S(root, "message") : null;
+                if (!parsed) msg = System.Text.RegularExpressions.Regex.Replace(text ?? "", @"<[^>]*>|\s+", " ").Trim();   // not Wapilot's JSON (a proxy page?)
+                if (status >= 400) Log.Error(new Exception("Wapilot " + method + " " + path.Split('/')[0] + " -> " + status + " " + code + " " + (msg ?? "")));
                 throw Friendly(status, code, msg);
             }
         }
@@ -74,7 +78,12 @@ namespace RiwaqChat
         {
             code = code ?? "";
             string text;
-            if (status == 401 || code == "TOKEN_INVALID") text = "الـ API token مش صح أو انتهى. اعمل token جديد من Wapilot (Create token) والصقه هنا.";
+            if (status == 401 || code == "TOKEN_INVALID")
+            {
+                var why = (msg ?? "").Trim(); if (why.Length > 120) why = why.Substring(0, 120);
+                text = "الـ API token مش صح أو انتهى. اعمل token جديد من Wapilot (Create token) والصقه هنا."
+                     + " [" + status + (code.Length > 0 ? " " + code : "") + (why.Length > 0 ? ": " + why : "") + "]";
+            }
             else if (code == "INSTANCE_FORBIDDEN") text = "الرقم ده مش تبع الـ token بتاعك على Wapilot.";
             else if (code == "INSTANCE_NOT_READY") text = "رقم الواتساب مش متصل على Wapilot دلوقتي. افتح Wapilot واتأكد إن الرقم متصل (WORKING).";
             else if (status == 404) text = "Wapilot مالقاش الرقم ده. اتأكد إنه لسه موجود في حسابك.";
