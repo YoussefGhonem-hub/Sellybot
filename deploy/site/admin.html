@@ -235,7 +235,9 @@
   .plan .p-stat span{font-size:11.5px;color:var(--muted)}
   .plan ul{list-style:none;margin:6px 0;padding:0;font-size:13.5px}
   .plan li{padding:3px 0;display:flex;gap:7px}
-  .plan li:before{content:"✓";color:var(--ok);font-weight:700}
+  .plan li{align-items:center}
+  .plan li .fic{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--card))}
+  .plan li .fic svg{width:13px;height:13px}
   .ribbon{position:absolute;top:14px;left:-34px;transform:rotate(-45deg);background:linear-gradient(135deg,#e8394a,#ff6b5c);color:#fff;font-size:12px;font-weight:700;padding:3px 40px;box-shadow:0 4px 10px rgba(232,57,74,.35)}
   .feat-tag{position:absolute;top:12px;right:12px}
   .plan .p-actions{margin-top:auto;display:flex;gap:8px;padding-top:10px}
@@ -534,6 +536,7 @@
 <div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
 
+<script src="feat-icons.js"></script>
 <script>
 (function () {
   "use strict";
@@ -1044,7 +1047,7 @@
         (p.discount && p.discount.endsAt ? '<div class="hint">⏰ الخصم لحد ' + date(p.discount.endsAt) + '</div>' : '') +
         '<div class="p-stats"><div class="p-stat"><b>' + fmt(p.usdBudget, 2) + '$</b><span>رصيد Claude</span></div><div class="p-stat"><b class="' + (p.minProfitEgp >= 0 ? "up" : "down") + '">' + money(p.minProfitEgp) + '</b><span>أقل ربح لو استهلك كله</span></div>' +
           '<div class="p-stat"><b>~' + fmt(p.messages.small) + '</b><span>رسالة · داتا صغيرة</span></div><div class="p-stat"><b>~' + fmt(p.messages.large) + '</b><span>رسالة · داتا كبيرة</span></div></div>' +
-        '<ul>' + p.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' +
+        '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
         '<div class="p-actions"><button class="btn sm" data-edit="' + p.id + '">✏️ تعديل</button><button class="btn ghost sm" data-disc="' + p.id + '">🏷️ خصم</button><span class="space"></span><button class="btn danger sm" data-del="' + p.id + '">حذف</button></div></div>';
     }).join("") + '<div class="card plan add anim" id="addPlan" style="animation-delay:' + (state.plans.length * 0.07) + 's"><span class="plus">＋</span><b>باقة جديدة</b></div>';
     $("addPlan").onclick = function () { planForm(null); };

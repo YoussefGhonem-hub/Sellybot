@@ -166,7 +166,9 @@
   .pl .tagx{position:absolute;top:12px;left:12px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#e8394a,#ff6b5c)}
   .pl .tagf{background:linear-gradient(135deg,var(--brand),var(--brand2))}
   .pl ul{list-style:none;padding:0;margin:6px 0 12px;font-size:13.5px}
-  .pl li:before{content:"✓ ";color:var(--ok);font-weight:700}
+  .pl li{display:flex;gap:8px;align-items:center;padding:3px 0}
+  .pl li .fic{flex:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--card))}
+  .pl li .fic svg{width:14px;height:14px}
   .pl .btn{margin-top:auto;text-align:center;text-decoration:none}
   .pl .est{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;margin:6px 0}
   .pl .est b{font-size:18px}
@@ -1087,6 +1089,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="feat-icons.js"></script>
 <script src="widget.js?v=20261112145445" data-art-only="1"></script>
 <script>
 (function () {
@@ -1332,7 +1335,7 @@
         '<div class="est">💬 حوالي <b>' + fmt(msgs) + '</b> رسالة في الشهر لمتجرك</div>' +
         '<div class="hint" style="margin:6px 0 2px">' + (p.periods || []).filter(function (q) { return q.months > 1; }).map(function (q) {
           return monthsAr(q.months) + ' <b style="color:var(--ink)">' + fmt(q.total) + '</b>' + (q.pct ? ' <span style="color:var(--ok)">(-' + fmt(q.pct) + '%)</span>' : ''); }).join(" · ") + '</div>' +
-        '<ul>' + p.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' +
+        '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
         '<button type="button" class="btn' + (cur ? " ghost" : "") + '" data-req="' + p.id + '">' + (cur ? "🔁 جدّد الباقة" : "📨 اطلب الباقة") + '</button></div>';
     }).join("") : '<div class="card hint">مفيش باقات متاحة دلوقتي. كلّمنا على واتساب.</div>';
     $("plGrid").querySelectorAll("[data-req]").forEach(function (b) { b.onclick = function () { openRequest(+b.dataset.req); }; });

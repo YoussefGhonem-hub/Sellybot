@@ -126,7 +126,8 @@
   .per-day{font-size:13px;color:var(--muted);margin-bottom:12px}
   .plan ul{list-style:none;padding:0;margin:8px 0 22px;display:flex;flex-direction:column;gap:9px;font-size:15px}
   .plan li{display:flex;gap:10px;align-items:flex-start}
-  .plan li:before{content:"";flex:none;width:20px;height:20px;margin-top:3px;border-radius:50%;background:color-mix(in srgb,var(--ok) 16%,var(--card)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232e9d5b' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/12px no-repeat}
+  .plan li .fic{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--card))}
+  .plan li .fic svg{width:15px;height:15px}
   .plan .btn{margin-top:auto;width:100%;padding:13px}
   .skel{height:440px;border-radius:26px;background:linear-gradient(90deg,var(--soft) 25%,var(--line) 50%,var(--soft) 75%);background-size:200% 100%;animation:sheen 1.2s infinite reverse}
 
@@ -278,6 +279,7 @@
   <span class="bubble">عندك سؤال؟ كلّمنا 👋</span>
 </a>
 
+<script src="feat-icons.js"></script>
 <script>
 (function () {
   "use strict";
@@ -356,7 +358,7 @@
         '<div class="ends" data-ends="' + (d && d.endsAt ? d.endsAt : "") + '"></div>' +
         '<div class="msgs-box"><span class="em">💬</span><div><span class="n" data-v="0">0</span> <span class="l">رسالة في الشهر تقريبًا</span></div></div>' +
         '<div class="per-day"></div>' +
-        '<ul>' + p.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' +
+        '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
         '<a class="btn' + (p.isFeatured ? "" : " ghost") + '" href="dashboard.html">ابدأ واشترك من لوحتك</a></div>';
     }).join("");
     $("plansNote").textContent = "الأسعار بالجنيه المصري. اعمل حساب لمتجرك، واطلب الباقة من تاب \"باقتي\" بعد ما تحوّل (InstaPay أو فودافون كاش)، ومن غير أي عقود.";
