@@ -478,9 +478,18 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM dbo.Plans)
     INSERT INTO dbo.Plans(Name, Description, Features, PriceEgp, UsdBudget, TokenLimit, DurationDays, IsFeatured, SortOrder) VALUES
     (N'الأساسية', N'بداية مثالية لمتجر صغير', N'مساعد ذكي بيرد 24 ساعة' + NCHAR(10) + N'رفع ملفات PDF و Word و Excel' + NCHAR(10) + N'20 شكل للشات وأي لون' + NCHAR(10) + N'دعم فني', 1000, 2, 20000000, 30, 0, 1),
-    (N'المتقدمة', N'الأنسب لأغلب المتاجر', N'كل مميزات الأساسية' + NCHAR(10) + N'رسايل أكتر بـ 50%' + NCHAR(10) + N'ربط متجر Shopify' + NCHAR(10) + N'أولوية في الدعم', 1300, 3, 30000000, 30, 1, 2),
-    (N'الاحترافية', N'للمتاجر الكبيرة والزحمة', N'كل مميزات المتقدمة' + NCHAR(10) + N'أكبر عدد رسايل' + NCHAR(10) + N'تتبع الأوردرات في الشات' + NCHAR(10) + N'دعم مباشر على واتساب', 1600, 5, 50000000, 30, 0, 3);
+    (N'المتقدمة', N'الأنسب لأغلب المتاجر', N'كل مميزات الأساسية' + NCHAR(10) + N'رسايل أكتر بـ 50%' + NCHAR(10) + N'ربط متجر Shopify أو EasyOrders' + NCHAR(10) + N'أولوية في الدعم', 1300, 3, 30000000, 30, 1, 2),
+    (N'الاحترافية', N'للمتاجر الكبيرة والزحمة', N'كل مميزات المتقدمة' + NCHAR(10) + N'أكبر عدد رسايل' + NCHAR(10) + N'تتبع الأوردرات في الشات' + NCHAR(10) + N'ربط Shopify و EasyOrders مع بعض' + NCHAR(10) + N'دعم مباشر على واتساب', 1600, 5, 50000000, 30, 0, 3);
   INSERT INTO dbo.Migrations(Name) VALUES ('seed-plans');
+END
+-- The starting plans' lines learn about EasyOrders (once). A plan whose text the admin already changed is left alone.
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'plans-easyorders')
+BEGIN
+  UPDATE dbo.Plans SET Features = REPLACE(Features, N'ربط متجر Shopify', N'ربط متجر Shopify أو EasyOrders')
+    WHERE Features LIKE N'%ربط متجر Shopify%' AND Features NOT LIKE N'%EasyOrders%';
+  UPDATE dbo.Plans SET Features = REPLACE(Features, N'تتبع الأوردرات في الشات', N'تتبع الأوردرات في الشات' + NCHAR(10) + N'ربط Shopify و EasyOrders مع بعض')
+    WHERE Name = N'الاحترافية' AND Features LIKE N'%تتبع الأوردرات في الشات%' AND Features NOT LIKE N'%EasyOrders%';
+  INSERT INTO dbo.Migrations(Name) VALUES ('plans-easyorders');
 END
 -- ---------- ordering from the chat (Shopify draft orders), one row per order being built in a chat ----------
 IF COL_LENGTH('dbo.Stores', 'CoOn') IS NULL ALTER TABLE dbo.Stores ADD CoOn BIT NOT NULL CONSTRAINT DF_Stores_CoOn DEFAULT 0,

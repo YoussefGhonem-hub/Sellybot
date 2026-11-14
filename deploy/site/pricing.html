@@ -201,6 +201,8 @@
   .fcard:hover{transform:translateY(-5px);box-shadow:var(--lift);border-color:color-mix(in srgb,var(--brand) 40%,var(--line))}
   .fcard.hot{border-color:color-mix(in srgb,var(--brand) 55%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--brand) 8%,var(--card)),var(--card) 55%)}
   .fcard .f-ic{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-size:24px;background:color-mix(in srgb,var(--brand) 13%,var(--card));margin-bottom:6px;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+  .fcard .f-ic:has(.f-logo){background:#fff;border:1px solid var(--line)}
+  .f-logo{width:60%;height:60%;object-fit:contain}
   .fcard:hover .f-ic{transform:rotate(-8deg) scale(1.08)}
   .fcard h3{margin:0;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .fcard p{margin:0;color:var(--muted);font-size:14.5px;flex:1}
@@ -566,8 +568,8 @@
     { k: ["whatsapp"], ic: "📲", t: "المساعد على واتساب", d: "نفس المساعد بيرد على رقم واتساب متجرك كمان. بتربطه بمسح QR في دقيقة.", isNew: true },
     { k: ["shopify", "whatsapp"], ic: "✅", t: "تأكيد الطلبات على واتساب", d: "كل طلب جديد يوصل للزبون رسالة بتفاصيله: يرد 1 يأكد أو 2 يلغي، والإلغاء بيتنفذ في Shopify لوحده.", isNew: true },
     { k: ["shopify"], ic: "📦", t: "تتبع الأوردرات", d: "الزبون يسأل «طلبي فين؟» ويعرف حالة الشحن ولينك التتبع، بعد ما يأكد رقم الأوردر." },
-    { k: ["shopify"], ic: "🛍️", t: "ربط Shopify", d: "المنتجات والأسعار والكميات المتاحة بتتسحب من متجرك وبتتحدث لوحدها." },
-    { k: ["easyorders"], ic: "🧡", t: "ربط EasyOrders", d: "اربط متجرك على EasyOrders بضغطة: المنتجات والمخزون بيتحدثوا لوحدهم، والزبون يتابع أوردره، والطلبات الجديدة بتتأكد على واتساب.", isNew: true },
+    { k: ["shopify"], ic: '<img class="f-logo" src="logo-shopify.svg" alt="">', t: "ربط Shopify", d: "المنتجات والأسعار والكميات المتاحة بتتسحب من متجرك وبتتحدث لوحدها." },
+    { k: ["easyorders"], ic: '<img class="f-logo" src="logo-easyorders.png" alt="">', t: "ربط EasyOrders", d: "اربط متجرك على EasyOrders بضغطة: المنتجات والمخزون بيتحدثوا لوحدهم، والزبون يتابع أوردره، والطلبات الجديدة بتتأكد على واتساب.", isNew: true },
     { k: ["bothstores"], ic: "🔗", t: "Shopify و EasyOrders مع بعض", d: "كل باقة فيها ربط متجر واحد. مع الميزة دي تربط متجرك على Shopify ومتجرك على EasyOrders في نفس الوقت، والمساعد يرد من منتجات الاتنين ويتابع أوردراتهم.", isNew: true },
     { k: ["files"], ic: "📄", t: "ملفات PDF و Word و Excel", d: "ارفع الكتالوج أو قايمة الأسعار زي ما هي، والمساعد يقراها ويرد منها." },
     { k: ["styles"], ic: "🎨", t: "20 شكل للشات وأي لون", d: "اختار الشكل اللي يناسب براندك. الشات بيتبع الوضع الفاتح والداكن بتاع موقعك، والزبون يقدر يسحبه لأي جنب." },

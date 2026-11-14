@@ -461,20 +461,25 @@
   .src.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 6%,var(--card))}
   .src-ic{width:44px;height:44px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:22px;background:color-mix(in srgb,var(--brand) 12%,var(--card))}
   .src-ic.shop{background:color-mix(in srgb,#95bf47 22%,var(--card))}
-  .src-ic.eo,.shop-logo.eo-logo{background:color-mix(in srgb,#f26b1d 18%,var(--card));color:#f26b1d;font-size:22px}
+  .src-ic.eo,.shop-logo.eo-logo{background:#fff;border:1px solid var(--line)}
+  /* the real platform logos (Shopify, EasyOrders): on a white tile in both themes, or inline next to text */
+  .logo-tile{background:#fff!important;border:1px solid var(--line)}
+  .plogo{display:block;width:64%;height:64%;object-fit:contain}
+  .plogo-i{display:inline-block;width:1.2em;height:1.2em;object-fit:contain;vertical-align:-.25em}
+  .btn .plogo-i{background:#fff;border-radius:6px;padding:2px;width:1.35em;height:1.35em}
   /* EasyOrders: how the link works (live diagram), what the owner gives us, and what each platform offers */
-  .eo-flow{--eo:#f26b1d;--hk:#7c5cff;--wa:#25b862;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1fr);align-items:center;gap:8px;margin:2px 0 16px;padding:18px 14px 16px;border-radius:18px;border:1px solid var(--line);
+  .eo-flow{--eo:#16a34a;--hk:#7c5cff;--wa:#25b862;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1fr);align-items:center;gap:8px;margin:2px 0 16px;padding:18px 14px 16px;border-radius:18px;border:1px solid var(--line);
     background:radial-gradient(90% 120% at 100% 0,color-mix(in srgb,var(--eo) 10%,transparent),transparent 62%),radial-gradient(90% 120% at 0 100%,color-mix(in srgb,var(--wa) 8%,transparent),transparent 62%),var(--soft)}
   .eo-node{display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0}
   .eo-node .ic{width:54px;height:54px;flex:none;border-radius:17px;display:grid;place-items:center;font-size:25px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
-  .eo-node .ic.eo{background:color-mix(in srgb,var(--eo) 16%,var(--card));border-color:color-mix(in srgb,var(--eo) 30%,var(--line))}
+  .eo-node .ic.eo{background:#fff;border-color:color-mix(in srgb,var(--eo) 30%,var(--line))}
   .eo-node.me .ic{width:62px;height:62px;border-radius:19px;padding:0;overflow:hidden;border:2px solid color-mix(in srgb,var(--brand) 45%,var(--line));box-shadow:0 0 0 0 rgba(232,119,74,.45);animation:pulse 2.4s infinite}
   .eo-node.me .ic img{width:100%;height:100%;display:block}
   .eo-node .tx{display:flex;flex-direction:column;gap:1px;min-width:0}
   .eo-node b{font-size:13.5px;line-height:1.35}
   .eo-node small{font-size:11.5px;color:var(--muted);line-height:1.4}
   .eo-link{display:flex;flex-direction:column;gap:14px;min-width:0}
-  .eo-lane{--c:var(--eo);display:flex;flex-direction:column;gap:5px;min-width:0;text-align:center}
+  .eo-lane{--c:var(--brand);display:flex;flex-direction:column;gap:5px;min-width:0;text-align:center}
   .eo-lane.hook{--c:var(--hk)}.eo-lane.cust{--c:var(--wa)}
   .eo-lane .lb{font-size:11.5px;color:var(--muted);line-height:1.4}
   .eo-lane .lb b{display:block;color:var(--ink);font-size:12.5px}
@@ -527,7 +532,7 @@
   .eo-cmp{padding:0;overflow:hidden;margin-bottom:12px}
   .eo-cmp>summary{list-style:none;display:flex;gap:12px;align-items:center;padding:16px 18px;margin:0;color:var(--ink);font-size:inherit}
   .eo-cmp>summary::-webkit-details-marker{display:none}
-  .eo-cmp-ic{width:44px;height:44px;flex:none;border-radius:13px;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,color-mix(in srgb,#f26b1d 24%,var(--card)),color-mix(in srgb,#95bf47 26%,var(--card)))}
+  .eo-cmp-ic{width:44px;height:44px;flex:none;border-radius:13px;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,color-mix(in srgb,#22c55e 22%,var(--card)),color-mix(in srgb,#95bf47 26%,var(--card)))}
   .eo-cmp>summary .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
   .eo-cmp>summary b{font-size:15px}
   .eo-cmp>summary small{font-size:12.5px;color:var(--muted);line-height:1.6}
@@ -535,7 +540,7 @@
   .eo-cmp[open] .eo-chev{transform:rotate(135deg);margin-top:5px}
   .eo-cmp-body{padding:0 18px 18px}
   .eo-score{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
-  .eo-sc{--c:#f26b1d;padding:11px 13px;border-radius:13px;border:1px solid var(--line);background:var(--soft)}
+  .eo-sc{--c:#16a34a;padding:11px 13px;border-radius:13px;border:1px solid var(--line);background:var(--soft)}
   .eo-sc.sh{--c:#6f9e35}
   .eo-sc b{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;font-size:13px}
   .eo-sc b span{white-space:nowrap}
@@ -625,6 +630,7 @@
   .plat-gets .space{flex:1}
   .plat-gets .lk{font-size:12.5px;color:var(--muted);text-decoration:underline;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
   .two.solo{grid-template-columns:minmax(0,1fr)}
+  @media (max-width:560px){#instCode .codepre{white-space:pre-wrap;word-break:break-all}}   /* the whole code visible on a phone */
   .o-sugg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 2px;font-size:12px;color:var(--muted)}
   .o-sugg button{font:12px ui-monospace,Consolas,monospace;padding:4px 10px;border-radius:999px;border:1px dashed color-mix(in srgb,var(--brand) 55%,var(--line));background:color-mix(in srgb,var(--brand) 7%,var(--card));color:var(--ink);cursor:pointer;direction:ltr}
   .both-alt{margin:12px 0 0;font-size:13px;line-height:1.7;opacity:.9}
@@ -1011,12 +1017,12 @@
         <span class="src-count" id="srcFilesCount">0</span>
       </button>
       <button class="src" type="button" role="tab" data-src="shopify" aria-selected="false">
-        <span class="src-ic shop">🛍️</span>
+        <span class="src-ic shop logo-tile"><img class="plogo" src="logo-shopify.svg" alt=""></span>
         <span class="src-txt"><b>متجرك على Shopify</b><small id="srcShopInfo">…</small></span>
         <span class="src-dot" id="srcShopDot" aria-hidden="true"></span>
       </button>
       <button class="src" type="button" role="tab" data-src="easyorders" aria-selected="false">
-        <span class="src-ic eo">🧡</span>
+        <span class="src-ic eo logo-tile"><img class="plogo" src="logo-easyorders.png" alt=""></span>
         <span class="src-txt"><b>متجرك على EasyOrders</b><small id="srcEoInfo">…</small></span>
         <span class="src-dot" id="srcEoDot" aria-hidden="true"></span>
       </button>
@@ -1053,7 +1059,7 @@
     <div class="wa-up" id="lockShop" hidden></div>
     <div class="card shop-card" id="shopCard" style="margin-bottom:12px">
       <div class="shop-head">
-        <span class="shop-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg></span>
+        <span class="shop-logo logo-tile" aria-hidden="true"><img class="plogo" src="logo-shopify.svg" alt=""></span>
         <div style="flex:1;min-width:0"><h3>اربط متجرك على Shopify</h3>
           <p class="sub" style="margin:0">المساعد يقرا منتجاتك وأسعارها والمخزون وسياسات الشحن والاسترجاع من متجرك على طول، فيرد على زباينك بإجابات أدق من غير ما ترفع ملفات. ملفاتك ليها الأولوية دايمًا لو فيها معلومة مختلفة.</p></div>
       </div>
@@ -1162,7 +1168,7 @@
       <div class="msg" id="shopMsg"></div>
     </div>
       <div id="shopDataWrap" hidden>
-        <div class="list-head"><h3>🛍️ الداتا اللي اتسحبت من Shopify</h3><span class="hint" style="margin:0">بتتحدث لوحدها، ومش بتتعدّل من هنا</span></div>
+        <div class="list-head"><h3><img class="plogo-i" src="logo-shopify.svg" alt=""> الداتا اللي اتسحبت من Shopify</h3><span class="hint" style="margin:0">بتتحدث لوحدها، ومش بتتعدّل من هنا</span></div>
         <div id="shopData"></div>
       </div>
     </div>
@@ -1172,13 +1178,13 @@
     <div class="wa-up" id="lockEo" hidden></div>
     <div class="card shop-card" id="eoCard" style="margin-bottom:12px">
       <div class="shop-head">
-        <span class="shop-logo eo-logo" aria-hidden="true">🧡</span>
+        <span class="shop-logo eo-logo" aria-hidden="true"><img class="plogo" src="logo-easyorders.png" alt=""></span>
         <div style="flex:1;min-width:0"><h3>اربط متجرك على EasyOrders</h3>
           <p class="sub" style="margin:0">المساعد يقرا منتجاتك وأسعارها واختياراتها (المقاس، اللون…) والمخزون من متجرك على EasyOrders على طول، ويتابع أوردرات زباينك. ملفاتك ليها الأولوية دايمًا لو فيها معلومة مختلفة.</p></div>
       </div>
 
       <div class="eo-flow" id="eoFlow" role="img" aria-label="إزاي الربط بيشتغل: متجرك على EasyOrders بيتكلم مع المساعد بالـ API Key والـ Webhook، والمساعد بيرد على زبونك في الشات والواتساب">
-        <div class="eo-node"><span class="ic eo" aria-hidden="true">🧡</span><span class="tx"><b>متجرك على EasyOrders</b><small>المنتجات والأوردرات</small></span></div>
+        <div class="eo-node"><span class="ic eo" aria-hidden="true"><img class="plogo" src="logo-easyorders.png" alt=""></span><span class="tx"><b>متجرك على EasyOrders</b><small>المنتجات والأوردرات</small></span></div>
         <div class="eo-link">
           <div class="eo-lane both on" id="eoLaneKey"><span class="lb"><b>🔑 API Key</b>بنقرا منتجاتك ونحدّث حالة الأوردر</span><span class="eo-wire"><i></i><i></i></span><small class="st"></small></div>
           <div class="eo-lane hook on" id="eoLaneHook"><span class="lb"><b>📬 Webhook</b>EasyOrders بتبلّغنا بكل طلب جديد</span><span class="eo-wire"><i></i><i></i></span><small class="st"></small></div>
@@ -1222,7 +1228,7 @@
         </div>
         <div id="eoApp">
           <p class="hint" style="margin:0 0 12px">دوس الزرار، وهتفتحلك صفحة من EasyOrders فيها الصلاحيات اللي محتاجينها (قراءة المنتجات، وقراءة وتعديل حالة الأوردرات). وافق، وارجع هنا هتلاقي الربط شغال. EasyOrders هتبعتلنا الطلبات الجديدة لوحدها.</p>
-          <a class="btn" id="eoInstall" href="#" target="_blank" rel="noopener" style="text-decoration:none">🧡 اربط بـ EasyOrders</a>
+          <a class="btn" id="eoInstall" href="#" target="_blank" rel="noopener" style="text-decoration:none"><img class="plogo-i" src="logo-easyorders.png" alt=""> اربط بـ EasyOrders</a>
           <p class="hint" style="margin:10px 0 0">لو الصفحة دي ماشتغلتش معاك، استخدم «ربط بـ API Key».</p>
         </div>
         <div id="eoKeyBox" hidden>
@@ -1288,11 +1294,11 @@
       </summary>
       <div class="eo-cmp-body">
         <div class="eo-score">
-          <div class="eo-sc"><b><span>🧡 EasyOrders</span><span id="eoScEo"></span></b><div class="eo-bar"><i id="eoBarEo"></i></div></div>
-          <div class="eo-sc sh"><b><span>🛍️ Shopify</span><span id="eoScSh"></span></b><div class="eo-bar"><i id="eoBarSh"></i></div></div>
+          <div class="eo-sc"><b><span><img class="plogo-i" src="logo-easyorders.png" alt=""> EasyOrders</span><span id="eoScEo"></span></b><div class="eo-bar"><i id="eoBarEo"></i></div></div>
+          <div class="eo-sc sh"><b><span><img class="plogo-i" src="logo-shopify.svg" alt=""> Shopify</span><span id="eoScSh"></span></b><div class="eo-bar"><i id="eoBarSh"></i></div></div>
         </div>
         <div class="eo-cmp-t" id="eoCmpT" role="table" aria-label="مقارنة اللي المساعد يقدر يعمله مع EasyOrders ومع Shopify">
-          <div class="eo-cr eo-ch" role="row"><span role="columnheader">الميزة</span><span role="columnheader">🧡 EasyOrders</span><span role="columnheader">🛍️ Shopify</span></div>
+          <div class="eo-cr eo-ch" role="row"><span role="columnheader">الميزة</span><span role="columnheader"><img class="plogo-i" src="logo-easyorders.png" alt=""> EasyOrders</span><span role="columnheader"><img class="plogo-i" src="logo-shopify.svg" alt=""> Shopify</span></div>
         </div>
         <div class="eo-why">
           <span aria-hidden="true">💡</span>
@@ -1307,7 +1313,7 @@
       </div>
     </details>
       <div id="eoDataWrap" hidden>
-        <div class="list-head"><h3>🧡 الداتا اللي اتسحبت من EasyOrders</h3><span class="hint" style="margin:0">بتتحدث لوحدها، ومش بتتعدّل من هنا</span></div>
+        <div class="list-head"><h3><img class="plogo-i" src="logo-easyorders.png" alt=""> الداتا اللي اتسحبت من EasyOrders</h3><span class="hint" style="margin:0">بتتحدث لوحدها، ومش بتتعدّل من هنا</span></div>
         <div id="eoData"></div>
       </div>
     </div>
@@ -1360,11 +1366,11 @@
       <div class="hub-head"><h3>الصورة كاملة</h3><span class="hint" style="margin:0">دوس على أي حاجة عشان تروحلها</span></div>
       <div class="hub" id="hub">
         <span class="hub-cap s">📥 الداتا بتوصل للمساعد منين</span>
-        <button type="button" class="hub-item s r1" data-hub="shopify" style="--c:#6f9e35"><span class="hi-ic" aria-hidden="true">🛍️</span><span class="hi-tx"><b>Shopify</b><small>بلينك متجرك أو ربط كامل · المنتجات والسياسات والأوردرات</small></span><span class="hi-st" id="hubShop"></span></button>
-        <button type="button" class="hub-item s r2" data-hub="easyorders" style="--c:#f26b1d"><span class="hi-ic" aria-hidden="true">🧡</span><span class="hi-tx"><b>EasyOrders</b><small>بضغطة أو بـ API Key · المنتجات والأوردرات وتأكيدها</small></span><span class="hi-st" id="hubEo"></span></button>
+        <button type="button" class="hub-item s r1" data-hub="shopify" style="--c:#6f9e35"><span class="hi-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-shopify.svg" alt=""></span><span class="hi-tx"><b>Shopify</b><small>بلينك متجرك أو ربط كامل · المنتجات والسياسات والأوردرات</small></span><span class="hi-st" id="hubShop"></span></button>
+        <button type="button" class="hub-item s r2" data-hub="easyorders" style="--c:#16a34a"><span class="hi-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-easyorders.png" alt=""></span><span class="hi-tx"><b>EasyOrders</b><small>بضغطة أو بـ API Key · المنتجات والأوردرات وتأكيدها</small></span><span class="hi-st" id="hubEo"></span></button>
         <button type="button" class="hub-item s r3" data-hub="files" style="--c:#e8774a"><span class="hi-ic" aria-hidden="true">📄</span><span class="hi-tx"><b>ملفاتك ونصوصك</b><small>PDF · Word · Excel · CSV، أو نص تكتبه</small></span><span class="hi-st" id="hubFiles"></span></button>
         <span class="eo-lane hub-w s r1" id="hwShop" style="--c:#6f9e35" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
-        <span class="eo-lane hub-w s r2" id="hwEo" style="--c:#f26b1d" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <span class="eo-lane hub-w s r2" id="hwEo" style="--c:#16a34a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
         <span class="eo-lane hub-w s r3" id="hwFiles" style="--c:#e8774a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
         <div class="hub-core"><span class="hub-logo"><img src="sellybot-icon.svg" alt=""></span><span class="tx"><b>المساعد</b><small>بيقرا كل ده ويرد في ثانية، 24 ساعة</small></span></div>
         <span class="eo-lane hub-w o r1" id="hwBubble" style="--c:#e8774a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
@@ -1381,8 +1387,8 @@
       <h3>متجرك على إيه؟</h3>
       <p class="sub">اختار، وهنوريك الخطوات بالظبط.</p>
       <div class="plat" role="tablist" aria-label="متجرك على إيه">
-        <button type="button" role="tab" data-plat="shopify" style="--c:#6f9e35"><span class="pl-ic" aria-hidden="true">🛍️</span><b>Shopify</b><small>الشات + ربط الداتا</small></button>
-        <button type="button" role="tab" data-plat="easyorders" style="--c:#f26b1d"><span class="pl-ic" aria-hidden="true">🧡</span><b>EasyOrders</b><small>الشات + ربط الداتا</small></button>
+        <button type="button" role="tab" data-plat="shopify" style="--c:#6f9e35"><span class="pl-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-shopify.svg" alt=""></span><b>Shopify</b><small>الشات + ربط الداتا</small></button>
+        <button type="button" role="tab" data-plat="easyorders" style="--c:#16a34a"><span class="pl-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-easyorders.png" alt=""></span><b>EasyOrders</b><small>الشات + ربط الداتا</small></button>
         <button type="button" role="tab" data-plat="site" style="--c:#3b82c4"><span class="pl-ic" aria-hidden="true">🌐</span><b>موقع تاني</b><small>WordPress، سلة، زد…</small></button>
         <button type="button" role="tab" data-plat="link" style="--c:#7c5cff"><span class="pl-ic" aria-hidden="true">🔗</span><b>من غير موقع</b><small>لينك تشاركه</small></button>
       </div>
@@ -1430,7 +1436,7 @@
           <li><b>ضيف دومين متجرك هنا</b><span>لينك متجرك على EasyOrders، في خانة الدومينات، عشان الشات يقبل يشتغل عليه.</span></li>
           <li><b>جرّب</b><span>افتح متجرك، هتلاقي الفقاعة في الركن. ممكن تاخد دقيقة لحد ما تظهر.</span></li>
         </ol>
-        <div class="tip" style="margin:14px 0 0"><strong>🧡 الكود بيحط الشات بس</strong><div>عشان المساعد يعرف منتجاتك وأوردراتك ويأكد الطلبات على واتساب، اربط داتا EasyOrders من صفحة الداتا، بضغطة واحدة.</div></div>
+        <div class="tip" style="margin:14px 0 0"><strong><img class="plogo-i" src="logo-easyorders.png" alt=""> الكود بيحط الشات بس</strong><div>عشان المساعد يعرف منتجاتك وأوردراتك ويأكد الطلبات على واتساب، اربط داتا EasyOrders من صفحة الداتا، بضغطة واحدة.</div></div>
       </div>
       <div class="card" data-plat-steps="site" hidden>
         <h3>2. حطه في موقعك</h3>
@@ -1675,7 +1681,8 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var me = null, editingId = null;
-  var ICON = { text: "📝", txt: "📄", pdf: "📕", docx: "📘", xlsx: "📗", shopify: "🛍️", easyorders: "🧡" };
+  var ICON = { text: "📝", txt: "📄", pdf: "📕", docx: "📘", xlsx: "📗", shopify: "🛍️", easyorders: "🟢" };
+  var LOGO = { shopify: "logo-shopify.svg", easyorders: "logo-easyorders.png" };   // synced items show the store's real logo
   var SYNCED = { shopify: true, easyorders: true };   // parts pulled from a store system: view only
   var BASE = location.origin + location.pathname.replace(/dashboard\.html$/, "");
 
@@ -2266,7 +2273,8 @@
 
   function itemRow(it) {
     var row = document.createElement("div"); row.className = "item"; row.tabIndex = 0; row.style.cursor = "pointer";
-    var ic = document.createElement("div"); ic.className = "ic"; ic.textContent = ICON[it.type] || "📄";
+    var ic = document.createElement("div"); ic.className = "ic";
+    if (LOGO[it.type]) { ic.classList.add("logo-tile"); var lgo = document.createElement("img"); lgo.className = "plogo"; lgo.src = LOGO[it.type]; lgo.alt = ""; ic.appendChild(lgo); } else ic.textContent = ICON[it.type] || "📄";
     var meta = document.createElement("div"); meta.className = "meta";
     var t = document.createElement("div"); t.className = "t"; t.textContent = it.title;
     if (!SYNCED[it.type] && vagueName(it.title)) { var bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚠️ غيّر الاسم لاسم أوضح"; t.appendChild(bd); }
@@ -2322,7 +2330,7 @@
           setMsg("edMsg", "🛍️ الجزء ده بيتسحب من متجرك على Shopify وبيتحدث لوحده. عدّل منتجاتك على Shopify ودوس \"حدّث دلوقتي\".", true);
         } else if (it.type === "easyorders") {   // synced from EasyOrders: view only, the same way
           readOnlyEditor(true); $("edTitleLbl").textContent = "داتا EasyOrders";
-          setMsg("edMsg", "🧡 الجزء ده بيتسحب من متجرك على EasyOrders وبيتحدث لوحده. عدّل منتجاتك على EasyOrders ودوس \"حدّث دلوقتي\".", true);
+          setMsg("edMsg", "الجزء ده بيتسحب من متجرك على EasyOrders وبيتحدث لوحده. عدّل منتجاتك على EasyOrders ودوس \"حدّث دلوقتي\".", true);
         }
       } catch (err) { setMsg("edMsg", err.message); }
     }
@@ -2671,9 +2679,9 @@
   ];
   (function () {
     var t = $("eoCmpT"), has = 0;
-    function cell(ok, note, who) {
+    function cell(ok, note, who, logo) {
       var c = document.createElement("span"); c.className = "eo-cell"; c.setAttribute("role", "cell");
-      var pf = document.createElement("span"); pf.className = "pf"; pf.textContent = who; c.appendChild(pf);   // phone layout has no header row
+      var pf = document.createElement("span"); pf.className = "pf"; var lg = document.createElement("img"); lg.className = "plogo-i"; lg.src = logo; lg.alt = ""; pf.appendChild(lg); pf.appendChild(document.createTextNode(" " + who)); c.appendChild(pf);   // phone layout has no header row
       var tag = document.createElement("span"); tag.className = ok ? "eo-y" : "eo-n"; tag.textContent = ok ? "✓ متاح" : "✕ مش متاح"; c.appendChild(tag);
       if (note) { var s = document.createElement("small"); s.textContent = note; c.appendChild(s); }
       return c;
@@ -2683,7 +2691,7 @@
       var f = document.createElement("span"); f.className = "f"; f.setAttribute("role", "rowheader");
       var ic = document.createElement("span"); ic.setAttribute("aria-hidden", "true"); ic.textContent = r[0];
       f.appendChild(ic); f.appendChild(document.createTextNode(r[1]));
-      row.appendChild(f); row.appendChild(cell(r[2], r[3], "🧡 EasyOrders")); row.appendChild(cell(1, r[4], "🛍️ Shopify"));
+      row.appendChild(f); row.appendChild(cell(r[2], r[3], "EasyOrders", "logo-easyorders.png")); row.appendChild(cell(1, r[4], "Shopify", "logo-shopify.svg"));
       t.appendChild(row); if (r[2]) has++;
     });
     $("eoScEo").textContent = has + " من " + EO_CMP.length; $("eoScSh").textContent = EO_CMP.length + " من " + EO_CMP.length;
@@ -2717,6 +2725,7 @@
   // ---------------- locked features: one upgrade card for all of them ----------------
   // Every feature a plan doesn't include gets the same card: a badge, a headline, three benefits, the plan's price,
   // an upgrade button, and a phone playing what the feature does. "wa" comes from api/whatsapp.ashx, the rest from api/locks.ashx.
+  var LG_SH = '<img class="plogo-i" src="logo-shopify.svg" alt="">', LG_EO = '<img class="plogo-i" src="logo-easyorders.png" alt="">';   // real logos for the upgrade cards
   var LOCK = {
     wa: { ac: "#25d366", ac2: "#1fae55", ph: "#075e54", av: "🛍️", what: "الواتساب",
       head: 'خلّي المساعد يرد على <span class="g">واتساب متجرك</span> وإنت مرتاح',
@@ -2726,27 +2735,27 @@
       chat: [["cu", "السلام عليكم، القميص الأبيض ده متوفر مقاس L؟", "10:41", 0.5], ["typing", 1.6, 3.0],
         ["bot", "وعليكم السلام 👋 أيوه متوفر مقاس L، سعره 450 ج.م والشحن خلال يومين 🚚 أأكدلك الطلب؟", "10:41", 3.0],
         ["cu", "تمام، أكّده 👍", "10:42", 5.0], ["typing", 5.9, 7.0], ["bot", "اتأكد ✅ رقم طلبك #1048، وهيوصلك لحد البيت.", "10:42", 7.0]] },
-    shopify: { ac: "#95bf47", ac2: "#5e8e3e", ph: "#3d6b2a", av: "🛍️", what: "ربط Shopify",
+    shopify: { ac: "#95bf47", ac2: "#5e8e3e", ph: "#3d6b2a", av: LG_SH, what: "ربط Shopify",
       head: 'المساعد يعرف <span class="g">كل منتج في متجرك</span> ويتابع أوردرات زباينك',
       p: "اربط متجرك على Shopify، والمساعد يقرا منتجاتك وأسعارها والمخزون لحظة بلحظة، ويرد على «طلبي فين؟» من غير ما تفتح موبايلك.",
       list: [["🔄", "المنتجات والأسعار والمخزون بتتحدث لوحدها"], ["📦", "الزبون يسأل على أوردره ويعرف حالته في ثانية"], ["⏱️", "من غير ما ترفع ولا ملف ولا تكتب ولا سطر"]],
-      chips: ["🛍️ Shopify", "📦 #1048", "🔄 مخزون لحظي"],
+      chips: [LG_SH + " Shopify", "📦 #1048", "🔄 مخزون لحظي"],
       chat: [["cu", "طلبي رقم #1048 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
         ["bot", "طلبك اتشحن امبارح 🚚 وهيوصلك بكرة إن شاء الله. تحب أبعتلك رقم التتبع؟", "8:15", 3.0],
         ["cu", "والجاكيت الأسود لسه موجود؟", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه 🔥 فاضل 3 قطع بس، سعره 890 ج.م. أحجزهولك؟", "8:16", 7.0]] },
-    easyorders: { ac: "#f26b1d", ac2: "#c9520f", ph: "#8a3a0c", av: "🧡", what: "ربط EasyOrders",
+    easyorders: { ac: "#22c55e", ac2: "#0b9a3c", ph: "#0d5f2c", av: LG_EO, what: "ربط EasyOrders",
       head: 'المساعد يعرف <span class="g">كل منتج في متجرك على EasyOrders</span> ويتابع أوردرات زباينك',
       p: "اربط متجرك على EasyOrders بضغطة، والمساعد يقرا منتجاتك وأسعارها والمخزون، ويرد على «طلبي فين؟»، ويأكد الطلبات الجديدة مع الزبون على واتساب.",
       list: [["🔄", "المنتجات والأسعار والمخزون بتتحدث لوحدها"], ["📦", "الزبون يسأل على أوردره ويعرف حالته في ثانية"], ["📲", "تأكيد الطلبات على واتساب، وحالتها بتتغيّر في EasyOrders لوحدها"]],
-      chips: ["🧡 EasyOrders", "📦 #46", "📲 تأكيد الطلب"],
+      chips: [LG_EO + " EasyOrders", "📦 #46", "📲 تأكيد الطلب"],
       chat: [["cu", "طلبي رقم 46 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
         ["bot", "طلبك خرج مع شركة الشحن النهارده 🚚 وهيوصلك خلال يومين إن شاء الله.", "8:15", 3.0],
         ["cu", "والطقم الأزرق مقاس L لسه موجود؟", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه 🔥 فاضل قطعتين بس، سعره 650 ج.م. تحب أبعتلك لينكه؟", "8:16", 7.0]] },
-    bothstores: { ac: "#f26b1d", ac2: "#6f9e35", ph: "#5a3a14", av: "🔗", what: "Shopify و EasyOrders مع بعض",
+    bothstores: { ac: "#22c55e", ac2: "#6f9e35", ph: "#5a3a14", av: "🔗", what: "Shopify و EasyOrders مع بعض",
       head: 'اربط <span class="g">Shopify و EasyOrders</span> مع بعض',
       p: "باقتك بتسمح بمتجر واحد. لو بتبيع على الاتنين (مثلًا Shopify للبراند و EasyOrders لصفحات الطلب)، رقّي باقتك والمساعد يرد من منتجات المتجرين ويتابع أوردراتهم. داتا متجرين في كل رد بتستهلك من الرصيد أكتر، عشان كده الميزة دي في باقة أعلى.",
-      list: [["🛍️", "منتجات Shopify و EasyOrders في مساعد واحد"], ["📦", "«طلبي فين؟» بيدوّر في المتجرين"], ["📲", "تأكيد الطلبات على واتساب من المتجرين"]],
-      chips: ["🛍️ Shopify", "🧡 EasyOrders", "🔗 مع بعض"],
+      list: [["🔗", "منتجات Shopify و EasyOrders في مساعد واحد"], ["📦", "«طلبي فين؟» بيدوّر في المتجرين"], ["📲", "تأكيد الطلبات على واتساب من المتجرين"]],
+      chips: [LG_SH + " Shopify", LG_EO + " EasyOrders", "🔗 مع بعض"],
       chat: [["cu", "طلبي رقم 46 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
         ["bot", "طلبك خرج مع شركة الشحن النهارده 🚚 وهيوصلك خلال يومين إن شاء الله.", "8:15", 3.0],
         ["cu", "والجاكيت الأسود اللي على موقعكم التاني لسه موجود؟", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه 🔥 فاضل 3 قطع، سعره 890 ج.م. أبعتلك لينكه؟", "8:16", 7.0]] },
