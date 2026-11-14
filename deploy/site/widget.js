@@ -427,6 +427,16 @@ button{font:inherit;cursor:pointer;color:inherit}
 .hello.swap{animation:helloSwap .45s cubic-bezier(.34,1.56,.64,1)}
 .hello[hidden]{display:none}
 .hello .x{position:absolute;top:4px;right:6px;border:0;background:none;color:var(--muted);font-size:16px;line-height:1;padding:2px}
+/* the visitor can drag the bubble; let go and it snaps to the nearest side */
+.lb{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:grab}
+.launcher.moved{transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s,left .4s cubic-bezier(.34,1.56,.64,1),top .4s cubic-bezier(.34,1.56,.64,1)}
+.launcher.drag{transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}
+.launcher.drag .lb{cursor:grabbing}
+.launcher.drag .art{transform:scale(1.08) rotate(-6deg)}
+.launcher.lside .hello{right:auto;left:0;border-radius:16px 16px 16px 4px;transform-origin:bottom left}
+.launcher.high .hello{bottom:auto;top:calc(100% + 12px);border-radius:4px 16px 16px 16px;transform-origin:top right}
+.launcher.high.lside .hello{border-radius:16px 4px 16px 16px;transform-origin:top left}
+.w.lside .chat{right:auto;left:max(20px,env(safe-area-inset-left));transform-origin:bottom left}
 @keyframes helloIn{0%{opacity:0;transform:scale(.3) translateY(20px)}100%{opacity:1;transform:none}}
 @keyframes helloSwap{0%{transform:scale(.85)}100%{transform:none}}
 
@@ -509,7 +519,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
 .brand{font-size:11px;color:var(--muted);text-align:center;padding:0 0 8px;background:var(--card)}
 
 @media (max-width:480px){
-  .w.bubble .chat{right:0;bottom:0;width:100%;height:100vh;height:100dvh;border-radius:0;transform-origin:bottom center}
+  .w.bubble .chat{right:0;left:0;bottom:0;width:100%;height:100vh;height:100dvh;border-radius:0;transform-origin:bottom center}
   .w.page{padding:0}
   .w.page .chat{width:100%;height:100vh;height:100dvh;border-radius:0}
   .ch{padding:max(10px,env(safe-area-inset-top)) 12px 10px}
@@ -836,8 +846,60 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     setTimeout(function () { $(".launcher").classList.remove("hide"); }, 180);
   }
 
-  $(".launcher").addEventListener("click", function (e) { if (e.target.closest(".x")) return; if (e.target.closest(".lb")) openChat(); });
+  var dragEnd = 0;   // a drag ends with a click; don't let that click open the chat
+  $(".launcher").addEventListener("click", function (e) { if (e.target.closest(".x")) return; if (Date.now() - dragEnd < 400) return; if (e.target.closest(".lb")) openChat(); });
   $(".x").onclick = function (e) { e.stopPropagation(); $(".hello").hidden = true; };
+
+  // ---------------------------------------------------------------- drag the bubble
+  // The visitor drags the bubble where it doesn't cover the store's page; let go and it snaps to the nearest side.
+  // The spot is kept for that site (side + distance from the bottom, so it fits other screen sizes). Not saved in previews.
+  if (MODE !== "page") (function () {
+    var L = $(".launcher"), btn = $(".lb"), M = 14, KEY = "sb-pos", pos = null, drag = null;
+    function vw() { return document.documentElement.clientWidth || window.innerWidth; }
+    function vh() { return window.innerHeight; }
+    function clampX(x) { return Math.max(0, Math.min(vw() - L.offsetWidth, x)); }
+    function clampY(y) { return Math.max(M, Math.min(vh() - L.offsetHeight - M, y)); }
+    function place(side, y) {
+      y = clampY(y);
+      L.style.right = L.style.bottom = "auto";
+      L.style.left = (side === "l" ? M : vw() - L.offsetWidth - M) + "px"; L.style.top = y + "px";
+      L.classList.toggle("lside", side === "l"); w.classList.toggle("lside", side === "l");
+      L.classList.toggle("high", y < 150);   // near the top: the "hello" note goes under the bubble
+      pos = { s: side, b: Math.round(vh() - y - L.offsetHeight) };
+    }
+    try { var saved = PREVIEW ? null : JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { saved = null; }
+    if (saved && (saved.s === "l" || saved.s === "r") && typeof saved.b === "number")
+      requestAnimationFrame(function () { place(saved.s, vh() - L.offsetHeight - saved.b); });
+    function end(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var was = drag.moved; drag = null;
+      if (!was) return;
+      dragEnd = Date.now();
+      L.classList.remove("drag"); L.classList.add("moved");
+      var r = L.getBoundingClientRect();
+      place(r.left + r.width / 2 < vw() / 2 ? "l" : "r", r.top);
+      if (!PREVIEW) try { localStorage.setItem(KEY, JSON.stringify(pos)); } catch (e2) {}
+    }
+    btn.addEventListener("pointerdown", function (e) {
+      if (e.button) return;
+      var r = L.getBoundingClientRect();
+      drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, moved: false };
+      try { btn.setPointerCapture(e.pointerId); } catch (e2) {}
+    });
+    btn.addEventListener("pointermove", function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.moved) {
+        if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) < 8) return;   // a small wobble is still a tap
+        drag.moved = true; L.classList.add("drag"); $(".hello").hidden = true;
+      }
+      e.preventDefault();
+      L.style.right = L.style.bottom = "auto";
+      L.style.left = clampX(e.clientX - drag.dx) + "px"; L.style.top = clampY(e.clientY - drag.dy) + "px";
+    });
+    btn.addEventListener("pointerup", end);
+    btn.addEventListener("pointercancel", end);
+    window.addEventListener("resize", function () { if (pos) place(pos.s, vh() - L.offsetHeight - pos.b); });
+  })();
   $(".close").onclick = closeChat;
   if ($(".thm")) $(".thm").onclick = function () {
     var on = !w.classList.contains("dark");
