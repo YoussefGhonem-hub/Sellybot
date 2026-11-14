@@ -408,6 +408,12 @@
       <section data-page="plans" hidden>
         <p class="sub" style="color:var(--muted);margin:0 0 14px">كل باقة ليها سعر بالجنيه ورصيد شهري في Claude بالدولار. الرصيد هو حد الاستهلاك اللي بيتحط للمتجر، وعدد الرسايل المكتوب تقديري حسب حجم داتا المتجر.</p>
         <div class="plans" id="plansGrid"></div>
+        <div class="card" style="margin-top:16px">
+          <h3>🔒 المميزات حسب الباقة</h3>
+          <p class="sub">اختار أقل باقة فيها كل ميزة. المتجر اللي باقته أقل بيشوف كارت ترقية بدل الميزة، ولو كان بيستخدمها ونزل لباقة أقل، بتتقفل لحد ما يرقّي. «مفتوحة للكل» = زي ما كانت.</p>
+          <div id="gateRows" style="display:grid;gap:12px;max-width:520px"></div>
+          <div class="hint" style="margin-top:8px">الواتساب ليه إعداده في صفحة «الواتساب».</div>
+        </div>
       </section>
 
       <!-- plan requests -->
@@ -1045,7 +1051,32 @@
   async function loadPlans() {
     $("plansGrid").innerHTML = '<div class="card plan"><div class="skel"></div><div class="skel" style="margin-top:12px;height:30px"></div></div>';
     try { var d = await api("plans"); state.plans = d.plans; state.usdRate = d.usdRate; renderPlans(); } catch (e) { toast(e.message, true); }
+    loadGates();
   }
+  // which plan each locked feature starts from (api/locks.ashx?admin=1)
+  async function gateApi(body) {
+    var init = { method: body ? "POST" : "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch" } };
+    if (body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
+    var r = await fetch("api/locks.ashx?admin=1", init), data = null;
+    try { data = await r.json(); } catch (e) {}
+    if (r.status === 401) { showLogin(); throw new Error("سجّل دخول تاني."); }
+    if (!r.ok) throw new Error((data && data.message) || "حصلت مشكلة، جرّب تاني.");
+    return data;
+  }
+  function renderGates(d) {
+    $("gateRows").innerHTML = d.features.map(function (f) {
+      return '<div><label for="gate_' + f.key + '">' + esc(f.name) + '</label><select id="gate_' + f.key + '" data-gate="' + f.key + '">' +
+        '<option value="0">مفتوحة للكل</option>' +
+        d.plans.map(function (p) { return '<option value="' + p.id + '"' + (p.id === f.minPlan ? " selected" : "") + '>من ' + esc(p.name) + " أو أعلى — " + money(p.price) + '</option>'; }).join("") +
+        '</select></div>';
+    }).join("");
+    $("gateRows").querySelectorAll("[data-gate]").forEach(function (s) {
+      s.onchange = async function () {
+        try { renderGates(await gateApi({ feature: s.dataset.gate, minPlan: String(s.value) })); toast("اتحفظ ✓"); } catch (e) { toast(e.message, true); }
+      };
+    });
+  }
+  async function loadGates() { try { renderGates(await gateApi()); } catch (e) { toast(e.message, true); } }
   function discountText(p) { var d = p.discount; if (!d) return ""; return d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "خصم " + money(d.value)); }
   function renderPlans() {
     $("plansGrid").innerHTML = state.plans.map(function (p, i) {

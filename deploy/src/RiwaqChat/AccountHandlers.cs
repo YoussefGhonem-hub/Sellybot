@@ -195,12 +195,14 @@ namespace RiwaqChat
                     {
                         var v = Web.Str(b, "bubbleStyle", 20);
                         if (!BubbleStyles.Contains(v)) { Web.Error(res, 400, "bad_style", "شكل الفقاعة مش معروف."); return; }
+                        if (v != s.BubbleStyle && !PlanGate.FreeStyles.Contains(v) && !PlanGate.Allows(c, s, "styles")) { PlanGate.Deny(res, c, s, "styles"); return; }
                         sets.Add("BubbleStyle=@style"); ps.Add("@style"); ps.Add(v);
                     }
                     if (b.ContainsKey("brandColor"))
                     {
                         var v = (Web.Str(b, "brandColor", 9) ?? "").ToLowerInvariant();
                         if (!System.Text.RegularExpressions.Regex.IsMatch(v, "^#[0-9a-f]{6}$")) { Web.Error(res, 400, "bad_color", "كود اللون لازم يكون زي #e8774a"); return; }
+                        if (v != (s.BrandColor ?? "").ToLowerInvariant() && !PlanGate.FreeColors.Contains(v) && !PlanGate.Allows(c, s, "styles")) { PlanGate.Deny(res, c, s, "styles"); return; }
                         sets.Add("BrandColor=@color"); ps.Add("@color"); ps.Add(v);
                     }
                     if (sets.Count > 0)

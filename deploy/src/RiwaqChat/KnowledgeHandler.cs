@@ -43,6 +43,7 @@ namespace RiwaqChat
                     if (!Web.Allow("kn:" + s.Id, 60, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "تعديلات كتير، استنى شوية."); return; }
 
                     string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
+                    if ((action == "shopify-connect" || action == "shopify-sync" || action == "shopify-admin-connect") && !PlanGate.Allows(c, s, "shopify")) { PlanGate.Deny(res, c, s, "shopify"); return; }
 
                     // ---- Shopify: connect (and sync now), sync again, disconnect ----
                     if (action == "shopify-connect" || action == "shopify-sync")
@@ -155,6 +156,7 @@ namespace RiwaqChat
                         string fileName = Path.GetFileName(file.FileName);
                         string type = Extract.TypeOf(fileName);
                         if (type == null) { Web.Error(res, 400, "bad_type", "نوع الملف مش مدعوم. المسموح: txt, md, csv, pdf, docx, xlsx"); return; }
+                        if (PlanGate.LockedFileTypes.Contains(type) && !PlanGate.Allows(c, s, "files")) { PlanGate.Deny(res, c, s, "files"); return; }
                         byte[] data;
                         using (var ms = new MemoryStream()) { file.InputStream.CopyTo(ms); data = ms.ToArray(); }
                         // stop early if the database is already full (before spending time or Claude tokens reading the file)

@@ -44,6 +44,7 @@ namespace RiwaqChat
                 {
                     conn = Db.Open();
                     store = Db.StoreBySlug(conn, slug);
+                    PlanGate.Apply(conn, store);   // what the store's plan doesn't include is off (styles, order tracking)
                 }
                 if (store == null && slug != legacySlug) { Web.Error(res, 404, "no_store"); return; }
 

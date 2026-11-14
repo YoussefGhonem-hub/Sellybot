@@ -228,9 +228,20 @@
   .tip b{color:var(--ink);font-weight:600}
   .badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:#fff1d6;color:#9a5b00;margin-inline-start:6px;vertical-align:1px}
   [data-theme=dark] .badge{background:#3d2c10;color:#f3c26b}
-  .banner{margin:0 0 16px;padding:12px 16px;border-radius:12px;font-size:14px;background:#fff1d6;color:#7a4700;border:1px solid #f3c26b}
-  .banner.full{background:#fdecea;color:var(--err);border-color:#f1a7a0}
-  [data-theme=dark] .banner{background:#3d2c10;color:#f3c26b;border-color:#6b4b14}[data-theme=dark] .banner.full{background:#3a1d1b;color:#ffb4ab;border-color:#6b2a24}
+  /* plan / balance banner: an icon, the message with a short line under it, and an upgrade button */
+  .banner{--bn:#e8a33d;--bn2:#c97a12;display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:14px 16px;border-radius:18px;font-size:14px;color:var(--ink);
+    border:1.5px solid color-mix(in srgb,var(--bn) 45%,var(--line));
+    background:radial-gradient(90% 140% at 100% 0%,color-mix(in srgb,var(--bn) 20%,transparent),transparent 60%),var(--card);
+    box-shadow:0 14px 34px -18px color-mix(in srgb,var(--bn) 70%,transparent);animation:upIn .6s cubic-bezier(.2,.8,.2,1) both}
+  .banner.full{--bn:#e8394a;--bn2:#b8202f}
+  .banner .bn-ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:color-mix(in srgb,var(--bn) 16%,var(--card));animation:lkBob 3s ease-in-out infinite}
+  .banner .bn-t{flex:1;min-width:0;line-height:1.6}.banner .bn-t b{display:block;font-size:15px}.banner .bn-t small{color:var(--muted);font-size:13px}
+  .banner .bn-bar{height:6px;border-radius:4px;margin-top:6px;background:color-mix(in srgb,var(--bn) 15%,var(--line));overflow:hidden}
+  .banner .bn-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--bn2),var(--bn))}
+  .banner .bn-cta{flex:none;position:relative;overflow:hidden;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;color:#fff;text-decoration:none;
+    background:linear-gradient(135deg,var(--bn2),var(--bn));box-shadow:0 10px 20px -10px var(--bn)}
+  .banner .bn-cta:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);animation:upShine 3.2s 1s ease-in-out infinite}
+  @media (max-width:560px){.banner{flex-wrap:wrap}.banner .bn-cta{width:100%;text-align:center}}
 
   /* ---------- auth (login / signup page) ---------- */
   .seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:4px;margin:12px 0 4px}
@@ -483,29 +494,29 @@
   .wa-qr-steps{margin:0 0 8px;padding-inline-start:20px;line-height:1.9;font-size:14px}
   @media (max-width:640px){.wa-qr{grid-template-columns:1fr;justify-items:center}.wa-qr-img{width:min(236px,100%);height:auto;aspect-ratio:1}}
   /* upgrade card: shown instead of the QR steps when the store's plan doesn't include WhatsApp */
-  .wa-up{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:26px;align-items:center;margin:4px 0 6px;padding:26px;border-radius:22px;
-    border:1.5px solid color-mix(in srgb,#25d366 45%,var(--line));
-    background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,#25d366 16%,transparent),transparent 60%),radial-gradient(90% 80% at 100% 100%,color-mix(in srgb,var(--brand) 18%,transparent),transparent 60%),var(--card);
-    box-shadow:0 18px 50px -18px color-mix(in srgb,#25d366 45%,transparent);animation:upIn .7s cubic-bezier(.2,.8,.2,1) both}
+  .wa-up{--ac:#25d366;--ac2:#1fae55;position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:26px;align-items:center;margin:4px 0 6px;padding:26px;border-radius:22px;
+    border:1.5px solid color-mix(in srgb,var(--ac) 45%,var(--line));
+    background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--ac) 16%,transparent),transparent 60%),radial-gradient(90% 80% at 100% 100%,color-mix(in srgb,var(--brand) 18%,transparent),transparent 60%),var(--card);
+    box-shadow:0 18px 50px -18px color-mix(in srgb,var(--ac) 45%,transparent);animation:upIn .7s cubic-bezier(.2,.8,.2,1) both}
   @keyframes upIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
-  .wa-up:before{content:"";position:absolute;inset:-40% -10% auto auto;width:260px;height:260px;border-radius:50%;background:conic-gradient(from 0deg,#25d36622,transparent,var(--brand),transparent,#25d36622);filter:blur(40px);opacity:.35;animation:upSpin 12s linear infinite;pointer-events:none}
+  .wa-up:before{content:"";position:absolute;inset:-40% -10% auto auto;width:260px;height:260px;border-radius:50%;background:conic-gradient(from 0deg,color-mix(in srgb,var(--ac) 14%,transparent),transparent,var(--brand),transparent,color-mix(in srgb,var(--ac) 14%,transparent));filter:blur(40px);opacity:.35;animation:upSpin 12s linear infinite;pointer-events:none}
   @keyframes upSpin{to{transform:rotate(360deg)}}
   .wa-up>*{position:relative}
-  .wa-up-badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#1fae55,#25d366);box-shadow:0 6px 16px -6px #25d366}
+  .wa-up-badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:999px;color:#fff;background:linear-gradient(135deg,var(--ac2),var(--ac));box-shadow:0 6px 16px -6px var(--ac)}
   .wa-up h3{margin:12px 0 8px;font-size:clamp(20px,2.6vw,26px);line-height:1.35;letter-spacing:-.3px}
-  .wa-up h3 .g{background:linear-gradient(135deg,#1fae55,#25d366 60%,#7be495);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .wa-up h3 .g{background:linear-gradient(135deg,var(--ac2),var(--ac) 60%,color-mix(in srgb,var(--ac) 50%,#fff));-webkit-background-clip:text;background-clip:text;color:transparent}
   .wa-up p{margin:0 0 14px;color:var(--muted);font-size:14.5px;line-height:1.75}
   .wa-up-list{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:8px}
   .wa-up-list li{display:flex;align-items:center;gap:10px;font-size:14px}
-  .wa-up-list i{font-style:normal;flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:15px;background:color-mix(in srgb,#25d366 14%,var(--card));border:1px solid color-mix(in srgb,#25d366 25%,var(--line))}
+  .wa-up-list i{font-style:normal;flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:15px;background:color-mix(in srgb,var(--ac) 14%,var(--card));border:1px solid color-mix(in srgb,var(--ac) 25%,var(--line))}
   .wa-up-price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .wa-up-price b{font-size:30px;letter-spacing:-.5px}
   .wa-up-price small{color:var(--muted);font-size:13px}
   .wa-up-price s{color:var(--muted);font-size:15px}
   .wa-up-cta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .wa-up-btn{position:relative;overflow:hidden;border:0;color:#fff;font-weight:700;font-size:15.5px;padding:13px 22px;border-radius:14px;cursor:pointer;
-    background:linear-gradient(135deg,#1fae55,#25d366);box-shadow:0 12px 26px -10px #25d366;transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
-  .wa-up-btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 16px 30px -10px #25d366}
+    background:linear-gradient(135deg,var(--ac2),var(--ac));box-shadow:0 12px 26px -10px var(--ac);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
+  .wa-up-btn:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 16px 30px -10px var(--ac)}
   .wa-up-btn:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);animation:upShine 3.2s 1.2s ease-in-out infinite}
   @keyframes upShine{0%,55%{transform:translateX(120%)}100%{transform:translateX(-120%)}}
   .wa-up-more{border:0;background:none;color:var(--ink);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:4px;cursor:pointer;padding:6px 2px}
@@ -514,8 +525,8 @@
   .wa-ph{width:250px;height:430px;border-radius:34px;padding:9px;background:#111;box-shadow:0 30px 60px -20px rgba(0,0,0,.55),inset 0 0 0 2px #2a2a2a;transform:rotate(-3deg);animation:upFloat 6s ease-in-out infinite}
   @keyframes upFloat{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(-3deg) translateY(-8px)}}
   .wa-ph-in{height:100%;border-radius:26px;overflow:hidden;display:flex;flex-direction:column;background:#efeae2;color:#111;font-size:12.5px}
-  .wa-ph-top{display:flex;align-items:center;gap:8px;padding:12px 12px 10px;background:#075e54;color:#fff}
-  .wa-ph-top .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#25d366;font-size:14px}
+  .wa-ph-top{display:flex;align-items:center;gap:8px;padding:12px 12px 10px;background:var(--ph,#075e54);color:#fff}
+  .wa-ph-top .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--ac);font-size:14px}
   .wa-ph-top b{display:block;font-size:13px}.wa-ph-top small{font-size:10.5px;opacity:.85}
   .wa-ph-msgs{flex:1;display:flex;flex-direction:column;gap:7px;padding:12px 10px;
     background-image:radial-gradient(#d8d0c4 1px,transparent 1.2px);background-size:14px 14px}
@@ -533,6 +544,39 @@
   @keyframes upGone{to{opacity:0;height:0;padding:0;margin:-7px 0 0}}
   @media (max-width:760px){.wa-up{grid-template-columns:1fr;padding:20px}.wa-ph{margin:0 auto;width:230px;height:400px}}
   @media (prefers-reduced-motion:reduce){.wa-b{opacity:1;transform:none}.wa-b.typing{display:none}}
+  /* the same card for every locked feature: floating chips around the phone, and a store page for "styles" */
+  .lk-vis{position:relative;display:grid;place-items:center}
+  .lk-chip{position:absolute;z-index:2;display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;
+    background:var(--card);color:var(--ink);border:1px solid color-mix(in srgb,var(--ac) 40%,var(--line));box-shadow:0 10px 24px -10px rgba(0,0,0,.35);animation:lkBob 4.5s ease-in-out infinite}
+  .lk-chip:nth-child(1){top:24%;right:-14px}.lk-chip:nth-child(2){top:46%;left:-22px;animation-delay:-1.5s}.lk-chip:nth-child(3){bottom:9%;right:-8px;animation-delay:-3s}
+  @keyframes lkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .lk-site{flex:1;display:flex;flex-direction:column;gap:8px;padding:10px;background:#fff;position:relative}
+  .lk-site .bar{height:9px;border-radius:5px;background:#ececec}.lk-site .bar.w60{width:60%}.lk-site .bar.w40{width:40%}
+  .lk-site .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+  .lk-site .pc{height:92px;border-radius:10px;background:linear-gradient(160deg,#f3f1ee,#e9e6e1)}
+  .lk-bub{position:absolute;left:12px;bottom:14px;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:27px;color:#fff;
+    background:var(--bc,#e8774a);box-shadow:0 10px 20px -6px var(--bc,#e8774a);transition:background .45s,box-shadow .45s;animation:lkPop .5s cubic-bezier(.34,1.56,.64,1)}
+  .lk-bub.swap{animation:lkPop2 .5s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes lkPop{from{transform:scale(.4)}to{transform:none}}@keyframes lkPop2{0%{transform:scale(.6) rotate(-18deg)}100%{transform:none}}
+  .lk-hello{position:absolute;left:12px;bottom:76px;max-width:150px;padding:7px 10px;border-radius:12px 12px 12px 3px;background:#fff;color:#222;font-size:11.5px;box-shadow:0 6px 16px rgba(0,0,0,.14)}
+  /* popup with the card, for locks inside a page (a file type, a style) */
+  .lk-modal{position:fixed;inset:0;z-index:2147483100;display:grid;place-items:center;padding:16px;background:rgba(10,8,6,.55);backdrop-filter:blur(6px);animation:lkFade .25s}
+  .lk-modal[hidden]{display:none}
+  @keyframes lkFade{from{opacity:0}to{opacity:1}}
+  .lk-box{position:relative;width:min(900px,100%);max-height:calc(100dvh - 32px);overflow:auto;border-radius:24px}
+  .lk-box .wa-up{margin:0}
+  .lk-x{position:absolute;top:12px;left:12px;z-index:5;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:16px;cursor:pointer}
+  /* a small "locked" strip that opens the popup */
+  .lk-strip{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:10px 14px;border-radius:14px;cursor:pointer;text-align:start;font-size:13.5px;color:var(--ink);
+    border:1px dashed color-mix(in srgb,var(--ac,#5b5bd6) 55%,var(--line));background:linear-gradient(90deg,color-mix(in srgb,var(--ac,#5b5bd6) 12%,var(--card)),var(--card));transition:transform .2s}
+  .lk-strip:hover{transform:translateY(-1px)}
+  .lk-strip b{color:var(--ac2,#3f3fb8)}
+  .lk-strip .go{margin-inline-start:auto;font-weight:700;white-space:nowrap;color:var(--ac2,#3f3fb8)}
+  .lk-strip[hidden]{display:none}
+  .sty.locked{position:relative}
+  .sty.locked:after{content:"🔒";position:absolute;top:6px;left:6px;font-size:12px;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:var(--card);box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  .src .lk-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#5e8e3e,#95bf47)}
+  @media (max-width:760px){.lk-chip:nth-child(2){left:-6px}.lk-chip:nth-child(1){right:-4px}}
   .wa-stats{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
   .wa-stats span{font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--soft)}
   .feat-list{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
@@ -764,6 +808,7 @@
           <span class="hint">TXT · CSV · PDF · Word (.docx) · Excel (.xlsx) — لحد 10 ميجا</span>
           <input type="file" id="fileInput" accept=".txt,.md,.csv,.pdf,.docx,.xlsx" hidden>
         </div>
+        <button type="button" class="lk-strip" id="lockFiles" hidden></button>
         <div class="msg" id="upMsg"></div>
         <details class="name-tip">
           <summary>💡 إزاي تسمّي ملفاتك عشان المساعد يلاقي المعلومة أسرع؟</summary>
@@ -777,6 +822,7 @@
 
     <!-- source 2: Shopify -->
     <div class="src-panel" id="srcShop" role="tabpanel" hidden>
+    <div class="wa-up" id="lockShop" hidden></div>
     <div class="card shop-card" id="shopCard" style="margin-bottom:12px">
       <div class="shop-head">
         <span class="shop-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg></span>
@@ -878,6 +924,7 @@
           <div class="group-title">أشكال كلاسيك</div><div class="styles" id="stylesStd"></div>
           <div class="group-title">أشكال مضحكة 😄</div><div class="styles" id="stylesFun"></div>
           <div class="group-title">تنفع لأي نوع متجر</div><div class="styles" id="stylesAny"></div>
+          <button type="button" class="lk-strip" id="lockLook" hidden></button>
         </div>
         <div class="card" style="margin-top:12px">
           <h3>اللون الأساسي</h3>
@@ -947,6 +994,11 @@
       </div>
     </div>
   </section>
+
+  <!-- upgrade popup for a locked feature (filled by openLock) -->
+  <div class="lk-modal" id="lockModal" hidden role="dialog" aria-modal="true" aria-label="ميزة في باقة أعلى">
+    <div class="lk-box"><button type="button" class="lk-x" id="lockX" aria-label="إغلاق">✕</button><div class="wa-up" id="lockCard"></div></div>
+  </div>
 
   <!-- WhatsApp -->
   <section data-panel="wa" hidden>
@@ -1315,6 +1367,8 @@
     if (tab === "plan") loadPlanTab();
     if (tab === "support") loadSupport();
     if (tab === "wa") loadWa();
+    if (tab === "data" || tab === "look") loadLocks();   // which features this store's plan doesn't include
+    if (tab !== "wa") stopUpsell();
     showLiveChat(tab !== "look");   // the look tab has its own preview of the chat
     if (history.replaceState) history.replaceState(null, "", "#" + tab);
     window.scrollTo(0, 0);
@@ -1550,7 +1604,7 @@
 
   function render() {
     var link = BASE + "?store=" + me.slug;
-    syncLiveChat(); renderShop();
+    syncLiveChat(); renderShop(); applyLocks();
     $("acctName").textContent = me.name; $("acctAvatar").textContent = (me.name || "م").trim().charAt(0);
     $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
     $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
@@ -1559,10 +1613,17 @@
     $("supBadge").textContent = fmt(me.supportAnswered || 0); $("supBadge").hidden = !me.supportAnswered;
     // subscription: ended, ending soon, or the month's allowance nearly used up
     var pl = me.plan || {}, pb = $("planBanner"), upct = me.usage.limit > 0 ? me.usage.used * 100 / me.usage.limit : 100;
-    var renew = ' <a href="#plan" data-goto="plan" style="font-weight:700">جدّد من هنا ←</a>';
-    if (pl.name && pl.expired) { pb.className = "banner full"; pb.innerHTML = "⛔ اشتراكك في باقة " + esc(pl.name) + " خلص، والمساعد واقف على موقعك." + renew; pb.hidden = false; }
-    else if (pl.name && pl.daysLeft <= 5) { pb.className = "banner"; pb.innerHTML = "⏳ باقتك هتخلص بعد " + fmt(pl.daysLeft) + " يوم." + renew; pb.hidden = false; }
-    else if (upct >= 90) { pb.className = upct >= 100 ? "banner full" : "banner"; pb.innerHTML = (upct >= 100 ? "⛔ رصيد الشهر خلص، والمساعد واقف لحد أول الشهر." : "⚠️ استهلكت " + Math.round(upct) + "% من رصيد الشهر.") + ' <a href="#plan" data-goto="plan" style="font-weight:700">رقّي باقتك ←</a>'; pb.hidden = false; }
+    function bn(cls, ic, title, sub, cta, bar) {   // icon, message, a short line under it, (usage bar), and the button
+      pb.className = "banner" + (cls ? " " + cls : "");
+      pb.innerHTML = '<span class="bn-ic">' + ic + '</span><span class="bn-t"><b>' + title + '</b><small>' + sub + '</small>' +
+        (bar != null ? '<div class="bn-bar"><i style="width:' + Math.min(100, Math.round(bar)) + '%"></i></div>' : '') + '</span>' +
+        '<a href="#plan" data-goto="plan" class="bn-cta">' + cta + '</a>';
+      pb.hidden = false;
+    }
+    if (pl.name && pl.expired) bn("full", "⛔", "اشتراكك في باقة " + esc(pl.name) + " خلص", "المساعد واقف على موقعك ومش بيرد على زباينك. جدّد ويرجع يشتغل في ساعتها.", "🔁 جدّد دلوقتي");
+    else if (pl.name && pl.daysLeft <= 5) bn("", "⏳", "باقتك هتخلص بعد " + fmt(pl.daysLeft) + " يوم", "جدّد من دلوقتي عشان المساعد مايقفش لحظة، والمدة الجديدة بتبدأ بعد آخر يوم في باقتك.", "🔁 جدّد الباقة");
+    else if (upct >= 100) bn("full", "🪫", "رصيد الشهر خلص", "المساعد واقف لحد أول الشهر. رقّي باقتك ويرجع يرد على زباينك على طول.", "🚀 رقّي باقتك", 100);
+    else if (upct >= 90) bn("", "⚡", "استهلكت " + Math.round(upct) + "% من رصيد الشهر", "زباينك بيسألوا كتير 👏 رقّي باقتك قبل ما الرصيد يخلص والمساعد يقف.", "🚀 رقّي باقتك", upct);
     else pb.hidden = true;
     pb.querySelectorAll("[data-goto]").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); go("plan"); }; });
     // storage
@@ -1793,56 +1854,125 @@
     try { wa = await api("api/whatsapp.ashx"); renderWa(); }
     catch (e) { setMsg("waMsg", e.message); }
   }
-  // Upgrade card: the plan that includes WhatsApp, its price, and a little WhatsApp chat playing on a phone
-  var upTimer = null;
-  function stopUpsell() { clearInterval(upTimer); upTimer = null; }
-  function renderUpsell(up) {
-    var store = esc(me && me.name || "متجرك");
-    var per = up.days === 30 ? "في الشهر" : "لـ " + fmt(up.days) + " يوم";
-    var badge = up.renew ? "⏳ باقتك خلصت" : "🔒 ميزة باقة " + esc(up.name);
-    var head = up.renew ? 'جدّد باقتك ورجّع المساعد يرد على <span class="g">واتساب متجرك</span>'
-                        : 'خلّي المساعد يرد على <span class="g">واتساب متجرك</span> وإنت مرتاح';
-    var note = up.renew ? "باقة " + esc(up.name) + " فيها الواتساب، وبتكمّل من آخر يوم في اشتراكك."
-             : up.current ? "باقتك دلوقتي: " + esc(up.current) + " ← الترقية بتفتح الواتساب على طول، من غير عقود."
-             : "من غير عقود، وتقدر توقف وقت ما تحب.";
-    // one chat, timed with --d (when it shows) and --e (when the typing dots go away)
-    var chat = [
-      ["cu", "السلام عليكم، القميص الأبيض ده متوفر مقاس L؟", "10:41", 0.5],
-      ["typing", "", "", 1.6, 3.0],
-      ["bot", "وعليكم السلام 👋 أيوه متوفر مقاس L، سعره 450 ج.م والشحن خلال يومين 🚚 أأكدلك الطلب؟", "10:41", 3.0],
-      ["cu", "تمام، أكّده 👍", "10:42", 5.0],
-      ["typing", "", "", 5.9, 7.0],
-      ["bot", "اتأكد ✅ رقم طلبك #1048، وهيوصلك لحد البيت.", "10:42", 7.0]
-    ].map(function (m) {
-      return m[0] === "typing" ? '<div class="wa-b bot typing" style="--d:' + m[3] + 's;--e:' + m[4] + 's"><span></span><span></span><span></span></div>'
+  // ---------------- locked features: one upgrade card for all of them ----------------
+  // Every feature a plan doesn't include gets the same card: a badge, a headline, three benefits, the plan's price,
+  // an upgrade button, and a phone playing what the feature does. "wa" comes from api/whatsapp.ashx, the rest from api/locks.ashx.
+  var LOCK = {
+    wa: { ac: "#25d366", ac2: "#1fae55", ph: "#075e54", av: "🛍️", what: "الواتساب",
+      head: 'خلّي المساعد يرد على <span class="g">واتساب متجرك</span> وإنت مرتاح',
+      renewHead: 'جدّد باقتك ورجّع المساعد يرد على <span class="g">واتساب متجرك</span>',
+      p: "زباينك بيسألوا على واتساب أكتر من أي مكان. المساعد يرد عليهم في ثواني، بنفس داتا متجرك وطريقة كلامك، ليل ونهار، ومايسيبش زبون مستني.",
+      list: [["⚡", "يرد في ثواني بدل ما الزبون يستنى ساعات ويمشي"], ["🛒", "يجاوب على الأسعار والمقاسات والشحن ويتابع الأوردرات"], ["🙋", "لو رديت إنت بنفسك، بيسكت ويسيبلك المحادثة"]],
+      chat: [["cu", "السلام عليكم، القميص الأبيض ده متوفر مقاس L؟", "10:41", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "وعليكم السلام 👋 أيوه متوفر مقاس L، سعره 450 ج.م والشحن خلال يومين 🚚 أأكدلك الطلب؟", "10:41", 3.0],
+        ["cu", "تمام، أكّده 👍", "10:42", 5.0], ["typing", 5.9, 7.0], ["bot", "اتأكد ✅ رقم طلبك #1048، وهيوصلك لحد البيت.", "10:42", 7.0]] },
+    shopify: { ac: "#95bf47", ac2: "#5e8e3e", ph: "#3d6b2a", av: "🛍️", what: "ربط Shopify",
+      head: 'المساعد يعرف <span class="g">كل منتج في متجرك</span> ويتابع أوردرات زباينك',
+      p: "اربط متجرك على Shopify، والمساعد يقرا منتجاتك وأسعارها والمخزون لحظة بلحظة، ويرد على «طلبي فين؟» من غير ما تفتح موبايلك.",
+      list: [["🔄", "المنتجات والأسعار والمخزون بتتحدث لوحدها"], ["📦", "الزبون يسأل على أوردره ويعرف حالته في ثانية"], ["⏱️", "من غير ما ترفع ولا ملف ولا تكتب ولا سطر"]],
+      chips: ["🛍️ Shopify", "📦 #1048", "🔄 مخزون لحظي"],
+      chat: [["cu", "طلبي رقم #1048 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "طلبك اتشحن امبارح 🚚 وهيوصلك بكرة إن شاء الله. تحب أبعتلك رقم التتبع؟", "8:15", 3.0],
+        ["cu", "والجاكيت الأسود لسه موجود؟", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه 🔥 فاضل 3 قطع بس، سعره 890 ج.م. أحجزهولك؟", "8:16", 7.0]] },
+    files: { ac: "#5b5bd6", ac2: "#3f3fb8", ph: "#34349a", av: "🤖", what: "رفع الملفات",
+      head: 'ارفع <span class="g">كتالوجك وملفاتك</span> زي ما هي، والمساعد يحفظها صم',
+      p: "قوايم الأسعار، الكتالوج، سياسة الضمان والاسترجاع: ارفعها PDF أو Word أو Excel، والمساعد يقراها كلها ويرد منها بالظبط.",
+      list: [["📄", "PDF و Word و Excel لحد 10 ميجا للملف"], ["🧠", "بيقرا الجداول والأسعار ويفهمها"], ["✍️", "مش محتاج تنسخ وتلزق ولا سطر"]],
+      chips: ["📕 PDF", "📘 Word", "📗 Excel"],
+      chat: [["cu", "عندكم ضمان على الغسالات؟", "6:02", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "أيوه ✅ ضمان سنتين على كل الغسالات، والصيانة مجانية أول سنة 🛠️", "6:02", 3.0],
+        ["cu", "وسعر الغسالة 8 كيلو كام؟", "6:03", 5.0], ["typing", 5.9, 7.0], ["bot", "8,450 ج.م، ومتاح تقسيط على 6 شهور من غير فوايد 👌", "6:03", 7.0]] },
+    styles: { ac: "#e84a8a", ac2: "#9b5de5", ph: "#6d3fc0", av: "🌐", what: "الأشكال والألوان", top: "موقعك", site: true,
+      head: 'خلّي الشات <span class="g">شبه متجرك</span> ويلفت نظر كل زبون',
+      p: "أكتر من 20 شكل للفقاعة (دبدوب، قطة، روبوت، بومة، شنطة، هدية...) وأي لون تختاره بكود لون البراند بتاعك بالظبط.",
+      list: [["🎨", "أي لون بكود لون البراند بتاعك"], ["🐱", "أشكال مضحكة وأشكال لكل نوع متجر"], ["✨", "حركات بتشد الزبون يدوس ويسأل"]],
+      chips: ["🐱 قطة", "🤖 روبوت", "🎨 أي لون"] }
+  };
+  var FREE_STYLES = ["classic", "pill", "agent", "minimal", "orb", "duo", "wave", "bear"];
+  var BUB_EMO = ["🐻", "🐱", "🤖", "🦉", "👻", "🐰", "🎁", "⭐", "☕", "🛒"], BUB_COL = ["#e8774a", "#9b5de5", "#1a73e8", "#0ea5a4", "#e84a8a", "#2f8f5b", "#d64545", "#1f3a5f"];
+  var locks = {}, lockTimers = {};
+  function chatHtml(chat) {
+    return chat.map(function (m) {   // --d: when it shows, --e: when the typing dots go away
+      return m[0] === "typing" ? '<div class="wa-b bot typing" style="--d:' + m[1] + 's;--e:' + m[2] + 's"><span></span><span></span><span></span></div>'
         : '<div class="wa-b ' + m[0] + '" style="--d:' + m[3] + 's">' + esc(m[1]) + '<small>' + m[2] + (m[0] === "bot" ? " ✓✓" : "") + '</small></div>';
     }).join("");
-    $("waUp").innerHTML =
+  }
+  function stopLock(box) { if (box && lockTimers[box.id]) { clearInterval(lockTimers[box.id]); lockTimers[box.id] = null; } }
+  function renderLock(box, key, up) {
+    var F = LOCK[key]; if (!box || !F || !up) return;
+    stopLock(box);
+    box.style.setProperty("--ac", F.ac); box.style.setProperty("--ac2", F.ac2); box.style.setProperty("--ph", F.ph);
+    if (!up.id) {   // no plan includes it right now
+      box.innerHTML = '<div><span class="wa-up-badge">🔒 ' + F.what + '</span><h3>' + F.head + '</h3><p>' + F.p + '</p><span class="wa-up-note">الميزة دي مش متاحة في الباقات دلوقتي. كلّمنا من «الدعم» ونفتحهالك.</span></div>';
+      return;
+    }
+    var per = up.days === 30 ? "في الشهر" : "لـ " + fmt(up.days) + " يوم";
+    var note = up.renew ? "باقة " + esc(up.name) + " فيها " + F.what + "، والمدة الجديدة بتكمّل من آخر يوم في اشتراكك."
+             : up.current ? "باقتك دلوقتي: " + esc(up.current) + " ← الترقية بتفتح " + F.what + " على طول، من غير عقود."
+             : "من غير عقود، وتقدر توقف وقت ما تحب.";
+    var screen = F.site
+      ? '<div class="lk-site"><div class="bar w60"></div><div class="bar w40"></div><div class="grid"><div class="pc"></div><div class="pc"></div><div class="pc"></div><div class="pc"></div></div>' +
+        '<div class="lk-hello">أهلاً 👋 محتاج مساعدة؟</div><div class="lk-bub">🐻</div></div>'
+      : '<div class="wa-ph-msgs">' + chatHtml(F.chat) + '</div>';
+    box.innerHTML =
       '<div>' +
-        '<span class="wa-up-badge">' + badge + '</span>' +
-        '<h3>' + head + '</h3>' +
-        '<p>زباينك بيسألوا على واتساب أكتر من أي مكان. المساعد يرد عليهم في ثواني، بنفس داتا متجرك وطريقة كلامك، ليل ونهار، ومايسيبش زبون مستني.</p>' +
-        '<ul class="wa-up-list">' +
-          '<li><i>⚡</i>يرد في ثواني بدل ما الزبون يستنى ساعات ويمشي</li>' +
-          '<li><i>🛒</i>يجاوب على الأسعار والمقاسات والشحن ويتابع الأوردرات</li>' +
-          '<li><i>🙋</i>لو رديت إنت بنفسك، بيسكت ويسيبلك المحادثة</li>' +
-        '</ul>' +
+        '<span class="wa-up-badge">' + (up.renew ? "⏳ باقتك خلصت" : "🔒 ميزة باقة " + esc(up.name)) + '</span>' +
+        '<h3>' + (up.renew && F.renewHead ? F.renewHead : F.head) + '</h3>' +
+        '<p>' + F.p + '</p>' +
+        '<ul class="wa-up-list">' + F.list.map(function (x) { return '<li><i>' + x[0] + '</i>' + x[1] + '</li>'; }).join("") + '</ul>' +
         '<div class="wa-up-price"><b>' + fmt(up.price) + '</b><small>ج.م ' + per + '</small>' + (up.listPrice > up.price ? '<s>' + fmt(up.listPrice) + '</s>' : '') + '</div>' +
-        '<div class="wa-up-cta"><button type="button" class="wa-up-btn" id="waUpGo">' + (up.renew ? "🔁 جدّد باقة " : "🚀 رقّي لباقة ") + esc(up.name) + '</button>' +
-          '<button type="button" class="wa-up-more" id="waUpPlans">قارن الباقات</button></div>' +
+        '<div class="wa-up-cta"><button type="button" class="wa-up-btn" data-go>' + (up.renew ? "🔁 جدّد باقة " : "🚀 رقّي لباقة ") + esc(up.name) + '</button>' +
+          '<button type="button" class="wa-up-more" data-plans>قارن الباقات</button></div>' +
         '<span class="wa-up-note">' + note + '</span>' +
       '</div>' +
-      '<div class="wa-ph run" id="waPh" aria-hidden="true"><div class="wa-ph-in">' +
-        '<div class="wa-ph-top"><span class="av">🛍️</span><div><b>' + store + '</b><small>متصل الآن</small></div></div>' +
-        '<div class="wa-ph-msgs">' + chat + '</div>' +
-      '</div></div>';
-    $("waUpGo").onclick = function () { upgradeTo(up.id); };
-    $("waUpPlans").onclick = function () { go("plan"); };
-    stopUpsell();
-    upTimer = setInterval(function () {   // replay the chat every 11s while the tab is on screen
-      var ph = $("waPh"); if (!ph || current !== "wa" || document.hidden) return;
-      ph.classList.remove("run"); void ph.offsetWidth; ph.classList.add("run");
-    }, 11000);
+      '<div class="lk-vis" aria-hidden="true">' + (F.chips || []).map(function (c) { return '<span class="lk-chip">' + c + '</span>'; }).join("") +
+        '<div class="wa-ph run"><div class="wa-ph-in">' +
+          '<div class="wa-ph-top"><span class="av">' + F.av + '</span><div><b>' + esc(me && me.name || "متجرك") + '</b><small>' + (F.top || "متصل الآن") + '</small></div></div>' + screen +
+        '</div></div>' +
+      '</div>';
+    box.querySelector("[data-go]").onclick = function () { closeLock(); upgradeTo(up.id); };
+    box.querySelector("[data-plans]").onclick = function () { closeLock(); go("plan"); };
+    var n = 0;
+    lockTimers[box.id] = setInterval(function () {   // replay the chat (or switch the bubble) while the card is on screen
+      if (!box.offsetParent || document.hidden) return;
+      if (F.site) {
+        var b = box.querySelector(".lk-bub"); if (!b) return; n++;
+        b.textContent = BUB_EMO[n % BUB_EMO.length]; b.style.setProperty("--bc", BUB_COL[n % BUB_COL.length]);
+        b.classList.remove("swap"); void b.offsetWidth; b.classList.add("swap");
+      } else {
+        var ph = box.querySelector(".wa-ph"); ph.classList.remove("run"); void ph.offsetWidth; ph.classList.add("run");
+      }
+    }, F.site ? 1500 : 11000);
+  }
+  // WhatsApp's card (called by renderWa)
+  function renderUpsell(up) { renderLock($("waUp"), "wa", up); }
+  function stopUpsell() { stopLock($("waUp")); }
+  // the popup, for a lock met inside a page (a PDF, a locked style)
+  function openLock(key) {
+    var up = key === "wa" ? wa && wa.upsell : locks[key]; if (!up) return;
+    renderLock($("lockCard"), key, up); $("lockModal").hidden = false;
+  }
+  function closeLock() { if (!$("lockModal").hidden) { $("lockModal").hidden = true; stopLock($("lockCard")); } }
+  $("lockX").onclick = closeLock;
+  $("lockModal").addEventListener("click", function (e) { if (e.target === this) closeLock(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeLock(); });
+  async function loadLocks() {
+    try { locks = await api("api/locks.ashx") || {}; } catch (e) { locks = {}; }
+    applyLocks();
+  }
+  function lockStrip(el, key, html) {
+    var up = locks[key]; el.hidden = !up || !up.id; if (el.hidden) return;
+    el.style.setProperty("--ac", LOCK[key].ac); el.style.setProperty("--ac2", LOCK[key].ac2);
+    el.innerHTML = '<span>' + html.replace("{plan}", '<b>' + esc(up.name) + '</b>') + '</span><span class="go">اعرف أكتر ←</span>';
+    el.onclick = function () { openLock(key); };
+  }
+  function applyLocks() {
+    var sh = locks.shopify;
+    $("lockShop").hidden = !sh; $("shopCard").hidden = !!sh;
+    if (sh) { renderLock($("lockShop"), "shopify", sh); if (sh.name) $("srcShopInfo").textContent = "🔒 متاح من باقة " + sh.name; } else stopLock($("lockShop"));
+    lockStrip($("lockFiles"), "files", "🔒 ارفع ملفات <b>PDF و Word و Excel</b> زي ما هي مع باقة {plan}. ملفات TXT و CSV والنص متاحين ليك دلوقتي.");
+    lockStrip($("lockLook"), "styles", "✨ الأشكال اللي عليها 🔒 وأي لون خاص متاحين مع باقة {plan}. جرّبهم في المعاينة دلوقتي، واحفظهم بعد الترقية.");
+    document.querySelectorAll(".sty").forEach(function (c) { c.classList.toggle("locked", !!locks.styles && FREE_STYLES.indexOf(c.dataset.style) < 0); });
   }
   async function upgradeTo(id) {
     go("plan");
@@ -1967,6 +2097,7 @@
   ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); }); });
   drop.addEventListener("drop", function (e) { var f = e.dataTransfer.files[0]; if (f) upload(f); });
   async function upload(file) {
+    if (locks.files && /\.(pdf|docx|xlsx)$/i.test(file.name)) { openLock("files"); return; }   // the plan doesn't include these
     if (file.size > 10 * 1024 * 1024) { setMsg("upMsg", "الملف أكبر من 10 ميجا."); return; }
     setMsg("upMsg", (/\.pdf$/i.test(file.name) ? "بنقرا الـ PDF بالذكاء الاصطناعي، ممكن ياخد دقيقة… ⏳" : "بنقرا الملف… ⏳"), true);
     var fd = new FormData(); fd.append("file", file);
@@ -2011,7 +2142,7 @@
       document.querySelectorAll("#pvSeg button").forEach(function (b) { b.onclick = function () { pvView = b.dataset.view; document.querySelectorAll("#pvSeg button").forEach(function (x) { x.classList.toggle("on", x === b); }); loadPreview(); }; });
       loadPreview();
     }
-    updateLook();
+    updateLook(); applyLocks();
   }
   function theme() { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; }
   function loadPreview() { $("preview").src = BASE + "?store=" + me.slug + "&preview=1&view=" + pvView + "&style=" + look.style + "&color=" + encodeURIComponent(look.color) + "&theme=" + theme(); }
@@ -2029,6 +2160,8 @@
   }
   $("saveLook").onclick = async function () {
     setMsg("lookMsg", "");
+    // a locked style or color can be tried in the preview; saving it needs the plan that has it
+    if (locks.styles && ((look.style !== me.bubbleStyle && FREE_STYLES.indexOf(look.style) < 0) || (look.color !== me.brandColor && SWATCHES.indexOf(look.color) < 0))) { openLock("styles"); return; }
     try {
       me = await api("api/store.ashx", { method: "POST", json: { bubbleStyle: look.style, brandColor: look.color, chatTitle: look.title.trim() } });
       look.title = me.chatTitle || ""; $("chatTitle").value = look.title;

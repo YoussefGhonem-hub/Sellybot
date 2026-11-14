@@ -263,15 +263,7 @@ namespace RiwaqChat
             offer = null;
             var mode = AutoAssign(c); int minId = MinPlanId(c);
             if (mode == "off" || (mode == "all" && minId == 0)) return true;
-            var all = Billing.Plans(c, true);
-            int minRank = minId > 0 ? all.FindIndex(p => p.Id == minId) : -1;   // a deleted minimum = any paid plan
-            int myRank = s.PlanId.HasValue ? all.FindIndex(p => p.Id == s.PlanId.Value) : -1;
-            bool paid = s.PlanId.HasValue && !Billing.Expired(s);
-            if (paid && (minRank < 0 || myRank >= minRank)) return true;
-            if (!paid && myRank >= 0 && myRank >= minRank && all[myRank].IsActive) { offer = all[myRank]; return false; }
-            for (int i = Math.Max(0, Math.Max(minRank, paid ? myRank + 1 : 0)); i < all.Count; i++)
-                if (all[i].IsActive) { offer = all[i]; break; }
-            return false;
+            return PlanGate.Check(c, s, minId, out offer);   // same plan rule as the other locked features
         }
 
         // Takes the first free number of the platform account for the store. null = none free.
@@ -505,6 +497,7 @@ ELSE
 
                     var s = Db.StoreById(c, storeId);
                     if (s == null || s.Status != "active" || !s.WaEnabled || string.IsNullOrEmpty(s.WaInstance)) return;
+                    PlanGate.Apply(c, s);   // e.g. no order tracking when the plan doesn't include Shopify
                     var token = WaAccount.Token(c, s);
                     if (token == null) return;
                     if (Billing.Expired(s)) { SetStatus(c, s.Id, "⚠️ الباقة خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها."); return; }
