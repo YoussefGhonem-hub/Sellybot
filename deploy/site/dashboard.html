@@ -1410,14 +1410,15 @@
       '<div><div class="hint">باقتك الحالية</div><div class="mp-name">' + esc(p.name || "التجربة المجانية") + '</div>' + status +
       '<p class="hint" style="margin:10px 0 0">' + (p.name ? (p.expired ? "خلصت يوم " + dateAr(p.endsAt) + ". المساعد متوقف لحد ما تجدد." : "بتخلص يوم " + dateAr(p.endsAt) + "، وبعدها المساعد بيتوقف لحد ما تجدد.") : "رصيد تجربة عشان تختبر المساعد على داتا متجرك. اشترك في باقة عشان تكمّل من غير توقف.") + '</p>' +
       (p.name && !p.expired && pct >= 80 ? '<p class="hint" style="margin:8px 0 0;color:#b26b00">⚠️ رصيد الشهر ده قرب يخلص. زوّد الرصيد عشان المساعد مايقفش قبل آخر الشهر.</p>' : '') +
-      '<div class="row" style="margin-top:14px"><button type="button" class="btn" id="mpRenew">' + (p.name ? (p.expired ? "🔁 جدّد الباقة" : "🔁 جدّد قبل ميعادها") : "🚀 اختار باقة") + '</button>' +
-      (p.name && !p.expired ? '<button type="button" class="btn ghost" id="mpTopup">➕ زوّد الرصيد</button>' : '') + '</div></div>' +
+      // on the free trial the plans are right under this card, so no button here; a paid plan gets renew / top up
+      (p.name ? '<div class="row" style="margin-top:14px"><button type="button" class="btn" id="mpRenew">' + (p.expired ? "🔁 جدّد الباقة" : "🔁 جدّد قبل ميعادها") + '</button>' +
+        (!p.expired ? '<button type="button" class="btn ghost" id="mpTopup">➕ زوّد الرصيد</button>' : '') + '</div>' : '') + '</div>' +
       '<div class="row" style="justify-content:center;gap:18px"><div class="mp-ring" id="mpRing" style="--p:0"><b>' + pct + '%<small>من رصيد الشهر</small></b></div>' +
       '<div><div class="hint">الشهر ده</div><div style="font-size:20px;font-weight:700">' + fmt(me.usage.messages) + ' رسالة</div>' +
       (me.usage.extra > 0 ? '<div class="hint">➕ فيه رصيد إضافي الشهر ده</div>' : '') +
       (left != null ? '<div class="hint">فاضل حوالي <b style="color:var(--ink)">' + fmt(left) + '</b> رسالة</div>' : '') + '</div></div>';
     requestAnimationFrame(function () { setTimeout(function () { var r = $("mpRing"); if (r) r.style.setProperty("--p", pct); }, 60); });
-    $("mpRenew").onclick = function () {
+    if ($("mpRenew")) $("mpRenew").onclick = function () {
       var same = p.id && plansData && plansData.plans.some(function (x) { return x.id === p.id; });
       if (same) openRequest(p.id); else $("plGrid").scrollIntoView({ behavior: "smooth", block: "start" });
     };
