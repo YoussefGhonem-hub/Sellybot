@@ -10,6 +10,12 @@
 // - After loading, the entries this browser hasn't seen yet open once in the "الجديد في Sellybot" window.
 window.SB_NEWS = [
   {
+    id: "2026-11-15-home", date: "2026-11-15", icon: "🏠",
+    title: "صفحة رئيسية جديدة للوحة التحكم",
+    text: "أول ما تدخل هتلاقي ملخص متجرك: المساعد شغال ولا لأ، ورسايل الشهر، ورصيدك، وكل قسم بدوسة.",
+    items: ["تحميل برنامج الكمبيوتر بقى فيها", "آخر الحاجات الجديدة في مكان واحد"]
+  },
+  {
     id: "2026-11-15-desktop", date: "2026-11-15", icon: "🖥️",
     title: "Sellybot على الكمبيوتر",
     text: "لوحة تحكم متجرك بقت برنامج لوحده على Windows، من غير متصفح.",

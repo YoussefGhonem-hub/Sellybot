@@ -100,6 +100,16 @@
   .dl-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .dl-row .how{color:var(--muted);text-decoration:none;font-weight:600;font-size:14.5px;border-bottom:1px dashed color-mix(in srgb,var(--muted) 60%,transparent)}
   .dl-row .how:hover{color:var(--brand);border-color:var(--brand)}
+  /* the second way: Microsoft Store ("soon" until the listing is approved, see STORE_LIVE) */
+  .ms-btn{position:relative;display:inline-flex;align-items:center;gap:11px;padding:11px 18px 11px 16px;border-radius:16px;text-decoration:none;
+          background:var(--ink);color:var(--bg);border:1px solid var(--ink);transition:transform .2s,box-shadow .2s}
+  .ms-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .ms-btn svg{width:26px;height:26px;flex:none}
+  .ms-btn small{display:block;font-size:11.5px;opacity:.8;line-height:1.3}
+  .ms-btn b{display:block;font-size:15.5px;line-height:1.3;direction:ltr;text-align:right;font-family:"Segoe UI",system-ui,sans-serif}
+  .ms-btn.soon{background:var(--card);color:var(--ink);border:1px dashed color-mix(in srgb,var(--muted) 55%,var(--line));cursor:default}
+  .ms-btn.soon:hover{transform:none;box-shadow:none}
+  .ms-btn .tag{position:absolute;top:-10px;left:-8px;padding:2px 9px;border-radius:999px;background:var(--brand);color:#fff;font-size:11.5px;font-weight:700;font-style:normal;box-shadow:0 4px 10px rgba(232,119,74,.35)}
   .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
   .meta span{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;color:var(--muted);white-space:nowrap}
   .meta b{color:var(--ink);font-weight:600}
@@ -427,6 +437,11 @@
           <span><b>حمّل لـ Windows</b><small>مجاني · ثبّته في أقل من دقيقة</small></span>
           <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg>
         </a>
+        <a class="ms-btn soon" id="msBtn" aria-disabled="true" title="البرنامج بيتراجع من Microsoft دلوقتي، وأول ما يتقبل هتقدر تثبّته من هنا">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7V6a3.5 3.5 0 0 1 7 0v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="7" width="18" height="14" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="10.4" width="3.5" height="3.5" fill="#f25022"/><rect x="12.3" y="10.4" width="3.5" height="3.5" fill="#7fba00"/><rect x="8.2" y="14.5" width="3.5" height="3.5" fill="#00a4ef"/><rect x="12.3" y="14.5" width="3.5" height="3.5" fill="#ffb900"/></svg>
+          <span><small>ثبّته من</small><b>Microsoft Store</b></span>
+          <em class="tag" id="msTag">قريبًا</em>
+        </a>
         <a class="how" href="#steps">إزاي أثبّته؟ ↓</a>
       </div>
       <div class="meta">
@@ -600,7 +615,12 @@
   </div>
   <div class="faq reveal">
     <details><summary>ليه Windows بيقول «Windows protected your PC»؟</summary>
-      <div class="a"><p>ده تحذير بيظهر مع أي برنامج جديد لسه ماخدش شهرة عند Microsoft، ومش معناه إن فيه مشكلة. البرنامج كل اللي بيعمله إنه بيفتح لوحة تحكمك على sellybot.online في نافذة لوحده. دوس <code>More info</code> وبعدين <code>Run anyway</code> وهيكمّل عادي.</p></div></details>
+      <div class="a"><p>ده تحذير بيظهر مع أي برنامج جديد لسه ماخدش شهرة عند Microsoft، ومش معناه إن فيه مشكلة. البرنامج كل اللي بيعمله إنه بيفتح لوحة تحكمك على sellybot.online في نافذة لوحده. دوس <code>More info</code> وبعدين <code>Run anyway</code> وهيكمّل عادي.<span class="ms-live" hidden> ولو مش عايز تشوف التحذير ده خالص، ثبّته من <a href="#" class="ms-link">Microsoft Store</a>.</span></p></div></details>
+    <details><summary>أنزّله منين: الملف ولا Microsoft Store؟</summary>
+      <div class="a"><p>الاتنين نفس البرنامج ونفس حسابك، فاختار اللي يريّحك.</p>
+        <p><b>ملف التثبيت</b> (<code>Sellybot-Setup.exe</code>): بتحمّله من هنا، وبيتحدّث لوحده.</p>
+        <p class="ms-soon"><b>Microsoft Store</b>: قريبًا. البرنامج بيتراجع من Microsoft دلوقتي، وأول ما يتقبل هتقدر تثبّته من الـ Store بدوسة واحدة، من غير تحذير «Windows protected your PC»، والـ Store هو اللي هيحدّثه.</p>
+        <p class="ms-live" hidden><b>Microsoft Store</b>: بتثبّته بدوسة واحدة من <a href="#" class="ms-link">صفحته على الـ Store</a>، من غير تحذير «Windows protected your PC»، والـ Store هو اللي بيحدّثه.</p></div></details>
     <details><summary>محتاج أنزّله تاني لما يحصل تحديث؟</summary>
       <div class="a"><p>لأ. لوحة التحكم جوه البرنامج بتتحدّث من الموقع على طول، والبرنامج نفسه بينزّل تحديثاته في الخلفية ويثبّتها لما تقفله.</p></div></details>
     <details><summary>فيه فرق بينه وبين الموقع؟</summary>
@@ -634,6 +654,10 @@
   var $ = function (id) { return document.getElementById(id); };
   var REPO = "YoussefGhonem-hub/Sellybot";
   var DL = "https://github.com/" + REPO + "/releases/latest/download/Sellybot-Setup.exe";   // always the newest release
+  // Microsoft Store: false shows "soon" while the listing is in certification. Once it is published, set true and the button,
+  // the FAQ and the SmartScreen answer all point to the Store page.
+  var STORE_LIVE = false;
+  var STORE_URL = "https://apps.microsoft.com/detail/9PF6W2MNNRK8?mode=full";
   var ua = navigator.userAgent;
   var inApp = /SellybotDesktop/.test(ua);
   var onWin = /Windows NT/.test(ua) && !/Windows Phone/.test(ua);
@@ -647,6 +671,17 @@
     if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { prompt("انسخ اللينك:", url); });
     else prompt("انسخ اللينك:", url);
   };
+
+  // ---------- Microsoft Store button: "soon" now, a real link once STORE_LIVE ----------
+  if (STORE_LIVE) {
+    var ms = $("msBtn");
+    ms.classList.remove("soon"); ms.removeAttribute("aria-disabled"); ms.removeAttribute("title");
+    ms.href = STORE_URL; ms.target = "_blank"; ms.rel = "noopener";
+    $("msTag").remove();
+    document.querySelectorAll(".ms-soon").forEach(function (el) { el.hidden = true; });
+    document.querySelectorAll(".ms-live").forEach(function (el) { el.hidden = false; });
+    document.querySelectorAll(".ms-link").forEach(function (a) { a.href = STORE_URL; a.target = "_blank"; a.rel = "noopener"; });
+  }
 
   // ---------- size and version of the newest release (static text stays when GitHub can't be reached) ----------
   fetch("https://api.github.com/repos/" + REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" } })

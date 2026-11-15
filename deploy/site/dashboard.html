@@ -40,7 +40,7 @@
 
   /* ---------- navbar ---------- */
   .nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
-  .nav-in{max-width:1240px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:16px}   /* wider than the page: room for the tabs + the app button */
+  .nav-in{max-width:1240px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:16px}   /* wider than the page: room for all the tabs */
   .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);flex:none}
   .logo .mark{width:30px;height:36px;flex:none;color:var(--ink);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
   .logo:hover .mark{transform:rotate(-8deg) scale(1.06)}
@@ -55,17 +55,8 @@
   .links button.on:after{content:"";position:absolute;inset:auto 10px 0 10px;height:3px;border-radius:3px 3px 0 0;background:var(--brand)}
   .theme-btn{flex:none;margin-inline-start:auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;overflow:hidden;transition:border-color .2s,transform .2s}
   .theme-btn:hover{border-color:var(--brand);transform:rotate(-12deg)}
-  /* "download the app" (Windows only, never inside the app): a pill, icon-only when the bar gets tight */
-  .dl-nav{flex:none;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px 0 13px;border-radius:999px;text-decoration:none;color:#fff;font-size:13.5px;font-weight:600;white-space:nowrap;
-          background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(232,119,74,.3);transition:transform .2s,box-shadow .2s}
-  .dl-nav:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(232,119,74,.4)}
-  .dl-nav svg{width:18px;height:18px;flex:none}
-  .dl-nav .ar{animation:dlBob 1.8s ease-in-out infinite}
-  @keyframes dlBob{0%,100%{transform:translateY(-.5px)}50%{transform:translateY(1.5px)}}
-  .dl-nav{margin-inline-start:auto}.dl-nav:not([hidden])+.theme-btn{margin-inline-start:0}
-  @media (max-width:1300px){.dl-nav{width:38px;padding:0;justify-content:center}.dl-nav span{display:none}}
   @media (min-width:761px) and (max-width:1150px){.links button{padding:0 9px}}
-  @media (min-width:761px) and (max-width:1000px){.dl-nav{display:none}}   /* the tabs already scroll here; the account menu has the same link */
+  @media (min-width:761px) and (max-width:1100px){.links button{padding:0 6px;font-size:13.5px}.logo small{display:none}.nav-in{gap:10px}}
   .theme-btn svg{width:18px;height:18px;grid-area:1/1;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
   .theme-btn .moon{transform:translateY(130%) rotate(-90deg);opacity:0}
   [data-theme=dark] .theme-btn .sun{transform:translateY(-130%) rotate(90deg);opacity:0}
@@ -893,6 +884,233 @@
     .item .meta{min-width:calc(100% - 60px)}
     .item .btn{width:100%}
   }
+
+  /* ---------- home (الرئيسية): the first page after login ---------- */
+  .hm{display:grid;gap:22px}
+  .hm-rv{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.2,.8,.2,1) var(--d,0s),transform .7s cubic-bezier(.2,.8,.2,1) var(--d,0s)}
+  .hm-rv.in{opacity:1;transform:none}
+  .hm-h{margin:0 0 16px}
+  .hm-h .tg{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--brand);
+            background:color-mix(in srgb,var(--brand) 11%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 24%,var(--line))}
+  .hm-h h2{margin:8px 0 2px;font-size:21px}
+  .hm-h p{margin:0;color:var(--muted);font-size:14px}
+  .hm-card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px;box-shadow:var(--shadow)}
+
+  /* hero: greeting + a chat that plays by itself */
+  .hm-hero{position:relative;overflow:hidden;isolation:isolate;border-radius:28px;padding:36px 34px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:26px;align-items:center;
+           background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 15%,var(--card)),var(--card) 52%,color-mix(in srgb,var(--brand2) 18%,var(--card)));border:1px solid var(--line);box-shadow:var(--lift)}
+  .hm-orb{position:absolute;z-index:-1;border-radius:50%;filter:blur(46px);opacity:.5;pointer-events:none;animation:hmFloat 15s ease-in-out infinite}
+  .hm-orb.a{width:280px;height:280px;background:var(--brand);top:-110px;left:-70px}
+  .hm-orb.b{width:220px;height:220px;background:#f7c873;bottom:-110px;left:36%;animation-delay:-5s}
+  .hm-orb.c{width:170px;height:170px;background:#ff9a7a;top:16%;right:-70px;animation-delay:-10s}
+  :root[data-theme=dark] .hm-orb{opacity:.2}
+  @keyframes hmFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(34px,-22px) scale(1.1)}66%{transform:translate(-24px,26px) scale(.94)}}
+  .hm-spark{position:absolute;z-index:-1;font-size:18px;opacity:.55;animation:hmRise var(--t,12s) linear infinite;animation-delay:var(--s,0s);left:var(--x)}
+  @keyframes hmRise{0%{transform:translateY(40px) rotate(0);opacity:0}12%{opacity:.6}88%{opacity:.6}100%{transform:translateY(-360px) rotate(25deg);opacity:0}}
+  .hm-spark{bottom:-30px}
+  .hm-hi{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13.5px;font-weight:600;box-shadow:var(--shadow)}
+  .hm-hi .wave{display:inline-block;transform-origin:70% 75%;animation:hmWave 2.6s ease-in-out infinite}
+  @keyframes hmWave{0%,55%,100%{transform:rotate(0)}10%,30%{transform:rotate(16deg)}20%,40%{transform:rotate(-8deg)}}
+  .hm-hero h1{margin:14px 0 10px;font-size:clamp(25px,3.4vw,38px);line-height:1.35;letter-spacing:-.3px}
+  .hm-hero h1 .st{color:var(--brand)}
+  .hm-rot{display:inline-block;background:linear-gradient(90deg,var(--brand),#f0a04b,#e8574a,var(--brand));background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+          animation:hmShine 5s linear infinite;transition:opacity .35s,transform .35s,filter .35s}
+  .hm-rot.out{opacity:0;transform:translateY(-12px);filter:blur(4px)}
+  .hm-rot.pre{opacity:0;transform:translateY(12px);filter:blur(4px);transition:none}
+  @keyframes hmShine{to{background-position:300% center}}
+  .hm-lead{margin:0 0 16px;color:var(--muted);font-size:15.5px;max-width:520px}
+  .hm-live{display:inline-flex;align-items:center;gap:8px;margin:0 0 18px;padding:7px 14px;border-radius:12px;font-size:13.5px;font-weight:600;
+           background:color-mix(in srgb,var(--ok) 11%,var(--card));border:1px solid color-mix(in srgb,var(--ok) 30%,var(--line));color:var(--ink)}
+  .hm-live i{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent);animation:hmPing 1.8s infinite}
+  .hm-live.off{background:color-mix(in srgb,var(--err) 10%,var(--card));border-color:color-mix(in srgb,var(--err) 30%,var(--line))}
+  .hm-live.off i{background:var(--err);animation:none}
+  .hm-live a{font-weight:700;text-decoration:none;cursor:pointer}
+  @keyframes hmPing{70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .hm-cta{display:flex;gap:10px;flex-wrap:wrap}
+  .hm-cta .btn{padding:12px 20px;border-radius:14px;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+  .hm-cta .btn:not(.ghost){background:linear-gradient(135deg,#d9653a,var(--brand) 50%,var(--brand2));box-shadow:0 10px 24px rgba(232,119,74,.32)}
+  .hm-phone{justify-self:center;width:min(100%,330px);border-radius:26px;background:var(--card);border:1px solid var(--line);box-shadow:0 30px 60px rgba(60,35,15,.2);overflow:hidden;
+            transform:perspective(900px) rotateY(10deg) rotateX(3deg);animation:hmBob 6s ease-in-out infinite}
+  @keyframes hmBob{0%,100%{transform:perspective(900px) rotateY(10deg) rotateX(3deg) translateY(0)}50%{transform:perspective(900px) rotateY(6deg) rotateX(1deg) translateY(-10px)}}
+  .hm-ph-top{display:flex;align-items:center;gap:10px;padding:12px 14px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .hm-ph-top .av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.22);font-size:18px}
+  .hm-ph-top b{display:block;font-size:14px;line-height:1.2}
+  .hm-ph-top small{display:flex;align-items:center;gap:5px;font-size:11.5px;opacity:.92}
+  .hm-ph-top small i{width:7px;height:7px;border-radius:50%;background:#b8ffcf}
+  .hm-ph-body{height:268px;overflow:hidden;padding:14px 12px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;background:var(--soft);transition:opacity .4s}
+  .hm-ph-body.clear{opacity:0}
+  .hm-ph-body .m{max-width:84%;padding:8px 12px;border-radius:16px;font-size:13.5px;line-height:1.55;animation:hmPop .45s cubic-bezier(.34,1.56,.64,1) both}
+  .hm-ph-body .m.u{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-right-radius:5px}
+  .hm-ph-body .m.b{align-self:flex-end;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));border-bottom-left-radius:5px}
+  .hm-ph-body .m.t{align-self:flex-end;display:flex;gap:4px;padding:11px 14px;background:var(--card);border:1px solid var(--line)}
+  .hm-ph-body .m.t i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:hmDot 1.1s infinite}
+  .hm-ph-body .m.t i:nth-child(2){animation-delay:.15s}.hm-ph-body .m.t i:nth-child(3){animation-delay:.3s}
+  @keyframes hmPop{from{opacity:0;transform:translateY(10px) scale(.85)}to{opacity:1;transform:none}}
+  @keyframes hmDot{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+
+  /* live numbers */
+  .hm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+  .hm-stat{position:relative;overflow:hidden;padding:18px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);transition:transform .25s,border-color .25s}
+  .hm-stat:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--brand) 40%,var(--line))}
+  .hm-stat .ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;margin-bottom:10px;background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+  .hm-stat b{display:block;font-size:24px;line-height:1.2;font-variant-numeric:tabular-nums}
+  .hm-stat small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  .hm-stat .mini-bar{height:6px;margin-top:10px;border-radius:9px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
+  .hm-stat .mini-bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--brand2),var(--brand));transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+  .hm-stat:after{content:"";position:absolute;inset:auto -30px -40px auto;width:110px;height:110px;border-radius:50%;background:color-mix(in srgb,var(--brand) 9%,transparent);transition:transform .5s}
+  .hm-stat:hover:after{transform:scale(1.5)}
+
+  /* how it works: data -> Sellybot -> customers, with packets running along the wires */
+  .hm-flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(40px,.6fr) minmax(0,1fr) minmax(40px,.6fr) minmax(0,1fr);align-items:center;gap:6px}
+  .hm-node{text-align:center;padding:18px 12px;border-radius:20px;background:var(--soft);border:1px solid var(--line);transition:transform .3s}
+  .hm-node:hover{transform:translateY(-4px)}
+  .hm-node .ic{width:58px;height:58px;margin:0 auto 10px;border-radius:18px;display:grid;place-items:center;font-size:27px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+  .hm-node b{display:block;font-size:15.5px}
+  .hm-node small{display:block;color:var(--muted);font-size:12.5px;line-height:1.6;margin-top:3px}
+  .hm-node.core{background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 16%,var(--card)),color-mix(in srgb,var(--brand2) 12%,var(--card)));border-color:color-mix(in srgb,var(--brand) 35%,var(--line))}
+  .hm-node.core .ic{position:relative;background:var(--card)}
+  .hm-node.core .ic svg{width:30px;height:36px;color:var(--ink)}
+  .hm-node.core .ic:before,.hm-node.core .ic:after{content:"";position:absolute;inset:-2px;border-radius:20px;border:2px solid var(--brand);opacity:0;animation:hmRing 2.4s ease-out infinite}
+  .hm-node.core .ic:after{animation-delay:1.2s}
+  @keyframes hmRing{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.55);opacity:0}}
+  .hm-wire{position:relative;height:4px;border-radius:4px;background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--brand) 35%,var(--line)) 0 8px,transparent 8px 14px)}
+  .hm-wire i{position:absolute;top:50%;right:0;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--brand);box-shadow:0 0 12px var(--brand);animation:hmRun 2.4s linear infinite}
+  .hm-wire i:nth-child(2){animation-delay:.8s;background:var(--brand2)}.hm-wire i:nth-child(3){animation-delay:1.6s}
+  @keyframes hmRun{0%{right:0;opacity:0;transform:scale(.4)}15%{opacity:1;transform:scale(1)}85%{opacity:1;transform:scale(1)}100%{right:calc(100% - 12px);opacity:0;transform:scale(.4)}}
+  .hm-chans{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px}
+  .hm-chans span{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:999px;font-size:13px;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+  .hm-chans span.on{color:var(--ink);background:color-mix(in srgb,var(--ok) 10%,var(--card));border-color:color-mix(in srgb,var(--ok) 32%,var(--line))}
+  .hm-chans img{width:16px;height:16px;object-fit:contain}
+
+  /* shortcuts to every part of the dashboard */
+  .hm-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .hm-tile{position:relative;overflow:hidden;display:grid;grid-template-columns:52px minmax(0,1fr);gap:4px 14px;align-items:start;padding:18px;border-radius:20px;text-align:right;cursor:pointer;
+           background:radial-gradient(260px circle at var(--mx,-200px) var(--my,-200px),color-mix(in srgb,var(--brand) 14%,transparent),transparent 70%),var(--card);
+           border:1px solid var(--line);box-shadow:var(--shadow);transition:transform .25s,border-color .25s,box-shadow .25s}
+  .hm-tile:hover{transform:translateY(-5px);border-color:color-mix(in srgb,var(--brand) 45%,var(--line));box-shadow:var(--lift)}
+  .hm-tile .ic{grid-row:span 3;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:25px;background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 20%,var(--card)),color-mix(in srgb,var(--brand2) 14%,var(--card)));transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+  .hm-tile:hover .ic{transform:rotate(-10deg) scale(1.12)}
+  .hm-tile b{font-size:15.5px}
+  .hm-tile p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+  .hm-tile .chip{justify-self:start;margin-top:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+  .hm-tile .chip.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--card));border-color:color-mix(in srgb,var(--ok) 30%,var(--line))}
+  .hm-tile .chip.go{color:#fff;background:var(--brand);border-color:var(--brand)}
+  .hm-tile .arr{position:absolute;top:18px;left:18px;color:var(--muted);transition:transform .25s,color .25s}
+  .hm-tile:hover .arr{transform:translateX(-5px);color:var(--brand)}
+  .hm-tile.next{border-color:color-mix(in srgb,var(--brand) 55%,var(--line));animation:hmGlow 2.4s ease-in-out infinite}
+  @keyframes hmGlow{0%,100%{box-shadow:var(--shadow),0 0 0 0 rgba(232,119,74,.35)}50%{box-shadow:var(--shadow),0 0 0 7px rgba(232,119,74,0)}}
+
+  /* the desktop app */
+  .hm-app{position:relative;overflow:hidden;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:center;padding:34px;border-radius:28px;color:#fbefe6;
+          background:radial-gradient(500px circle at 15% 20%,rgba(232,119,74,.38),transparent 60%),radial-gradient(420px circle at 90% 100%,rgba(245,162,93,.25),transparent 60%),linear-gradient(135deg,#2b1d15,#1b130e)}
+  .hm-app:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.35;background-image:radial-gradient(rgba(255,255,255,.18) 1px,transparent 1px);background-size:22px 22px;
+                 -webkit-mask-image:linear-gradient(180deg,#000,transparent 85%);mask-image:linear-gradient(180deg,#000,transparent 85%)}
+  .hm-app .tg{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18)}
+  .hm-app h2{margin:12px 0 8px;font-size:clamp(23px,3vw,32px);line-height:1.3;color:#fff}
+  .hm-app h2 span{background:linear-gradient(90deg,#ffb48a,#ffd39a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hm-app p{margin:0 0 18px;color:#d9c6b8;font-size:15px;max-width:460px}
+  .hm-feat{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px;padding:0;list-style:none}
+  .hm-feat li{padding:5px 12px;border-radius:999px;font-size:13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+  .hm-btns{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .hm-dl{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:12px;padding:13px 22px 13px 18px;border-radius:16px;color:#fff;text-decoration:none;
+         background:linear-gradient(135deg,#d9653a,var(--brand) 45%,var(--brand2));box-shadow:0 14px 34px rgba(232,119,74,.45);transition:transform .2s,box-shadow .2s}
+  .hm-dl:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(232,119,74,.55)}
+  .hm-dl:before{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.38) 50%,transparent 70%);animation:hmSweep 4.5s ease-in-out infinite}
+  @keyframes hmSweep{0%,55%{transform:translateX(120%)}85%,100%{transform:translateX(-120%)}}
+  .hm-dl .wl{width:32px;height:32px;flex:none;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.2)}
+  .hm-dl .wl svg{width:17px;height:17px}
+  .hm-dl b{display:block;font-size:17px;line-height:1.25}.hm-dl small{display:block;font-size:12px;opacity:.9}
+  .hm-dl .arr{width:20px;height:20px;flex:none;animation:hmDown 1.6s ease-in-out infinite}
+  @keyframes hmDown{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+  .hm-ms{position:relative;display:inline-flex;align-items:center;gap:10px;padding:10px 16px 10px 14px;border-radius:16px;text-decoration:none;color:#fff;background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.35)}
+  .hm-ms svg{width:24px;height:24px;flex:none}
+  .hm-ms small{display:block;font-size:11px;opacity:.8;line-height:1.3}.hm-ms b{display:block;font-size:14.5px;line-height:1.3;direction:ltr;text-align:right;font-family:"Segoe UI",system-ui,sans-serif}
+  .hm-ms em{position:absolute;top:-10px;left:-8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;font-style:normal;color:#fff;background:var(--brand);box-shadow:0 4px 10px rgba(232,119,74,.4)}
+  .hm-ms.live{background:#fff;color:#1b130e;border:1px solid #fff;cursor:pointer}
+  .hm-ms:not(.live){cursor:default}
+  .hm-more{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:16px;font-size:13.5px;color:#cdb8a9}
+  .hm-more a{color:#ffc29e;font-weight:600;text-decoration:none;border-bottom:1px dashed rgba(255,194,158,.5)}
+  .hm-note{margin-top:14px;padding:12px 14px;border-radius:14px;font-size:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+  .hm-note.ok{background:rgba(76,194,126,.14);border-color:rgba(76,194,126,.4)}
+  .hm-note a{color:#ffc29e;font-weight:600}
+  .hm-note button{margin-top:8px;padding:6px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:none;color:#fff;cursor:pointer;font-size:13px}
+  /* a laptop where the icon is double-clicked and the app opens, in a loop */
+  .hm-lap{position:relative;justify-self:center;width:min(100%,460px)}
+  .hm-lap .scr{position:relative;aspect-ratio:16/10;border-radius:14px 14px 0 0;border:9px solid #0f0a07;border-bottom-width:12px;overflow:hidden;container-type:inline-size;
+               background:linear-gradient(135deg,#f6b28a,#e8774a 45%,#a8496b)}
+  .hm-lap .base{height:13px;margin:0 -6%;border-radius:0 0 14px 14px;background:linear-gradient(180deg,#3b2b22,#1a120d);box-shadow:0 18px 30px rgba(0,0,0,.35)}
+  .hm-lap .base:after{content:"";display:block;width:16%;height:5px;margin:0 auto;border-radius:0 0 6px 6px;background:#0f0a07}
+  .hm-lap .icon{position:absolute;top:7cqi;right:6cqi;display:flex;flex-direction:column;align-items:center;gap:1cqi;font-size:2.6cqi;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .hm-lap .icon img{width:10cqi;height:10cqi;padding:.6cqi;border-radius:2.4cqi;background:#fff8f3;box-shadow:0 1cqi 2cqi rgba(0,0,0,.25);animation:hmIcon 8s ease-in-out infinite}
+  @keyframes hmIcon{0%,22%{transform:none}25%{transform:scale(.88)}28%,100%{transform:none}}
+  .hm-lap .cur{position:absolute;width:5cqi;height:5cqi;z-index:3;animation:hmCur 8s ease-in-out infinite}
+  @keyframes hmCur{0%{top:70%;right:60%}20%,30%{top:14cqi;right:9cqi}45%,100%{top:75%;right:35%}}
+  .hm-lap .click{position:absolute;top:13cqi;right:7cqi;width:8cqi;height:8cqi;border-radius:50%;border:.5cqi solid #fff;opacity:0;animation:hmClick 8s ease-out infinite}
+  @keyframes hmClick{0%,23%{opacity:0;transform:scale(.3)}25%{opacity:.9;transform:scale(.6)}32%,100%{opacity:0;transform:scale(1.5)}}
+  .hm-lap .win{position:absolute;left:5cqi;top:5cqi;width:72cqi;border-radius:1.6cqi;overflow:hidden;background:var(--card);box-shadow:0 2cqi 6cqi rgba(30,10,5,.4);transform-origin:85% 15%;animation:hmWin 8s cubic-bezier(.2,.8,.2,1) infinite}
+  @keyframes hmWin{0%,27%{opacity:0;transform:scale(.2)}36%,90%{opacity:1;transform:none}100%{opacity:0;transform:scale(.9)}}
+  .hm-lap .wt{display:flex;align-items:center;gap:1cqi;height:4.6cqi;padding:0 1.6cqi;background:var(--soft);border-bottom:1px solid var(--line);font:600 1.8cqi "Segoe UI",system-ui,sans-serif;color:var(--ink);direction:ltr}
+  .hm-lap .wt img{width:2.4cqi;height:2.4cqi}
+  .hm-lap .wt span{margin-left:auto;display:flex;gap:2cqi;color:var(--muted);font-weight:400}
+  .hm-lap .wb{padding:2cqi;display:grid;grid-template-columns:repeat(3,1fr);gap:1.4cqi}
+  .hm-lap .wb .k{padding:1.4cqi;border-radius:1.2cqi;background:var(--soft);border:1px solid var(--line)}
+  .hm-lap .wb .k small{display:block;font-size:1.5cqi;color:var(--muted)}.hm-lap .wb .k b{display:block;font-size:2.4cqi;color:var(--ink)}
+  .hm-lap .wb .bars{display:flex;align-items:flex-end;gap:.6cqi;height:5cqi;margin-top:.8cqi}
+  .hm-lap .wb .bars i{flex:1;border-radius:.5cqi .5cqi 0 0;background:linear-gradient(180deg,var(--brand2),var(--brand));transform-origin:bottom;animation:hmBar 8s ease-out infinite}
+  @keyframes hmBar{0%,36%{transform:scaleY(0)}48%,100%{transform:scaleY(1)}}
+  .hm-lap .wb .ch{grid-column:1/-1;display:flex;flex-direction:column;gap:.8cqi;padding:1.4cqi;border-radius:1.2cqi;background:var(--soft);border:1px solid var(--line);font-size:1.7cqi}
+  .hm-lap .wb .ch span{padding:.6cqi 1.4cqi;border-radius:1.4cqi;opacity:0;animation:hmMsg 8s ease-out infinite}
+  .hm-lap .wb .ch .u{align-self:flex-start;background:var(--card);border:1px solid var(--line);color:var(--ink);animation-delay:.2s}
+  .hm-lap .wb .ch .b{align-self:flex-end;background:color-mix(in srgb,var(--brand) 20%,var(--card));color:var(--ink);animation-delay:.6s}
+  @keyframes hmMsg{0%,45%{opacity:0;transform:translateY(1cqi)}52%,100%{opacity:1;transform:none}}
+  .hm-lap .bar{position:absolute;inset:auto 0 0 0;height:6.5cqi;display:flex;align-items:center;justify-content:center;gap:2cqi;background:rgba(255,248,243,.75);backdrop-filter:blur(6px)}
+  .hm-lap .bar svg{width:3cqi;height:3cqi}.hm-lap .bar img{width:3.6cqi;height:3.6cqi;border-radius:.8cqi}
+  .hm-chip{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;
+           color:var(--ink);background:var(--card);border:1px solid var(--line);box-shadow:0 10px 24px rgba(0,0,0,.25);animation:hmChip 5s ease-in-out infinite}
+  .hm-chip.c1{top:-12px;right:12%}.hm-chip.c2{top:44%;left:-18px;animation-delay:-1.7s}.hm-chip.c3{bottom:2px;right:-10px;animation-delay:-3.3s}
+  @keyframes hmChip{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+  /* what's new + help */
+  .hm-two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+  .hm-news{position:relative;display:grid;gap:14px;padding-right:18px}
+  .hm-news:before{content:"";position:absolute;top:8px;bottom:8px;right:5px;width:2px;border-radius:2px;background:linear-gradient(180deg,var(--brand),color-mix(in srgb,var(--brand) 10%,var(--line)))}
+  .hm-ni{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start}
+  .hm-ni:before{content:"";position:absolute;top:14px;right:-18px;width:12px;height:12px;border-radius:50%;background:var(--card);border:3px solid var(--brand)}
+  .hm-ni .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+  .hm-ni b{display:block;font-size:14.5px}
+  .hm-ni p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .hm-ni .nl{display:inline-block;margin-top:6px;padding:0;border:0;background:none;color:var(--brand);font-weight:600;font-size:13px;cursor:pointer;text-decoration:none}
+  .hm-help{text-align:center;background:linear-gradient(160deg,color-mix(in srgb,var(--brand) 10%,var(--card)),var(--card))}
+  .hm-help .big{font-size:44px;display:inline-block;animation:hmWave 3s ease-in-out infinite}
+  .hm-help h3{margin:6px 0 4px;font-size:18px}
+  .hm-help p{margin:0 0 16px;color:var(--muted);font-size:14px}
+  .hm-help .btn{display:flex;justify-content:center;width:100%;margin-top:8px;padding:11px;border-radius:12px;text-decoration:none}
+
+  @media (max-width:900px){
+    .hm-hero,.hm-app,.hm-two{grid-template-columns:minmax(0,1fr)}
+    .hm-hero{padding:28px 22px;text-align:center}
+    .hm-lead{margin-inline:auto}.hm-cta{justify-content:center}
+    .hm-phone{transform:none;animation:none}
+    .hm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .hm-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .hm-app{padding:28px 22px}
+    .hm-flow{grid-template-columns:minmax(0,1fr);gap:0;justify-items:center}
+    .hm-node{width:100%;max-width:380px}
+    .hm-wire{width:4px;height:44px;background:repeating-linear-gradient(180deg,color-mix(in srgb,var(--brand) 35%,var(--line)) 0 8px,transparent 8px 14px)}
+    .hm-wire i{top:0;right:50%;margin:0 -6px 0 0;animation-name:hmRunV}
+  }
+  @keyframes hmRunV{0%{top:0;opacity:0;transform:scale(.4)}15%{opacity:1;transform:scale(1)}85%{opacity:1;transform:scale(1)}100%{top:calc(100% - 12px);opacity:0;transform:scale(.4)}}
+  @media (max-width:560px){
+    .hm-card{padding:20px 16px}
+    .hm-tiles{grid-template-columns:minmax(0,1fr)}
+    .hm-stat{padding:14px}.hm-stat b{font-size:20px}
+    .hm-chip{font-size:11px;padding:4px 9px}.hm-chip.c2{left:-6px}.hm-chip.c3{right:-4px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hm *,.hm *:before,.hm *:after{animation:none!important;transition:none!important}
+    .hm-rv{opacity:1;transform:none}
+    .hm-lap .win,.hm-lap .wb .ch span{opacity:1;transform:none}
+  }
 </style>
 </head>
 <body>
@@ -914,7 +1132,8 @@
     <div class="nav-back" id="navBack"></div>
     <nav class="links" id="navLinks" hidden>
       <div class="side-head"><b>القائمة</b><button type="button" id="navClose" aria-label="اقفل القائمة">✕</button></div>
-      <button data-tab="data" class="on">📚 داتا المتجر</button>
+      <button data-tab="home" class="on">🏠 الرئيسية</button>
+      <button data-tab="data">📚 داتا المتجر</button>
       <button data-tab="look">🎨 شكل الشات</button>
       <button data-tab="install">🛍️ ضيفه لمتجرك</button>
       <button data-tab="wa">💬 واتساب</button>
@@ -923,10 +1142,6 @@
       <button type="button" data-href="about.html">ℹ️ من نحن</button>
       <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
     </nav>
-    <a class="dl-nav" id="navDl" href="download.html" title="حمّل Sellybot لـ Windows" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="13" rx="2.5"/><path d="M8.5 20.5h7M12 16.5v4"/><g class="ar"><path d="M12 6.5v6M9.3 10l2.7 2.7 2.7-2.7"/></g></svg>
-      <span>حمّل البرنامج</span>
-    </a>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="غيّر الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق">
       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
@@ -943,7 +1158,7 @@
         <button data-goto="plan">💎 باقتي والاشتراك</button>
         <button data-goto="support">🎧 الدعم الفني <span class="nb" id="supBadge" hidden></span></button>
         <a id="menuWa" target="_blank" rel="noopener">🟢 كلّمنا على واتساب ↗</a>
-        <a id="menuDesktop" href="download.html" hidden>🖥️ نزّل البرنامج على الكمبيوتر</a>
+        <button type="button" id="menuDesktop" hidden>🖥️ نزّل البرنامج على الكمبيوتر</button>
         <div class="sep"></div>
         <button id="logoutBtn">↩️ تسجيل خروج</button>
       </div>
@@ -1055,8 +1270,117 @@
   <div class="banner" id="storageBanner" hidden></div>
   <div class="banner" id="planBanner" hidden></div>
 
+  <!-- home: the first page after login. What Sellybot does for this store, where each part lives, and the desktop app -->
+  <section data-panel="home" class="hm">
+    <div class="hm-hero">
+      <i class="hm-orb a"></i><i class="hm-orb b"></i><i class="hm-orb c"></i>
+      <span class="hm-spark" style="--x:8%;--t:13s;--s:0s" aria-hidden="true">💬</span>
+      <span class="hm-spark" style="--x:30%;--t:16s;--s:-6s" aria-hidden="true">✨</span>
+      <span class="hm-spark" style="--x:52%;--t:12s;--s:-3s" aria-hidden="true">🛍️</span>
+      <span class="hm-spark" style="--x:74%;--t:15s;--s:-9s" aria-hidden="true">⭐</span>
+      <div>
+        <span class="hm-hi"><span class="wave" id="hmHiIc">👋</span><span id="hmHi">أهلاً بيك</span></span>
+        <h1>مساعد <span class="st" id="hmStore"></span> بيرد على زباينك<br><span class="hm-rot" id="hmRot">في ثانية ⚡</span></h1>
+        <p class="hm-lead">Sellybot بيقرا داتا متجرك ويرد على أسئلة زباينك عن المنتجات والأسعار والشحن، على موقعك وعلى واتساب، ليل ونهار.</p>
+        <div class="hm-live" id="hmLive"><i></i><span id="hmLiveT">المساعد شغال دلوقتي</span></div>
+        <div class="hm-cta">
+          <a class="btn" id="hmOpenChat" target="_blank" rel="noopener">💬 جرّب شاتك</a>
+          <button class="btn ghost" type="button" data-goto="data">📚 ضيف داتا</button>
+          <button class="btn ghost" type="button" data-goto="install">🛍️ ضيفه لمتجرك</button>
+        </div>
+      </div>
+      <div class="hm-phone" aria-hidden="true">
+        <div class="hm-ph-top"><span class="av">🛍️</span><div><b id="hmBotName">مساعد متجرك</b><small><i></i>مثال لمحادثة مع زبون</small></div></div>
+        <div class="hm-ph-body" id="hmChat"></div>
+      </div>
+    </div>
+
+    <div class="hm-stats">
+      <div class="hm-stat hm-rv" style="--d:0s"><div class="ic">💬</div><b id="hmMsgs">٠</b><small>رسالة رد عليها المساعد الشهر ده</small></div>
+      <div class="hm-stat hm-rv" style="--d:.08s"><div class="ic">🔋</div><b id="hmLeft">٠</b><small id="hmLeftS">رسالة فاضلة في رصيدك</small><div class="mini-bar"><i id="hmLeftBar"></i></div></div>
+      <div class="hm-stat hm-rv" style="--d:.16s"><div class="ic">📚</div><b id="hmData">—</b><small id="hmDataS">داتا متجرك</small></div>
+      <div class="hm-stat hm-rv" style="--d:.24s"><div class="ic">💎</div><b id="hmPlan">—</b><small id="hmPlanS"></small></div>
+    </div>
+
+    <div class="hm-card hm-rv">
+      <div class="hm-h"><span class="tg">⚙️ إزاي بيشتغل</span><h2>من داتا متجرك لرد في ثانية</h2><p>انت بتديله الداتا مرة واحدة، وهو بيرد على كل زبون بيها.</p></div>
+      <div class="hm-flow">
+        <div class="hm-node"><span class="ic">📚</span><b>داتا متجرك</b><small>ملفات ونصوص، أو منتجاتك من Shopify و EasyOrders</small></div>
+        <div class="hm-wire" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="hm-node core"><span class="ic"><svg viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span><b>Sellybot</b><small>بيفهم سؤال الزبون ويدوّر على الإجابة في داتاك</small></div>
+        <div class="hm-wire" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="hm-node"><span class="ic">🙋</span><b>زباينك</b><small>بياخدوا الرد في ثواني، 24 ساعة في اليوم</small></div>
+      </div>
+      <div class="hm-chans" id="hmChans"></div>
+    </div>
+
+    <div>
+      <div class="hm-h hm-rv"><span class="tg">🧭 لوحة التحكم</span><h2>كل حاجة في مكانها</h2><p>دوس على أي قسم وابدأ منه.</p></div>
+      <div class="hm-tiles" id="hmTiles"></div>
+    </div>
+
+    <div class="hm-app hm-rv" id="hmApp">
+      <div>
+        <span class="tg">🖥️ جديد · Windows 10 و 11</span>
+        <h2>Sellybot <span>على الكمبيوتر</span></h2>
+        <p>نفس لوحة التحكم دي بكل مميزاتها، في برنامج لوحده بأيقونة على سطح المكتب، من غير ما تفتح متصفح.</p>
+        <ul class="hm-feat"><li>⚡ بيفتح بدوسة</li><li>🔐 بيفتكر دخولك</li><li>🔄 بيتحدّث لوحده</li><li>🎁 مجاني</li></ul>
+        <div id="hmAppGet">
+          <div class="hm-btns">
+            <a class="hm-dl" id="hmDl" href="download.html" rel="noopener">
+              <span class="wl"><svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M2 4.6l8.2-1.1v7.9H2zM11.2 3.4L22 2v9.4H11.2zM2 12.4h8.2v7.9L2 19.2zM11.2 12.4H22V22l-10.8-1.5z"/></svg></span>
+              <span><b>حمّل لـ Windows</b><small id="hmDlS">ملف تثبيت · مجاني</small></span>
+              <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg>
+            </a>
+            <a class="hm-ms" id="hmMs" aria-disabled="true" title="البرنامج بيتراجع من Microsoft دلوقتي، وأول ما يتقبل هتقدر تثبّته من هنا">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 7V6a3.5 3.5 0 0 1 7 0v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="7" width="18" height="14" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="10.4" width="3.5" height="3.5" fill="#f25022"/><rect x="12.3" y="10.4" width="3.5" height="3.5" fill="#7fba00"/><rect x="8.2" y="14.5" width="3.5" height="3.5" fill="#00a4ef"/><rect x="12.3" y="14.5" width="3.5" height="3.5" fill="#ffb900"/></svg>
+              <span><small>ثبّته من</small><b>Microsoft Store</b></span><em id="hmMsTag">قريبًا</em>
+            </a>
+          </div>
+          <div class="hm-more"><a href="download.html#steps">خطوات التثبيت بالصور ←</a><span id="hmVer"></span></div>
+          <div class="hm-note ok" id="hmStarted" hidden>🎉 التحميل بدأ! افتح <b dir="ltr">Sellybot-Setup.exe</b> من التنزيلات. لو Windows قال «Windows protected your PC» دوس <b dir="ltr">More info</b> ثم <b dir="ltr">Run anyway</b>. <a href="download.html#steps">الخطوات بالصور</a></div>
+        </div>
+        <div class="hm-note ok" id="hmInApp" hidden>✅ انت فاتح Sellybot من البرنامج دلوقتي. هو متثبت عندك وبيتحدّث لوحده.</div>
+        <div class="hm-note" id="hmNotWin" hidden>💡 البرنامج لـ Windows بس. افتح لوحة التحكم من الكمبيوتر ونزّله من هنا، أو ابعت لنفسك لينك صفحة التحميل.<br><button type="button" id="hmCopyDl">🔗 انسخ لينك صفحة التحميل</button></div>
+      </div>
+      <div class="hm-lap" aria-hidden="true">
+        <span class="hm-chip c1">⚡ بيفتح بدوسة</span><span class="hm-chip c2">🔐 بيفتكر دخولك</span><span class="hm-chip c3">🔄 بيتحدّث لوحده</span>
+        <div class="scr">
+          <div class="icon"><img src="sellybot-icon.svg" alt=""><span>Sellybot</span></div>
+          <span class="click"></span>
+          <div class="win">
+            <div class="wt"><img src="sellybot-icon.svg" alt="">Sellybot<span><i>─</i><i>▢</i><i>✕</i></span></div>
+            <div class="wb">
+              <div class="k"><small>رسايل الشهر</small><b>1,284</b><div class="bars"><i style="height:45%"></i><i style="height:70%"></i><i style="height:55%"></i><i style="height:100%"></i></div></div>
+              <div class="k"><small>ردود المساعد</small><b>98%</b><div class="bars"><i style="height:75%"></i><i style="height:90%"></i><i style="height:65%"></i><i style="height:95%"></i></div></div>
+              <div class="k"><small>أوردرات</small><b>312</b><div class="bars"><i style="height:35%"></i><i style="height:60%"></i><i style="height:80%"></i><i style="height:100%"></i></div></div>
+              <div class="ch"><span class="u">الطقم ده متاح مقاس L؟</span><span class="b">أيوه متاح 👌 بـ 650 ج.م</span></div>
+            </div>
+          </div>
+          <svg class="cur" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 1.5L10 19z" fill="#fff" stroke="#1b130e" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <div class="bar"><svg viewBox="0 0 24 24" fill="#0067c0"><path d="M2 4.6l8.2-1.1v7.9H2zM11.2 3.4L22 2v9.4H11.2zM2 12.4h8.2v7.9L2 19.2zM11.2 12.4H22V22l-10.8-1.5z"/></svg><img src="sellybot-icon.svg" alt=""></div>
+        </div>
+        <div class="base"></div>
+      </div>
+    </div>
+
+    <div class="hm-two">
+      <div class="hm-card hm-rv">
+        <div class="hm-h"><span class="tg">✨ الجديد</span><h2>آخر حاجات نزلت لمتجرك</h2></div>
+        <div class="hm-news" id="hmNews"></div>
+      </div>
+      <div class="hm-card hm-help hm-rv" style="--d:.1s">
+        <span class="big" aria-hidden="true">🎧</span>
+        <h3>محتاج مساعدة؟</h3>
+        <p>فريقنا موجود يرد عليك في أي حاجة تخص متجرك أو المساعد.</p>
+        <button class="btn" type="button" data-goto="support">🎧 افتح تذكرة دعم</button>
+        <a class="btn ghost" id="hmWa" target="_blank" rel="noopener">🟢 كلّمنا على واتساب</a>
+      </div>
+    </div>
+  </section>
+
   <!-- data -->
-  <section data-panel="data">
+  <section data-panel="data" hidden>
     <div class="page-title"><div><h2>داتا المتجر</h2><p>كل اللي المساعد بيعرفه عن متجرك، ومنه بيرد على زباينك</p></div></div>
     <div class="grid">
       <div class="card stat"><div class="label">الاستهلاك الشهر ده</div><div class="value" id="usageVal">—</div><div class="bar" id="usageBar"><i style="width:0"></i></div><div class="hint" id="usageHint"></div></div>
@@ -1825,7 +2149,7 @@
     try {
       var r = await api("api/auth.ashx?action=login", { method: "POST", json: { email: $("lEmail").value, password: $("lPass").value } });
       if (r && r.role === "superadmin") { $("lPass").value = ""; location.href = r.redirect || "admin.html"; return; }   // platform admin -> admin dashboard
-      me = r; showApp();
+      me = r; showApp(true);
     }
     catch (err) { setMsg("lMsg", err.message); shake(); }
     finally { $("lBtn").classList.remove("loading"); }
@@ -1834,7 +2158,7 @@
     e.preventDefault(); setMsg("sMsg", ""); $("sBtn").classList.add("loading");
     try {
       me = await api("api/auth.ashx?action=signup", { method: "POST", json: { name: $("sName").value, slug: $("sSlug").value, email: $("sEmail").value, password: $("sPass").value } });
-      showApp(); toast("تم إنشاء متجرك 🎉 ابدأ ضيف الداتا");
+      showApp(true); toast("تم إنشاء متجرك 🎉 ابدأ ضيف الداتا");
     } catch (err) { setMsg("sMsg", err.message); shake(); }
     finally { $("sBtn").classList.remove("loading"); }
   };
@@ -1924,9 +2248,10 @@
   matchMedia("(min-width:761px)").addEventListener("change", function (m) { if (m.matches) sideNav(false); });
 
   // ---------------- navigation ----------------
-  var current = "data";
+  var current = "home";
   function go(tab) {
     current = tab;
+    if (tab === "home") homeShow(); else homeStop();
     document.querySelectorAll("[data-tab]").forEach(function (x) { x.classList.toggle("on", x.dataset.tab === tab); });
     document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== tab; });
     $("acctMenu").hidden = true; sideNav(false);
@@ -1947,13 +2272,178 @@
   $("acctBtn").onclick = function (e) { e.stopPropagation(); $("acctMenu").hidden = !$("acctMenu").hidden; };
   document.addEventListener("click", function (e) { if (!e.target.closest("#acct")) $("acctMenu").hidden = true; });
 
-  function showApp() {
+  // fresh = just logged in or signed up: always the home page. A reload keeps the tab in the address (#look...).
+  function showApp(fresh) {
     $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("menuBtn").hidden = false; $("acct").hidden = false; heroStop();
     $("adminTabBtn").hidden = !me.isAdmin;
     render(); loadItems(); mountLiveChat();
-    var want = (location.hash || "").replace("#", "");
-    go(["data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "data");
+    var want = fresh ? "" : (location.hash || "").replace("#", "");
+    go(["home", "data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "home");
     setTimeout(showNews, 1200);   // what's new since this browser last looked
+  }
+
+  // ---------------- home (الرئيسية) ----------------
+  // The first page after login: what the assistant does for this store (with its live numbers), a door to every tab,
+  // the desktop app, and what's new. Everything moves: a chat that plays itself, counters, packets on the wires, the app opening.
+  var DL_EXE = "https://github.com/YoussefGhonem-hub/Sellybot/releases/latest/download/Sellybot-Setup.exe";   // newest desktop release
+  // Microsoft Store: false shows "soon" while the listing is in certification. Once it is published set true here AND in download.html.
+  var STORE_LIVE = false, STORE_URL = "https://apps.microsoft.com/detail/9PF6W2MNNRK8?mode=full";
+  var HM_ROT = ["في ثانية ⚡", "24 ساعة في اليوم 🌙", "على موقعك 🌐", "وعلى واتساب 💬"];
+  var HM_TILES = [
+    ["data", "📚", "داتا المتجر", "ارفع ملفاتك أو اربط متجرك، والمساعد يتعلّم منها"],
+    ["look", "🎨", "شكل الشات", "أكتر من 30 شكل للفقاعة وأي لون يناسب براندك"],
+    ["install", "🛍️", "ضيفه لمتجرك", "سطر كود واحد في Shopify أو EasyOrders أو أي موقع"],
+    ["wa", "💬", "واتساب", "المساعد يرد على واتساب متجرك بنفس الداتا"],
+    ["settings", "⚙️", "المساعد", "اسمه وأسلوب كلامه وتعليماتك ليه"],
+    ["plan", "💎", "باقتي", "استهلاكك وباقتك والتجديد"]
+  ];
+  var homeRun = 0, homeIO = null, homeBuilt = false, homeVer = false;
+  function homeWin() { return /Windows NT/.test(navigator.userAgent) && !/Windows Phone/.test(navigator.userAgent); }
+
+  function homeBuild() {   // the parts that don't change with the store's data: built once
+    homeBuilt = true;
+    $("hmTiles").innerHTML = HM_TILES.map(function (t, k) {
+      return '<button type="button" class="hm-tile hm-rv" style="--d:' + (k % 3) * 0.08 + 's" data-home-tab="' + t[0] + '"><span class="ic">' + t[1] + '</span><b>' + esc(t[2]) + '</b><p>' + esc(t[3]) + '</p>' +
+        '<span class="chip" id="hmChip-' + t[0] + '"></span><span class="arr" aria-hidden="true">←</span></button>';
+    }).join("");
+    var tiles = $("hmTiles");
+    tiles.addEventListener("mousemove", function (e) {   // a soft light follows the mouse on each card
+      var c = e.target.closest(".hm-tile"); if (!c) return;
+      var r = c.getBoundingClientRect(); c.style.setProperty("--mx", (e.clientX - r.left) + "px"); c.style.setProperty("--my", (e.clientY - r.top) + "px");
+    });
+    // what's new: the 3 newest entries of whats-new.js
+    $("hmNews").innerHTML = NEWS.slice(0, 3).map(function (n) {
+      var l = "";
+      if (n.link && n.link.tab) l = '<button class="nl" type="button" data-home-tab="' + esc(n.link.tab) + '">' + esc(n.link.label || "شوفه") + ' ←</button>';
+      else if (n.link && n.link.href && /download\.html/.test(n.link.href)) l = IN_APP ? "" : '<button class="nl" type="button" data-home-app>' + esc(n.link.label || "شوفه") + ' ↓</button>';
+      else if (n.link && n.link.href) l = '<a class="nl" href="' + esc(n.link.href) + '">' + esc(n.link.label || "شوفه") + ' ←</a>';
+      return '<div class="hm-ni"><span class="ic">' + esc(n.icon || "✨") + '</span><div><b>' + esc(n.title) + '</b>' + (n.text ? '<p>' + esc(n.text) + '</p>' : '') + l + '</div></div>';
+    }).join("") || '<p class="hint" style="margin:0">مفيش جديد دلوقتي.</p>';
+    document.querySelectorAll('[data-panel="home"] [data-home-tab]').forEach(function (b) { b.onclick = function () { go(b.dataset.homeTab); }; });
+    document.querySelectorAll('[data-panel="home"] [data-home-app]').forEach(function (b) { b.onclick = homeToApp; });
+    // the desktop app: download here on Windows, a note inside the app or on other devices
+    $("hmDl").href = DL_EXE;
+    $("hmDl").addEventListener("click", function () { $("hmStarted").hidden = false; });
+    if (STORE_LIVE) { var ms = $("hmMs"); ms.classList.add("live"); ms.href = STORE_URL; ms.target = "_blank"; ms.removeAttribute("aria-disabled"); ms.removeAttribute("title"); $("hmMsTag").remove(); }
+    $("hmCopyDl").onclick = function () {
+      var b = this, url = BASE + "download.html";
+      function done() { b.textContent = "✓ اتنسخ، ابعته لنفسك وافتحه من الكمبيوتر"; }
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { prompt("انسخ اللينك:", url); }); else prompt("انسخ اللينك:", url);
+    };
+  }
+  function homeToApp() { go("home"); setTimeout(function () { $("hmApp").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }); }, 60); }
+  $("menuDesktop").onclick = homeToApp;
+
+  function renderHome() {   // everything that comes from the store's data (called again after every change)
+    if (!me) return;
+    if (!homeBuilt) homeBuild();
+    var h = new Date().getHours(), pl = me.plan || {}, u = me.usage || {}, kn = me.knowledge || {};
+    $("hmHi").textContent = (h >= 5 && h < 12 ? "صباح الخير" : "مساء الخير") + "، أهلاً بيك";
+    $("hmStore").textContent = me.name || "متجرك";
+    $("hmBotName").textContent = me.botName || ("مساعد " + (me.name || "متجرك"));
+    $("hmOpenChat").href = BASE + "?store=" + me.slug;
+    $("hmWa").href = waLink("أهلاً 👋 أنا صاحب متجر " + me.name + " (" + me.slug + ") على Sellybot");
+    // is the assistant answering right now?
+    var why = me.status !== "active" ? "الحساب موقوف" : pl.name && pl.expired ? "الباقة خلصت" : u.pct >= 100 ? "رصيد الشهر خلص" : "";
+    $("hmLive").classList.toggle("off", !!why);
+    $("hmLiveT").innerHTML = why ? "المساعد واقف: " + esc(why) + (me.status === "active" ? ' · <a data-home-tab="plan">جدّده من «باقتي» ←</a>' : "") : "المساعد شغال دلوقتي وبيرد على زباينك";
+    $("hmLiveT").querySelectorAll("[data-home-tab]").forEach(function (a) { a.onclick = function () { go("plan"); }; });
+    // the numbers
+    var left = Math.max(0, Math.round(u.msgLeft || 0));
+    $("hmMsgs").dataset.n = u.messages || 0; $("hmMsgs").textContent = fmt(u.messages);
+    $("hmLeft").dataset.n = left; $("hmLeft").textContent = fmt(left);
+    $("hmLeftS").textContent = u.trial ? "رسالة فاضلة من " + fmt(u.msgLimit) + " في التجربة" : "رسالة فاضلة تقريبًا في رصيدك";
+    $("hmLeftBar").dataset.w = Math.max(0, Math.min(100, 100 - (u.pct || 0)));
+    $("hmData").textContent = fmtSize(kn.chars);
+    $("hmDataS").textContent = (kn.chars || 0) > 0 ? "داتا متجرك اللي المساعد بيرد منها" : "لسه مفيش داتا، ضيفها من «داتا المتجر»";
+    $("hmPlan").textContent = pl.name || "تجربة مجانية";
+    $("hmPlanS").textContent = !pl.name ? "اشترك في باقة عشان المساعد مايقفش" : pl.expired ? "خلصت، جدّدها من «باقتي»" : "فاضل " + fmt(pl.daysLeft) + " يوم في باقتك";
+    // where the assistant answers, and which store system feeds it
+    var sh = shopLinked(), eo = !!eoState().connected, wa = !!(me.orderConfirm || {}).whatsapp;
+    var origins = (me.allowedOrigins || "").split(",").filter(Boolean).length, hasData = (kn.chars || 0) > 0 || sh || eo;
+    $("hmChans").innerHTML = [[origins > 0, "🌐 شات موقعك"], [true, "🔗 لينك الشات"], [wa, "💬 واتساب"], [sh, '<img src="logo-shopify.svg" alt=""> Shopify'], [eo, '<img src="logo-easyorders.png" alt=""> EasyOrders']]
+      .map(function (c) { return '<span class="' + (c[0] ? "on" : "") + '">' + c[1] + (c[0] ? " ✓" : "") + '</span>'; }).join("");
+    // each card says where the store stands; the first thing still to do glows
+    function chip(tab, cls, text) { var c = $("hmChip-" + tab); c.className = "chip" + (cls ? " " + cls : ""); c.textContent = text; }
+    chip("data", hasData ? "ok" : "go", hasData ? "✓ فيه داتا · " + fmtSize(kn.chars) : "ابدأ من هنا");
+    chip("look", "", "🎨 غيّر الشكل واللون");
+    chip("install", origins ? "ok" : "", origins ? "✓ شغال على " + fmt(origins) + " دومين" : "⏳ ضيف الكود لموقعك");
+    chip("wa", wa ? "ok" : "", wa ? "✓ مربوط" : "اربطه");
+    chip("settings", "", me.botName ? "🤖 " + me.botName : "سمّيه");
+    chip("plan", pl.name && !pl.expired ? "ok" : "", pl.name ? (pl.expired ? "⛔ جدّدها" : "✓ " + pl.name) : "تجربة مجانية");
+    var next = !hasData ? "data" : !origins ? "install" : null;
+    document.querySelectorAll("#hmTiles .hm-tile").forEach(function (t) { t.classList.toggle("next", t.dataset.homeTab === next); });
+    // the desktop app box
+    $("hmInApp").hidden = !IN_APP; $("hmAppGet").hidden = IN_APP || !homeWin(); $("hmNotWin").hidden = IN_APP || homeWin();
+    if (current === "home") $("hmLeftBar").style.width = $("hmLeftBar").dataset.w + "%";
+  }
+
+  function homeShow() {
+    renderHome();
+    var run = ++homeRun;
+    // cards slide in as they come into view
+    var els = document.querySelectorAll('[data-panel="home"] .hm-rv:not(.in)');
+    if (reduce || !("IntersectionObserver" in window)) els.forEach(function (e) { e.classList.add("in"); });
+    else {
+      if (!homeIO) homeIO = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); homeIO.unobserve(e.target); } }); }, { threshold: 0.12 });
+      els.forEach(function (e) { homeIO.observe(e); });
+    }
+    // counters run up from zero, the credit bar fills
+    ["hmMsgs", "hmLeft"].forEach(function (id) { countUp($(id), +$(id).dataset.n || 0); });
+    var bar = $("hmLeftBar"); bar.style.width = "0"; setTimeout(function () { if (run === homeRun) bar.style.width = bar.dataset.w + "%"; }, 250);
+    // version and size of the newest desktop release, once
+    if (!homeVer && homeWin() && !IN_APP) {
+      homeVer = true;
+      fetch("https://api.github.com/repos/YoussefGhonem-hub/Sellybot/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (rel) {
+          if (!rel) return;
+          var a = (rel.assets || []).filter(function (x) { return x.name === "Sellybot-Setup.exe"; })[0], v = String(rel.tag_name || "").replace(/^v/, "");
+          var parts = []; if (v) parts.push("نسخة " + v); if (a && a.size) parts.push(fmt(Math.round(a.size / 1048576)) + " ميجا");
+          $("hmVer").textContent = parts.join(" · ");
+        }).catch(function () {});
+    }
+    if (reduce) { hmChatStatic(); return; }
+    hmRotLoop(run).catch(function () {}); hmChatLoop(run).catch(function () {});
+  }
+  function homeStop() { homeRun++; }
+  function hmWait(ms, run) { return new Promise(function (res, rej) { setTimeout(function () { run === homeRun ? res() : rej("stop"); }, ms); }); }
+  function countUp(el, n) {
+    if (reduce || !n) { el.textContent = fmt(n); return; }
+    var t0 = performance.now(), d = 1400;
+    (function step(t) { var p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(Math.round(n * e)); if (p < 1) requestAnimationFrame(step); })(t0);
+  }
+  async function hmRotLoop(run) {
+    var el = $("hmRot"), i = 0;
+    for (;;) {
+      await hmWait(2600, run);
+      el.classList.add("out"); await hmWait(350, run);
+      i = (i + 1) % HM_ROT.length; el.textContent = HM_ROT[i];
+      el.classList.remove("out"); el.classList.add("pre"); void el.offsetWidth; el.classList.remove("pre");
+    }
+  }
+  // an example conversation (the phone says "مثال"), in the assistant's real style: short, no formal phrases
+  var HM_CHAT = [
+    ["u", "السلام عليكم، القميص الأبيض متاح مقاس L؟"],
+    ["b", "وعليكم السلام 👋 أيوه متاح مقاس **L**، سعره **450 ج.م** والشحن خلال يومين 🚚"],
+    ["u", "ينفع أدفع كاش عند الاستلام؟"],
+    ["b", "أيوه، الدفع عند الاستلام متاح لكل المحافظات 👌"]
+  ];
+  function hmMsg(cls) { var d = document.createElement("div"); d.className = "m " + cls; $("hmChat").appendChild(d); return d; }
+  function hmChatStatic() { $("hmChat").textContent = ""; HM_CHAT.forEach(function (m) { richInto(hmMsg(m[0]), m[1]); }); }
+  async function hmChatLoop(run) {
+    var body = $("hmChat");
+    for (;;) {
+      body.textContent = ""; body.classList.remove("clear");
+      await hmWait(500, run);
+      for (var k = 0; k < HM_CHAT.length; k++) {
+        if (HM_CHAT[k][0] === "b") { var t = hmMsg("t"); t.innerHTML = "<i></i><i></i><i></i>"; await hmWait(1400, run); t.remove(); }
+        richInto(hmMsg(HM_CHAT[k][0]), HM_CHAT[k][1]);
+        await hmWait(HM_CHAT[k][0] === "u" ? 900 : 2200, run);
+      }
+      await hmWait(2400, run);
+      body.classList.add("clear"); await hmWait(450, run);
+    }
   }
 
   // ---------------- my plan + support ----------------
@@ -2182,9 +2672,10 @@
     $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
     $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
     $("menuChat").href = link;
-    // the Windows app (desktop/ in the repo): offered on Windows only, and not inside the app itself
+    // the Windows app (desktop/ in the repo): its download lives on the home page; the account menu jumps there (Windows only, not inside the app)
     var offerApp = /Windows NT/.test(navigator.userAgent) && !/SellybotDesktop/.test(navigator.userAgent);
-    $("menuDesktop").hidden = !offerApp; $("navDl").hidden = !offerApp;
+    $("menuDesktop").hidden = !offerApp;
+    renderHome();
     $("menuWa").href = waLink("أهلاً 👋 أنا صاحب متجر " + me.name + " (" + me.slug + ") على Sellybot");
     $("supBadge").textContent = fmt(me.supportAnswered || 0); $("supBadge").hidden = !me.supportAnswered;
     $("supAcct").textContent = fmt(me.supportAnswered || 0); $("supAcct").hidden = !me.supportAnswered;   // support lives in the account menu: show replies on its button too
