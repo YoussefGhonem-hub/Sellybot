@@ -36,6 +36,18 @@ The dashboard links to it from two places:
 
 Both show only on Windows, and never inside the app. The site tells it's inside the app from the `SellybotDesktop/<version>` token in the user agent.
 
+## How owners hear about updates
+
+**A new feature on the site:** add an entry at the top of `deploy/site/whats-new.js`, then deploy the site.
+- Open dashboards (and the app) re-read that file every 10 minutes and when the window comes back to the front. They then show a bar «✨ جديد في Sellybot: …» with a reload button.
+- In the app, a Windows notification appears too if the window is in the background.
+- After the reload, the window «الجديد في Sellybot» shows what's new.
+
+**A new version of the app:** it downloads in the background.
+- `preload.js` tells the dashboard, which shows «نسخة جديدة من البرنامج جاهزة» with **أعد التشغيل**.
+- A Windows notification says the same. Otherwise the update installs when the app is closed.
+- To try this locally: `SELLYBOT_FAKE_UPDATE=1.2.3 npm start`.
+
 ## Release a new version
 
 1. Raise `version` in `package.json`.

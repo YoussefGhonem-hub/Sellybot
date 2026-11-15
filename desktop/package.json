@@ -1,7 +1,7 @@
 {
   "name": "sellybot-desktop",
   "productName": "Sellybot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sellybot على الكمبيوتر: لوحة تحكم متجرك في برنامج لوحده",
   "author": "Sellybot",
   "homepage": "https://sellybot.online",
@@ -10,7 +10,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win nsis --x64 --publish never"
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "dist:store": "electron-builder --win appx --x64 --publish never"
   },
   "devDependencies": {
     "electron": "45.2.1",
@@ -27,6 +28,7 @@
     },
     "files": [
       "main.js",
+      "preload.js",
       "offline.html",
       "build/icon.png"
     ],
@@ -63,6 +65,22 @@
       "uninstallDisplayName": "Sellybot",
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": true
+    },
+    "appx": {
+      "identityName": "yghonem.Sellybot",
+      "publisher": "CN=DC32D674-82C7-4212-BB8E-A827CDDA1332",
+      "publisherDisplayName": "yghonem",
+      "applicationId": "Sellybot",
+      "displayName": "Sellybot",
+      "backgroundColor": "#fff8f3",
+      "languages": [
+        "ar-EG",
+        "en-US"
+      ],
+      "showNameOnTiles": false,
+      "artifactName": "Sellybot-Store-${version}.${ext}",
+      "minVersion": "10.0.17763.0",
+      "maxVersionTested": "10.0.26100.0"
     },
     "publish": [
       {

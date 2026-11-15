@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sellybot · سياسة الخصوصية</title>
+<meta name="description" content="سياسة الخصوصية لـ Sellybot: إيه البيانات اللي بنجمعها، وليه، ومين بيشوفها، وقد إيه بنحتفظ بيها، وإزاي تطلب مسحها.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 2 60 72'%3E%3Cpath d='M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15' fill='none' stroke='%23E8774A' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15' fill='none' stroke='%233a2a20' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  (function () {
+    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}
+    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+    window.sbTheme = function (v) { t = v; try { localStorage.setItem("sb-theme", v); } catch (e) {} document.documentElement.setAttribute("data-theme", v === "dark" ? "dark" : "light"); };
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- The privacy policy (linked from the Microsoft Store listing of the Windows app, and from the site's footers).
+     Keep it true to what the code does: when a feature starts keeping or sharing new data, update the matching section and the date. -->
+<style>
+  :root{color-scheme:light;--bg:#faf6f1;--card:#ffffff;--ink:#221a14;--muted:#7f7266;--line:#ece4db;--soft:#fbf7f3;--brand:#e8774a;--brand2:#f5a25d;--shadow:0 1px 2px rgba(40,25,10,.05),0 12px 34px rgba(40,25,10,.08)}
+  :root[data-theme=dark]{color-scheme:dark;--bg:#120d0a;--card:#1d1611;--ink:#f4ebe2;--muted:#b0a193;--line:#33281f;--soft:#261d17;--shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4)}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.85 "IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+  a{color:var(--brand)}
+  .nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:880px;margin:0 auto;padding:0 18px;height:62px;display:flex;align-items:center;gap:12px}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .logo svg{width:26px;height:32px}
+  .logo b{font-size:20px;direction:ltr}.logo b span{color:var(--brand)}
+  .space{flex:1}
+  .nav a.l{color:var(--muted);text-decoration:none;font-size:14.5px}
+  .nav a.l:hover{color:var(--ink)}
+  .icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+  .icon-btn svg{width:17px;height:17px}
+  main{max-width:880px;margin:0 auto;padding:40px 18px 20px}
+  .head{margin-bottom:26px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:5px 13px;border-radius:999px;background:color-mix(in srgb,var(--brand) 12%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 25%,var(--line));color:var(--brand);font-weight:700;font-size:13px}
+  h1{margin:14px 0 8px;font-size:clamp(28px,4.4vw,40px);line-height:1.3}
+  .head p{margin:0;color:var(--muted)}
+  .short{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:22px 0 10px}
+  .short div{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:16px;background:var(--card);border:1px solid var(--line);font-size:14.5px;line-height:1.7}
+  .short i{font-style:normal;font-size:20px;line-height:1.4}
+  @media (max-width:640px){.short{grid-template-columns:minmax(0,1fr)}}
+  .toc{margin:22px 0 8px;padding:16px 20px;border-radius:16px;background:var(--soft);border:1px solid var(--line);font-size:14.5px}
+  .toc ol{margin:6px 0 0;padding-inline-start:20px;columns:2;column-gap:28px}
+  @media (max-width:640px){.toc ol{columns:1}}
+  section{margin-top:30px;padding:24px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);scroll-margin-top:80px}
+  section h2{margin:0 0 10px;font-size:21px;line-height:1.4}
+  section h3{margin:16px 0 4px;font-size:16.5px}
+  section p{margin:0 0 10px}
+  section ul{margin:4px 0 10px;padding-inline-start:22px}
+  section li{margin-bottom:6px}
+  .muted{color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;margin:6px 0 4px}
+  th,td{text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:13px;color:var(--muted);font-weight:600}
+  .en{direction:ltr;text-align:left;font-family:"Segoe UI",system-ui,sans-serif;line-height:1.7}
+  .en h2,.en h3{font-family:inherit}
+  .en th,.en td{text-align:left}
+  footer{max-width:880px;margin:30px auto 0;padding:22px 18px 40px;border-top:1px solid var(--line);display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+  footer a{color:var(--muted);text-decoration:none}footer a:hover{color:var(--brand)}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="nav-in">
+    <a class="logo" href="about.html" aria-label="Sellybot">
+      <svg viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>
+      <b>Selly<span>bot</span></b>
+    </a>
+    <span class="space"></span>
+    <a class="l" href="#en">English</a>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="الوضع الفاتح / الغامق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+  </div>
+</header>
+
+<main>
+  <div class="head">
+    <span class="eyebrow">🔒 الخصوصية</span>
+    <h1>سياسة الخصوصية</h1>
+    <p>آخر تحديث: 15 نوفمبر 2026 · بتنطبق على موقع <b dir="ltr">sellybot.online</b> ولوحة التحكم ومساعد الشات وبرنامج Sellybot على الكمبيوتر.</p>
+  </div>
+
+  <div class="short">
+    <div><i>🚫</i><span>مش بنبيع بياناتك ولا بيانات زباينك لأي حد، ومفيش إعلانات ولا تتبّع.</span></div>
+    <div><i>🎯</i><span>بنستخدم البيانات عشان الخدمة تشتغل بس: المساعد يرد على زباينك من داتا متجرك.</span></div>
+    <div><i>🔐</i><span>الباسورد ومفاتيح الربط محفوظة متشفّرة، والاتصال كله HTTPS.</span></div>
+    <div><i>🗑️</i><span>تقدر تطلب نسخة من بياناتك أو مسح حسابك في أي وقت.</span></div>
+  </div>
+
+  <nav class="toc" aria-label="المحتويات"><b>المحتويات</b>
+    <ol>
+      <li><a href="#who">إحنا مين</a></li>
+      <li><a href="#collect">البيانات اللي بنجمعها</a></li>
+      <li><a href="#use">بنستخدمها في إيه</a></li>
+      <li><a href="#share">مين تاني بيشوفها</a></li>
+      <li><a href="#keep">بنحتفظ بيها قد إيه</a></li>
+      <li><a href="#app">برنامج الكمبيوتر</a></li>
+      <li><a href="#cookies">الكوكيز والتخزين في المتصفح</a></li>
+      <li><a href="#security">الأمان</a></li>
+      <li><a href="#rights">حقوقك</a></li>
+      <li><a href="#contact">التغييرات والتواصل</a></li>
+    </ol>
+  </nav>
+
+  <section id="who">
+    <h2>1. إحنا مين</h2>
+    <p>Sellybot خدمة بتدّي أصحاب المتاجر والأنشطة مساعد ذكي بيرد على زباينهم من داتا نشاطهم، على شات الموقع وعلى واتساب. فيه طرفين في الكلام ده:</p>
+    <ul>
+      <li><b>صاحب الحساب</b> (صاحب المتجر أو النشاط): بيعمل حساب على Sellybot ويضيف داتاه.</li>
+      <li><b>الزبون</b>: اللي بيكلّم المساعد على موقع صاحب الحساب أو على الواتساب بتاعه.</li>
+    </ul>
+    <p>بالنسبة لبيانات الزباين، صاحب الحساب هو المسؤول عنها، وإحنا بنشتغل عليها بالنيابة عنه عشان نقدّم الخدمة.</p>
+  </section>
+
+  <section id="collect">
+    <h2>2. البيانات اللي بنجمعها</h2>
+    <h3>من صاحب الحساب</h3>
+    <ul>
+      <li><b>بيانات الحساب:</b> اسم المتجر، والإيميل، والباسورد (بيتحفظ متشفّر بطريقة ماينفعش ترجّعه لأصله).</li>
+      <li><b>داتا المتجر:</b> الملفات والنصوص اللي بترفعها (منتجات، أسعار، سياسات...)، وتعليماتك للمساعد وإعدادات شكل الشات.</li>
+      <li><b>الربط مع المتاجر:</b> لو ربطت Shopify أو EasyOrders، بنحفظ مفاتيح الربط متشفّرة، وبنسحب منتجاتك وأسعارها ومخزونها.</li>
+      <li><b>واتساب:</b> لو ربطت رقم واتساب المتجر، بنحفظ الرقم وبيانات الربط.</li>
+      <li><b>الباقة والدعم:</b> باقتك وطلبات الاشتراك، ورسايلك للدعم الفني وردودنا عليها.</li>
+    </ul>
+    <h3>من الزباين (من خلال المساعد)</h3>
+    <ul>
+      <li><b>رسايل شات الموقع:</b> بتتبعت لمزوّد الذكاء الاصطناعي عشان يكتب الرد. مش بنحفظ نص المحادثة عندنا، بنسجّل عدد الرسايل بس عشان استهلاك الباقة.</li>
+      <li><b>رسايل واتساب:</b> بنحفظها عشان المساعد يفهم المحادثة ويرد في سياقها، ولو صاحب الحساب رد بنفسه المساعد يسكت.</li>
+      <li><b>الطلب من الشات وتأكيد الطلبات:</b> لو الزبون طلب من الشات أو أكّد طلبه على واتساب، بنستخدم اللي كتبه (الاسم، رقم الموبايل، العنوان، المنتجات) عشان نعمل الطلب في متجر صاحب الحساب أو نحدّث حالته، وبيتسجّل في سجل طلبات المتجر.</li>
+      <li><b>تتبع الأوردر:</b> لما الزبون يسأل عن أوردره، رقم الأوردر والموبايل أو الإيميل بيتبعتوا لمتجر صاحب الحساب للتأكد منهم.</li>
+    </ul>
+    <h3>بيانات تقنية</h3>
+    <ul>
+      <li>عنوان IP ونوع المتصفح، عشان نحمي الخدمة من الإساءة (زي تحديد عدد الطلبات في الدقيقة)، وسجلات أخطاء عشان نصلّح المشاكل.</li>
+    </ul>
+    <p class="muted">مش بنطلب ولا بنحفظ بيانات بطاقات بنكية.</p>
+  </section>
+
+  <section id="use">
+    <h2>3. بنستخدمها في إيه</h2>
+    <ul>
+      <li>عشان المساعد يرد على الزباين من داتا متجرك، ويتابع الأوردرات ويأكّدها لو انت مفعّل ده.</li>
+      <li>عشان نشغّل حسابك: تسجيل الدخول، والباقة، والاستهلاك، والدعم الفني.</li>
+      <li>عشان نحمي الخدمة ونصلّح الأخطاء ونحسّنها.</li>
+    </ul>
+    <p>مش بنستخدم بياناتك ولا بيانات زباينك في إعلانات، ومش بنبيعها.</p>
+  </section>
+
+  <section id="share">
+    <h2>4. مين تاني بيشوفها</h2>
+    <p>بنشارك البيانات مع الجهات دي بس، وعلى قد اللي محتاجينه عشان الخدمة تشتغل:</p>
+    <table>
+      <tr><th>الجهة</th><th>ليه</th></tr>
+      <tr><td>Anthropic (نموذج Claude)</td><td>كتابة ردود المساعد. الرسالة وداتا المتجر اللي محتاجها الرد بتتبعت ليهم. حسب شروطهم التجارية، مش بيدرّبوا نماذجهم على البيانات دي.</td></tr>
+      <tr><td>مزوّد ربط واتساب</td><td>استقبال وإرسال رسايل واتساب لرقم المتجر، لو صاحب الحساب ربطه.</td></tr>
+      <tr><td>Shopify و EasyOrders</td><td>سحب المنتجات، ومتابعة الأوردرات، وعمل الطلبات أو تأكيدها، لو صاحب الحساب ربط متجره.</td></tr>
+      <tr><td>شركة الاستضافة</td><td>السيرفر وقاعدة البيانات اللي الخدمة شغالة عليها.</td></tr>
+      <tr><td>GitHub و Microsoft Store</td><td>تنزيل برنامج الكمبيوتر وتحديثاته.</td></tr>
+      <tr><td>Google Fonts</td><td>تحميل خط الصفحات.</td></tr>
+    </table>
+    <p>وممكن نكشف بيانات لو القانون أو جهة رسمية طلبت ده.</p>
+  </section>
+
+  <section id="keep">
+    <h2>5. بنحتفظ بيها قد إيه</h2>
+    <ul>
+      <li><b>الحساب وداتا المتجر:</b> طول ما الحساب موجود، وبتتمسح لما تمسح الداتا أو تطلب مسح الحساب.</li>
+      <li><b>رسايل واتساب:</b> بتتمسح لوحدها بعد 60 يوم، وبتتمسح كلها لو فصلت واتساب من لوحة التحكم.</li>
+      <li><b>رسايل شات الموقع:</b> مش بتتحفظ عندنا أصلًا.</li>
+      <li><b>الطلبات وتأكيدها:</b> بتفضل في سجل طلبات المتجر لصاحب الحساب.</li>
+    </ul>
+  </section>
+
+  <section id="app">
+    <h2>6. برنامج Sellybot على الكمبيوتر</h2>
+    <ul>
+      <li>البرنامج بيفتح لوحة التحكم على <b dir="ltr">sellybot.online</b> بس، وأي لينك تاني بيفتح في المتصفح بتاعك.</li>
+      <li>بيحفظ على جهازك تسجيل دخولك (متشفّر) ومكان النافذة وحجمها، عشان مايسألكش كل مرة.</li>
+      <li>مش بيجمع أي بيانات زيادة عن لوحة التحكم، ومش بيوصل لملفاتك.</li>
+      <li>بيشيك على التحديثات من GitHub، ونسخة Microsoft Store بتتحدث من الـ Store.</li>
+      <li>لما تشيله، بيتمسح معاه تسجيل الدخول اللي على الجهاز.</li>
+    </ul>
+  </section>
+
+  <section id="cookies">
+    <h2>7. الكوكيز والتخزين في المتصفح</h2>
+    <ul>
+      <li>كوكي واحدة لتسجيل الدخول في لوحة التحكم.</li>
+      <li>تفضيلات بسيطة على جهازك: الوضع الفاتح أو الغامق، والجديد اللي شفته، ورقم جلسة الشات عشان الطلب من الشات يكمّل.</li>
+      <li>مفيش كوكيز إعلانات ولا تتبّع من أطراف تانية.</li>
+    </ul>
+  </section>
+
+  <section id="security">
+    <h2>8. الأمان</h2>
+    <ul>
+      <li>الاتصال كله مشفّر بـ HTTPS.</li>
+      <li>الباسوردات متشفّرة بطريقة ماينفعش ترجع، ومفاتيح ربط المتاجر وواتساب متشفّرة.</li>
+      <li>كل حساب بيشوف داتاه بس، والمساعد بيرد من داتا المتجر بتاعه بس.</li>
+    </ul>
+    <p class="muted">مفيش نظام آمن 100%، بس بنعمل اللي علينا عشان نحمي البيانات، ولو حصل تسريب يأثر عليك هنبلّغك.</p>
+  </section>
+
+  <section id="rights">
+    <h2>9. حقوقك</h2>
+    <ul>
+      <li>تشوف وتعدّل داتا متجرك وإعداداتك من لوحة التحكم في أي وقت، وتمسح أي ملف أو نص.</li>
+      <li>تطلب نسخة من بياناتك، أو مسح حسابك وكل داتاه، من خلال التواصل معانا.</li>
+      <li>لو انت زبون كلّمت مساعد متجر وعايز تمسح بياناتك، كلّم المتجر نفسه، أو كلّمنا وإحنا نوصّل طلبك.</li>
+    </ul>
+    <p>الخدمة معمولة لأصحاب الأعمال، ومش موجّهة للأطفال.</p>
+  </section>
+
+  <section id="contact">
+    <h2>10. التغييرات والتواصل</h2>
+    <p>لو غيّرنا السياسة دي هنحدّث التاريخ اللي فوق، ولو التغيير مهم هنبلّغ أصحاب الحسابات في لوحة التحكم.</p>
+    <p>لأي سؤال أو طلب بخصوص بياناتك: <a id="waLink" href="https://wa.me/201229391155" target="_blank" rel="noopener">كلّمنا على واتساب</a>، أو من «الدعم الفني» في لوحة التحكم.</p>
+  </section>
+
+  <section id="en" class="en" lang="en" dir="ltr">
+    <h2>Privacy policy (English)</h2>
+    <p>Last updated: November 15, 2026. Applies to sellybot.online, the dashboard, the chat assistant and the Sellybot desktop app.</p>
+    <h3>What we collect</h3>
+    <ul>
+      <li><b>Account holders (store owners):</b> store name, email, password (stored as a one-way hash), the store data they upload (files, text, instructions), the products pulled from Shopify or EasyOrders when they link them (keys stored encrypted), their WhatsApp connection if they link one, plan details and support messages.</li>
+      <li><b>Their customers, through the assistant:</b> website chat messages are sent to our AI provider to write the reply and are not stored by us (we only count them for usage). WhatsApp messages are stored so the assistant can follow the conversation. When a customer orders from the chat or confirms an order, the name, phone, address and items they give are used to place or update the order in the owner's store.</li>
+      <li><b>Technical data:</b> IP address and browser type for abuse protection (rate limits), and error logs.</li>
+    </ul>
+    <p>We do not collect payment card details.</p>
+    <h3>How we use it</h3>
+    <p>Only to provide the service: answering customers from the owner's store data, tracking and confirming orders when enabled, running the account, support, security and fixing errors. We do not sell data and do not use it for advertising.</p>
+    <h3>Who else receives it</h3>
+    <table>
+      <tr><th>Recipient</th><th>Purpose</th></tr>
+      <tr><td>Anthropic (Claude)</td><td>Writing the assistant's replies. Under its commercial terms it does not train its models on this data.</td></tr>
+      <tr><td>WhatsApp connection provider</td><td>Sending and receiving WhatsApp messages for a linked store number.</td></tr>
+      <tr><td>Shopify, EasyOrders</td><td>Products, order tracking, placing and confirming orders, when the owner links a store.</td></tr>
+      <tr><td>Hosting provider</td><td>The servers and database that run the service.</td></tr>
+      <tr><td>GitHub, Microsoft Store</td><td>Downloads and updates of the desktop app.</td></tr>
+      <tr><td>Google Fonts</td><td>Loading the pages' font.</td></tr>
+    </table>
+    <h3>Retention</h3>
+    <p>Account and store data are kept while the account exists and removed when deleted. WhatsApp messages are deleted automatically after 60 days, and all of them when WhatsApp is disconnected. Website chat messages are not stored. Orders stay in the owner's order history.</p>
+    <h3>The desktop app</h3>
+    <p>The app only opens the dashboard on sellybot.online; any other link opens in the default browser. It stores the login (encrypted) and the window position on the device, collects nothing beyond the dashboard, and does not access the user's files. Its data is removed when the app is uninstalled. Updates come from GitHub, or from the Microsoft Store for the Store version.</p>
+    <h3>Cookies</h3>
+    <p>One sign-in cookie for the dashboard, plus small preferences in the browser (theme, seen announcements, the chat session id). No advertising or third-party tracking cookies.</p>
+    <h3>Security</h3>
+    <p>All traffic uses HTTPS; passwords are hashed; store and WhatsApp keys are encrypted; each account can only access its own data.</p>
+    <h3>Your rights and contact</h3>
+    <p>Owners can view, edit and delete their data from the dashboard, and request a copy or the deletion of their account by contacting us on WhatsApp (link above) or through support in the dashboard. Customers of a store can ask that store, or us, to delete their data. The service is meant for businesses and is not directed to children. Changes to this policy are shown by the date above.</p>
+  </section>
+</main>
+
+<footer>
+  <span>© <span id="yr"></span> Sellybot</span><span class="space"></span>
+  <a href="about.html">من نحن</a><a href="pricing.html">الباقات والأسعار</a><a href="download.html">برنامج الكمبيوتر</a><a href="dashboard.html">لوحة المتجر</a>
+</footer>
+
+<script>
+(function () {
+  document.getElementById("yr").textContent = new Date().getFullYear();
+  document.getElementById("themeBtn").onclick = function () { window.sbTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); };
+  fetch("api/plans.ashx", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.wa) document.getElementById("waLink").href = "https://wa.me/" + d.wa + "?text=" + encodeURIComponent("أهلاً 👋 عندي طلب بخصوص بياناتي على Sellybot");
+  }).catch(function () {});
+})();
+</script>
+</body>
+</html>

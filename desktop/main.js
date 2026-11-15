@@ -3,8 +3,11 @@
 // and there is nothing to reinstall. This file only adds what a browser gives for free: one window, copy/paste menu, reload and
 // zoom keys, an offline screen, and links that leave sellybot.online (WhatsApp, Shopify, EasyOrders...) opening in the browser.
 // The login stays saved between runs (the app's own cookies, removed on uninstall).
+// Updates: the site's new features reach the open app by themselves (the dashboard checks whats-new.js and offers a reload);
+// a new version of the app itself downloads in the background, and the dashboard offers "restart" (preload.js is the bridge).
 // SELLYBOT_URL points it at another copy of the site (local tests), e.g. SELLYBOT_URL=http://localhost:5710/dashboard.html
-const { app, BrowserWindow, Menu, shell, clipboard, session, screen } = require("electron");
+// SELLYBOT_FAKE_UPDATE=1.2.3 (not in installed builds) pretends that version was downloaded, to try the update bar.
+const { app, BrowserWindow, Menu, shell, clipboard, session, screen, ipcMain, Notification } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
@@ -21,11 +24,13 @@ function openOutside(url) { if (/^(https?|mailto|tel):/i.test(url)) shell.openEx
 
 // ---------- one copy of the app ----------
 if (!app.requestSingleInstanceLock()) { app.quit(); return; }
-app.on("second-instance", () => {
+function focusMain() {
   const w = BrowserWindow.getAllWindows()[0];
   if (w) { if (w.isMinimized()) w.restore(); w.show(); w.focus(); }
-});
-app.setAppUserModelId("online.sellybot.desktop");   // taskbar grouping and the name on Windows notifications
+}
+app.on("second-instance", focusMain);
+// taskbar grouping and the name on Windows notifications (the Microsoft Store package brings its own id)
+if (!process.windowsStore) app.setAppUserModelId("online.sellybot.desktop");
 
 // ---------- window size and place, as the owner left them ----------
 function savedBounds() {
@@ -90,7 +95,7 @@ function wire(win) {
 }
 
 function prefs() {
-  return { contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false };
+  return { contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false, preload: path.join(__dirname, "preload.js") };
 }
 
 function createMain() {
@@ -125,16 +130,41 @@ app.whenReady().then(() => {
 // It looks at GitHub Releases quietly at start and every 6 hours, downloads in the background and installs when the app is closed.
 // No internet or no new release: nothing happens.
 function updates() {
-  if (!app.isPackaged) return;
+  if (!app.isPackaged || process.windowsStore) return;   // the Microsoft Store version is updated by the Store
   let au;
   try { au = require("electron-updater").autoUpdater; } catch { return; }
   au.logger = null;
   au.autoDownload = true;
   au.autoInstallOnAppQuit = true;
   au.on("error", () => { });
+  au.on("update-downloaded", info => announce(info));
   const check = () => au.checkForUpdates().catch(() => { });
   check();
   setInterval(check, 6 * 60 * 60 * 1000);
 }
+
+// a new version is downloaded: tell the open pages (the dashboard shows its update bar) and Windows (a notification)
+let updateReady = null;
+function announce(info) {
+  if (updateReady) return;
+  updateReady = { version: String((info && info.version) || "") };
+  for (const w of BrowserWindow.getAllWindows()) w.webContents.send("sb-update-ready", updateReady);
+  try {
+    if (Notification.isSupported()) {
+      const n = new Notification({ title: "Sellybot", body: "نسخة جديدة من البرنامج جاهزة" + (updateReady.version ? " (" + updateReady.version + ")" : "") + ". هتتثبت لوحدها لما تقفل البرنامج.", icon: ICON });
+      n.on("click", focusMain);
+      n.show();
+    }
+  } catch { }
+}
+// only pages of the site may ask
+const fromSite = e => inside((e.senderFrame && e.senderFrame.url) || "");
+ipcMain.handle("sb-update-state", e => (fromSite(e) ? updateReady : null));
+ipcMain.handle("sb-restart", e => {
+  if (!fromSite(e) || !updateReady) return;
+  if (!app.isPackaged) { app.relaunch(); app.exit(0); return; }   // a local run has nothing to install
+  require("electron-updater").autoUpdater.quitAndInstall(true, true);   // silent install, then open again
+});
+if (!app.isPackaged && process.env.SELLYBOT_FAKE_UPDATE) app.whenReady().then(() => setTimeout(() => announce({ version: process.env.SELLYBOT_FAKE_UPDATE }), 6000));
 
 app.on("window-all-closed", () => app.quit());

@@ -259,6 +259,48 @@
   .modal textarea{min-height:46vh}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;transition:transform .3s;z-index:70;max-width:90vw}
   .toast.show{transform:translateX(-50%) translateY(0)}
+  /* update bar: a new feature on the site, or (desktop app) a new version of the app itself */
+  .upd{position:fixed;left:50%;bottom:20px;z-index:75;display:flex;align-items:center;gap:12px;width:max-content;max-width:min(600px,calc(100vw - 24px));padding:10px 10px 10px 14px;border-radius:18px;
+       background:var(--card);border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line));box-shadow:0 18px 50px rgba(40,20,10,.28);transform:translate(-50%,160%);transition:transform .55s cubic-bezier(.2,.9,.3,1.15)}
+  .upd.show{transform:translate(-50%,0)}
+  .upd:before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(90deg,var(--brand),var(--brand2),#ffd27a,var(--brand));background-size:300% 100%;animation:updRun 3s linear infinite;
+       -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  @keyframes updRun{to{background-position:300% 0}}
+  .upd-ic{width:42px;height:42px;flex:none;border-radius:13px;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(232,119,74,.35);animation:updWob 2.4s ease-in-out infinite}
+  @keyframes updWob{0%,100%{transform:rotate(0)}15%{transform:rotate(-12deg) scale(1.08)}30%{transform:rotate(9deg)}45%{transform:rotate(0)}}
+  .upd-tx{min-width:0;flex:1;line-height:1.35}
+  .upd-tx b{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .upd-tx small{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .upd-go{flex:none;white-space:nowrap}
+  .upd-later{flex:none;border:0;background:none;color:var(--muted);font-size:13px;cursor:pointer;padding:6px 8px;border-radius:9px}
+  .upd-later:hover{color:var(--ink);background:var(--soft)}
+  @media (max-width:560px){.upd{top:68px;bottom:auto;gap:9px;padding:9px;transform:translate(-50%,-190%)}.upd.show{transform:translate(-50%,0)}   /* phones: at the top, clear of the chat bubble */.upd-ic{width:36px;height:36px;font-size:18px}.upd-tx small{white-space:normal}.upd-later{display:none}}
+  /* "what's new" window */
+  .modal.news{align-items:center}
+  .news-card{position:relative;width:100%;max-width:520px;border-radius:24px;background:var(--card);border:1px solid var(--line);box-shadow:0 30px 80px rgba(30,15,5,.35);overflow:hidden;animation:newsIn .5s cubic-bezier(.2,.9,.3,1.15)}
+  @keyframes newsIn{from{opacity:0;transform:translateY(26px) scale(.96)}to{opacity:1;transform:none}}
+  .news-head{position:relative;display:flex;align-items:center;gap:14px;padding:22px 22px 20px;color:#fff;background:linear-gradient(135deg,#d9653a,var(--brand) 45%,#f2a35a);overflow:hidden}
+  .news-head b{display:block;font-size:20px;line-height:1.3}
+  .news-head small{display:block;font-size:13px;opacity:.9}
+  .news-spark{position:relative;width:52px;height:52px;flex:none;border-radius:16px;display:grid;place-items:center;font-size:27px;background:rgba(255,255,255,.18);animation:updWob 2.4s ease-in-out infinite}
+  .news-x{position:relative;margin-inline-start:auto;align-self:flex-start;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;cursor:pointer;font-size:15px}
+  .news-x:hover{background:rgba(255,255,255,.3)}
+  .news-burst i{position:absolute;width:8px;height:8px;border-radius:2px;background:#fff;opacity:0;animation:confetti 2.6s ease-out infinite}
+  .news-burst i:nth-child(1){left:12%;top:70%;background:#ffe08a}.news-burst i:nth-child(2){left:30%;top:80%;animation-delay:.4s}.news-burst i:nth-child(3){left:52%;top:75%;background:#ffd0b5;animation-delay:.9s}
+  .news-burst i:nth-child(4){left:70%;top:82%;animation-delay:1.3s;background:#fff3c4}.news-burst i:nth-child(5){left:86%;top:72%;animation-delay:.2s}.news-burst i:nth-child(6){left:42%;top:90%;animation-delay:1.7s;background:#ffe08a}
+  @keyframes confetti{0%{opacity:0;transform:translateY(0) rotate(0)}15%{opacity:.95}100%{opacity:0;transform:translateY(-90px) rotate(260deg)}}
+  .news-list{display:flex;flex-direction:column;gap:10px;padding:18px 18px 4px;max-height:min(56vh,460px);overflow-y:auto}
+  .news-it{display:flex;gap:13px;padding:14px;border-radius:16px;background:var(--soft);border:1px solid var(--line);animation:fadeUp .45s both}
+  .news-it>i{font-style:normal;font-size:24px;width:46px;height:46px;flex:none;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--brand) 13%,var(--card))}
+  .news-it b{display:block;font-size:15.5px;line-height:1.4}
+  .news-it p{margin:3px 0 0;color:var(--muted);font-size:13.5px;line-height:1.65}
+  .news-it ul{margin:7px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13px}
+  .news-it li{position:relative;padding-inline-start:20px}
+  .news-it li:before{content:"✓";position:absolute;inset-inline-start:0;top:1px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;font-size:9.5px;font-weight:700;color:#fff;background:var(--brand)}
+  .news-it .nl{display:inline-flex;margin-top:9px;padding:6px 12px;border-radius:10px;border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line));background:var(--card);color:var(--brand);font-weight:600;font-size:13px;cursor:pointer;text-decoration:none}
+  .news-it .nl:hover{background:color-mix(in srgb,var(--brand) 10%,var(--card))}
+  .news-foot{padding:14px 18px 18px;display:flex;justify-content:center}
+  .news-foot .btn{min-width:200px}
   .drop{border:2px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted);cursor:pointer;transition:border-color .2s,background .2s}
   .drop.over{border-color:var(--brand);background:var(--soft)}
   .tip{background:var(--soft);border:1px solid var(--line);border-inline-start:4px solid var(--brand);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
@@ -1691,6 +1733,26 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- what's new / update bar (whats-new.js lists the new features; see "what's new + updates" in the script below) -->
+<div class="upd" id="updBar" role="status" aria-live="polite" hidden>
+  <span class="upd-ic" id="updIc" aria-hidden="true">✨</span>
+  <span class="upd-tx"><b id="updT"></b><small id="updS"></small></span>
+  <button class="btn sm upd-go" id="updGo" type="button">حدّث دلوقتي</button>
+  <button class="upd-later" id="updLater" type="button">بعدين</button>
+</div>
+<div class="modal news" id="newsBox" role="dialog" aria-modal="true" aria-labelledby="newsTitle" hidden>
+  <div class="news-card">
+    <div class="news-head">
+      <span class="news-burst" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <span class="news-spark" aria-hidden="true">✨</span>
+      <div><b id="newsTitle">الجديد في Sellybot</b><small id="newsSub"></small></div>
+      <button class="news-x" id="newsClose" type="button" aria-label="اقفل">✕</button>
+    </div>
+    <div class="news-list" id="newsList"></div>
+    <div class="news-foot"><button class="btn" id="newsOk" type="button">تمام، يلا بينا 🚀</button></div>
+  </div>
+</div>
+<script src="whats-new.js"></script>
 <script src="feat-icons.js"></script>
 <script src="widget.js?v=20261112145445" data-art-only="1"></script>
 <script>
@@ -1891,6 +1953,7 @@
     render(); loadItems(); mountLiveChat();
     var want = (location.hash || "").replace("#", "");
     go(["data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "data");
+    setTimeout(showNews, 1200);   // what's new since this browser last looked
   }
 
   // ---------------- my plan + support ----------------
@@ -3159,6 +3222,94 @@
       });
     } catch (err) { toast(err.message); }
   }
+
+  // ---------------- what's new + updates ----------------
+  // whats-new.js lists the new features, newest first. This page re-reads it every 10 minutes and when its window comes back
+  // to the front: a new entry at the top = the bar "✨ جديد في Sellybot" with a reload button (in the desktop app also a Windows
+  // notification). After loading, the entries this browser hasn't seen open once in the "الجديد في Sellybot" window.
+  // Inside the desktop app, window.sellybotApp (desktop/preload.js) says when a new version of the app itself is downloaded:
+  // the same bar, with "restart".
+  var NEWS = (window.SB_NEWS || []).slice(), NEWS_TOP = NEWS.length ? NEWS[0].id : null, newsShown = false;
+  var IN_APP = /SellybotDesktop/.test(navigator.userAgent);
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  function showNews() {
+    if (newsShown || !NEWS.length || !me) return;
+    newsShown = true;
+    var seen = lsGet("sb-news-seen"), fresh = [];
+    for (var i = 0; i < NEWS.length && NEWS[i].id !== seen; i++) fresh.push(NEWS[i]);
+    // only what's recent (a first visit, or a long time away, doesn't get the whole history)
+    fresh = fresh.filter(function (n) { return Date.now() - new Date(n.date).getTime() < (seen ? 60 : 21) * 864e5; }).slice(0, 5);
+    lsSet("sb-news-seen", NEWS_TOP);
+    if (!fresh.length) return;
+    var list = $("newsList"); list.innerHTML = "";
+    fresh.forEach(function (n, k) {
+      var it = document.createElement("div"); it.className = "news-it"; it.style.animationDelay = (0.15 + k * 0.12) + "s";
+      var h = '<i>' + esc(n.icon || "✨") + '</i><div><b>' + esc(n.title) + '</b>' + (n.text ? '<p>' + esc(n.text) + '</p>' : "");
+      if (n.items && n.items.length) h += '<ul>' + n.items.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>';
+      if (n.link && n.link.tab) h += '<button class="nl" type="button" data-news-tab="' + esc(n.link.tab) + '">' + esc(n.link.label || "شوفه") + ' ←</button>';
+      else if (n.link && n.link.href && !(IN_APP && /download\.html/.test(n.link.href))) h += '<a class="nl" href="' + esc(n.link.href) + '">' + esc(n.link.label || "شوفه") + ' ←</a>';
+      it.innerHTML = h + '</div>'; list.appendChild(it);
+    });
+    $("newsSub").textContent = fresh.length === 1 ? "حاجة جديدة نزلت لمتجرك" : fmt(fresh.length) + " حاجات جديدة نزلت لمتجرك";
+    list.querySelectorAll("[data-news-tab]").forEach(function (b) { b.onclick = function () { closeNews(); go(b.dataset.newsTab); }; });
+    $("newsBox").hidden = false;
+  }
+  function closeNews() { $("newsBox").hidden = true; }
+  $("newsOk").onclick = closeNews; $("newsClose").onclick = closeNews;
+  $("newsBox").addEventListener("click", function (e) { if (e.target === $("newsBox")) closeNews(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("newsBox").hidden) closeNews(); });
+
+  var updKind = null, updLaterUntil = 0, updNotified = {};
+  function showUpd(kind, title, sub) {
+    updKind = kind;
+    $("updIc").textContent = kind === "app" ? "🖥️" : "✨";
+    $("updT").textContent = title; $("updS").textContent = sub;
+    $("updGo").textContent = kind === "app" ? "أعد التشغيل دلوقتي" : "حدّث دلوقتي";
+    $("updBar").hidden = false;
+    requestAnimationFrame(function () { requestAnimationFrame(function () { $("updBar").classList.add("show"); }); });
+  }
+  $("updGo").onclick = function () {
+    if (updKind === "app" && window.sellybotApp) window.sellybotApp.restart();
+    else location.reload();
+  };
+  $("updLater").onclick = function () {
+    $("updBar").classList.remove("show"); updLaterUntil = Date.now() + 60 * 60e3;   // ask again in an hour
+    setTimeout(function () { $("updBar").hidden = true; }, 500);
+  };
+
+  // the newest whats-new.js, without touching this page's own list
+  var newsCheckedAt = 0;
+  function checkNews() {
+    if (Date.now() - newsCheckedAt < 90e3 || updKind === "app") return;
+    newsCheckedAt = Date.now();
+    var mine = window.SB_NEWS, s = document.createElement("script");
+    s.src = "whats-new.js?t=" + Date.now();
+    s.onload = function () { var latest = window.SB_NEWS || []; window.SB_NEWS = mine; s.remove(); newsArrived(latest); };
+    s.onerror = function () { s.remove(); };
+    document.head.appendChild(s);
+  }
+  function newsArrived(latest) {
+    var top = latest[0];
+    if (!top || top.id === NEWS_TOP || Date.now() < updLaterUntil) return;
+    var more = 0; for (var i = 1; i < latest.length && latest[i].id !== NEWS_TOP; i++) more++;
+    showUpd("site", "جديد في Sellybot: " + top.title, more ? "و" + fmt(more) + (more === 1 ? " حاجة تانية" : " حاجات تانية") + " جديدة. حدّث الصفحة عشان تشوفهم." : "حدّث الصفحة عشان تشوفه.");
+    // the desktop app in the background: a Windows notification too (once per update)
+    if (IN_APP && document.hidden && !updNotified[top.id] && "Notification" in window) {
+      updNotified[top.id] = true;
+      try { var n = new Notification("Sellybot · تحديث جديد ✨", { body: top.title, icon: "sellybot-icon.svg" }); n.onclick = function () { window.focus(); }; } catch (e) {}
+    }
+  }
+  setInterval(checkNews, 10 * 60e3);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) checkNews(); });
+  window.addEventListener("focus", checkNews);
+
+  // the desktop app: a new version of the app itself is downloaded
+  if (window.sellybotApp && typeof window.sellybotApp.onUpdate === "function")
+    window.sellybotApp.onUpdate(function (u) {
+      showUpd("app", "نسخة جديدة من البرنامج جاهزة" + (u && u.version ? " (" + u.version + ")" : "") + " 🎉", "هتتثبت لوحدها لما تقفل البرنامج، أو دوس «أعد التشغيل» دلوقتي.");
+    });
 
   // ---------------- start ----------------
   api("api/auth.ashx?action=me").then(function (d) { me = d; showApp(); }).catch(showAuth);
