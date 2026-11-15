@@ -84,6 +84,48 @@
       '<g transform="translate(10,-6)"><g class="headG">' + bearHeadParts() + "</g></g>", "full");
   }
 
+  // the coder monkey: round glasses, headphones playing music, a </> hoodie. The headphones and the code follow the brand color.
+  function monkeyHeadParts() {
+    var fur = "#7a4f2e", face = "#f1cfa6", line = "#4a2e1a";
+    return '<g class="ear"><circle cx="11" cy="66" r="12" fill="' + fur + '"/><circle cx="11" cy="66" r="6.5" fill="' + face + '"/></g>' +
+      '<g class="ear r"><circle cx="109" cy="66" r="12" fill="' + fur + '"/><circle cx="109" cy="66" r="6.5" fill="' + face + '"/></g>' +
+      '<circle cx="60" cy="60" r="40" fill="' + fur + '"/>' +
+      '<path d="M50 23 q4 -12 10 -3 q5 -10 10 3" fill="' + fur + '"/>' +
+      '<circle cx="46" cy="58" r="17" fill="' + face + '"/><circle cx="74" cy="58" r="17" fill="' + face + '"/><ellipse cx="60" cy="80" rx="26" ry="20" fill="' + face + '"/>' +
+      cheeks(34, 86, 77, 5) +
+      '<circle cx="45" cy="59" r="12.5" fill="#fff" opacity=".6"/><circle cx="75" cy="59" r="12.5" fill="#fff" opacity=".6"/>' +
+      eyes(45, 75, 60, 4.6) +
+      '<circle cx="45" cy="59" r="12.5" fill="none" stroke="#1f1f1f" stroke-width="3.6"/><circle cx="75" cy="59" r="12.5" fill="none" stroke="#1f1f1f" stroke-width="3.6"/>' +
+      '<path d="M57.5 57 q2.5 -3 5 0" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+      '<path d="M39 53 l5 -3 M69 53 l5 -3" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".85"/>' +
+      '<circle cx="56.5" cy="76" r="1.8" fill="' + line + '"/><circle cx="63.5" cy="76" r="1.8" fill="' + line + '"/>' +
+      '<g class="smile"><path d="M50 84 q10 9 20 0" stroke="' + line + '" stroke-width="2.6" fill="none" stroke-linecap="round"/></g>' +
+      '<g class="open"><path d="M50 83 Q60 99 70 83 Z" fill="#5a1f1f"/><ellipse cx="60" cy="90" rx="4.4" ry="2.3" fill="#ff6b81"/></g>' +
+      '<path d="M25 52 C25 10 95 10 95 52" stroke="#2b2b2b" stroke-width="6" fill="none" stroke-linecap="round"/>' +
+      '<g class="mkCup"><rect x="17" y="46" width="15" height="26" rx="7" fill="var(--c)"/><rect x="21" y="51" width="7" height="16" rx="3.5" fill="var(--c3)"/></g>' +
+      '<g class="mkCup"><rect x="88" y="46" width="15" height="26" rx="7" fill="var(--c)"/><rect x="92" y="51" width="7" height="16" rx="3.5" fill="var(--c3)"/></g>';
+  }
+  function monkeyNote() {
+    return '<circle cx="0" cy="8" r="3.4" fill="var(--c)"/><path d="M3 8 V-5 l6 2" stroke="var(--c)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+  // the bubble: the whole monkey, vibing to its music (head bob, notes), waving (the bear's arm), swinging its tail
+  function monkeyFull() {
+    var fur = "#7a4f2e", face = "#f1cfa6", hood = "#33363b", hood2 = "#24262a";
+    return svg("0 0 140 160",
+      '<g class="mkTail"><path d="M96 134 C126 140 134 106 118 96 C108 90 100 102 110 106" stroke="' + fur + '" stroke-width="7" fill="none" stroke-linecap="round"/></g>' +
+      '<g transform="translate(14,30)"><g class="mkNote">' + monkeyNote() + "</g></g>" +
+      '<g transform="translate(124,22)"><g class="mkNote n2">' + monkeyNote() + "</g></g>" +
+      '<ellipse cx="54" cy="151" rx="14" ry="7" fill="' + fur + '"/><ellipse cx="86" cy="151" rx="14" ry="7" fill="' + fur + '"/>' +
+      '<ellipse cx="54" cy="152" rx="7" ry="3.6" fill="' + face + '"/><ellipse cx="86" cy="152" rx="7" ry="3.6" fill="' + face + '"/>' +
+      '<g class="mkArmL"><ellipse cx="36" cy="116" rx="10" ry="19" fill="' + hood + '"/><circle cx="34" cy="133" r="7.5" fill="' + face + '"/></g>' +
+      '<path d="M40 104 Q70 92 100 104 L106 138 Q70 152 34 138 Z" fill="' + hood + '"/>' +
+      '<path d="M48 101 Q70 117 92 101" stroke="' + hood2 + '" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+      '<path d="M62 109 v11 M78 109 v11" stroke="#e9e9e9" stroke-width="2" stroke-linecap="round"/><circle cx="62" cy="121" r="1.8" fill="#e9e9e9"/><circle cx="78" cy="121" r="1.8" fill="#e9e9e9"/>' +
+      '<g class="mkCode"><path d="M60 124 l-7 5 7 5 M80 124 l7 5 -7 5 M73 121 l-6 16" stroke="var(--c)" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>' +
+      '<g transform="translate(10,-4)"><g class="mkHead">' + monkeyHeadParts() + "</g></g>" +
+      '<g class="mkWave"><ellipse cx="104" cy="114" rx="10" ry="19" fill="' + hood + '"/><circle cx="106" cy="131" r="7.5" fill="' + face + '"/></g>', "full");   // after the head: the waving hand shows beside the ear
+  }
+
   var STYLES = {
     classic: {
       name: "كلاسيك", art: function () {
@@ -432,6 +474,9 @@
           '<g class="flame"><path d="M60 5 q8 8 0 15 q-8 -7 0 -15z" fill="#ffb300"/><path d="M60 10 q3.5 4.5 0 8 q-3.5 -3.5 0 -8z" fill="#fff3c4"/></g>' +
           eyes(46, 74, 87, 4.8) + cheeks(36, 84, 95, 5.5) + mouth(60, 95, 6), "face");
       }
+    },
+    monkey: {
+      name: "قرد مبرمج", art: function () { return svg("0 0 120 120", '<g class="headG">' + monkeyHeadParts() + "</g>", "face"); }, launcher: monkeyFull, tall: true
     }
   };
   function styleOf(k) { return STYLES[k] ? k : "bear"; }
@@ -563,6 +608,24 @@ button{font:inherit;cursor:pointer;color:inherit}
 @keyframes xDash{0%,66%,100%{opacity:0;transform:translateX(6px)}76%{opacity:.9}92%{opacity:0;transform:translateX(-6px)}}
 .art .flame{transform-box:fill-box;transform-origin:50% 100%;animation:xFlick .9s ease-in-out infinite}
 @keyframes xFlick{0%,100%{transform:scale(1) rotate(-4deg)}50%{transform:scale(.86,1.12) rotate(4deg)}}
+/* monkey: bobs its head to the music, notes float out of the headphones, the code glows, the tail swings */
+.art .mkHead{transform-box:fill-box;transform-origin:50% 90%;animation:mkBob 1.3s ease-in-out infinite}
+@keyframes mkBob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg) translateY(1.5px)}}
+.art .mkCup{transform-box:fill-box;transform-origin:center;animation:mkBeat 1.3s ease-in-out infinite}
+.talking .art .mkCup{animation-duration:.6s}
+@keyframes mkBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.art .mkNote{opacity:0;animation:mkNote 2.8s ease-out infinite}
+.art .mkNote.n2{animation-delay:1.4s}
+@keyframes mkNote{0%{opacity:0;transform:translate(0,6px) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(-6px,-24px) scale(1.1) rotate(-14deg)}}
+.art .mkCode{transform-box:fill-box;transform-origin:center;animation:mkCode 2.2s ease-in-out infinite}
+@keyframes mkCode{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.14)}}
+.art .mkTail{transform-box:view-box;transform-origin:96px 134px;animation:mkTail 2.6s ease-in-out infinite}
+@keyframes mkTail{0%,100%{transform:rotate(0)}50%{transform:rotate(-16deg)}}
+.art .mkArmL{transform-box:view-box;transform-origin:40px 98px;animation:mkArm 2.6s ease-in-out infinite}
+@keyframes mkArm{0%,100%{transform:rotate(0)}50%{transform:rotate(9deg)}}
+.art .mkWave{transform-box:view-box;transform-origin:100px 100px;animation:mkWave 5.5s ease-in-out infinite;transition:transform .3s}
+@keyframes mkWave{0%,40%,100%{transform:rotate(0)}48%{transform:rotate(-130deg)}54%{transform:rotate(-106deg)}60%{transform:rotate(-132deg)}66%{transform:rotate(-106deg)}72%{transform:rotate(-130deg)}82%{transform:rotate(0)}}
+.bubbleBtn.jump .mkWave{animation:none;transform:rotate(-140deg)}
 
 /* ----- launcher (bubble mode) ----- */
 .launcher{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));z-index:2147483000;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}

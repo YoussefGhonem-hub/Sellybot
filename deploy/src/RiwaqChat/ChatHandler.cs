@@ -137,6 +137,7 @@ namespace RiwaqChat
                 // ordering from the chat: its instructions + this chat's order so far, after the cached prompt
                 var octx = store == null ? null : ChatOrders.ForChannel(conn, store, chatSid, Web.Ip(req));
                 if (octx != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
+                else if (store != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
                 var parameters = new MessageCreateParams
                 {
                     Model = Claude.Model,
@@ -225,6 +226,7 @@ namespace RiwaqChat
             // WhatsApp ("wa:<chat>"): the chat is the customer's own number, so ordering needs no extra code
             var octx = ip != null && ip.StartsWith("wa:") ? ChatOrders.ForChannel(conn, store, ip, ip) : null;
             if (octx != null) sys.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
+            else sys.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
             var parameters = new MessageCreateParams { Model = Claude.Model, MaxTokens = maxTokens, System = sys, Messages = messages };
 
             bool orderTool = OrderTracking.On(store);   // Shopify or EasyOrders

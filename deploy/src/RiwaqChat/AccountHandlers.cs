@@ -228,7 +228,7 @@ namespace RiwaqChat
         {
             "classic", "pill", "agent", "minimal", "bear", "cat", "blob", "bag", "gift", "star",
             "orb", "duo", "wave", "robot", "owl", "ghost", "bunny", "heart", "cup", "cart",
-            "mail", "phone", "penguin", "fox", "panda", "frog", "shirt", "box", "diamond", "cake"
+            "mail", "phone", "penguin", "fox", "panda", "frog", "shirt", "box", "diamond", "cake", "monkey"
         };
 
         static string NullIfEmpty(string v) { return string.IsNullOrWhiteSpace(v) ? null : v; }

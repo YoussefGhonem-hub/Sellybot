@@ -37,6 +37,8 @@ namespace RiwaqChat
         public bool NotActive { get { var r = Raw ?? ""; return r.IndexOf("not active", StringComparison.OrdinalIgnoreCase) >= 0 || r.IndexOf("over due", StringComparison.OrdinalIgnoreCase) >= 0; } }
         // a missing order comes back as 400 {"message":"record not found"} (not 404)
         public bool NotFound { get { return Status == 404 || (Raw ?? "").IndexOf("not found", StringComparison.OrdinalIgnoreCase) >= 0; } }
+        // a revoked or wrong key comes back as 400 {"message":"Api-Key not valid"} (checked on the live API, 2026-11-15)
+        public bool BadKey { get { var r = Raw ?? ""; return Status == 401 || r.IndexOf("api-key", StringComparison.OrdinalIgnoreCase) >= 0 || r.IndexOf("api key", StringComparison.OrdinalIgnoreCase) >= 0; } }
     }
 
     public static class EasyOrders
@@ -194,7 +196,7 @@ namespace RiwaqChat
                 ct.ThrowIfCancellationRequested();
                 JsonElement r;
                 try { r = await Call(k, HttpMethod.Get, plain ? "/products" : "/products?fields=" + Fields + "&" + Joins + "&limit=" + PageSize + "&page=" + page); }
-                catch (EoException ex) when (page == 1 && ex.Status == 400 && !ex.NotActive)
+                catch (EoException ex) when (page == 1 && ex.Status == 400 && !ex.NotActive && !ex.BadKey)
                 {
                     plain = true;   // the paging / fields / join params weren't accepted: the plain list
                     r = await Call(k, HttpMethod.Get, "/products");
@@ -419,7 +421,7 @@ namespace RiwaqChat
             try { o = await Call(k, HttpMethod.Get, "/orders/short/" + num); }
             catch (EoException ex)
             {
-                if (ex.NotFound || (ex.Status == 400 && !ex.NotActive)) return NoMatch;
+                if (ex.NotFound || (ex.Status == 400 && !ex.NotActive && !ex.BadKey)) return NoMatch;   // a bad key is our problem, not a wrong order number
                 return "مقدرناش نوصل لبيانات الأوردرات دلوقتي. اعتذر للزبون وانصحه يجرّب كمان شوية أو يكلّم المتجر.";
             }
             if (o.ValueKind != JsonValueKind.Object || string.IsNullOrEmpty(Str(o, "id"))) return NoMatch;
