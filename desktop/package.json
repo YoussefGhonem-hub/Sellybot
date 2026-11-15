@@ -1,0 +1,79 @@
+{
+  "name": "sellybot-desktop",
+  "productName": "Sellybot",
+  "version": "1.0.0",
+  "description": "Sellybot على الكمبيوتر: لوحة تحكم متجرك في برنامج لوحده",
+  "author": "Sellybot",
+  "homepage": "https://sellybot.online",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.2.1",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "online.sellybot.desktop",
+    "productName": "Sellybot",
+    "copyright": "© Sellybot",
+    "artifactName": "Sellybot-Setup.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "offline.html",
+      "build/icon.png"
+    ],
+    "electronLanguages": [
+      "ar",
+      "en-US"
+    ],
+    "compression": "maximum",
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Sellybot",
+      "uninstallDisplayName": "Sellybot",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "YoussefGhonem-hub",
+        "repo": "Sellybot",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
+  }
+}

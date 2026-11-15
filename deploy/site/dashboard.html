@@ -40,7 +40,7 @@
 
   /* ---------- navbar ---------- */
   .nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
-  .nav-in{max-width:1080px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:18px}
+  .nav-in{max-width:1240px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:16px}   /* wider than the page: room for the tabs + the app button */
   .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);flex:none}
   .logo .mark{width:30px;height:36px;flex:none;color:var(--ink);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
   .logo:hover .mark{transform:rotate(-8deg) scale(1.06)}
@@ -55,6 +55,17 @@
   .links button.on:after{content:"";position:absolute;inset:auto 10px 0 10px;height:3px;border-radius:3px 3px 0 0;background:var(--brand)}
   .theme-btn{flex:none;margin-inline-start:auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;overflow:hidden;transition:border-color .2s,transform .2s}
   .theme-btn:hover{border-color:var(--brand);transform:rotate(-12deg)}
+  /* "download the app" (Windows only, never inside the app): a pill, icon-only when the bar gets tight */
+  .dl-nav{flex:none;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px 0 13px;border-radius:999px;text-decoration:none;color:#fff;font-size:13.5px;font-weight:600;white-space:nowrap;
+          background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 16px rgba(232,119,74,.3);transition:transform .2s,box-shadow .2s}
+  .dl-nav:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(232,119,74,.4)}
+  .dl-nav svg{width:18px;height:18px;flex:none}
+  .dl-nav .ar{animation:dlBob 1.8s ease-in-out infinite}
+  @keyframes dlBob{0%,100%{transform:translateY(-.5px)}50%{transform:translateY(1.5px)}}
+  .dl-nav{margin-inline-start:auto}.dl-nav:not([hidden])+.theme-btn{margin-inline-start:0}
+  @media (max-width:1300px){.dl-nav{width:38px;padding:0;justify-content:center}.dl-nav span{display:none}}
+  @media (min-width:761px) and (max-width:1150px){.links button{padding:0 9px}}
+  @media (min-width:761px) and (max-width:1000px){.dl-nav{display:none}}   /* the tabs already scroll here; the account menu has the same link */
   .theme-btn svg{width:18px;height:18px;grid-area:1/1;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
   .theme-btn .moon{transform:translateY(130%) rotate(-90deg);opacity:0}
   [data-theme=dark] .theme-btn .sun{transform:translateY(-130%) rotate(90deg);opacity:0}
@@ -870,6 +881,10 @@
       <button type="button" data-href="about.html">ℹ️ من نحن</button>
       <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
     </nav>
+    <a class="dl-nav" id="navDl" href="download.html" title="حمّل Sellybot لـ Windows" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="13" rx="2.5"/><path d="M8.5 20.5h7M12 16.5v4"/><g class="ar"><path d="M12 6.5v6M9.3 10l2.7 2.7 2.7-2.7"/></g></svg>
+      <span>حمّل البرنامج</span>
+    </a>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="غيّر الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق">
       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
@@ -886,6 +901,7 @@
         <button data-goto="plan">💎 باقتي والاشتراك</button>
         <button data-goto="support">🎧 الدعم الفني <span class="nb" id="supBadge" hidden></span></button>
         <a id="menuWa" target="_blank" rel="noopener">🟢 كلّمنا على واتساب ↗</a>
+        <a id="menuDesktop" href="download.html" hidden>🖥️ نزّل البرنامج على الكمبيوتر</a>
         <div class="sep"></div>
         <button id="logoutBtn">↩️ تسجيل خروج</button>
       </div>
@@ -2103,6 +2119,9 @@
     $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
     $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
     $("menuChat").href = link;
+    // the Windows app (desktop/ in the repo): offered on Windows only, and not inside the app itself
+    var offerApp = /Windows NT/.test(navigator.userAgent) && !/SellybotDesktop/.test(navigator.userAgent);
+    $("menuDesktop").hidden = !offerApp; $("navDl").hidden = !offerApp;
     $("menuWa").href = waLink("أهلاً 👋 أنا صاحب متجر " + me.name + " (" + me.slug + ") على Sellybot");
     $("supBadge").textContent = fmt(me.supportAnswered || 0); $("supBadge").hidden = !me.supportAnswered;
     $("supAcct").textContent = fmt(me.supportAnswered || 0); $("supAcct").hidden = !me.supportAnswered;   // support lives in the account menu: show replies on its button too

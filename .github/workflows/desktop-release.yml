@@ -1,0 +1,52 @@
+name: Desktop app release
+
+# Builds the Windows app (desktop/) and publishes it as a GitHub Release.
+# Start it by hand: Actions > Desktop app release > Run workflow, after raising "version" in desktop/package.json.
+# - The dashboard's download link always gets the newest release:
+#     https://github.com/YoussefGhonem-hub/Sellybot/releases/latest/download/Sellybot-Setup.exe
+# - Installed apps update themselves from the same release (latest.yml), so every release must carry all three files.
+# The app loads the live site, so site changes never need a release; only changes in desktop/ do.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install
+        working-directory: desktop
+        run: npm ci --no-audit --no-fund
+
+      - name: Build the installer
+        working-directory: desktop
+        run: npm run dist
+
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = (Get-Content desktop/package.json -Raw | ConvertFrom-Json).version
+          $tag = "v$v"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release $tag already exists. Raise the version in desktop/package.json first." }
+          $notes = "Sellybot على الكمبيوتر (Windows) - نسخة $v`n`nنزّل Sellybot-Setup.exe وشغّله. البرنامج بيتحدّث لوحده بعد كده."
+          gh release create $tag desktop/dist/Sellybot-Setup.exe desktop/dist/Sellybot-Setup.exe.blockmap desktop/dist/latest.yml --title "Sellybot for Windows $v" --notes $notes --latest
