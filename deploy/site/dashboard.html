@@ -145,7 +145,7 @@
   .per.sug{border-color:var(--brand);box-shadow:0 10px 24px -14px var(--brand)}
   @media (prefers-reduced-motion:reduce){.tp-gauge span{animation:none}}
   label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
-  input[type=text],input[type=email],input[type=password],input[type=number],textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);outline:none}
+  input[type=text],input[type=email],input[type=password],input[type=number],input[type=tel],textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);outline:none}
   input:focus,textarea:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(232,119,74,.15)}
   textarea{min-height:120px;resize:vertical}
   .ltr{direction:ltr;text-align:left}
@@ -284,6 +284,115 @@
   .hrow{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:8px}
   .hrow .grow{flex:1;min-width:0}
   .hrow .rsn{margin:6px 0 0;padding:6px 10px;border-radius:8px;font-size:12.5px;background:var(--soft)}
+
+  /* ---- «باقتي» ---- */
+  /* «مواعيدك»: the dates that matter, each with how much of its time is left */
+  .mp-dates{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;padding-top:14px;border-top:1px dashed var(--line);position:relative}
+  .mp-dates .md-h{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--muted)}
+  .md{--c:var(--brand);display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--soft);border:1px solid var(--line)}
+  .md .md-ic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;background:color-mix(in srgb,var(--c) 14%,var(--card))}
+  .md .grow{flex:1;min-width:0}
+  .md b{display:block;font-size:13.5px}
+  .md small{display:block;color:var(--muted);font-size:12px}
+  .md-bar{height:5px;border-radius:4px;background:color-mix(in srgb,var(--c,var(--brand)) 15%,var(--line));margin-top:6px;overflow:hidden}
+  .md-bar i{display:block;height:100%;background:var(--c,var(--brand));border-radius:4px;transition:width .8s}
+  .md.warn{--c:#e8394a;border-color:color-mix(in srgb,#e8394a 40%,var(--line))}
+  .md.warn b{color:#c0392b}
+  [data-theme=dark] .md.warn b{color:#ff8a7a}
+  /* «عايز تعمل إيه؟» */
+  .pa-title{margin:22px 0 10px}
+  .pa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .pa{--c:var(--brand);position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:start;padding:16px;border-radius:16px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);cursor:pointer;color:var(--ink);font:inherit;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s;animation:fadeUp .4s both}
+  .pa:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--c)}
+  .pa:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--c) 55%,var(--line))}
+  .pa:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+  .pa.main{border-color:color-mix(in srgb,var(--c) 55%,var(--line));background:linear-gradient(165deg,color-mix(in srgb,var(--c) 10%,var(--card)),var(--card) 70%)}
+  .pa .pa-ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:color-mix(in srgb,var(--c) 14%,var(--card))}
+  .pa .pa-t{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+  @media (max-width:520px){.pa{flex-direction:row;gap:12px;padding:14px}.pa .pa-ic{width:40px;height:40px;font-size:20px}}
+  .pa b{font-size:15px}
+  .pa small{color:var(--muted);font-size:12.5px;line-height:1.65}
+  .pa .pa-go{margin-top:auto;padding-top:4px;font-size:13px;font-weight:700;color:var(--c)}
+  .pa.wait .pa-go{color:var(--muted);font-weight:500}
+  .pa[data-act=renew]{--c:#3b82f6}.pa[data-act=upgrade]{--c:#7c5cff}.pa[data-act=topup]{--c:#0ea5a4}.pa[data-act=wa]{--c:#1fae55}.pa[data-act=plans]{--c:var(--brand)}
+  /* higher plans, side by side with the current one */
+  .up-panel{margin-top:14px;border:2px solid #7c5cff;animation:fadeUp .35s both}
+  .up-head{display:flex;gap:12px;align-items:flex-start}
+  .up-head .grow{flex:1;min-width:0}
+  .up-head h3{margin:0 0 2px}
+  .up-head p{margin:0}
+  .up-rows{display:grid;gap:10px;margin-top:14px}
+  .up-row{display:grid;grid-template-columns:1.1fr 1fr 1fr auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+  .up-row.cur{background:var(--soft);border-style:dashed}
+  .up-row small{color:var(--muted);font-size:12px}
+  .up-row b{font-size:16px}
+  .up-row .plus{grid-column:1/-1;font-size:12.5px;color:var(--muted);margin-top:-4px}
+  .up-row .x{font-size:11.5px;font-weight:700;color:#7c5cff;background:color-mix(in srgb,#7c5cff 13%,var(--card));padding:2px 8px;border-radius:999px;white-space:nowrap}
+  @media (max-width:640px){.up-row{grid-template-columns:1fr 1fr}.up-row>div:first-child{grid-column:1/-1}.up-row .btn,.up-row .st-pill{grid-column:1/-1;justify-self:stretch;text-align:center}}
+  /* the latest request as a tracker: sent → being checked → on / rejected */
+  .rl{--c:#e8a33d;margin:0 0 14px;padding:16px 18px;border-radius:18px;border:1px solid var(--line);border-inline-start:5px solid var(--c);background:var(--card);box-shadow:var(--shadow);animation:fadeUp .35s both}
+  .rl.ok{--c:#1fae55}.rl.bad{--c:#e8394a}
+  .rl-head{display:flex;gap:12px;align-items:flex-start}
+  .rl-head .grow{flex:1;min-width:0}
+  .rl-ic{--c:var(--brand);flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:23px;background:color-mix(in srgb,var(--c) 15%,var(--card))}
+  .rl-head .k{display:block;color:var(--muted);font-size:12px}
+  .rl-head .t{display:block;font-size:16px;margin:1px 0 2px}
+  .rl-steps{list-style:none;display:flex;margin:18px 0 4px;padding:0}
+  .rl-steps li{flex:1;position:relative;text-align:center;font-size:12px;color:var(--muted);padding:0 4px}
+  .rl-steps li i{position:relative;z-index:1;width:34px;height:34px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:14px;background:var(--soft);border:2px solid var(--line);color:var(--muted)}
+  .rl-steps li:not(:first-child):after{content:"";position:absolute;z-index:0;top:16px;left:50%;width:100%;height:3px;border-radius:3px;background:var(--line)}
+  .rl-steps li.done:not(:first-child):after,.rl-steps li.cur:after{background:#1fae55}
+  .rl-steps li.bad:after{background:linear-gradient(270deg,#1fae55,#e8394a)}
+  .rl-steps li.done i{background:#1fae55;border-color:#1fae55;color:#fff}
+  .rl-steps li.cur i{background:var(--card);border-color:var(--c);color:var(--c);animation:rlPulse 1.8s ease-in-out infinite}
+  .rl-steps li.bad i{background:#e8394a;border-color:#e8394a;color:#fff}
+  .rl-steps li b{display:block;color:var(--ink);font-size:12.5px}
+  .rl-steps li small{display:block;font-size:11.5px}
+  @keyframes rlPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 35%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--c) 0%,transparent)}}
+  .rl-res{margin-top:12px;padding:10px 12px;border-radius:12px;font-size:13.5px;background:color-mix(in srgb,#1fae55 8%,var(--card));border:1px solid color-mix(in srgb,#1fae55 25%,var(--line))}
+  .rl-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+  .rl-acts a.btn{text-decoration:none}
+  /* the admin's reply, as a chat bubble */
+  .reply{display:flex;gap:10px;align-items:flex-start;margin-top:12px}
+  .reply .av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .reply .bub{flex:1;min-width:0;padding:10px 14px;border-radius:16px;border-start-start-radius:4px;background:var(--soft);border:1px solid var(--line);font-size:13.5px;line-height:1.7;overflow-wrap:anywhere}
+  .reply .bub b{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:2px}
+  .reply.bad .bub{background:color-mix(in srgb,#e8394a 8%,var(--card));border-color:color-mix(in srgb,#e8394a 30%,var(--line))}
+  .reply.ok .bub{background:color-mix(in srgb,#1fae55 8%,var(--card));border-color:color-mix(in srgb,#1fae55 30%,var(--line))}
+  /* the three views */
+  .ptabs{display:flex;gap:6px;margin:26px 0 14px;padding:5px;border-radius:14px;background:var(--soft);border:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+  .ptabs::-webkit-scrollbar{display:none}
+  .ptabs button{flex:1;white-space:nowrap;border:0;background:none;padding:10px 14px;border-radius:10px;font:inherit;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s,box-shadow .2s}
+  .ptabs button:hover{color:var(--ink)}
+  .ptabs button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+  .ptabs small{font-weight:500;color:var(--muted)}
+  .pp-lead{margin:0 0 12px}
+  [data-pp][hidden]{display:none}
+  /* requests and subscriptions as a timeline, newest first */
+  .tl{position:relative;padding-inline-start:26px}
+  .tl:before{content:"";position:absolute;top:8px;bottom:8px;inset-inline-start:9px;width:2px;border-radius:2px;background:var(--line)}
+  .tl.none{padding:0}.tl.none:before{display:none}
+  .ti-month{position:relative;font-size:12px;font-weight:700;color:var(--muted);margin:16px 0 8px}
+  .ti-month:first-child{margin-top:0}
+  .ti{--c:var(--brand);position:relative;margin-bottom:12px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);animation:fadeUp .35s both}
+  .ti:before{content:"";position:absolute;top:22px;inset-inline-start:-23px;width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 0 4px var(--bg)}
+  .ti-h{display:flex;gap:10px;align-items:center}
+  .ti-ic{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px;background:color-mix(in srgb,var(--c) 14%,var(--card))}
+  .ti-h .grow{flex:1;min-width:0}
+  .ti-h small{display:block;color:var(--muted);font-size:11.5px}
+  .ti-h b{display:block;font-size:14.5px}
+  .ti .meta{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.7}
+  .ti .meta.ok-line{color:#1f7a45}
+  [data-theme=dark] .ti .meta.ok-line{color:#6fd49a}
+  .ti.dim{opacity:.6}
+  .ti .md-bar{max-width:320px}
+  .ss-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+  .ss{display:flex;gap:10px;align-items:center;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+  .ss .ss-ic{font-size:22px}
+  .ss small{display:block;color:var(--muted);font-size:12px}
+  .ss b{font-size:18px}
+  @media (max-width:520px){.rl{padding:14px}.rl-steps li b{font-size:11.5px}.rl-steps li small{display:none}.ptabs button{font-size:13px;padding:9px 10px}}
+  @media (prefers-reduced-motion:reduce){.rl-steps li.cur i{animation:none}.pa,.ti,.rl{animation:none}}
   .bubs{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;margin:12px 0;padding:2px}
   .bb{max-width:85%;padding:9px 13px;border-radius:15px;white-space:pre-wrap;word-wrap:break-word;font-size:14px;animation:fadeUp .3s both}
   .bb.me{align-self:flex-start;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-bottom-right-radius:5px}
@@ -872,6 +981,21 @@
   .wa-add-body ul{list-style:none;padding:0;margin:10px 0 4px;display:grid;gap:4px;font-size:13px}
   .wa-add-body li{display:flex;gap:8px}
   .wa-add-body .hint{display:block;margin-top:6px}
+  /* the WhatsApp number: [logo | number ...... ✓], read left to right like a phone number */
+  .wa-add-body label{color:var(--ink);font-weight:600;margin-top:14px}
+  .wa-phone{display:flex;align-items:center;direction:ltr;height:52px;border:1.5px solid color-mix(in srgb,#25d366 35%,var(--line));border-radius:14px;background:var(--card);overflow:hidden;transition:border-color .2s,box-shadow .2s}
+  .wa-phone:hover{border-color:color-mix(in srgb,#25d366 60%,var(--line))}
+  .wa-phone:focus-within{border-color:#1fae55;box-shadow:0 0 0 4px color-mix(in srgb,#25d366 20%,transparent)}
+  .wa-phone.bad{border-color:var(--err);box-shadow:0 0 0 4px color-mix(in srgb,var(--err) 15%,transparent)}
+  .wa-ph-ic{flex:none;align-self:stretch;width:52px;display:grid;place-items:center;color:#fff;background:linear-gradient(160deg,#2fd96f,#18a84e)}
+  .wa-ph-ic svg{width:24px;height:24px}
+  .wa-phone input{flex:1;min-width:0;width:auto;height:100%;border:0;border-radius:0;box-shadow:none;background:transparent;padding:0 14px;font-size:18px;font-weight:600;letter-spacing:.08em;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .wa-phone input:focus{box-shadow:none;border:0}
+  .wa-phone input::placeholder{color:var(--muted);opacity:.55;font-weight:500}
+  .wa-ph-ok{flex:none;width:26px;height:26px;margin-right:13px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;background:#1fae55;transform:scale(0);transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+  .wa-phone.ok .wa-ph-ok{transform:scale(1)}
+  .wa-ph-hint{display:flex;gap:6px;align-items:flex-start;margin-top:7px;font-size:12.5px;color:var(--muted);line-height:1.6}
+  @media (prefers-reduced-motion:reduce){.wa-ph-ok{transition:none}}
   .mp-wa{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:12px;font-size:13.5px;
     background:color-mix(in srgb,#25d366 8%,var(--soft));border:1px solid color-mix(in srgb,#25d366 30%,var(--line))}
   .mp-wa .grow{flex:1 1 180px}
@@ -1207,7 +1331,7 @@
       <button data-tab="install">🛍️ ضيفه لمتجرك</button>
       <button data-tab="wa">💬 واتساب</button>
       <button data-tab="settings">⚙️ المساعد</button>
-      <button data-tab="plan">💎 باقتي</button>
+      <button data-tab="plan">💎 باقتي <span class="nb" id="planNb" hidden title="رد جديد من الإدارة على طلبك">1</span></button>
       <button type="button" data-href="about.html">ℹ️ من نحن</button>
       <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
     </nav>
@@ -1339,6 +1463,7 @@
   <div class="banner" id="storageBanner" hidden></div>
   <div class="banner" id="planBanner" hidden></div>
   <div class="banner wa" id="waBanner" hidden></div>
+  <div class="banner" id="replyBanner" hidden></div>
 
   <!-- home: the first page after login. What Sellybot does for this store, where each part lives, and the desktop app -->
   <section data-panel="home" class="hm">
@@ -2063,10 +2188,16 @@
 
   <!-- my plan -->
   <section data-panel="plan" hidden>
-    <div class="page-title"><div><h2>باقتي</h2><p>اشتراكك واستهلاكك، والباقات المتاحة. اختار باقة، ادفع، وابعت الطلب، والإدارة بتفعّلها بعد ما تتأكد من الدفع.</p></div>
+    <div class="page-title"><div><h2>باقتي</h2><p>كل حاجة عن اشتراكك في مكان واحد: باقتك ومواعيدها، طلباتك وردود الإدارة عليها، وسجل اللي دفعته.</p></div>
       <a class="btn wa-btn" id="planWaTop" target="_blank" rel="noopener">🟢 كلّمنا على واتساب</a></div>
-    <div class="my-plan card" id="myPlan"></div>
+    <!-- the latest request as a tracker: sent → the admin checks the payment → on / rejected, with the admin's reply -->
     <div id="reqPending"></div>
+    <div class="my-plan card" id="myPlan"></div>
+    <!-- what the owner can do now: renew / upgrade / extra messages / WhatsApp (or pick a plan) -->
+    <h3 class="sec-title pa-title">عايز تعمل إيه؟</h3>
+    <div class="pa-grid" id="mpActs"></div>
+    <!-- higher plans with what each one adds and the price difference -->
+    <div class="card up-panel" id="upPanel" hidden></div>
 
     <!-- request a plan -->
     <form class="card req-form" id="reqForm" hidden>
@@ -2086,7 +2217,12 @@
             <li><span>📅</span><span id="waAddWhen">بتشتغل من يوم ما الإدارة توافق، لمدة شهر</span></li>
           </ul>
           <label for="waAddPhone">رقم الواتساب اللي هتربطه بالمساعد</label>
-          <input type="tel" id="waAddPhone" class="ltr" maxlength="20" placeholder="01001234567" autocomplete="tel">
+          <div class="wa-phone" id="waPhoneBox">
+            <span class="wa-ph-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></span>
+            <input type="tel" id="waAddPhone" inputmode="tel" maxlength="20" placeholder="01001234567" autocomplete="tel" spellcheck="false" aria-describedby="waPhoneHint">
+            <span class="wa-ph-ok" aria-hidden="true">✓</span>
+          </div>
+          <small class="wa-ph-hint" id="waPhoneHint"><span aria-hidden="true">💡</span><span>الرقم اللي عليه واتساب متجرك، عادي أو بيزنس. بعد التفعيل بتربطه بمسح QR من الموبايل.</span></small>
           <small class="hint" id="waAddSum"></small>
         </div>
       </div>
@@ -2116,18 +2252,29 @@
       <button class="btn" id="rqSend">📨 ابعت الطلب</button>
     </form>
 
-    <h3 class="sec-title" style="margin-top:22px">الباقات المتاحة <span class="hint" id="plansFor"></span></h3>
-    <div class="wa-strip" id="waStrip" hidden></div>
-    <div class="pl-grid" id="plGrid"><div class="card"><div class="hint">بنحمّل الباقات…</div></div></div>
-    <div class="est-note">
-      <span class="ic" aria-hidden="true">💡</span>
-      <div class="grow"><b>عدد الرسايل تقديري</b><span>بيعتمد على حجم داتا متجرك واستهلاكك الحقيقي، وهتشوف استهلاكك أول بأول في الصفحة دي.</span></div>
-      <a class="btn ghost sm" href="pricing.html" target="_blank" rel="noopener">تفاصيل الأسعار ↗</a>
+    <!-- three views: the plans / my requests with the admin's replies / what I subscribed to and paid -->
+    <div class="ptabs" id="pTabs" role="tablist" aria-label="أقسام باقتي">
+      <button type="button" role="tab" data-pt="plans" aria-selected="true" class="on">💎 الباقات</button>
+      <button type="button" role="tab" data-pt="reqs" aria-selected="false">📨 طلباتي والردود <small id="pTabReqN"></small></button>
+      <button type="button" role="tab" data-pt="subs" aria-selected="false">🧾 سجل اشتراكاتي <small id="pTabSubN"></small></button>
     </div>
-
-    <div class="hist-grid">
-      <div><h3 class="sec-title">📨 طلباتي</h3><div id="reqList"></div></div>
-      <div><h3 class="sec-title">🧾 سجل اشتراكاتي</h3><div id="subList"></div></div>
+    <div data-pp="plans" role="tabpanel">
+      <p class="hint pp-lead">الباقات المتاحة <span id="plansFor"></span></p>
+      <div class="wa-strip" id="waStrip" hidden></div>
+      <div class="pl-grid" id="plGrid"><div class="card"><div class="hint">بنحمّل الباقات…</div></div></div>
+      <div class="est-note">
+        <span class="ic" aria-hidden="true">💡</span>
+        <div class="grow"><b>عدد الرسايل تقديري</b><span>بيعتمد على حجم داتا متجرك واستهلاكك الحقيقي، وهتشوف استهلاكك أول بأول في الصفحة دي.</span></div>
+        <a class="btn ghost sm" href="pricing.html" target="_blank" rel="noopener">تفاصيل الأسعار ↗</a>
+      </div>
+    </div>
+    <div data-pp="reqs" role="tabpanel" hidden>
+      <p class="hint pp-lead">كل طلب بعته، وحالته، ورد الإدارة عليه. الإدارة بتراجع التحويل وبتفعّل أو بترد عليك بالسبب.</p>
+      <div class="tl" id="reqList"></div>
+    </div>
+    <div data-pp="subs" role="tabpanel" hidden>
+      <div class="ss-grid" id="subSum"></div>
+      <div class="tl" id="subList"></div>
     </div>
   </section>
 
@@ -2594,39 +2741,138 @@
     var ch = me.knowledge.chars;
     return ch <= 40000 ? U.small : ch <= 150000 ? U.medium : U.large;
   }
-  var plansData = null;
+  var plansData = null, mineReady = false;
   function renderMyPlan() {
-    var p = me.plan || {}, pct = Math.round(me.usage.pct), left = me.usage.msgLeft;
-    var status = !p.name ? '<span class="st-pill">تجربة مجانية</span>' : p.expired ? '<span class="st-pill" style="background:#fdecea;color:#b23324;border-color:transparent">الاشتراك خلص</span>'
+    var p = me.plan || {}, pct = Math.round(me.usage.pct), left = me.usage.msgLeft, tu = me.usage;
+    var status = !p.name ? (tu.trialEnded ? '<span class="st-pill" style="background:#fdecea;color:#b23324;border-color:transparent">التجربة خلصت</span>'
+                                          : '<span class="st-pill">تجربة مجانية · فاضل ' + fmt(tu.trialDaysLeft) + ' يوم</span>')
+      : p.expired ? '<span class="st-pill" style="background:#fdecea;color:#b23324;border-color:transparent">الاشتراك خلص</span>'
       : '<span class="st-pill answered">شغالة · فاضل ' + fmt(p.daysLeft) + ' يوم</span>';
     $("myPlan").innerHTML =
       '<div><div class="hint">باقتك الحالية</div><div class="mp-name">' + esc(p.name || "التجربة المجانية") + '</div>' + status +
-      '<p class="hint" style="margin:10px 0 0">' + (p.name ? (p.expired ? "خلصت يوم " + dateAr(p.endsAt) + ". المساعد متوقف لحد ما تجدد." : "بتخلص يوم " + dateAr(p.endsAt) + "، وبعدها المساعد بيتوقف لحد ما تجدد.") : fmt(me.usage.msgLimit) + " رسالة مجانية في الشهر عشان تختبر المساعد على داتا متجرك. اشترك في باقة عشان تكمّل من غير توقف.") + '</p>' +
+      '<p class="hint" style="margin:10px 0 0">' + (p.name ? (p.expired ? "خلصت يوم " + dateAr(p.endsAt) + ". المساعد متوقف لحد ما تجدد." : "بتخلص يوم " + dateAr(p.endsAt) + "، وبعدها المساعد بيتوقف لحد ما تجدد.") : tu.trialEnded ? "التجربة المجانية خلصت يوم " + dateAr(tu.trialEnds) + "، والمساعد واقف ومش بيرد على زباينك. اختار باقة من تحت ويرجع يشتغل على طول."
+        : "تجربة مجانية لمدة شهر، مرة واحدة بس: " + fmt(tu.msgLimit) + " رسالة لحد يوم " + dateAr(tu.trialEnds) + " عشان تختبر المساعد على داتا متجرك. بعدها المساعد بيقف لحد ما تشترك في باقة.") + '</p>' +
       (p.name && !p.expired && pct >= 80 ? '<p class="hint" style="margin:8px 0 0;color:#b26b00">⚠️ رصيد الشهر ده قرب يخلص. زوّد الرصيد عشان المساعد مايقفش قبل آخر الشهر.</p>' : '') +
       // a lower plan waiting for this one to end
       (p.next ? '<p class="hint" style="margin:8px 0 0">⬇️ من يوم <b>' + dateAr(p.next.startsAt) + '</b> هتبدأ باقة <b>' + esc(p.next.name) + '</b> لحد يوم ' + dateAr(p.next.endsAt) + '. لحد كده باقتك الحالية شغالة بكل مميزاتها.</p>' : '') +
-      // on the free trial the plans are right under this card, so no button here; a paid plan gets renew / top up
-      (p.name ? '<div class="row" style="margin-top:14px"><button type="button" class="btn" id="mpRenew">' + (p.expired ? "🔁 جدّد الباقة" : "🔁 جدّد قبل ميعادها") + '</button>' +
-        (!p.expired ? '<button type="button" class="btn ghost" id="mpTopup">➕ زوّد الرصيد</button>' : '') + '</div>' : '') + mpWaHtml() + '</div>' +
-      '<div class="row" style="justify-content:center;gap:18px"><div class="mp-ring" id="mpRing" style="--p:0"><b>' + pct + '%<small>من رصيد الشهر</small></b></div>' +
-      '<div><div class="hint">الشهر ده</div><div style="font-size:20px;font-weight:700">' + fmt(me.usage.messages) + ' رسالة</div>' +
+      '</div>' +   // renew / upgrade / extra messages / WhatsApp: the «عايز تعمل إيه؟» tiles under this card
+      '<div class="row" style="justify-content:center;gap:18px"><div class="mp-ring" id="mpRing" style="--p:0"><b>' + pct + '%<small>' + (tu.trial ? "من رسايل التجربة" : "من رصيد الشهر") + '</small></b></div>' +
+      '<div><div class="hint">' + (tu.trial ? "في التجربة" : "الشهر ده") + '</div><div style="font-size:20px;font-weight:700">' + fmt(tu.trial ? tu.trialUsed : me.usage.messages) + ' رسالة</div>' +
       (me.usage.extra > 0 ? '<div class="hint">➕ فيه رصيد إضافي الشهر ده</div>' : '') +
-      '<div class="hint">فاضل ' + (me.usage.trial ? "" : "حوالي ") + '<b style="color:var(--ink)">' + fmt(left) + '</b> رسالة' + (me.usage.trial ? " من " + fmt(me.usage.msgLimit) : "") + '</div></div></div>';
+      '<div class="hint">فاضل ' + (me.usage.trial ? "" : "حوالي ") + '<b style="color:var(--ink)">' + fmt(left) + '</b> رسالة' + (me.usage.trial ? " من " + fmt(me.usage.msgLimit) : "") + '</div></div></div>' +
+      mpDatesHtml();
     requestAnimationFrame(function () { setTimeout(function () { var r = $("mpRing"); if (r) r.style.setProperty("--p", pct); }, 60); });
-    if ($("mpRenew")) $("mpRenew").onclick = function () {
-      var same = p.id && plansData && plansData.plans.some(function (x) { return x.id === p.id; });
-      if (same) openRequest(p.id); else $("plGrid").scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-    if ($("mpTopup")) $("mpTopup").onclick = function () { openTopup(); };
-    if ($("mpWa")) $("mpWa").onclick = addWaService;
+    renderActs();
     renderWaStrip();
   }
+  // «مواعيدك»: every date that matters to this store, each with how much of its time is left
+  function mpDatesHtml() {
+    var p = me.plan || {}, tu = me.usage, sv = waSvc(), out = [];
+    function chip(ic, title, sub, leftPct, warn, c) {
+      return '<div class="md' + (warn ? " warn" : "") + '"' + (c ? ' style="--c:' + c + '"' : '') + '><span class="md-ic" aria-hidden="true">' + ic + '</span><div class="grow"><b>' + title + '</b><small>' + sub + '</small>' +
+        (leftPct != null ? '<div class="md-bar"><i style="width:' + Math.max(3, Math.min(100, Math.round(leftPct))) + '%"></i></div>' : '') + '</div></div>';
+    }
+    if (p.name) {
+      var pl = plansData && plansData.plans.filter(function (x) { return x.id === p.id; })[0], dur = (pl && pl.durationDays) || 30;
+      out.push(chip("💎", (p.expired ? "باقتك خلصت يوم " : "باقتك بتخلص يوم ") + dateAr(p.endsAt), p.expired ? "المساعد واقف لحد ما تجدّد" : "فاضل " + fmt(p.daysLeft) + " يوم",
+        p.expired ? 0 : p.daysLeft * 100 / dur, p.expired || p.daysLeft <= 5, "#3b82f6"));
+      // the month's messages start again on the 1st, while the plan still runs then
+      var d = new Date(), nm = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      if (!p.expired && new Date(p.endsAt) > nm) out.push(chip("🔄", "رصيد الرسايل بيتجدد يوم " + dateAr(nm.toISOString()), "فاضلك " + fmt(tu.msgLeft) + " رسالة الشهر ده",
+        100 - tu.pct, tu.pct >= 80, "#0ea5a4"));
+      if (p.next) out.push(chip("⬇️", "باقة " + esc(p.next.name) + " بتبدأ يوم " + dateAr(p.next.startsAt), "لحد يوم " + dateAr(p.next.endsAt), null, false, "#64748b"));
+    } else if (tu.trialEnds) {
+      out.push(chip("🎁", (tu.trialEnded ? "التجربة خلصت يوم " : "التجربة بتخلص يوم ") + dateAr(tu.trialEnds),
+        tu.trialEnded ? "اختار باقة والمساعد يرجع يرد" : "فاضل " + fmt(tu.trialDaysLeft) + " يوم · مرة واحدة بس", tu.trialEnded ? 0 : (tu.trialDaysLeft || 0) * 100 / 30, tu.trialEnded || tu.trialDaysLeft <= 5));
+    }
+    if (sv.price && !sv.always && sv.until)
+      out.push(chip("📱", (sv.on ? "الواتساب بيتجدد يوم " : "الواتساب خلص يوم ") + dateAr(sv.until), sv.on ? "فاضل " + fmt(sv.daysLeft) + " يوم · تجديده لوحده" : "المساعد مش بيرد على واتساب متجرك",
+        sv.on ? sv.daysLeft * 100 / (sv.days || 30) : 0, !sv.on || sv.daysLeft <= (sv.warnDays || 2), "#1fae55"));
+    return out.length ? '<div class="mp-dates"><div class="md-h">📅 مواعيدك</div>' + out.join("") + '</div>' : '';
+  }
+  // «عايز تعمل إيه؟»: only what this store can do now; the one that matters most is highlighted
+  function renderActs() {
+    var el = $("mpActs"); if (!el) return;
+    var p = me.plan || {}, tu = me.usage, sv = waSvc(), nd = mine.topupNeed, ups = upgrades(), pend = pendingReq(), A = [];
+    function act(k, ic, title, sub, main) { A.push({ k: k, ic: ic, t: title, s: sub, main: !!main }); }
+    if (!p.name) act("plans", "💎", tu.trialEnded ? "اختار باقتك" : "اشترك في باقة",
+      tu.trialEnded ? "التجربة خلصت والمساعد واقف. اختار باقة ويرجع يرد على زباينك أول ما الإدارة توافق." : "قبل ما التجربة تخلص، عشان المساعد مايقفش عن زباينك. شوف الباقات واختار اللي على أدّك.", true);
+    else {
+      act("renew", "🔁", p.expired ? "جدّد باقتك" : "جدّد قبل ميعادها",
+        p.expired ? "المساعد واقف من يوم " + dateAr(p.endsAt) + ". جدّد ويرجع يشتغل أول ما الإدارة توافق." : "المدة الجديدة بتبدأ بعد يوم " + dateAr(p.endsAt) + "، فمش هتخسر ولا يوم.", p.expired || p.daysLeft <= 5);
+      if (ups.length && !p.expired) act("upgrade", "⬆️", "رقّي باقتك", "رسايل ومميزات أكتر من النهارده، وبتدفع فرق السعر عن الأيام الباقية بس.");
+      if (nd) {
+        var sug = (nd.options || []).filter(function (o) { return o.suggest; })[0];
+        act("topup", "➕", "زوّد رسايل للشهر ده", nd.need > 0 && sug ? "على أد استهلاكك محتاج حوالي " + fmt(nd.need) + " رسالة لآخر الشهر. نقترح " + fmt(sug.msgs) + " رسالة بـ " + fmt(sug.price) + " ج.م."
+          : "رصيدك غالبًا هيكفيك لآخر الشهر، ولو حابب تحتاط زوّد شوية بنفس سعر الرسالة في باقتك.", nd.need > 0 && tu.pct >= 80);
+      }
+      if (p.expired) act("plans", "🔀", "غيّر لباقة تانية", "شوف كل الباقات واختار اللي على أد استهلاكك.");
+    }
+    if (sv.price && !sv.always) act("wa", "📱", sv.on ? "جدّد خدمة الواتساب" : sv.until ? "رجّع خدمة الواتساب" : "فعّل خدمة الواتساب",
+      (sv.on ? "شغالة لحد يوم " + dateAr(sv.until) + "، والشهر الجديد بيتضاف بعدها. " : sv.until ? "خلصت يوم " + dateAr(sv.until) + "، فالمساعد مش بيرد على الواتساب. " : "المساعد يرد على زباينك على رقم واتساب متجرك. ") +
+      "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م." + (tu.trial && !tu.trialEnded && !sv.until ? " مش ضمن التجربة المجانية." : ""), !sv.on && !!sv.until);
+    el.innerHTML = A.map(function (a, i) {
+      return '<button type="button" class="pa' + (a.main ? " main" : "") + (pend ? " wait" : "") + '" data-act="' + a.k + '" style="animation-delay:' + (i * 0.06) + 's">' +
+        '<span class="pa-ic" aria-hidden="true">' + a.ic + '</span><span class="pa-t"><b>' + a.t + '</b><small>' + a.s + '</small>' +
+        '<span class="pa-go">' + (pend ? "⏳ استنى رد طلبك الأول" : a.k === "plans" ? "شوف الباقات ←" : "ابدأ ←") + '</span></span></button>';
+    }).join("");
+    el.querySelectorAll(".pa").forEach(function (b) { b.onclick = function () { doAct(b.dataset.act); }; });
+  }
+  function doAct(a) {
+    if (a === "plans") { showPT("plans"); $("pTabs").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    if (a === "upgrade") { openUpgrades(); return; }
+    if (a === "topup") { openTopup(); return; }
+    if (a === "wa") { openWaService(); return; }
+    if (a === "renew") {
+      var p = me.plan || {}, same = p.id && plansData && plansData.plans.some(function (x) { return x.id === p.id; });
+      if (same) openRequest(p.id); else doAct("plans");
+    }
+  }
+  // the plans above this store's (each with what it costs now: the price difference for the days left)
+  function upgrades() {
+    return plansData ? plansData.plans.filter(function (x) { var ch = changeOf(x.id); return ch && ch.kind === "upgrade" && !ch.blocked; }) : [];
+  }
+  function planMsgs(x) { return Math.floor(x.messages.small * plansData.units.small / unitsPerMsg(plansData.units)); }
+  function openUpgrades() {
+    var ups = upgrades(), el = $("upPanel"), p = me.plan || {};
+    if (!ups.length) { doAct("plans"); return; }
+    var cur = plansData.plans.filter(function (x) { return x.id === p.id; })[0], cm = cur ? planMsgs(cur) : 0;
+    el.innerHTML = '<div class="up-head"><span class="rl-ic" style="--c:#7c5cff" aria-hidden="true">⬆️</span><div class="grow"><h3>رقّي باقتك</h3>' +
+        '<p class="hint">الباقة الأعلى بتشتغل أول ما الإدارة توافق، وميعاد تجديدك بيفضل يوم <b>' + dateAr(p.endsAt) + '</b>. بتدفع فرق السعر عن الـ ' + fmt(p.daysLeft) + ' يوم الباقيين بس.</p></div>' +
+        '<button type="button" class="btn ghost sm" id="upClose">إخفاء</button></div>' +
+      '<div class="up-rows">' +
+      (cur ? '<div class="up-row cur"><div><small>باقتك دلوقتي</small><br><b>' + esc(cur.name) + '</b></div><div><b>' + fmt(cm) + '</b> <small>رسالة في الشهر</small></div>' +
+        '<div><b>' + fmt(cur.finalPrice) + '</b> <small>ج.م في الشهر</small></div><span class="st-pill answered">باقتك</span></div>' : '') +
+      ups.map(function (x) {
+        var ch = changeOf(x.id), m = planMsgs(x), times = cm ? m / cm : 0;
+        var plus = cur ? x.features.filter(function (f) { return cur.features.indexOf(f) < 0; }).slice(0, 3) : [];
+        return '<div class="up-row"><div><small>رقّي لـ</small><br><b>' + esc(x.name) + '</b></div>' +
+          '<div><b>' + fmt(m) + '</b> <small>رسالة في الشهر</small>' + (times >= 1.1 ? ' <span class="x">× ' + (Math.round(times * 10) / 10).toLocaleString("ar-EG") + '</span>' : '') + '</div>' +
+          '<div><b>' + fmt(ch.amount) + ' ج.م</b> <small>دلوقتي، بدل ' + fmt(x.finalPrice) + '</small></div>' +
+          '<button type="button" class="btn" data-up="' + x.id + '">⬆️ رقّي</button>' +
+          (plus.length ? '<div class="plus">✨ فيها كمان: ' + plus.map(esc).join("، ") + '</div>' : '') + '</div>';
+      }).join("") + '</div>' +
+      '<p class="hint" style="margin:12px 0 0">💡 لما تختار باقة، هنوريك الحساب بأرقامك قبل ما تبعت الطلب.</p>';
+    el.hidden = false;
+    $("upClose").onclick = function () { el.hidden = true; };
+    el.querySelectorAll("[data-up]").forEach(function (b) { b.onclick = function () { el.hidden = true; openRequest(+b.dataset.up); }; });
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  // the three views of the page
+  function showPT(k) {
+    $("pTabs").querySelectorAll("[data-pt]").forEach(function (b) { var on = b.dataset.pt === k; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
+    document.querySelectorAll("[data-pp]").forEach(function (x) { x.hidden = x.dataset.pp !== k; });
+  }
+  $("pTabs").querySelectorAll("[data-pt]").forEach(function (b) { b.onclick = function () { showPT(b.dataset.pt); }; });
   async function loadPlanTab() {
     $("planWaTop").href = waLink("أهلاً 👋 عندي سؤال عن باقات Sellybot لمتجر " + me.name + " (" + me.slug + ")");
+    markReplySeen();   // the admin's latest reply is shown on top of this page now
+    showPT("plans");
     renderMyPlan();
+    var mineP = loadMine();   // in parallel with the plans; what each plan would mean for this store (upgrade / lower plan later / renew), for the cards below
     try { plansData = await api("api/plans.ashx"); } catch (e) { $("plGrid").innerHTML = '<div class="card hint">مقدرناش نحمّل الباقات دلوقتي.</div>'; return; }
+    await mineP;
     renderMyPlan();
-    await loadMine();   // what each plan would mean for this store (upgrade / lower plan later / renew), for the buttons below
     var per = unitsPerMsg(plansData.units), next = me.plan && me.plan.next;
     $("plansFor").textContent = "· الرسايل محسوبة على متجرك (≈ " + fmt(Math.round(per)) + " وحدة للرسالة)";
     $("plGrid").innerHTML = plansData.plans.length ? plansData.plans.map(function (p, i) {
@@ -2663,40 +2909,154 @@
   }
   async function loadMine() {
     try { mine = await api("api/plans.ashx?mine=1"); } catch (e) { return; }
-    var pending = mine.requests.filter(function (r) { return r.status === "pending"; })[0];
-    // waiting for the admin
-    $("reqPending").innerHTML = pending
-      ? '<div class="card req-card"><span style="font-size:26px">⏳</span><div class="grow"><b>طلبك (' + reqTitle(pending) + ') بيتراجع</b>' +
-        '<div class="hint">بعته ' + agoAr(pending.at) + ' · ' + fmt(pending.amount) + ' ج.م · ' + esc(pending.method) +
-          (pending.refNo ? ' · الرقم المرجعي: <b class="ltr">' + esc(pending.refNo) + '</b>' : ' · رقم العملية: <span class="ltr">' + esc(pending.ref) + '</span>') + '</div>' +
-        '<div class="hint">' + (pending.kind === "wa" ? "الإدارة هتفعّل خدمة الواتساب أول ما تتأكد من الدفع." : pending.kind === "topup" ? "الإدارة هتضيف الرصيد أول ما تتأكد من الدفع." : "الإدارة هتفعّل الباقة أول ما تتأكد من الدفع.") + ' ولو مستعجل ابعتلنا صورة التحويل على واتساب.</div></div>' +
-        '<div class="row" style="flex-direction:column;align-items:stretch;gap:6px"><a class="btn wa-btn sm" target="_blank" rel="noopener" href="' +
-        esc(waLink("أهلاً 👋 بعت طلب " + (pending.kind === "wa" ? "خدمة الواتساب" : pending.kind === "upgrade" ? "ترقية لباقة " + pending.plan : pending.kind === "topup" ? "رصيد إضافي لباقة " + pending.plan : "باقة " + pending.plan + " (" + monthsAr(pending.months) + ")") +
-          " لمتجر " + me.name + " (" + me.slug + ")" + (pending.refNo ? "، والرقم المرجعي " + pending.refNo : "") + "، ودي صورة التحويل:")) + '">ابعت صورة التحويل</a>' +
-        '<button type="button" class="btn ghost sm" id="rqCancel">إلغاء الطلب</button></div></div>'
-      : "";
-    if (pending) $("rqCancel").onclick = async function () {
-      if (!confirm("تلغي طلب الباقة ده؟")) return;
-      try { await api("api/plans.ashx?action=cancel", { method: "POST", json: { id: pending.id } }); toast("اتلغى الطلب"); loadMine(); } catch (e) { toast(e.message); }
-    };
-    // history
-    $("reqList").innerHTML = mine.requests.length ? mine.requests.map(function (r) {
-      var st = REQ_ST[r.status] || ["", r.status];
-      return '<div class="hrow"><div class="grow"><b>' + (r.kind === "topup" ? "➕ " : "") + reqTitle(r) + '</b> <span class="st-pill ' + st[0] + '">' + (r.kind === "topup" && r.status === "approved" ? "✅ اتضاف" : st[1]) + '</span>' +
-        '<div class="hint">' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م · ' + esc(r.method) + (r.refNo ? ' · الرقم المرجعي: <span class="ltr">' + esc(r.refNo) + '</span>' : '') + '</div>' +
-        (r.adminNote ? '<div class="rsn">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظة الإدارة: ") + esc(r.adminNote) + '</div>' : '') + '</div></div>';
-    }).join("") : '<div class="card empty">لسه مابعتش طلبات.</div>';
-    $("subList").innerHTML = mine.subscriptions.length ? mine.subscriptions.map(function (s) {
-      if (s.topup) return '<div class="hrow"><div class="grow"><b>➕ ' + esc(s.plan) + '</b>' +
-        '<div class="hint">لشهر ' + new Date(s.startsAt).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }) + ' · دفعت ' + fmt(s.paid) + ' ج.م</div></div></div>';
-      if (s.kind === "upgrade") return '<div class="hrow"><div class="grow"><b>⬆️ ترقية لباقة ' + esc(s.plan) + '</b>' +
-        '<div class="hint">من ' + dateAr(s.startsAt) + ' لحد ' + dateAr(s.endsAt) + ' · دفعت فرق السعر ' + fmt(s.paid) + ' ج.م</div></div></div>';
-      var live = new Date(s.endsAt) > new Date() && new Date(s.startsAt) <= new Date(), later = new Date(s.startsAt) > new Date();
-      return '<div class="hrow"><div class="grow"><b>' + esc(s.plan) + ' · ' + monthsAr(s.months) + '</b>' +
-        (live ? ' <span class="st-pill answered">شغالة دلوقتي</span>' : later ? ' <span class="st-pill open">هتبدأ ' + dateAr(s.startsAt) + '</span>' : '') +
-        '<div class="hint">من ' + dateAr(s.startsAt) + ' لحد ' + dateAr(s.endsAt) + ' · دفعت ' + fmt(s.paid) + ' ج.م</div></div></div>';
-    }).join("") : '<div class="card empty">مفيش اشتراكات لسه.</div>';
+    mineReady = true;
+    renderLive(); renderReqList(); renderSubs();
+    if (plansData) renderActs();   // the tiles say "wait for your request" while one is pending
   }
+  // a request's type when it was sent: icon, colour, name (the same types the admin sees)
+  var RQT = { "new": ["💎", "#e8774a", "باقة جديدة"], renew: ["🔁", "#3b82f6", "تجديد الباقة"], upgrade: ["⬆️", "#7c5cff", "ترقية"], downgrade: ["⬇️", "#64748b", "نزول لباقة أقل"],
+              "wa-new": ["📱", "#1fae55", "خدمة الواتساب"], "wa-renew": ["📱", "#1fae55", "تجديد الواتساب"], topup: ["➕", "#0ea5a4", "رسايل إضافية"] };
+  function rqType(r) { return RQT[r.what] || RQT[r.kind === "wa" ? "wa-new" : r.kind === "topup" ? "topup" : r.kind === "upgrade" ? "upgrade" : "new"]; }
+  function pendingReq() { return (mine.requests || []).filter(function (r) { return r.status === "pending"; })[0] || null; }
+  function subOf(r) { return r.subscriptionId ? (mine.subscriptions || []).filter(function (s) { return s.id === r.subscriptionId; })[0] || null : null; }
+  // what an approval did, in one line
+  function resultLine(r) {
+    var s = subOf(r), sv = waSvc(), later = s && new Date(s.startsAt) > new Date();
+    var wa = r.wa || r.kind === "wa" ? (sv.on && sv.until ? "📱 خدمة الواتساب شغالة لحد يوم " + dateAr(sv.until) : "📱 خدمة الواتساب اتفعّلت") : "";
+    if (r.kind === "wa") return "✅ " + wa + ".";
+    if (r.kind === "topup") return "✅ " + (r.msgs ? fmt(r.msgs) + " رسالة" : "الرصيد الإضافي") + " اتضافت لرصيد الشهر ده.";
+    var plan = s ? (later ? "⏭️ باقة " + esc(s.plan) + " هتبدأ يوم " + dateAr(s.startsAt) + " لحد يوم " + dateAr(s.endsAt)
+                          : "✅ باقة " + esc(s.plan) + " شغالة من " + dateAr(s.startsAt) + " لحد يوم " + dateAr(s.endsAt))
+                 : "✅ اتفعّل يوم " + dateAr(r.decidedAt);
+    return plan + (wa ? "، و" + wa : "") + ".";
+  }
+  // the admin's reply as a chat bubble
+  function replyHtml(r) {
+    var bad = r.status === "rejected";
+    return '<div class="reply ' + (bad ? "bad" : "ok") + '"><span class="av" aria-hidden="true">S</span><div class="bub"><b>' + (bad ? "سبب الرفض من الإدارة" : "رسالة من الإدارة") +
+      (r.decidedAt ? " · " + agoAr(r.decidedAt) : "") + '</b>' + (r.adminNote ? esc(r.adminNote) : "مفيش سبب مكتوب. كلّمنا على واتساب ونفهّمك.") + '</div></div>';
+  }
+  // on top of the page: the pending request, or the last answer (14 days, until "تمام")
+  function liveReq() {
+    var p = pendingReq(); if (p) return p;
+    var r = (mine.requests || []).filter(function (x) { return x.status === "approved" || x.status === "rejected"; })
+      .sort(function (a, b) { return new Date(b.decidedAt || b.at) - new Date(a.decidedAt || a.at); })[0];
+    if (!r || Date.now() - new Date(r.decidedAt || r.at) > 14 * 864e5 || lsGet("sb-req-ok:" + me.slug) === String(r.id)) return null;
+    return r;
+  }
+  function renderLive() {
+    var r = liveReq(), el = $("reqPending");
+    if (!r) { el.innerHTML = ""; return; }
+    var t = rqType(r), ok = r.status === "approved", bad = r.status === "rejected", pend = r.status === "pending", top = r.kind === "topup";
+    var shot = pend ? waLink("أهلاً 👋 بعت طلب " + (r.kind === "wa" ? "خدمة الواتساب" : r.kind === "upgrade" ? "ترقية لباقة " + r.plan : top ? "رسايل إضافية لباقة " + r.plan : "باقة " + r.plan + " (" + monthsAr(r.months) + ")") +
+      " لمتجر " + me.name + " (" + me.slug + ")" + (r.refNo ? "، والرقم المرجعي " + r.refNo : "") + "، ودي صورة التحويل:") : "";
+    el.innerHTML = '<div class="rl' + (ok ? " ok" : bad ? " bad" : "") + '">' +
+      '<div class="rl-head"><span class="rl-ic" style="--c:' + t[1] + '" aria-hidden="true">' + t[0] + '</span><div class="grow">' +
+        '<small class="k">' + (pend ? "طلبك بيتراجع" : "رد الإدارة على طلبك") + ' · ' + t[2] + '</small><b class="t">' + reqTitle(r) + '</b>' +
+        '<div class="hint">بعته ' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م' + (r.method ? ' · ' + esc(r.method) : '') +
+          (r.refNo ? ' · الرقم المرجعي: <b class="ltr">' + esc(r.refNo) + '</b>' : r.ref ? ' · رقم العملية: <span class="ltr">' + esc(r.ref) + '</span>' : '') + '</div></div>' +
+        '<span class="st-pill ' + (ok ? "answered" : bad ? "bad" : "open") + '">' + (ok ? (top ? "✅ اتضاف" : "✅ اتفعّل") : bad ? "✕ اترفض" : "⏳ بيتراجع") + '</span></div>' +
+      '<ol class="rl-steps">' +
+        '<li class="done"><i>✓</i><b>بعت الطلب</b><small>' + agoAr(r.at) + '</small></li>' +
+        '<li class="' + (pend ? "cur" : "done") + '"><i>' + (pend ? "🔎" : "✓") + '</i><b>الإدارة بتراجع التحويل</b><small>' + (pend ? "دلوقتي" : dateAr(r.decidedAt)) + '</small></li>' +
+        '<li class="' + (ok ? "done" : bad ? "bad" : "") + '"><i>' + (ok ? "✓" : bad ? "✕" : "٣") + '</i><b>' +
+          (ok ? (top ? "الرسايل اتضافت" : "اتفعّل") : bad ? "اترفض" : top ? "الرسايل تتضاف" : "التفعيل") + '</b><small>' + (pend ? "أول ما نتأكد من الدفع" : agoAr(r.decidedAt)) + '</small></li>' +
+      '</ol>' +
+      (bad || r.adminNote ? replyHtml(r) : '') +
+      (ok ? '<div class="rl-res">' + resultLine(r) + '</div>' : '') +
+      '<div class="rl-acts">' +
+        (pend ? '<a class="btn wa-btn sm" target="_blank" rel="noopener" href="' + esc(shot) + '">ابعت صورة التحويل</a><button type="button" class="btn ghost sm" id="rqCancel">إلغاء الطلب</button>' +
+                '<span class="hint">' + (r.kind === "wa" ? "الإدارة هتفعّل خدمة الواتساب أول ما تتأكد من الدفع." : top ? "الإدارة هتضيف الرسايل أول ما تتأكد من الدفع." : "الإدارة هتفعّل الباقة أول ما تتأكد من الدفع.") + '</span>'
+          : bad ? '<button type="button" class="btn" id="rlAgain">✏️ عدّل وابعت الطلب تاني</button><a class="btn ghost" target="_blank" rel="noopener" href="' +
+                  esc(waLink("أهلاً 👋 طلب " + reqTitle(r).replace(/<[^>]+>/g, "") + " لمتجر " + me.name + " (" + me.slug + ") اترفض، وعندي سؤال عن السبب:")) + '">💬 اسألنا على واتساب</a>'
+          : '<button type="button" class="btn ghost sm" id="rlOk">تمام 👍</button>') +
+      '</div></div>';
+    if (pend) $("rqCancel").onclick = async function () {
+      if (!confirm("تلغي الطلب ده؟")) return;
+      try { await api("api/plans.ashx?action=cancel", { method: "POST", json: { id: r.id } }); toast("اتلغى الطلب"); loadMine(); refreshMe(); } catch (e) { toast(e.message); }
+    };
+    if (bad) $("rlAgain").onclick = function () { resendReq(r); };
+    if (ok) $("rlOk").onclick = function () { lsSet("sb-req-ok:" + me.slug, String(r.id)); renderLive(); };
+  }
+  // a rejected request again: the same choice in the form, ready to fix and send
+  async function resendReq(r) {
+    if (r.kind === "wa") await openWaService();
+    else if (r.kind === "topup") openTopup();
+    else {
+      if (!plansData || !plansData.plans.some(function (x) { return x.id === r.planId; })) { toast("الباقة دي مش متاحة دلوقتي، اختار باقة تانية."); doAct("plans"); return; }
+      rq.months = r.months || 1; openRequest(r.planId);
+    }
+    if ($("reqForm").hidden) return;
+    if (r.wa && !$("waAdd").hidden && !$("waAddOn").disabled) { $("waAddOn").checked = true; waAddPaint(); }
+    if (r.waPhone && !$("waAdd").hidden) { $("waAddPhone").value = r.waPhone; waPhonePaint(); }
+    if (r.method && [].some.call($("rqMethod").options, function (o) { return o.value === r.method; })) $("rqMethod").value = r.method;
+    if (r.ref) $("rqRef").value = r.ref;
+    setMsg("rqMsg", "✏️ ده نفس طلبك اللي اترفض. صلّح اللي الإدارة قالت عليه، واكتب الرقم المرجعي، وابعته تاني.", true);
+  }
+  // «طلباتي والردود»: every request, its state and the admin's reply, month by month
+  function renderReqList() {
+    var rs = mine.requests || [], el = $("reqList"), month = "";
+    $("pTabReqN").textContent = rs.length ? "(" + fmt(rs.length) + ")" : "";
+    el.classList.toggle("none", !rs.length);
+    if (!rs.length) { el.innerHTML = '<div class="card empty">لسه مابعتش طلبات. اختار باقة من «الباقات» وابعت أول طلب.</div>'; return; }
+    var again = rs[0].status === "rejected" ? rs[0].id : 0;   // only the newest one, if it was rejected, can be sent again
+    el.innerHTML = rs.map(function (r, i) {
+      var t = rqType(r), st = REQ_ST[r.status] || ["", r.status];
+      var m = new Date(r.at).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }), sep = m !== month ? '<div class="ti-month">' + m + '</div>' : "";
+      month = m;
+      return sep + '<div class="ti' + (r.status === "cancelled" ? " dim" : "") + '" style="--c:' + t[1] + ';animation-delay:' + (Math.min(i, 8) * 0.04) + 's">' +
+        '<div class="ti-h"><span class="ti-ic" aria-hidden="true">' + t[0] + '</span><div class="grow"><small>' + t[2] + '</small><b>' + reqTitle(r) + '</b></div>' +
+          '<span class="st-pill ' + st[0] + '">' + (r.kind === "topup" && r.status === "approved" ? "✅ اتضاف" : st[1]) + '</span></div>' +
+        '<div class="meta">' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م' + (r.method ? ' · ' + esc(r.method) : '') +
+          (r.refNo ? ' · الرقم المرجعي: <span class="ltr">' + esc(r.refNo) + '</span>' : '') + (r.waPhone ? ' · 📱 <span class="ltr">' + esc(r.waPhone) + '</span>' : '') + '</div>' +
+        (r.note ? '<div class="meta">📝 ملاحظتك: ' + esc(r.note) + '</div>' : '') +
+        (r.status === "pending" ? '<div class="meta">⏳ الإدارة بتراجع التحويل، والرد هيظهرلك هنا.</div>' : '') +
+        (r.status === "approved" ? '<div class="meta ok-line">' + resultLine(r) + '</div>' : '') +
+        (r.status === "rejected" || (r.adminNote && r.status !== "cancelled") ? replyHtml(r) : '') +
+        (r.id === again ? '<div class="rl-acts"><button type="button" class="btn sm" data-again="' + r.id + '">✏️ عدّل وابعته تاني</button></div>' : '') + '</div>';
+    }).join("");
+    el.querySelectorAll("[data-again]").forEach(function (b) { b.onclick = function () { resendReq(rs[0]); }; });
+  }
+  // «سجل اشتراكاتي»: what was paid for and when it runs, with a summary on top
+  function renderSubs() {
+    var ss = mine.subscriptions || [], el = $("subList"), paid = 0, first = null, now = new Date();
+    ss.forEach(function (s) { paid += +s.paid || 0; if (!first || new Date(s.startsAt) < new Date(first)) first = s.startsAt; });
+    $("pTabSubN").textContent = ss.length ? "(" + fmt(ss.length) + ")" : "";
+    $("subSum").innerHTML = ss.length ? [["💰", "إجمالي اللي دفعته", fmt(paid) + " ج.م"], ["📅", "معانا من", dateAr(first)], ["🧾", "عدد الاشتراكات", fmt(ss.length)]].map(function (x) {
+      return '<div class="ss"><span class="ss-ic" aria-hidden="true">' + x[0] + '</span><div><small>' + x[1] + '</small><b>' + x[2] + '</b></div></div>';
+    }).join("") : "";
+    el.classList.toggle("none", !ss.length);
+    if (!ss.length) { el.innerHTML = '<div class="card empty">مفيش اشتراكات لسه. أول ما الإدارة تفعّل طلبك هيظهر هنا.</div>'; return; }
+    el.innerHTML = ss.map(function (s, i) {
+      var live = new Date(s.endsAt) > now && new Date(s.startsAt) <= now, later = new Date(s.startsAt) > now;
+      var t = RQT[s.topup ? "topup" : s.kind === "upgrade" ? "upgrade" : s.kind === "wa" ? "wa-new" : "new"];
+      var title = s.topup ? esc(s.plan) : s.kind === "upgrade" ? "ترقية لباقة " + esc(s.plan) : s.kind === "wa" ? "خدمة الواتساب · " + monthsAr(s.months) : esc(s.plan) + " · " + monthsAr(s.months);
+      var meta = s.topup ? "لشهر " + new Date(s.startsAt).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }) + " · دفعت " + fmt(s.paid) + " ج.م"
+        : "من " + dateAr(s.startsAt) + " لحد " + dateAr(s.endsAt) + " · " + (s.kind === "upgrade" ? "دفعت فرق السعر " : "دفعت ") + fmt(s.paid) + " ج.م";
+      var pill = s.topup ? "" : live ? '<span class="st-pill answered">شغالة دلوقتي</span>' : later ? '<span class="st-pill open">هتبدأ ' + dateAr(s.startsAt) + '</span>' : '<span class="st-pill">خلصت</span>';
+      var span = new Date(s.endsAt) - new Date(s.startsAt), leftPct = live && span > 0 ? (new Date(s.endsAt) - now) * 100 / span : 0;
+      return '<div class="ti' + (!live && !later && !s.topup ? " dim" : "") + '" style="--c:' + t[1] + ';animation-delay:' + (Math.min(i, 8) * 0.04) + 's">' +
+        '<div class="ti-h"><span class="ti-ic" aria-hidden="true">' + t[0] + '</span><div class="grow"><small>' + t[2] + '</small><b>' + title + '</b></div>' + pill + '</div>' +
+        '<div class="meta">' + meta + '</div>' +
+        (live && !s.topup ? '<div class="md-bar" style="--c:' + t[1] + '" title="الوقت الباقي"><i style="width:' + Math.max(3, Math.round(leftPct)) + '%"></i></div>' : '') + '</div>';
+    }).join("");
+  }
+  // the admin answered a request and the owner hasn't opened «باقتي» since: a banner on every page and a dot on «باقتي»
+  function replySeenKey() { return "sb-reply-seen:" + me.slug; }
+  function renderReplyBanner() {
+    var r = me.lastReply, el = $("replyBanner"); if (!el) return;
+    var unseen = !!(r && lsGet(replySeenKey()) !== String(r.id));
+    $("planNb").hidden = !unseen;
+    if (!unseen || current === "plan") { el.hidden = true; return; }
+    var bad = r.status === "rejected", top = r.kind === "topup";
+    el.className = "banner " + (bad ? "full" : "wa");
+    el.innerHTML = '<span class="bn-ic">' + (bad ? "✕" : "✅") + '</span><span class="bn-t"><b>' + (bad ? "طلبك اترفض: " : "الإدارة وافقت على طلبك: ") + reqTitle(r) + '</b><small>' +
+      (bad ? "السبب: " + esc(r.adminNote || "—") : r.adminNote ? "رسالة الإدارة: " + esc(r.adminNote) : r.kind === "wa" ? "خدمة الواتساب اشتغلت." : top ? "الرسايل اتضافت لرصيد الشهر ده." : "باقتك اشتغلت.") +
+      '</small></span><a href="#plan" class="bn-cta">' + (bad ? "شوف الرد وابعته تاني" : "شوف التفاصيل") + '</a>';
+    el.hidden = false;
+    el.querySelector(".bn-cta").onclick = function (e) { e.preventDefault(); go("plan"); };
+  }
+  function markReplySeen() { if (me.lastReply) lsSet(replySeenKey(), String(me.lastReply.id)); renderReplyBanner(); }
   function hasPending() {
     if (!mine.requests.some(function (r) { return r.status === "pending"; })) return false;
     toast("عندك طلب لسه بيتراجع. استنى الرد أو الغيه الأول."); $("reqPending").scrollIntoView({ behavior: "smooth", block: "center" }); return true;
@@ -2715,20 +3075,7 @@
   // Asked for alone (kind "wa": «باقتي», the WhatsApp tab, the banner, «داتا المتجر»), or ticked in a plan request while it isn't running.
   // It renews on its own date, never with the plan. The admin sees the request with the number to link.
   function waSvc() { return me.waService || {}; }
-  // its line in «باقتي»
-  function mpWaHtml() {
-    var sv = waSvc();
-    if (!sv.price || sv.always) return "";
-    if (sv.on) return '<div class="mp-wa"><span aria-hidden="true">📱</span><span class="grow"><b>خدمة الواتساب شغالة</b> لحد يوم ' + dateAr(sv.until) +
-      ' (فاضل ' + fmt(sv.daysLeft) + ' يوم). تجديدها شهري لوحده، مش مع الباقة.</span>' +
-      (sv.pending ? '<span class="st-pill open">⏳ طلب التجديد بيتراجع</span>' : '<button type="button" class="btn ghost sm" id="mpWa">🔁 جدّد شهر</button>') + '</div>';
-    var ended = !!sv.until;
-    return '<div class="mp-wa"><span aria-hidden="true">📱</span><span class="grow">' +
-      (ended ? '<b>خدمة الواتساب خلصت</b> يوم ' + dateAr(sv.until) + '، فالمساعد مش بيرد على واتساب متجرك.'
-             : '<b>خلّي المساعد يرد على واتساب متجرك</b> كمان: اشتراك شهري لوحده بـ ' + fmt(sv.price) + ' ج.م، تفعّله في أي وقت بطلب للإدارة.' +
-               (me.usage && me.usage.trial ? ' الواتساب مش ضمن التجربة المجانية.' : '')) + '</span>' +
-      (sv.pending ? '<span class="st-pill open">⏳ طلبك بيتراجع</span>' : '<button type="button" class="btn sm" id="mpWa">' + (ended ? "🔁 جدّد الخدمة" : "📱 فعّل خدمة الواتساب") + '</button>') + '</div>';
-  }
+  // in «باقتي» it's a date in «مواعيدك» and a tile in «عايز تعمل إيه؟» (mpDatesHtml / renderActs)
   // a line above the plans: WhatsApp isn't part of a plan
   function renderWaStrip() {
     var sv = waSvc(), el = $("waStrip"); if (!el) return;
@@ -2804,8 +3151,18 @@
       var last = (mine.requests || []).filter(function (r) { return r.waPhone; })[0];
       $("waAddPhone").value = sv.number || (last ? last.waPhone : "");
     }
+    waPhonePaint();
     waAddPaint();
   }
+  // the WhatsApp number: Arabic digits become Latin as they're typed, and a ✓ shows once it looks like a whole number
+  function waPhonePaint() {
+    var el = $("waAddPhone"), v = el.value;
+    if (/[٠-٩]/.test(v)) el.value = v = v.replace(/[٠-٩]/g, function (d) { return "٠١٢٣٤٥٦٧٨٩".indexOf(d); });
+    var n = (v.match(/[0-9]/g) || []).length;
+    $("waPhoneBox").classList.toggle("ok", n >= 10 && n <= 15);
+    $("waPhoneBox").classList.remove("bad");
+  }
+  $("waAddPhone").oninput = waPhonePaint;
   function waAddOn() { return !$("waAdd").hidden && $("waAddOn").checked; }
   function waAddMonths() { return 1; }   // always one month: the service renews monthly on its own
   // the amount = what was picked (rq.base) + the service when it's ticked
@@ -2968,7 +3325,7 @@
   }
   $("reqForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("rqMsg", "");
-    if (waAddOn() && ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length < 8) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waAddPhone").focus(); return; }
+    if (waAddOn() && ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length < 8) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waPhoneBox").classList.add("bad"); $("waAddPhone").focus(); return; }
     var nothingToPay = rq.kind === "upgrade" && rq.change && rq.change.amount <= 0 && !waAddOn();   // a plan at the same price, no WhatsApp service
     if (!nothingToPay && !$("rqMethod").value) { setMsg("rqMsg", "اختار دفعت بإيه."); return; }
     var refNo = normRef($("rqRefNo").value);
@@ -3068,16 +3425,22 @@
       asked ? "طلب التجديد وصلنا وبيتراجع، والمساعد هيرجع يرد أول ما نتأكد من الدفع." : "المساعد واقف على موقعك ومش بيرد على زباينك. جدّد ويرجع يشتغل في ساعتها.", asked ? "شوف الطلب" : "🔁 جدّد دلوقتي"); renewId = asked ? 0 : pl.id; }
     else if (pl.name && pl.daysLeft <= 5 && !pl.next) { bn("", "⏳", "تجديد باقتك قرّب: بتخلص يوم " + dateAr(pl.endsAt) + (pl.daysLeft <= 1 ? " (بكرة)" : " (بعد " + fmt(pl.daysLeft) + " يوم)"),
       asked ? "طلب التجديد وصلنا وبيتراجع، والمدة الجديدة بتبدأ بعد آخر يوم في باقتك." : "جدّد من دلوقتي عشان المساعد مايقفش لحظة، والمدة الجديدة بتبدأ بعد آخر يوم في باقتك.", asked ? "شوف الطلب" : "🔁 جدّد الباقة"); renewId = asked ? 0 : pl.id; }
-    else if (!pl.expired && upct >= 100) bn("full", "🪫", "رصيد الشهر خلص",
-      topupAsked ? "طلب الرسايل الإضافية وصلنا وبيتراجع، والمساعد هيرجع يرد أول ما نتأكد من الدفع." : running ? "المساعد واقف لحد أول الشهر. زوّد رسايل تكمّل بيها الشهر، وإحنا هنحسبلك العدد المناسب من استهلاكك." : "المساعد واقف لحد أول الشهر. اشترك في باقة ويرجع يرد على زباينك على طول.",
+    // the free trial: one month from signing up, once. Ended, or ending within 5 days
+    else if (!pl.name && me.usage.trialEnded) bn("full", "⛔", "التجربة المجانية خلصت يوم " + dateAr(me.usage.trialEnds),
+      asked ? "طلب الاشتراك وصلنا وبيتراجع، والمساعد هيرجع يرد أول ما نتأكد من الدفع." : "المساعد واقف ومش بيرد على زباينك. اختار باقة ويرجع يشتغل على طول.", asked ? "شوف الطلب" : "💎 اختار باقة");
+    else if (!pl.name && me.usage.trial && me.usage.trialDaysLeft <= 5 && upct < 100) bn("", "⏳", "التجربة المجانية بتخلص يوم " + dateAr(me.usage.trialEnds) + (me.usage.trialDaysLeft <= 1 ? " (بكرة)" : " (بعد " + fmt(me.usage.trialDaysLeft) + " يوم)"),
+      asked ? "طلب الاشتراك وصلنا وبيتراجع." : "التجربة مش بتتجدد. اشترك في باقة من دلوقتي عشان المساعد مايقفش عن زباينك.", asked ? "شوف الطلب" : "💎 اختار باقة");
+    else if (!pl.expired && upct >= 100) bn("full", "🪫", pl.name ? "رصيد الشهر خلص" : "رسايل التجربة المجانية خلصت",
+      topupAsked ? "طلب الرسايل الإضافية وصلنا وبيتراجع، والمساعد هيرجع يرد أول ما نتأكد من الدفع." : running ? "المساعد واقف لحد أول الشهر. زوّد رسايل تكمّل بيها الشهر، وإحنا هنحسبلك العدد المناسب من استهلاكك." : "المساعد واقف. اشترك في باقة ويرجع يرد على زباينك على طول.",
       topupAsked ? "شوف الطلب" : running ? "➕ زوّد رسايل" : "🚀 اشترك في باقة", 100);
-    else if (!pl.expired && upct >= 90) bn("", "⚡", "استهلكت " + Math.round(upct) + "% من رصيد الشهر",
+    else if (!pl.expired && upct >= 90) bn("", "⚡", "استهلكت " + Math.round(upct) + (pl.name ? "% من رصيد الشهر" : "% من رسايل التجربة"),
       topupAsked ? "طلب الرسايل الإضافية وصلنا وبيتراجع." : running ? "زباينك بيسألوا كتير 👏 زوّد رسايل قبل ما الرصيد يخلص، وهنقترحلك العدد اللي يكفيك لآخر الشهر." : "زباينك بيسألوا كتير 👏 اشترك في باقة قبل ما الرصيد يخلص والمساعد يقف.",
       topupAsked ? "شوف الطلب" : running ? "➕ زوّد رسايل" : "🚀 اشترك في باقة", upct);
     else { pb.hidden = true; topupCta = false; }
     if (pl.name && (pl.expired || (pl.daysLeft <= 5 && !pl.next))) topupCta = false;   // the banner is about the plan's end, not the messages
     pb.querySelectorAll("[data-goto]").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); if (renewId) upgradeTo(renewId); else if (topupCta) openTopupAnywhere(); else go("plan"); }; });
     renderWaBanner();
+    renderReplyBanner();   // the admin approved / rejected a request
     // storage
     var st = me.storage || {}, bn = $("storageBanner");
     var mb = st.capacityMB > 0 ? " (" + fmt(st.usedMB) + " من " + fmt(st.capacityMB) + " ميجا)" : "";
@@ -3087,17 +3450,19 @@
     // stats
     // messages used and left: the free trial has a fixed number, a plan's are estimated from its units (server side)
     var mu = me.usage, pct = Math.round(mu.pct);
-    $("usageVal").textContent = "استخدمت " + fmt(mu.messages) + " رسالة";
+    $("usageVal").textContent = "استخدمت " + fmt(mu.trial ? mu.trialUsed : mu.messages) + " رسالة";
     // nearly used up (80%+): the bar, the number and the line under it turn red
     var low = pct >= 80;
     $("usageBar").querySelector("i").style.width = Math.max(pct, mu.messages > 0 ? 1 : 0) + "%"; $("usageBar").classList.toggle("hot", low);
     $("usageCard").classList.toggle("low", low);
     $("usageHint").className = "hint" + (low ? " warn" : "");
-    $("usageHint").textContent = (low && !(me.plan && me.plan.expired) ? "⚠️ " : "") + (mu.trial ? "فاضل " + fmt(mu.msgLeft) + " رسالة من " + fmt(mu.msgLimit) + " في التجربة المجانية"
+    $("usageHint").textContent = (low && !(me.plan && me.plan.expired) ? "⚠️ " : "") + (mu.trial ? (mu.trialEnded ? "التجربة المجانية خلصت، اشترك في باقة عشان المساعد يرجع يرد"
+        : "فاضل " + fmt(mu.msgLeft) + " رسالة من " + fmt(mu.msgLimit) + " في التجربة المجانية")
       : (me.plan && me.plan.expired) ? "الباقة خلصت، جدّدها عشان المساعد يرجع يرد" : "فاضل حوالي " + fmt(mu.msgLeft) + " رسالة في باقتك");
-    // until when: the plan's end date (the trial's messages come back on the 1st of the month)
+    // until when: the plan's end date, or the trial's (one month from signing up, once)
     var upl = me.plan || {};
-    $("usageEnds").textContent = !upl.name ? "📅 التجربة المجانية: الرصيد بيتجدد أول كل شهر"
+    $("usageEnds").textContent = !upl.name ? (mu.trialEnded ? "📅 التجربة المجانية خلصت يوم " + dateAr(mu.trialEnds)
+        : "📅 التجربة المجانية لحد يوم " + dateAr(mu.trialEnds) + " (فاضل " + fmt(mu.trialDaysLeft) + " يوم)، ومش بتتجدد")
       : upl.expired ? "📅 باقة " + upl.name + " خلصت يوم " + dateAr(upl.endsAt) : "📅 باقة " + upl.name + " لحد يوم " + dateAr(upl.endsAt) + " (فاضل " + fmt(upl.daysLeft) + " يوم)";
     // nearly used up on a running plan: extra messages, worked out from the store's pace
     if (low && upl.name && !upl.expired) {
@@ -3833,7 +4198,7 @@
     }
     var per = A ? "في الشهر، اشتراك لوحده" : up.days === 30 ? "في الشهر" : "لـ " + fmt(up.days) + " يوم";
     // the free trial doesn't include WhatsApp: even while trying Sellybot it takes its own paid subscription, asked for and approved like any request
-    var onTrial = !!(me && me.usage && me.usage.trial);
+    var onTrial = !!(me && me.usage && me.usage.trial && !me.usage.trialEnded);   // still in the free month, not after it ended with no plan
     var note = A ? (onTrial ? "الواتساب مش ضمن التجربة المجانية: حتى وانت بتجرّب، ليه اشتراك لوحده. بتبعت طلب، والإدارة بتفعّله بعد ما تتأكد من الدفع. " : "") +
       "اشتراك شهري لوحده، تفعّله في أي وقت مع باقة أو من غيرها، وتجديده مش مرتبط بتجديد الباقة. رسايل الواتساب غير محدودة، وردود المساعد بتتحسب من رصيدك زي الموقع."
              : up.renew ? "باقة " + esc(up.name) + " فيها " + F.what + "، والمدة الجديدة بتكمّل من آخر يوم في اشتراكك."
@@ -3930,7 +4295,7 @@
   }
   async function upgradeTo(id) {
     go("plan");
-    for (var i = 0; i < 60 && !(plansData && plansData.plans); i++) await new Promise(function (r) { setTimeout(r, 120); });
+    for (var i = 0; i < 60 && !(plansData && plansData.plans && mineReady); i++) await new Promise(function (r) { setTimeout(r, 120); });   // openRequest reads mine.changes
     if (plansData && plansData.plans) openRequest(id);
   }
   function renderWa() {

@@ -90,6 +90,8 @@ namespace RiwaqChat
                 // (a plan whose end date passed allows nothing until the super admin renews it)
                 // subscription ended: the chat stops until the super admin renews it (the widget says "not available, contact the store")
                 if (store != null && Billing.Expired(store)) { Web.Error(res, 403, "plan_expired"); return; }
+                // the free trial is one month from signing up, once: after it the chat stops the same way until the store subscribes
+                if (store != null && Billing.TrialEnded(conn, store)) { Web.Error(res, 403, "trial_ended"); return; }
                 if (store != null && Billing.LimitReached(conn, store)) { Web.Error(res, 402, "limit_reached"); return; }
 
                 // keep the store's Shopify data fresh (refreshes in the background when it is older than a few hours)

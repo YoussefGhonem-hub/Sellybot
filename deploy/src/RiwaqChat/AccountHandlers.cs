@@ -45,6 +45,8 @@ namespace RiwaqChat
                 { "waService", WaAccount.ServiceJson(c, s) },
                 // a request waiting for the admin ("plan", "upgrade", "topup", "wa", or ""), so the banners don't ask for one again
                 { "pendingRequest", PendingKind(c, s.Id) },
+                // the admin's latest answer to a request (last 14 days), so every page can say it was approved or rejected, and why
+                { "lastReply", LastReply(c, s.Id) },
                 { "supportAnswered", SupportAnswered(c, s.Id) },
                 { "storage", storage },
                 { "knowledge", new Dictionary<string, object> { { "items", items }, { "chars", chars }, { "maxChars", KnowledgeHandler.MaxStoreChars },
@@ -56,6 +58,12 @@ namespace RiwaqChat
         {
             using (var cmd = Db.Cmd(c, "SELECT TOP 1 Kind FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending' ORDER BY Id DESC", "@s", storeId))
                 return cmd.ExecuteScalar() as string ?? "";
+        }
+
+        static Dictionary<string, object> LastReply(SqlConnection c, int storeId)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT TOP 1 * FROM dbo.PlanRequests WHERE StoreId=@s AND Status IN ('approved','rejected') AND DecidedAt > DATEADD(day, -14, SYSUTCDATETIME()) ORDER BY DecidedAt DESC, Id DESC", "@s", storeId))
+            using (var r = cmd.ExecuteReader()) return r.Read() ? Billing.RequestJson(r) : null;
         }
 
         // tickets where support replied and the owner hasn't answered yet (badge in the dashboard)
