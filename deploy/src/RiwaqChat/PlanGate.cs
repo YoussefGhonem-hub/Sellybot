@@ -1,5 +1,5 @@
 // Features that only some plans include. The super admin picks, per feature, the lowest plan that has it
-// (AppSettings "MinPlan_<feature>"; WhatsApp keeps its own "WaMinPlan" and its auto-assign rule in WaAccount).
+// (AppSettings "MinPlan_<feature>"). WhatsApp isn't gated by plan: it's a monthly service added to any plan (WaAccount.HasService).
 // No minimum set = the feature is open to every store, which is how everything worked before.
 //   shopify : linking a Shopify store (quick or full) and order tracking in the chat
 //   easyorders : linking an EasyOrders store, its order tracking and order confirmation (follows shopify's minimum until set)
@@ -7,6 +7,7 @@
 //                until the super admin picks a minimum it's the top active plan, never "open to everyone"
 //   files   : uploading PDF, Word and Excel files (typed text, .txt, .csv and .md stay open)
 //   styles  : the fun and "any store" bubble styles and custom colors (classic styles, the bear and the 12 swatches stay open)
+//   delivery: the delivery-day message on WhatsApp (Delivery.cs), on top of the store link and the WhatsApp plan
 // The dashboard asks api/locks.ashx which features are locked and shows an upgrade card with the plan to suggest.
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace RiwaqChat
 {
     public static class PlanGate
     {
-        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "bothstores" };
+        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "bothstores", "delivery" };
         public static readonly HashSet<string> FreeStyles = new HashSet<string> { "classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear" };
         public static readonly HashSet<string> FreeColors = new HashSet<string> { "#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222" };
         public static readonly HashSet<string> LockedFileTypes = new HashSet<string> { "pdf", "docx", "xlsx" };
@@ -28,7 +29,7 @@ namespace RiwaqChat
         static readonly Dictionary<string, string> Names = new Dictionary<string, string> {
             { "shopify", "ربط Shopify وتتبع الأوردرات" }, { "files", "رفع ملفات PDF و Word و Excel" }, { "styles", "أشكال الشات والألوان" }, { "chatorders", "الطلب من الشات" },
             { "easyorders", "ربط EasyOrders وتتبع الأوردرات" },
-            { "bothstores", "ربط Shopify و EasyOrders مع بعض" } };
+            { "bothstores", "ربط Shopify و EasyOrders مع بعض" }, { "delivery", "رسالة يوم التوصيل على واتساب" } };
 
         public static int MinPlanId(SqlConnection c, string feature)
         {
@@ -182,7 +183,7 @@ namespace RiwaqChat
 
         static Dictionary<string, object> AdminState(SqlConnection c)
         {
-            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify وتتبع الأوردرات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتتبع الأوردرات" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" } };
+            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify وتتبع الأوردرات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتتبع الأوردرات" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" } };
             return new Dictionary<string, object> {
                 { "features", PlanGate.Features.Select(f => new Dictionary<string, object> { { "key", f }, { "name", names[f] }, { "minPlan", PlanGate.MinPlanId(c, f) } }).ToList() },
                 { "plans", Billing.Plans(c, false).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } }).ToList() } };

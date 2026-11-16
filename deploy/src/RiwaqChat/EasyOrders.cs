@@ -348,7 +348,7 @@ namespace RiwaqChat
             }
             using (var cmd = Db.Cmd(c, "DELETE FROM dbo.KnowledgeItems WHERE StoreId=@s AND SourceType=@t", "@s", s.Id, "@t", SourceType)) cmd.ExecuteNonQuery();
             using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET EoKey=NULL, EoMode=NULL, EoStoreId=NULL, EoUrl=NULL, EoStatus=NULL, EoSyncedAt=NULL,
-                EoOrders=0, EoOcOn=0, EoHookKey=NULL, EoHookAt=NULL WHERE Id=@s", "@s", s.Id)) cmd.ExecuteNonQuery();
+                EoOrders=0, EoOcOn=0, EoDnOn=0, EoHookKey=NULL, EoHookAt=NULL WHERE Id=@s", "@s", s.Id)) cmd.ExecuteNonQuery();
             Db.BumpVersion(c, s.Id);
         }
 
@@ -543,7 +543,10 @@ namespace RiwaqChat
                 { "confirm", new Dictionary<string, object> {
                     { "on", s.EoOcOn }, { "scope", s.EoOcScope ?? "all" },
                     { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
-                    { "recent", on ? (object)EoConfirm.Recent(c, s.Id) : new object[0] } } } };
+                    { "recent", on ? (object)EoConfirm.Recent(c, s.Id) : new object[0] } } },
+                { "delivery", new Dictionary<string, object> {
+                    { "on", s.EoDnOn }, { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
+                    { "recent", on && s.EoDnOn ? (object)Delivery.Recent(c, s.Id, "eo") : new object[0] } } } };
         }
 
         // ---------- helpers ----------
@@ -912,8 +915,9 @@ namespace RiwaqChat
                     if (!Web.Allow("eo:" + s.Id, 60, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "تعديلات كتير، استنى شوية."); return; }
                     var body = Web.Body(req, 4000);
                     object en; bool enabled = body.TryGetValue("enabled", out en) && en is bool && (bool)en;
-                    bool gated = action == "connect" || action == "sync" || ((action == "orders" || action == "confirm") && enabled);
+                    bool gated = action == "connect" || action == "sync" || ((action == "orders" || action == "confirm" || action == "delivery") && enabled);
                     if (gated && !PlanGate.Allows(c, s, EasyOrders.Feature)) { PlanGate.Deny(res, c, s, EasyOrders.Feature); return; }
+                    if (action == "delivery" && enabled && !PlanGate.Allows(c, s, Delivery.Feature)) { PlanGate.Deny(res, c, s, Delivery.Feature); return; }
                     if (action == "connect" && PlanGate.BothBlocked(c, s, "easyorders")) { PlanGate.DenyBoth(res, c, s, "easyorders"); return; }   // Shopify already linked
                     if (action != "connect" && action != "disconnect" && !EasyOrders.Connected(s)) { Web.Error(res, 400, "not_connected", "اربط متجرك على EasyOrders الأول."); return; }
 
@@ -966,6 +970,14 @@ namespace RiwaqChat
                             { Web.Error(res, 400, "no_whatsapp", "اربط واتساب المتجر الأول من صفحة الواتساب، عشان الرسايل تتبعت من رقمك."); return; }
                             using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET EoOcOn=@o, EoOcScope=@sc WHERE Id=@s", "@o", enabled, "@sc", scope, "@s", s.Id)) cmd.ExecuteNonQuery();
                             Web.Json(res, 200, new { ok = true, enabled, scope });
+                            return;
+                        }
+                        case "delivery":   // the delivery-day message on WhatsApp (Delivery.cs)
+                        {
+                            if (enabled && (string.IsNullOrEmpty(s.WaInstance) || string.IsNullOrEmpty(s.WaNumber)))
+                            { Web.Error(res, 400, "no_whatsapp", "اربط واتساب المتجر الأول من صفحة الواتساب، عشان الرسايل تتبعت من رقمك."); return; }
+                            using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET EoDnOn=@o WHERE Id=@s", "@o", enabled, "@s", s.Id)) cmd.ExecuteNonQuery();
+                            Web.Json(res, 200, new { ok = true, enabled });
                             return;
                         }
                         case "disconnect":
@@ -1039,7 +1051,12 @@ namespace RiwaqChat
                     using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET EoHookAt=SYSUTCDATETIME() WHERE Id=@s", "@s", s.Id)) cmd.ExecuteNonQuery();
 
                     if (EasyOrders.Str(o, "event_type") == "order-status-update")
-                        EoConfirm.OnStatus(c, s, EasyOrders.Str(o, "order_id"), EasyOrders.Str(o, "new_status"));
+                    {
+                        string orderId = EasyOrders.Str(o, "order_id"), newStatus = EasyOrders.Str(o, "new_status");
+                        EoConfirm.OnStatus(c, s, orderId, newStatus);
+                        // out for delivery -> the delivery-day message (the order and its status are read back from EasyOrders)
+                        if (newStatus == "in_delivery" && s.EoDnOn) Delivery.QueueEo(s.Id, orderId);
+                    }
                     else
                     {
                         string id = EasyOrders.Str(o, "id");

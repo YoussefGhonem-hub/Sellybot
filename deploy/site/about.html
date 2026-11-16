@@ -467,6 +467,9 @@
       li: ["شغال مع Shopify و EasyOrders", "لازم الزبون يأكد رقم الأوردر والموبايل أو الإيميل اللي طلب بيه", "يعرف الحالة، وفي Shopify كمان شركة الشحن ولينك التتبع", "حد لعدد المحاولات يمنع أي حد يخمّن أوردرات غيره"] },
     { cat: "orders", ic: "✅", t: "تأكيد الطلبات على واتساب", d: "كل طلب جديد بيتأكد مع الزبون على واتساب قبل ما تشحنه.", k: ["shopify", "whatsapp"], isNew: true,
       li: ["أول ما زبون يطلب، توصله رسالة على واتساب بتفاصيل طلبه", "يرد 1 يأكد أو 2 يلغي", "حالة الأوردر بتتغيّر في متجرك لوحدها", "تقدر تخليه لطلبات الدفع عند الاستلام بس", "محتاج رقم واتساب مربوط، ومع Shopify لازم الربط الكامل", "أوردرات وهمية ومرتجعات أقل"] },
+    { cat: "orders", ic: "🚚", t: "رسالة يوم التوصيل", d: "أول ما الأوردر يخرج للتوصيل، الزبون يعرف إن المندوب جايله ويجهّز المبلغ.", k: ["delivery", "whatsapp"], isNew: true,
+      li: ["بتتبعت لوحدها من رقم واتساب متجرك أول ما الأوردر يخرج للتوصيل", "فيها المبلغ اللي الزبون يجهّزه، أو إن طلبه مدفوع", "بتفكّره يخلّي موبايله جنبه ويرد على المندوب", "لو مش هيكون موجود، يرد عليها والمساعد يطمّنه وانت تشوف رسالته",
+        "مع EasyOrders: لما حالة الأوردر تبقى «In delivery»، سواء غيّرتها إنت أو شركة الشحن", "مع Shopify: لما شركة الشحن تبلّغ Shopify إن الأوردر خرج للتوصيل (مش كل شركات الشحن بتعمل كده)", "مرتجعات أقل من زباين مارَدّوش على المندوب"] },
     { cat: "orders", ic: "🛒", t: "الطلب من جوه الشات", d: "الزبون يطلب من غير ما يسيب الشات، والأوردر ينزل في Shopify.", k: ["chatorders"], isNew: true,
       li: ["يختار المقاس واللون والكمية", "يكتب عنوانه ويختار الشحن", "الأوردر ينزل عندك في Shopify على طول"] },
     { cat: "channels", ic: "💬", t: "فقاعة شات في موقعك", d: "سطر كود واحد، والمساعد يظهر لكل زائر على موقعك.", k: [],
@@ -504,7 +507,10 @@
   function card(s, i) {
     var c = catOf(s.cat), p = planFor(s.k || []);
     var ic = s.logo ? '<span class="c-ic logo"><img src="' + esc(s.logo) + '" alt=""></span>' : '<span class="c-ic" aria-hidden="true">' + s.ic + '</span>';
-    var plan = !plansData ? "" : p ? '<span class="plan">💎 ' + (s.part ? esc(s.part) + " " : "") + "من باقة " + esc(p.name) + "</span>" : '<span class="plan all">✓ في كل الباقات</span>';
+    // WhatsApp isn't in a plan: it's a monthly service added to any plan
+    var waPrice = plansData && plansData.waAddon && (s.k || []).indexOf("whatsapp") >= 0 ? plansData.waAddon.price : 0;
+    var plan = !plansData ? "" : waPrice ? '<span class="plan">📱 ' + (p ? "من باقة " + esc(p.name) + " + " : "") + "اشتراك الواتساب الشهري بـ " + Number(waPrice).toLocaleString("ar-EG") + " ج.م، في أي وقت</span>"
+      : p ? '<span class="plan">💎 ' + (s.part ? esc(s.part) + " " : "") + "من باقة " + esc(p.name) + "</span>" : '<span class="plan all">✓ في كل الباقات</span>';
     return '<article class="card" style="--c:' + c.c + ';animation-delay:' + Math.min(i, 8) * 45 + 'ms">' +
       '<div class="c-top">' + ic + '<span class="c-meta"><span class="c-cat">' + c.ic + " " + esc(c.t) + "</span>" + (s.isNew ? '<span class="c-new">جديد</span>' : "") + "</span></div>" +
       "<h3>" + esc(s.t) + "</h3><p>" + esc(s.d) + "</p>" +

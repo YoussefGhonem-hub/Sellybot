@@ -124,6 +124,26 @@
   .bar{height:8px;background:var(--soft);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
   .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand2),var(--brand));border-radius:999px;transition:width .4s}
   .bar.hot i{background:var(--err)}
+  /* «داتا المتجر»: plan messages, WhatsApp, data size, chat link */
+  .grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  @media (max-width:1100px){.grid.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:760px){.grid.g4{grid-template-columns:1fr}}
+  .stat.low .value,.stat .hint.warn{color:var(--err)}
+  .stat .hint.ends{margin-top:4px}
+  .bar.wa i{background:linear-gradient(90deg,#1a8a47,#25d366)}
+  .stat .st-act{margin-top:8px}
+  .banner.wa{--bn:#25d366;--bn2:#1a8a47}
+  /* extra messages: what's left vs what the rest of the month needs, and a typed number */
+  .tp-gauge{display:flex;height:26px;border-radius:9px;overflow:hidden;margin:10px 0 4px;background:var(--soft);border:1px solid var(--line);font-size:12px;font-weight:700;color:#fff}
+  .tp-gauge span{display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;min-width:0;animation:tpGrow .8s cubic-bezier(.2,.8,.2,1) both;transform-origin:right}
+  .tp-gauge .have{background:linear-gradient(90deg,#2f8f5b,#46b977)}
+  .tp-gauge .need{background:repeating-linear-gradient(135deg,#d64545 0 10px,#e25b5b 10px 20px);animation-delay:.25s}
+  @keyframes tpGrow{from{transform:scaleX(0)}to{transform:none}}
+  .tp-custom{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tp-custom input{width:140px;margin:0}
+  .tp-custom b{color:var(--brand)}
+  .per.sug{border-color:var(--brand);box-shadow:0 10px 24px -14px var(--brand)}
+  @media (prefers-reduced-motion:reduce){.tp-gauge span{animation:none}}
   label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
   input[type=text],input[type=email],input[type=password],input[type=number],textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);outline:none}
   input:focus,textarea:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(232,119,74,.15)}
@@ -226,6 +246,30 @@
   @media (max-width:640px){.per-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .pay-box{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:12px;margin-bottom:6px}
   @media (max-width:640px){.pay-box{grid-template-columns:minmax(0,1fr)}}
+  /* changing plans: how it's counted, with the owner's own numbers */
+  .chg-box{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:6px 0 14px;background:color-mix(in srgb,var(--brand) 6%,var(--soft));font-size:13.5px;line-height:1.75}
+  .chg-box h4{margin:0 0 6px;font-size:15px}
+  .chg-box ul{list-style:none;padding:0;margin:0 0 8px}
+  .chg-box li{display:flex;gap:8px;padding:2px 0}
+  .chg-box .ex{font-weight:700;margin:8px 0 4px}
+  .chg-box .calc-line{background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:6px 10px;margin:4px 0;overflow-wrap:anywhere}
+  .chg-box .calc-line b{color:var(--brand)}
+  .chg-box .hint{margin:8px 0 0}
+  .pl .chg-note{font-size:12px;color:var(--muted);text-align:center;margin:6px 0 0}
+  /* where to send the money: the number and InstaPay's QR */
+  .pay-to{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 2px;padding:8px 10px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+  .pay-to span{font-size:13px;color:var(--muted)}
+  .pay-to b{font-size:20px;letter-spacing:.04em}
+  .pay-to .btn{margin-inline-start:auto}
+  .pay-qr{margin:10px 0 0;text-align:center}
+  .pay-qr img{display:block;width:100%;max-width:220px;height:auto;margin:0 auto;border-radius:12px;background:#fff;padding:6px;border:1px solid var(--line)}
+  .pay-qr figcaption{font-size:12px;color:var(--muted);margin-top:6px}
+  /* the payment's reference number (required, never used twice) */
+  .ref-box{border:2px dashed color-mix(in srgb,var(--brand) 45%,var(--line));border-radius:14px;padding:10px 12px 12px;margin:10px 0 4px;background:color-mix(in srgb,var(--brand) 5%,var(--card))}
+  .ref-box label{margin-top:0;font-weight:700}
+  .ref-box .req{color:#d64545}
+  .ref-box input{font-size:17px;letter-spacing:.06em;font-weight:600}
+  .ref-box small{display:block;margin-top:6px;font-size:12px;color:var(--muted);line-height:1.6}
   .pay-amt,.pay-how{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--soft)}
   .pay-amt span{display:block;font-size:13px;color:var(--muted)}
   .pay-amt b{display:block;font-size:26px;line-height:1.3}
@@ -812,6 +856,30 @@
   @keyframes lkFade{from{opacity:0}to{opacity:1}}
   .lk-box{position:relative;width:min(900px,100%);max-height:calc(100dvh - 32px);overflow:auto;border-radius:24px}
   .lk-box .wa-up{margin:0}
+  /* the WhatsApp service: an add-on any plan request can carry (and its line in «باقتي») */
+  .wa-add{border:1.5px solid color-mix(in srgb,#25d366 45%,var(--line));border-radius:16px;margin:6px 0 14px;background:color-mix(in srgb,#25d366 7%,var(--card));overflow:hidden;transition:border-color .2s,box-shadow .2s}
+  .wa-add.on{border-color:#1fae55;box-shadow:0 0 0 3px color-mix(in srgb,#25d366 18%,transparent)}
+  .wa-add-top{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;margin:0}
+  .wa-add-top input{width:20px;height:20px;flex:none;accent-color:#1fae55;margin:0}
+  .wa-add-ic{font-size:24px;flex:none;animation:waAddBob 2.6s ease-in-out infinite}
+  @keyframes waAddBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  .wa-add-top .grow b{display:block;font-size:15px}
+  .wa-add-top .grow small{display:block;color:var(--muted);font-size:12.5px;line-height:1.6}
+  .wa-add-pr{flex:none;text-align:center;line-height:1.2}
+  .wa-add-pr b{display:block;font-size:20px;color:#1a8a47}
+  .wa-add-pr small{font-size:11.5px;color:var(--muted)}
+  .wa-add-body{padding:0 14px 12px;border-top:1px dashed color-mix(in srgb,#25d366 35%,var(--line))}
+  .wa-add-body ul{list-style:none;padding:0;margin:10px 0 4px;display:grid;gap:4px;font-size:13px}
+  .wa-add-body li{display:flex;gap:8px}
+  .wa-add-body .hint{display:block;margin-top:6px}
+  .mp-wa{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:12px;font-size:13.5px;
+    background:color-mix(in srgb,#25d366 8%,var(--soft));border:1px solid color-mix(in srgb,#25d366 30%,var(--line))}
+  .mp-wa .grow{flex:1 1 180px}
+  .wa-strip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 14px;border-radius:14px;font-size:13.5px;
+    background:color-mix(in srgb,#25d366 8%,var(--card));border:1px dashed color-mix(in srgb,#25d366 45%,var(--line))}
+  .wa-strip .grow{flex:1 1 220px}
+  .wa-strip[hidden],.wa-add[hidden],.wa-add-body[hidden]{display:none}
+  @media (prefers-reduced-motion:reduce){.wa-add-ic{animation:none}}
   .lk-x{position:absolute;top:12px;left:12px;z-index:5;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:16px;cursor:pointer}
   /* a small "locked" strip that opens the popup */
   .lk-strip{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:10px 14px;border-radius:14px;cursor:pointer;text-align:start;font-size:13.5px;color:var(--ink);
@@ -957,6 +1025,7 @@
   .hm-stat small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
   .hm-stat .mini-bar{height:6px;margin-top:10px;border-radius:9px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
   .hm-stat .mini-bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--brand2),var(--brand));transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+  .hm-stat .mini-bar.hot i{background:var(--err)}   /* the month's messages nearly used up (same 80% as «داتا المتجر») */
   .hm-stat:after{content:"";position:absolute;inset:auto -30px -40px auto;width:110px;height:110px;border-radius:50%;background:color-mix(in srgb,var(--brand) 9%,transparent);transition:transform .5s}
   .hm-stat:hover:after{transform:scale(1.5)}
 
@@ -1269,6 +1338,7 @@
 <div class="wrap" id="appView" hidden>
   <div class="banner" id="storageBanner" hidden></div>
   <div class="banner" id="planBanner" hidden></div>
+  <div class="banner wa" id="waBanner" hidden></div>
 
   <!-- home: the first page after login. What Sellybot does for this store, where each part lives, and the desktop app -->
   <section data-panel="home" class="hm">
@@ -1382,8 +1452,10 @@
   <!-- data -->
   <section data-panel="data" hidden>
     <div class="page-title"><div><h2>داتا المتجر</h2><p>كل اللي المساعد بيعرفه عن متجرك، ومنه بيرد على زباينك</p></div></div>
-    <div class="grid">
-      <div class="card stat"><div class="label">الاستهلاك الشهر ده</div><div class="value" id="usageVal">—</div><div class="bar" id="usageBar"><i style="width:0"></i></div><div class="hint" id="usageHint"></div></div>
+    <div class="grid g4">
+      <div class="card stat" id="usageCard"><div class="label">الاستهلاك الشهر ده</div><div class="value" id="usageVal">—</div><div class="bar" id="usageBar"><i style="width:0"></i></div><div class="hint" id="usageHint"></div><div class="hint ends" id="usageEnds"></div></div>
+      <!-- WhatsApp: its own monthly subscription, unlimited messages; the bar is the time left in its month -->
+      <div class="card stat" id="waStat"><div class="label">📱 رسايل الواتساب الشهر ده</div><div class="value" id="waStatVal">—</div><div class="bar wa" id="waStatBar"><i style="width:0"></i></div><div class="hint" id="waStatHint"></div><div class="hint ends" id="waStatEnds"></div></div>
       <div class="card stat"><div class="label">حجم داتا المتجر</div><div class="value" id="dataVal">—</div><div class="bar" id="dataBar"><i style="width:0"></i></div><div class="hint" id="dataHint"></div></div>
       <div class="card stat"><div class="label">لينك الشات بتاعك</div>
         <input type="text" id="chatLink" class="ltr" readonly style="margin:6px 0 8px">
@@ -1470,8 +1542,8 @@
             <li><b>افتح Dev Dashboard بتاع Shopify</b><span>ادخل على <a href="https://dev.shopify.com/dashboard/" target="_blank" rel="noopener" class="ltr">dev.shopify.com/dashboard</a> بنفس حساب متجرك.</span></li>
             <li><b>اعمل تطبيق جديد</b><span>دوس <b style="display:inline">Create app</b> وسمّيه <span class="kbd">Sellybot</span>. ده مش برنامج ولا كود: ده "إذن دخول" بتديه لـ Sellybot عشان يقرا داتا متجرك.</span></li>
             <li><b>اختار الصلاحيات</b><span>في إعدادات النسخة (Version) حط دول في خانة <b style="display:inline">Scopes</b>:
-              <span class="scope-box"><code class="ltr" id="scopeText">read_products,read_inventory,read_orders,write_orders,write_draft_orders</code><button type="button" class="btn ghost sm" id="copyScopes">نسخ</button></span>
-              <small class="scope-why"><span class="ltr">read_products</span>: المنتجات والأسعار · <span class="ltr">read_inventory</span>: الكمية المتاحة · <span class="ltr">read_orders</span>: حالة الأوردرات · <span class="ltr">write_orders</span>: إلغاء الأوردر لما الزبون يرفضه على واتساب (لو مش هتستخدم تأكيد الطلبات شيلها) · <span class="ltr">write_draft_orders</span>: الزبون يطلب من الشات على طول (لو مش هتستخدم الطلب من الشات شيلها)</small></span></li>
+              <span class="scope-box"><code class="ltr" id="scopeText">read_products,read_inventory,read_orders,write_orders,write_draft_orders,read_fulfillments</code><button type="button" class="btn ghost sm" id="copyScopes">نسخ</button></span>
+              <small class="scope-why"><span class="ltr">read_products</span>: المنتجات والأسعار · <span class="ltr">read_inventory</span>: الكمية المتاحة · <span class="ltr">read_orders</span>: حالة الأوردرات · <span class="ltr">write_orders</span>: إلغاء الأوردر لما الزبون يرفضه على واتساب (لو مش هتستخدم تأكيد الطلبات شيلها) · <span class="ltr">write_draft_orders</span>: الزبون يطلب من الشات على طول (لو مش هتستخدم الطلب من الشات شيلها) · <span class="ltr">read_fulfillments</span>: نعرف إن الأوردر خرج للتوصيل ونبعت للزبون رسالة يوم التوصيل (لو مش هتستخدمها شيلها)</small></span></li>
             <li><b>اسمح ببيانات الزبون</b><span>في صفحة التطبيق افتح <b style="display:inline">API access requests</b> ← <b style="display:inline">Protected customer data</b>، اطلب الوصول واختار <b style="display:inline">Name</b> و<b style="display:inline">Email</b> و<b style="display:inline">Phone</b> و<b style="display:inline">Address</b>. من غيرها Shopify بيخفي موبايل الزبون، فتتبع الأوردرات وتأكيدها على واتساب مش هيشتغلوا.</span></li>
             <li><b>احفظ وركّبه على متجرك</b><span>دوس <b style="display:inline">Release</b> عشان تحفظ النسخة، وبعدين <b style="display:inline">Install</b> واختار متجرك ووافق.</span></li>
             <li><b>انسخ المفاتيح وحطها هنا</b><span>من <b style="display:inline">Settings</b> بتاع التطبيق انسخ <b style="display:inline">Client ID</b> و<b style="display:inline">Client secret</b>.</span></li>
@@ -1531,6 +1603,21 @@
               </div>
               <div class="oc-warn" id="ocWarn" hidden></div>
               <div class="oc-list" id="ocList"></div>
+            </div>
+          </div>
+          <div class="oc-box">
+            <label class="toggle"><input type="checkbox" id="dnToggle"><span class="tg" aria-hidden="true"></span>
+              <span><b>🚚 رسالة يوم التوصيل <span class="new-tag">جديد</span></b><small>لما شركة الشحن تحدّث الشحنة في Shopify إنها «خرجت للتوصيل»، يوصل للزبون من رقم متجرك: المندوب جايلك النهارده، جهّز المبلغ، وخلّي موبايلك جنبك. بتقلّل الأوردرات اللي بترجع عشان الزبون مارَدّش على المندوب.</small></span></label>
+            <details class="name-tip">
+              <summary>💡 إزاي بتشتغل؟ ولازمها إيه؟</summary>
+              <div>• الرسالة بتتبعت <b>لوحدها</b> لما شركة الشحن تبلّغ Shopify إن الأوردر <b>«خرج للتوصيل»</b> (Out for delivery).<br>
+              • <b>مش كل شركات الشحن بتعمل كده.</b> لو بتعلّم الأوردر «Fulfilled» بإيدك من غير تطبيق تتبع، الرسالة مش هتتبعت. لو مش متأكد، اسأل شركة الشحن: <b>«التطبيق بتاعكم بيحدّث حالة الشحنة في Shopify لـ Out for delivery؟»</b><br>
+              • الرسايل بتتبعت من <b>رقم واتساب متجرك</b>، فلازم يكون مربوط من صفحة الواتساب.<br>
+              • تعرف إنها شغالة إزاي؟ أول أوردر يخرج للتوصيل هيظهر في اللستة تحت الزرار، ومكتوب جنبه الرسالة اتبعتت ولا لأ وليه.</div>
+            </details>
+            <div id="dnOpts" hidden>
+              <div class="oc-warn" id="dnWarn" hidden></div>
+              <div class="oc-list" id="dnList"></div>
             </div>
           </div>
         </div>
@@ -1653,6 +1740,21 @@
             </div>
             <div class="oc-warn" id="eoOcWarn" hidden></div>
             <div class="oc-list" id="eoOcList"></div>
+          </div>
+        </div>
+        <div class="oc-box">
+          <label class="toggle"><input type="checkbox" id="eoDnToggle"><span class="tg" aria-hidden="true"></span>
+            <span><b>🚚 رسالة يوم التوصيل <span class="new-tag">جديد</span></b><small>لما حالة الأوردر في EasyOrders تبقى «In delivery»، يوصل للزبون من رقم متجرك إن طلبه خرج مع شركة الشحن، والمبلغ اللي يجهّزه، ويخلّي موبايله جنبه. بتقلّل الأوردرات اللي بترجع عشان الزبون مارَدّش على المندوب.</small></span></label>
+          <details class="name-tip">
+            <summary>💡 إزاي بتشتغل؟ ولازمها إيه؟</summary>
+            <div>• الرسالة بتتبعت <b>لوحدها</b> أول ما حالة الأوردر في EasyOrders تبقى <b>«In delivery»</b>.<br>
+            • لو شركة الشحن <b>مش بتغيّر الحالة دي لوحدها</b>، غيّرها إنت من EasyOrders لما تسلّم الأوردر للمندوب، والرسالة هتروح للزبون على طول.<br>
+            • الرسايل بتتبعت من <b>رقم واتساب متجرك</b>، فلازم يكون مربوط من صفحة الواتساب.<br>
+            • جرّبها: اعمل أوردر تجربة <b>برقمك إنت</b> وغيّر حالته لـ «In delivery»، هتوصلك الرسالة وتظهر في اللستة تحت الزرار.</div>
+          </details>
+          <div id="eoDnOpts" hidden>
+            <div class="oc-warn" id="eoDnWarn" hidden></div>
+            <div class="oc-list" id="eoDnList"></div>
           </div>
         </div>
         <div class="shop-fields" style="margin-top:12px">
@@ -1968,16 +2070,45 @@
 
     <!-- request a plan -->
     <form class="card req-form" id="reqForm" hidden>
-      <div class="row"><h3 style="margin:0">طلب باقة <span id="rqPlanName"></span></h3><span class="space"></span><button type="button" class="btn ghost sm" id="rqClose">إلغاء</button></div>
-      <p class="sub" id="rqHint">١) اختار المدة &nbsp;·&nbsp; ٢) حوّل المبلغ &nbsp;·&nbsp; ٣) اكتب رقم العملية وابعت الطلب. الإدارة بتفعّل الباقة بعد ما تتأكد من الدفع.</p>
+      <div class="row"><h3 style="margin:0"><span id="rqTitle">طلب باقة</span> <span id="rqPlanName"></span></h3><span class="space"></span><button type="button" class="btn ghost sm" id="rqClose">إلغاء</button></div>
+      <p class="sub" id="rqHint">١) اختار المدة &nbsp;·&nbsp; ٢) حوّل المبلغ &nbsp;·&nbsp; ٣) اكتب الرقم المرجعي وابعت الطلب. الإدارة بتفعّل الباقة بعد ما تتأكد من الدفع.</p>
       <div class="per-grid" id="rqPeriods" role="radiogroup" aria-label="المدة"></div>
+      <div class="chg-box" id="rqExplain" hidden></div>
+      <!-- the WhatsApp service, offered with every plan (alone too, on a running plan) -->
+      <div class="wa-add" id="waAdd" hidden>
+        <label class="wa-add-top" for="waAddOn"><input type="checkbox" id="waAddOn"><span class="wa-add-ic" aria-hidden="true">📱</span>
+          <span class="grow"><b>ضيف خدمة الواتساب</b><small>المساعد يرد على زباينك على رقم واتساب متجرك 24 ساعة، ويأكد الطلبات ويبعت رسالة يوم التوصيل.</small></span>
+          <span class="wa-add-pr"><b id="waAddPrice">+300</b><small>ج.م في الشهر</small></span></label>
+        <div class="wa-add-body" id="waAddBody" hidden>
+          <ul>
+            <li><span>♾️</span><span>رسايل واتساب غير محدودة، من غير أي رسوم على الرسالة</span></li>
+            <li><span>💬</span><span>ردود المساعد بتتحسب من رصيد باقتك، زي الشات على موقعك بالظبط</span></li>
+            <li><span>📅</span><span id="waAddWhen">بتشتغل من يوم ما الإدارة توافق، لمدة شهر</span></li>
+          </ul>
+          <label for="waAddPhone">رقم الواتساب اللي هتربطه بالمساعد</label>
+          <input type="tel" id="waAddPhone" class="ltr" maxlength="20" placeholder="01001234567" autocomplete="tel">
+          <small class="hint" id="waAddSum"></small>
+        </div>
+      </div>
+      <p class="hint" id="waRunNote" hidden style="margin:4px 0 14px"></p>
       <div class="pay-box">
         <div class="pay-amt"><span>المبلغ المطلوب</span><b id="rqAmount">—</b><small id="rqSave"></small></div>
-        <div class="pay-how"><b>💳 طريقة الدفع</b><p id="rqPayInfo"></p></div>
+        <div class="pay-how"><b>💳 طريقة الدفع</b>
+          <!-- where to send the money: the number (copy button) and InstaPay's QR, both set by the super admin -->
+          <div class="pay-to" id="rqPayTo" hidden><span>حوّل على الرقم</span><b class="ltr" id="rqPayNum"></b><button type="button" class="btn ghost sm" id="rqPayCopy">📋 نسخ</button></div>
+          <p id="rqPayInfo"></p>
+          <figure class="pay-qr" id="rqPayQrBox" hidden><img id="rqPayQr" alt="QR InstaPay للتحويل"><figcaption>امسح الكود من تطبيق InstaPay وحوّل على طول</figcaption></figure>
+        </div>
+      </div>
+      <!-- the payment's reference number: required, and one payment backs one request only -->
+      <div class="ref-box">
+        <label for="rqRefNo">🔖 الرقم المرجعي <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="rqRefNo" class="ltr" maxlength="40" autocomplete="off" spellcheck="false" placeholder="مثلًا: 123456789012" aria-describedby="rqRefNoHint">
+        <small id="rqRefNoHint">الرقم اللي بيظهرلك في InstaPay بعد ما التحويل يتم، جنب «الرقم المرجعي». كل دفعة ليها رقم واحد، ومينفعش يتبعت في طلبين.</small>
       </div>
       <div class="cols2">
         <div><label for="rqMethod">دفعت بإيه؟</label><select id="rqMethod"></select></div>
-        <div><label for="rqRef">رقم العملية أو الرقم اللي حوّلت منه</label><input type="text" id="rqRef" class="ltr" maxlength="100" placeholder="مثلًا: 0101234567 أو رقم عملية InstaPay"></div>
+        <div><label for="rqRef">الرقم أو الحساب اللي حوّلت منه</label><input type="text" id="rqRef" class="ltr" maxlength="100" placeholder="مثلًا: 0101234567 أو name@instapay"></div>
       </div>
       <label for="rqNote">ملاحظة (اختياري)</label>
       <input type="text" id="rqNote" maxlength="500" placeholder="أي حاجة عايز الإدارة تعرفها">
@@ -1986,6 +2117,7 @@
     </form>
 
     <h3 class="sec-title" style="margin-top:22px">الباقات المتاحة <span class="hint" id="plansFor"></span></h3>
+    <div class="wa-strip" id="waStrip" hidden></div>
     <div class="pl-grid" id="plGrid"><div class="card"><div class="hint">بنحمّل الباقات…</div></div></div>
     <div class="est-note">
       <span class="ic" aria-hidden="true">💡</span>
@@ -2354,6 +2486,7 @@
     $("hmLeft").dataset.n = left; $("hmLeft").textContent = fmt(left);
     $("hmLeftS").textContent = u.trial ? "رسالة فاضلة من " + fmt(u.msgLimit) + " في التجربة" : "رسالة فاضلة تقريبًا في رصيدك";
     $("hmLeftBar").dataset.w = Math.max(0, Math.min(100, 100 - (u.pct || 0)));
+    $("hmLeftBar").parentNode.classList.toggle("hot", (u.pct || 0) >= 80);
     $("hmData").textContent = fmtSize(kn.chars);
     $("hmDataS").textContent = (kn.chars || 0) > 0 ? "داتا متجرك اللي المساعد بيرد منها" : "لسه مفيش داتا، ضيفها من «داتا المتجر»";
     $("hmPlan").textContent = pl.name || "تجربة مجانية";
@@ -2368,7 +2501,8 @@
     chip("data", hasData ? "ok" : "go", hasData ? "✓ فيه داتا · " + fmtSize(kn.chars) : "ابدأ من هنا");
     chip("look", "", "🎨 غيّر الشكل واللون");
     chip("install", origins ? "ok" : "", origins ? "✓ شغال على " + fmt(origins) + " دومين" : "⏳ ضيف الكود لموقعك");
-    chip("wa", wa ? "ok" : "", wa ? "✓ مربوط" : "اربطه");
+    var waSv = me.waService || {};   // WhatsApp is a service added to the plan
+    chip("wa", wa && waSv.on ? "ok" : "", wa && waSv.on ? "✓ مربوط" : wa ? "⏳ الخدمة خلصت، جدّدها" : waSv.on ? "اربطه" : "📱 ضيفه لباقتك");
     chip("settings", "", me.botName ? "🤖 " + me.botName : "سمّيه");
     chip("plan", pl.name && !pl.expired ? "ok" : "", pl.name ? (pl.expired ? "⛔ جدّدها" : "✓ " + pl.name) : "تجربة مجانية");
     var next = !hasData ? "data" : !origins ? "install" : null;
@@ -2469,9 +2603,11 @@
       '<div><div class="hint">باقتك الحالية</div><div class="mp-name">' + esc(p.name || "التجربة المجانية") + '</div>' + status +
       '<p class="hint" style="margin:10px 0 0">' + (p.name ? (p.expired ? "خلصت يوم " + dateAr(p.endsAt) + ". المساعد متوقف لحد ما تجدد." : "بتخلص يوم " + dateAr(p.endsAt) + "، وبعدها المساعد بيتوقف لحد ما تجدد.") : fmt(me.usage.msgLimit) + " رسالة مجانية في الشهر عشان تختبر المساعد على داتا متجرك. اشترك في باقة عشان تكمّل من غير توقف.") + '</p>' +
       (p.name && !p.expired && pct >= 80 ? '<p class="hint" style="margin:8px 0 0;color:#b26b00">⚠️ رصيد الشهر ده قرب يخلص. زوّد الرصيد عشان المساعد مايقفش قبل آخر الشهر.</p>' : '') +
+      // a lower plan waiting for this one to end
+      (p.next ? '<p class="hint" style="margin:8px 0 0">⬇️ من يوم <b>' + dateAr(p.next.startsAt) + '</b> هتبدأ باقة <b>' + esc(p.next.name) + '</b> لحد يوم ' + dateAr(p.next.endsAt) + '. لحد كده باقتك الحالية شغالة بكل مميزاتها.</p>' : '') +
       // on the free trial the plans are right under this card, so no button here; a paid plan gets renew / top up
       (p.name ? '<div class="row" style="margin-top:14px"><button type="button" class="btn" id="mpRenew">' + (p.expired ? "🔁 جدّد الباقة" : "🔁 جدّد قبل ميعادها") + '</button>' +
-        (!p.expired ? '<button type="button" class="btn ghost" id="mpTopup">➕ زوّد الرصيد</button>' : '') + '</div>' : '') + '</div>' +
+        (!p.expired ? '<button type="button" class="btn ghost" id="mpTopup">➕ زوّد الرصيد</button>' : '') + '</div>' : '') + mpWaHtml() + '</div>' +
       '<div class="row" style="justify-content:center;gap:18px"><div class="mp-ring" id="mpRing" style="--p:0"><b>' + pct + '%<small>من رصيد الشهر</small></b></div>' +
       '<div><div class="hint">الشهر ده</div><div style="font-size:20px;font-weight:700">' + fmt(me.usage.messages) + ' رسالة</div>' +
       (me.usage.extra > 0 ? '<div class="hint">➕ فيه رصيد إضافي الشهر ده</div>' : '') +
@@ -2482,47 +2618,61 @@
       if (same) openRequest(p.id); else $("plGrid").scrollIntoView({ behavior: "smooth", block: "start" });
     };
     if ($("mpTopup")) $("mpTopup").onclick = function () { openTopup(); };
+    if ($("mpWa")) $("mpWa").onclick = addWaService;
+    renderWaStrip();
   }
   async function loadPlanTab() {
     $("planWaTop").href = waLink("أهلاً 👋 عندي سؤال عن باقات Sellybot لمتجر " + me.name + " (" + me.slug + ")");
     renderMyPlan();
     try { plansData = await api("api/plans.ashx"); } catch (e) { $("plGrid").innerHTML = '<div class="card hint">مقدرناش نحمّل الباقات دلوقتي.</div>'; return; }
     renderMyPlan();
-    var per = unitsPerMsg(plansData.units);
+    await loadMine();   // what each plan would mean for this store (upgrade / lower plan later / renew), for the buttons below
+    var per = unitsPerMsg(plansData.units), next = me.plan && me.plan.next;
     $("plansFor").textContent = "· الرسايل محسوبة على متجرك (≈ " + fmt(Math.round(per)) + " وحدة للرسالة)";
     $("plGrid").innerHTML = plansData.plans.length ? plansData.plans.map(function (p, i) {
       var cur = me.plan && me.plan.id === p.id, d = p.discount;
+      var ch = changeOf(p.id), k = ch ? ch.kind : "new", waiting = next && next.id === p.id;
+      if (cur && k === "new") k = "renew";   // their own plan that ended: renewing it
+      var btn = k === "renew" ? "🔁 جدّد الباقة" : k === "upgrade" ? "⬆️ رقّي للباقة دي" : k === "downgrade" ? (waiting ? "🔁 زوّد مدة الباقة الجاية" : "⬇️ انزل للباقة دي") : "📨 اطلب الباقة";
+      var note = k === "upgrade" ? "بتدفع فرق السعر بس: " + fmt(ch.amount) + " ج.م" : k === "downgrade" && !waiting ? "بتبدأ بعد ما باقتك الحالية تخلص" : "";
       var msgs = Math.floor(p.messages.small * plansData.units.small / per);
       var label = d ? (d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "وفّر " + fmt(d.value) + " ج.م")) : "";
       var maxPct = Math.max.apply(null, (p.periods || []).map(function (q) { return q.pct || 0; }).concat([0]));
       return '<div class="card pl' + (cur ? " cur" : "") + (p.isFeatured ? " feat" : "") + '" style="animation-delay:' + (i * 0.07) + 's">' +
         '<div class="pl-top"><div><h3>' + esc(p.name) + '</h3><div class="hint">' + esc(p.description) + '</div></div>' +
-          (cur ? '<span class="st-pill answered">باقتك</span>' : d ? '<span class="tagx">🔥 ' + esc(label) + '</span>' : p.isFeatured ? '<span class="tagx tagf">⭐ الأكثر طلبًا</span>' : '') + '</div>' +
+          (cur ? '<span class="st-pill answered">باقتك</span>' : waiting ? '<span class="st-pill open">جاية يوم ' + dateAr(next.startsAt) + '</span>' : d ? '<span class="tagx">🔥 ' + esc(label) + '</span>' : p.isFeatured ? '<span class="tagx tagf">⭐ الأكثر طلبًا</span>' : '') + '</div>' +
         '<div class="pr"><b>' + fmt(p.finalPrice) + '</b><small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' + (d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
         '<div class="est"><span class="ei">💬</span><div><b>' + fmt(msgs) + '</b> رسالة في الشهر<small>تقريبًا، محسوبة على داتا متجرك</small></div></div>' +
         '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
         (maxPct > 0 ? '<div class="soon-row">🔒 اشتراك 4 و 6 شهور وسنة بخصم لحد ' + fmt(maxPct) + '% <span class="soon">قريبًا</span></div>' : '') +
-        '<button type="button" class="btn' + (cur ? " ghost" : "") + '" data-req="' + p.id + '">' + (cur ? "🔁 جدّد الباقة" : "📨 اطلب الباقة") + '</button></div>';
+        '<button type="button" class="btn' + (cur || waiting ? " ghost" : "") + '" data-req="' + p.id + '">' + btn + '</button>' +
+        (note ? '<div class="chg-note">' + note + '</div>' : '') + '</div>';
     }).join("") : '<div class="card hint">مفيش باقات متاحة دلوقتي. كلّمنا على واتساب.</div>';
     $("plGrid").querySelectorAll("[data-req]").forEach(function (b) { b.onclick = function () { openRequest(+b.dataset.req); }; });
-    loadMine();
   }
+  // what picking plan id means for this store right now (from the server): new / renew / upgrade / downgrade, with the numbers
+  function changeOf(id) { return (mine.changes || []).filter(function (x) { return x.planId === id; })[0] || null; }
 
   // ---------------- plan requests: owner asks -> super admin approves or rejects ----------------
   var mine = { requests: [], subscriptions: [], methods: [] }, rq = { plan: null, months: 1 };
   var REQ_ST = { pending: ['open', "⏳ بيتراجع"], approved: ['answered', "✅ اتفعّلت"], rejected: ['bad', "✕ اترفض"], cancelled: ['', "اتلغى"] };
   function monthsAr(m) { return m === 1 ? "شهر" : m === 12 ? "سنة" : fmt(m) + " شهور"; }
-  function reqTitle(r) { return r.kind === "topup" ? "رصيد إضافي لباقة " + esc(r.plan) : "باقة " + esc(r.plan) + " · " + monthsAr(r.months); }
+  function reqTitle(r) {
+    return (r.kind === "wa" ? "📱 خدمة الواتساب · " + monthsAr(r.months) : r.kind === "topup" ? (r.msgs ? fmt(r.msgs) + " رسالة إضافية للشهر" : "رصيد إضافي لباقة " + esc(r.plan)) : r.kind === "upgrade" ? "ترقية لباقة " + esc(r.plan) : "باقة " + esc(r.plan) + " · " + monthsAr(r.months)) +
+      (r.wa && r.kind !== "wa" ? " + 📱 خدمة الواتساب" : "");
+  }
   async function loadMine() {
     try { mine = await api("api/plans.ashx?mine=1"); } catch (e) { return; }
     var pending = mine.requests.filter(function (r) { return r.status === "pending"; })[0];
     // waiting for the admin
     $("reqPending").innerHTML = pending
       ? '<div class="card req-card"><span style="font-size:26px">⏳</span><div class="grow"><b>طلبك (' + reqTitle(pending) + ') بيتراجع</b>' +
-        '<div class="hint">بعته ' + agoAr(pending.at) + ' · ' + fmt(pending.amount) + ' ج.م · ' + esc(pending.method) + ' · رقم العملية: <span class="ltr">' + esc(pending.ref) + '</span></div>' +
-        '<div class="hint">' + (pending.kind === "topup" ? "الإدارة هتضيف الرصيد أول ما تتأكد من الدفع." : "الإدارة هتفعّل الباقة أول ما تتأكد من الدفع.") + ' ولو مستعجل ابعتلنا صورة التحويل على واتساب.</div></div>' +
+        '<div class="hint">بعته ' + agoAr(pending.at) + ' · ' + fmt(pending.amount) + ' ج.م · ' + esc(pending.method) +
+          (pending.refNo ? ' · الرقم المرجعي: <b class="ltr">' + esc(pending.refNo) + '</b>' : ' · رقم العملية: <span class="ltr">' + esc(pending.ref) + '</span>') + '</div>' +
+        '<div class="hint">' + (pending.kind === "wa" ? "الإدارة هتفعّل خدمة الواتساب أول ما تتأكد من الدفع." : pending.kind === "topup" ? "الإدارة هتضيف الرصيد أول ما تتأكد من الدفع." : "الإدارة هتفعّل الباقة أول ما تتأكد من الدفع.") + ' ولو مستعجل ابعتلنا صورة التحويل على واتساب.</div></div>' +
         '<div class="row" style="flex-direction:column;align-items:stretch;gap:6px"><a class="btn wa-btn sm" target="_blank" rel="noopener" href="' +
-        esc(waLink("أهلاً 👋 بعت طلب باقة " + pending.plan + " (" + monthsAr(pending.months) + ") لمتجر " + me.name + " (" + me.slug + ")، ودي صورة التحويل:")) + '">ابعت صورة التحويل</a>' +
+        esc(waLink("أهلاً 👋 بعت طلب " + (pending.kind === "wa" ? "خدمة الواتساب" : pending.kind === "upgrade" ? "ترقية لباقة " + pending.plan : pending.kind === "topup" ? "رصيد إضافي لباقة " + pending.plan : "باقة " + pending.plan + " (" + monthsAr(pending.months) + ")") +
+          " لمتجر " + me.name + " (" + me.slug + ")" + (pending.refNo ? "، والرقم المرجعي " + pending.refNo : "") + "، ودي صورة التحويل:")) + '">ابعت صورة التحويل</a>' +
         '<button type="button" class="btn ghost sm" id="rqCancel">إلغاء الطلب</button></div></div>'
       : "";
     if (pending) $("rqCancel").onclick = async function () {
@@ -2533,14 +2683,17 @@
     $("reqList").innerHTML = mine.requests.length ? mine.requests.map(function (r) {
       var st = REQ_ST[r.status] || ["", r.status];
       return '<div class="hrow"><div class="grow"><b>' + (r.kind === "topup" ? "➕ " : "") + reqTitle(r) + '</b> <span class="st-pill ' + st[0] + '">' + (r.kind === "topup" && r.status === "approved" ? "✅ اتضاف" : st[1]) + '</span>' +
-        '<div class="hint">' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م · ' + esc(r.method) + '</div>' +
+        '<div class="hint">' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م · ' + esc(r.method) + (r.refNo ? ' · الرقم المرجعي: <span class="ltr">' + esc(r.refNo) + '</span>' : '') + '</div>' +
         (r.adminNote ? '<div class="rsn">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظة الإدارة: ") + esc(r.adminNote) + '</div>' : '') + '</div></div>';
     }).join("") : '<div class="card empty">لسه مابعتش طلبات.</div>';
     $("subList").innerHTML = mine.subscriptions.length ? mine.subscriptions.map(function (s) {
       if (s.topup) return '<div class="hrow"><div class="grow"><b>➕ ' + esc(s.plan) + '</b>' +
         '<div class="hint">لشهر ' + new Date(s.startsAt).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }) + ' · دفعت ' + fmt(s.paid) + ' ج.م</div></div></div>';
-      var live = new Date(s.endsAt) > new Date() && new Date(s.startsAt) <= new Date();
-      return '<div class="hrow"><div class="grow"><b>' + esc(s.plan) + ' · ' + monthsAr(s.months) + '</b>' + (live ? ' <span class="st-pill answered">شغالة دلوقتي</span>' : '') +
+      if (s.kind === "upgrade") return '<div class="hrow"><div class="grow"><b>⬆️ ترقية لباقة ' + esc(s.plan) + '</b>' +
+        '<div class="hint">من ' + dateAr(s.startsAt) + ' لحد ' + dateAr(s.endsAt) + ' · دفعت فرق السعر ' + fmt(s.paid) + ' ج.م</div></div></div>';
+      var live = new Date(s.endsAt) > new Date() && new Date(s.startsAt) <= new Date(), later = new Date(s.startsAt) > new Date();
+      return '<div class="hrow"><div class="grow"><b>' + esc(s.plan) + ' · ' + monthsAr(s.months) + '</b>' +
+        (live ? ' <span class="st-pill answered">شغالة دلوقتي</span>' : later ? ' <span class="st-pill open">هتبدأ ' + dateAr(s.startsAt) + '</span>' : '') +
         '<div class="hint">من ' + dateAr(s.startsAt) + ' لحد ' + dateAr(s.endsAt) + ' · دفعت ' + fmt(s.paid) + ' ج.م</div></div></div>';
     }).join("") : '<div class="card empty">مفيش اشتراكات لسه.</div>';
   }
@@ -2550,41 +2703,206 @@
   }
   function fillPayFields() {
     $("rqPayInfo").textContent = plansData.paymentInfo || "";
+    $("rqPayNum").textContent = plansData.payNumber || ""; $("rqPayTo").hidden = !plansData.payNumber;
+    $("rqPayQrBox").hidden = !plansData.payQr;
+    if (plansData.payQr) $("rqPayQr").src = "api/plans.ashx?payqr=1&v=" + encodeURIComponent(plansData.payQr);
     $("rqMethod").innerHTML = '<option value="">اختار…</option>' + (mine.methods || []).map(function (m) { return '<option>' + esc(m) + '</option>'; }).join("");
-    $("rqRef").value = ""; $("rqNote").value = ""; setMsg("rqMsg", "");
+    $("rqRef").value = ""; $("rqRefNo").value = ""; $("rqNote").value = ""; setMsg("rqMsg", "");
+    waAddSetup();
   }
-  // extra quota for the rest of this month (on a running plan)
-  function openTopup() {
-    if (hasPending()) return;
-    if (!mine.topups || !mine.topups.length) { toast("الرصيد الإضافي للباقات الشغالة بس."); return; }
-    rq.kind = "topup"; rq.plan = null;
-    var per = plansData ? unitsPerMsg(plansData.units) : 0;
-    $("rqPlanName").textContent = "رصيد إضافي لباقة " + (me.plan && me.plan.name || "");
-    fillPayFields();
-    $("rqPeriods").innerHTML = mine.topups.map(function (t) {
-      return '<button type="button" class="per" role="radio" data-p="' + t.pct + '"><b>+' + fmt(t.pct) + '% رصيد</b><div class="pp">' + fmt(t.total) + ' <small style="display:inline">ج.م</small></div>' +
-        '<small>' + (per ? "≈ " + fmt(Math.floor(t.units / per)) + " رسالة زيادة" : fmt(t.units) + " وحدة") + '</small></button>';
-    }).join("");
-    $("rqPeriods").querySelectorAll(".per").forEach(function (b) { b.onclick = function () { pickTopup(+b.dataset.p); }; });
-    $("rqHint").textContent = "الرصيد الإضافي بيتضاف للشهر ده بس، أول ما الإدارة توافق. الشهر الجاي رصيد باقتك بيتجدد عادي.";
-    pickTopup(mine.topups[0].pct);
+
+  // ---------------- the WhatsApp service: its own monthly subscription, at any time ----------------
+  // Asked for alone (kind "wa": «باقتي», the WhatsApp tab, the banner, «داتا المتجر»), or ticked in a plan request while it isn't running.
+  // It renews on its own date, never with the plan. The admin sees the request with the number to link.
+  function waSvc() { return me.waService || {}; }
+  // its line in «باقتي»
+  function mpWaHtml() {
+    var sv = waSvc();
+    if (!sv.price || sv.always) return "";
+    if (sv.on) return '<div class="mp-wa"><span aria-hidden="true">📱</span><span class="grow"><b>خدمة الواتساب شغالة</b> لحد يوم ' + dateAr(sv.until) +
+      ' (فاضل ' + fmt(sv.daysLeft) + ' يوم). تجديدها شهري لوحده، مش مع الباقة.</span>' +
+      (sv.pending ? '<span class="st-pill open">⏳ طلب التجديد بيتراجع</span>' : '<button type="button" class="btn ghost sm" id="mpWa">🔁 جدّد شهر</button>') + '</div>';
+    var ended = !!sv.until;
+    return '<div class="mp-wa"><span aria-hidden="true">📱</span><span class="grow">' +
+      (ended ? '<b>خدمة الواتساب خلصت</b> يوم ' + dateAr(sv.until) + '، فالمساعد مش بيرد على واتساب متجرك.'
+             : '<b>خلّي المساعد يرد على واتساب متجرك</b> كمان: اشتراك شهري لوحده بـ ' + fmt(sv.price) + ' ج.م، تفعّله في أي وقت بطلب للإدارة.' +
+               (me.usage && me.usage.trial ? ' الواتساب مش ضمن التجربة المجانية.' : '')) + '</span>' +
+      (sv.pending ? '<span class="st-pill open">⏳ طلبك بيتراجع</span>' : '<button type="button" class="btn sm" id="mpWa">' + (ended ? "🔁 جدّد الخدمة" : "📱 فعّل خدمة الواتساب") + '</button>') + '</div>';
+  }
+  // a line above the plans: WhatsApp isn't part of a plan
+  function renderWaStrip() {
+    var sv = waSvc(), el = $("waStrip"); if (!el) return;
+    el.hidden = !sv.price || sv.always || sv.on; if (el.hidden) return;
+    el.innerHTML = '<span aria-hidden="true">📱</span><span class="grow"><b>خدمة الواتساب</b> اشتراك شهري لوحده بـ ' + fmt(sv.price) +
+      ' ج.م: المساعد يرد على زباينك على رقم واتساب متجرك. تفعّلها في أي وقت، مع باقة أو من غيرها.</span>' +
+      (sv.pending ? '' : '<button type="button" class="btn sm" id="waStripGo">📱 فعّلها</button>');
+    if ($("waStripGo")) $("waStripGo").onclick = addWaService;
+  }
+  // a warning on every page: WarnDays before the service ends (with the date), and after it ended while a number is still linked
+  function renderWaBanner() {
+    var sv = waSvc(), wb = $("waBanner");
+    var ending = sv.on && !sv.always && sv.until && sv.daysLeft <= (sv.warnDays || 2), ended = !sv.on && !sv.always && sv.until && sv.connected;
+    if (!ending && !ended) { wb.hidden = true; return; }
+    wb.className = "banner " + (ended ? "full" : "wa");
+    wb.innerHTML = '<span class="bn-ic">📱</span><span class="bn-t"><b>' + (ended ? "خدمة الواتساب خلصت يوم " + dateAr(sv.until)
+        : "تجديد باقة الواتساب يوم " + dateAr(sv.until) + (sv.daysLeft <= 1 ? " (بكرة)" : " (بعد " + fmt(sv.daysLeft) + " يوم)")) + '</b><small>' +
+      (sv.pending ? "طلب التجديد وصلنا وبيتراجع، وهنفعّله أول ما نتأكد من الدفع."
+        : ended ? "المساعد مش بيرد على الواتساب ومفيش رسايل بتطلع من رقمك. جدّدها وكل حاجة ترجع زي ما كانت."
+        : "جدّدها بـ " + fmt(sv.price) + " ج.م عشان المساعد يفضل يرد على زباينك على الواتساب من غير ما يقف.") + '</small></span>' +
+      '<a href="#plan" class="bn-cta">' + (sv.pending ? "شوف الطلب" : "🔁 جدّد باقة الواتساب") + '</a>';
+    wb.hidden = false;
+    wb.querySelector(".bn-cta").onclick = function (e) { e.preventDefault(); if (sv.pending) go("plan"); else openWaService(); };
+  }
+  // its card in «داتا المتجر»: messages this month (no limit) and until when; the bar is the time left in its month
+  function renderWaStat() {
+    var sv = waSvc(), card = $("waStat"); if (!card) return;
+    var on = !!sv.on, ended = !on && !!sv.until, ending = on && !sv.always && sv.daysLeft <= (sv.warnDays || 2);
+    card.classList.toggle("low", ended);
+    $("waStatEnds").className = "hint ends" + (ending || ended ? " warn" : "");   // renewal close: the date line turns red
+    $("waStatVal").textContent = on || ended ? fmt(sv.replies || 0) + " رد" + (sv.chats ? " لـ " + fmt(sv.chats) + " زبون" : "") : "مش مفعّلة";
+    var left = sv.always ? 100 : on ? Math.min(100, Math.round((sv.daysLeft || 0) * 100 / (sv.days || 30))) : 0;
+    $("waStatBar").querySelector("i").style.width = left + "%"; $("waStatBar").classList.toggle("hot", ended);
+    $("waStatHint").className = "hint" + (ended ? " warn" : "");
+    $("waStatHint").textContent = on ? "♾️ رسايل غير محدودة، وردود المساعد من رصيد باقتك" : ended ? "⚠️ المساعد مش بيرد على الواتساب لحد ما تجدّدها" : "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م، المساعد يرد على واتساب متجرك";
+    var ends = $("waStatEnds");
+    ends.textContent = sv.always ? "📅 شغالة دايمًا" : on ? "📅 لحد يوم " + dateAr(sv.until) + " (فاضل " + fmt(sv.daysLeft) + " يوم)" : ended ? "📅 خلصت يوم " + dateAr(sv.until) : "";
+    if (!sv.always && !sv.pending && (!on || sv.daysLeft <= (sv.warnDays || 2))) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "btn sm st-act"; b.style.display = "block";
+      b.textContent = on || ended ? "🔁 جدّد باقة الواتساب" : "📱 فعّل خدمة الواتساب"; b.onclick = addWaService; ends.appendChild(b);
+    } else if (sv.pending) { var p = document.createElement("div"); p.textContent = "⏳ طلبك بيتراجع"; ends.appendChild(p); }
+  }
+  // from anywhere: the WhatsApp-only request (it doesn't need a plan)
+  function addWaService() { openWaService(); }
+  async function openWaService() {
+    if (current !== "plan") go("plan");
+    for (var i = 0; i < 60 && !(plansData && plansData.plans && mine.methods && mine.methods.length); i++) await new Promise(function (r) { setTimeout(r, 120); });
+    if (!plansData || hasPending()) return;
+    var sv = waSvc();
+    rq.kind = "wa"; rq.plan = null; rq.change = null; rq.base = 0; rq.months = 1;
+    $("rqTitle").textContent = "طلب"; $("rqPlanName").textContent = "خدمة الواتساب";
+    $("rqPeriods").innerHTML = ""; $("rqPeriods").hidden = true; $("rqExplain").hidden = true;
+    $("rqHint").textContent = "١) حوّل المبلغ  ·  ٢) اكتب رقم الواتساب ورقم العملية وابعت الطلب. الخدمة بتشتغل أول ما الإدارة تتأكد من الدفع" +
+      (sv.on ? "، والشهر الجديد بيتضاف بعد ميعادها الحالي." : "، لمدة شهر.");
+    fillPayFields(); $("rqSave").textContent = "";
     $("reqForm").hidden = false; $("reqForm").scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  function pickTopup(pct) {
-    rq.pct = pct;
-    var t = mine.topups.filter(function (x) { return x.pct === pct; })[0];
-    $("rqPeriods").querySelectorAll(".per").forEach(function (b) { var on = +b.dataset.p === pct; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
-    $("rqAmount").textContent = fmt(t.total) + " ج.م"; $("rqSave").textContent = "";
+  // the box in the request form (fillPayFields): hidden for extra quota and for the admin's own store
+  function waAddSetup() {
+    // a plan request offers it only while it isn't running: renewing the plan never renews the service (its own monthly date)
+    var sv = waSvc(), only = rq.kind === "wa", running = !!sv.on && !sv.always && !only;
+    var show = !!sv.price && !sv.always && rq.kind !== "topup" && !running;
+    $("waAdd").hidden = !show;
+    $("waRunNote").hidden = !(running && rq.kind !== "topup");
+    if (running) $("waRunNote").textContent = "📱 خدمة الواتساب شغالة عندك لحد يوم " + dateAr(sv.until) + "، وتجديدها شهري لوحده ومش بيتأثر بتجديد الباقة. هنفكّرك قبلها بيومين.";
+    if (!show) { $("waAddOn").checked = false; return; }
+    $("waAddOn").checked = only;
+    $("waAddOn").disabled = only;
+    $("waAddPrice").textContent = (only ? "" : "+") + fmt(sv.price);
+    $("waAddWhen").textContent = sv.on ? "شغالة عندك لحد يوم " + dateAr(sv.until) + "، والشهر الجديد بيبدأ بعدها" : "بتشتغل من يوم ما الإدارة توافق لمدة شهر، وتجديدها شهري لوحده";
+    if (!$("waAddPhone").value) {
+      // the phone linked now, otherwise the one from the last request
+      var last = (mine.requests || []).filter(function (r) { return r.waPhone; })[0];
+      $("waAddPhone").value = sv.number || (last ? last.waPhone : "");
+    }
+    waAddPaint();
+  }
+  function waAddOn() { return !$("waAdd").hidden && $("waAddOn").checked; }
+  function waAddMonths() { return 1; }   // always one month: the service renews monthly on its own
+  // the amount = what was picked (rq.base) + the service when it's ticked
+  function waAddPaint() {
+    var on = waAddOn(), box = $("waAdd");
+    box.classList.toggle("on", on); $("waAddBody").hidden = !on;
+    if (box.hidden) return;
+    var add = on ? waSvc().price * waAddMonths() : 0;
+    $("rqAmount").textContent = fmt((rq.base || 0) + add) + " ج.م";
+    $("waAddSum").textContent = on && rq.kind !== "wa" ? "المبلغ المطلوب فوق فيه " + fmt(add) + " ج.م لخدمة الواتساب" + (waAddMonths() > 1 ? " (" + monthsAr(waAddMonths()) + ")" : "") + "." : "";
+  }
+  $("waAddOn").onchange = waAddPaint;
+
+  // extra quota for the rest of this month (on a running plan)
+  // ---- extra messages for the rest of this month, worked out from this store's own pace (server: Billing.TopupNeed) ----
+  // Three ready choices around the suggestion, or any number typed; priced at the plan's own rate per message, the same way as the server.
+  function openTopup() {
+    if (hasPending()) return;
+    var nd = mine.topupNeed;
+    if (!nd) { toast("الرسايل الإضافية للباقات الشغالة بس. لو باقتك خلصت، جدّدها الأول."); return; }
+    rq.kind = "topup"; rq.plan = null; rq.change = null; rq.need = nd;
+    $("rqTitle").textContent = "طلب"; $("rqPlanName").textContent = "رسايل إضافية للشهر ده";
+    $("rqPeriods").hidden = false;
+    fillPayFields();
+    $("rqPeriods").innerHTML = nd.options.map(function (o) {
+      return '<button type="button" class="per' + (o.suggest ? " sug" : "") + '" role="radio" data-n="' + o.msgs + '">' + (o.suggest ? '<span class="off">⭐ مقترح لك</span>' : '') +
+        '<b>' + fmt(o.msgs) + ' رسالة</b><div class="pp">' + fmt(o.price) + ' <small style="display:inline">ج.م</small></div><small>' + tpCover(nd, o.msgs) + '</small></button>';
+    }).join("");
+    $("rqPeriods").querySelectorAll(".per").forEach(function (b) { b.onclick = function () { pickTopup(+b.dataset.n); }; });
+    $("rqHint").textContent = "الرسايل الإضافية بتتضاف للشهر ده بس، أول ما الإدارة توافق. الشهر الجاي رصيد باقتك بيتجدد عادي.";
+    explainTopup(nd);
+    pickTopup(nd.suggest);
+    $("reqForm").hidden = false; $("reqForm").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function tpPrice(nd, n) { return Math.max(10, Math.ceil(nd.pricePerMsg * n / 5) * 5); }
+  // how far n more messages carry the store at its pace
+  function tpCover(nd, n) {
+    if (!nd.rate) return "على أد استهلاكك دلوقتي";
+    var d = new Date(Date.now() + (nd.left + n) / nd.rate * 864e5);
+    return d >= new Date(nd.until) ? "✅ يكفيك لآخر الشهر" : "يكفيك لحد " + d.toLocaleDateString("ar-EG", { day: "numeric", month: "long" });
+  }
+  function explainTopup(nd) {
+    var have = nd.left, need = nd.need, tot = Math.max(1, have + need), pl = plansData && me.plan && plansData.plans.filter(function (p) { return p.id === me.plan.id; })[0];
+    var pricey = pl && tpPrice(nd, nd.suggest) >= pl.finalPrice * 0.5;
+    $("rqExplain").innerHTML = '<h4>📊 حسبناها من استهلاكك</h4><ul>' +
+      '<li><span>📈</span><span>الشهر ده استخدمت <b>' + fmt(nd.used) + ' رسالة</b> في ' + fmt(nd.daysPassed) + ' يوم، يعني حوالي <b>' + fmt(nd.rate) + ' رسالة في اليوم</b>' +
+        (nd.fromLastMonth ? " (حسب الشهر اللي فات، لسه بدري في الشهر ده)" : "") + '.</span></li>' +
+      '<li><span>📅</span><span>فاضل <b>' + fmt(nd.daysLeft) + ' يوم</b> لحد ' + dateAr(nd.until) + '، وفاضلك <b>' + fmt(nd.left) + ' رسالة</b> في رصيدك.</span></li>' +
+      '<li><span>🎯</span><span>' + (need > 0 ? 'عشان المساعد مايقفش لآخر الشهر محتاج حوالي <b>' + fmt(need) + ' رسالة</b> زيادة (فيهم 10% احتياطي)، فاقترحنا <b>' + fmt(nd.suggest) + '</b>.'
+        : 'رصيدك غالبًا هيكفيك لآخر الشهر، ولو حابب تحتاط اختار أقل كمية.') + '</span></li></ul>' +
+      // what's left vs what the rest of the month needs
+      '<div class="tp-gauge" aria-hidden="true"><span class="have" style="width:' + Math.round(have * 100 / tot) + '%">' + (have ? "فاضلك " + fmt(have) : "") + '</span>' +
+        (need > 0 ? '<span class="need" style="width:' + Math.round(need * 100 / tot) + '%">ناقصك ' + fmt(need) + '</span>' : '') + '</div>' +
+      '<div class="ex">أو اكتب العدد اللي تحبه:</div>' +
+      '<div class="tp-custom"><input type="number" id="tpN" min="' + nd.min + '" max="' + nd.max + '" step="50" inputmode="numeric" aria-label="عدد الرسايل"><span>رسالة</span><b id="tpP"></b></div>' +
+      '<p class="hint">نفس سعر الرسالة في باقتك على داتا متجرك (≈ ' + Number(nd.pricePerMsg).toLocaleString("ar-EG", { maximumFractionDigits: 2 }) + ' ج.م للرسالة)، من ' + fmt(nd.min) + ' لـ ' + fmt(nd.max) + ' رسالة.' +
+        (pricey ? ' 💡 لو ده بيتكرر كل شهر، الترقية لباقة أعلى غالبًا أوفر.' : '') + '</p>';
+    $("rqExplain").hidden = false;
+    $("tpN").oninput = function () { var n = Math.round(+this.value || 0); if (n >= nd.min && n <= nd.max) pickTopup(n, true); else $("tpP").textContent = "من " + fmt(nd.min) + " لـ " + fmt(nd.max); };
+  }
+  function pickTopup(n, typed) {
+    var nd = rq.need; rq.msgs = n;
+    $("rqPeriods").querySelectorAll(".per").forEach(function (b) { var on = +b.dataset.n === n; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
+    if (!typed && $("tpN")) $("tpN").value = n;
+    var p = tpPrice(nd, n);
+    $("rqAmount").textContent = fmt(p) + " ج.م"; $("rqSave").textContent = fmt(n) + " رسالة · " + tpCover(nd, n);
+    if ($("tpP")) $("tpP").textContent = "= " + fmt(p) + " ج.م";
+  }
+  // from a banner or a card on any page: the plan tab with the extra-messages request open
+  async function openTopupAnywhere() {
+    if (current !== "plan") go("plan");
+    for (var i = 0; i < 60 && !(plansData && plansData.plans && mine.methods && mine.methods.length); i++) await new Promise(function (r) { setTimeout(r, 120); });
+    openTopup();
   }
   function openRequest(planId) {
     if (hasPending()) return;
-    rq.kind = "plan";
     rq.plan = plansData.plans.filter(function (p) { return p.id === planId; })[0]; if (!rq.plan) return;
+    var ch = rq.change = changeOf(planId);
+    if (ch && ch.blocked) { toast(ch.blocked); return; }
+    rq.kind = ch && ch.kind === "upgrade" ? "upgrade" : "plan";
     rq.months = rq.months || 1;
-    $("rqHint").textContent = "١) اختار المدة  ·  ٢) حوّل المبلغ  ·  ٣) اكتب رقم العملية وابعت الطلب. الإدارة بتفعّل الباقة بعد ما تتأكد من الدفع." +
-      (me.plan && me.plan.id === planId && !me.plan.expired ? " بما إن باقتك لسه شغالة، المدة الجديدة هتبدأ بعد آخر يوم فيها، فمش هتخسر أي يوم." : "");
+    $("rqTitle").textContent = rq.kind === "upgrade" ? "ترقية لباقة" : ch && ch.kind === "downgrade" ? "النزول لباقة" : "طلب باقة";
     $("rqPlanName").textContent = rq.plan.name;
     fillPayFields();
+    if (rq.kind === "upgrade") {
+      // no period to pick: the higher plan runs until the current end date, for the price difference
+      $("rqHint").textContent = "١) اقرا الحساب تحت  ·  ٢) حوّل المبلغ  ·  ٣) اكتب الرقم المرجعي وابعت الطلب. الباقة الجديدة بتشتغل أول ما الإدارة تتأكد من الدفع.";
+      $("rqPeriods").innerHTML = ""; $("rqPeriods").hidden = true;
+      $("rqAmount").textContent = fmt(ch.amount) + " ج.م"; $("rqSave").textContent = "بدل " + fmt(ch.newPrice) + " ج.م سعر الباقة كامل";
+      explainUpgrade(ch);
+      rq.base = ch.amount; waAddPaint();   // + the WhatsApp service when it's ticked
+      $("reqForm").hidden = false; $("reqForm").scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    $("rqPeriods").hidden = false;
+    $("rqHint").textContent = "١) اختار المدة  ·  ٢) حوّل المبلغ  ·  ٣) اكتب الرقم المرجعي وابعت الطلب. الإدارة بتفعّل الباقة بعد ما تتأكد من الدفع." +
+      (ch && ch.kind === "renew" ? " بما إن باقتك لسه شغالة، المدة الجديدة هتبدأ بعد آخر يوم فيها، فمش هتخسر أي يوم." : "");
     $("rqPeriods").innerHTML = rq.plan.periods.map(function (q) {
       if (q.soon) return '<button type="button" class="per locked" disabled aria-disabled="true" title="هيكون متاح قريب"><span class="soon">قريبًا</span>' +
         '<b>' + monthsAr(q.months) + '</b><div class="pp">🔒</div><small>' + (q.pct ? "بخصم " + fmt(q.pct) + "%" : "") + '</small></button>';
@@ -2603,19 +2921,73 @@
     $("rqPeriods").querySelectorAll(".per").forEach(function (b) { var on = +b.dataset.m === m; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
     $("rqAmount").textContent = fmt(q.total) + " ج.م";
     $("rqSave").textContent = q.save > 0 ? "وفّرت " + fmt(q.save) + " ج.م" : "";
+    if (rq.change && rq.change.kind === "downgrade") explainDowngrade(rq.change, m, q.total); else $("rqExplain").hidden = true;
+    rq.base = q.total; waAddPaint();   // + the WhatsApp service when it's ticked
+  }
+  // ---- how a plan change is counted, written with the owner's own numbers ----
+  function addDays(iso, n) { var d = new Date(iso); d.setDate(d.getDate() + n); return d.toISOString(); }
+  function money2(n) { return Number(n || 0).toLocaleString("ar-EG", { maximumFractionDigits: 2 }); }
+  // higher plan: now, same end date, the price difference for the days left
+  function explainUpgrade(ch) {
+    var ends = me.plan && me.plan.endsAt, name = esc(rq.plan.name), cur = esc(ch.curName);
+    var calc = ch.curDuration === ch.newDuration
+      ? '<div class="calc-line">(' + fmt(ch.newPrice) + ' − ' + fmt(ch.curPrice) + ') × ' + fmt(ch.days) + ' يوم ÷ ' + fmt(ch.newDuration) + ' يوم = <b>' + fmt(ch.amount) + ' ج.م</b></div>'
+      : '<div class="calc-line">سعر اليوم في ' + name + ': ' + money2(ch.newPrice / ch.newDuration) + ' ج.م، وفي ' + cur + ': ' + money2(ch.curPrice / ch.curDuration) + ' ج.م</div>' +
+        '<div class="calc-line">الفرق × ' + fmt(ch.days) + ' يوم = <b>' + fmt(ch.amount) + ' ج.م</b></div>';
+    $("rqExplain").innerHTML = '<h4>⬆️ الترقية بتتحسب إزاي؟</h4><ul>' +
+      '<li><span>✅</span><span>باقة <b>' + name + '</b> بتشتغل بكل مميزاتها ورصيدها أول ما الإدارة توافق على طلبك.</span></li>' +
+      '<li><span>📅</span><span>ميعاد تجديدك بيفضل زي ما هو: يوم <b>' + dateAr(ends) + '</b>.</span></li>' +
+      '<li><span>💰</span><span>مش بتدفع سعر الباقة كامل. بتدفع فرق السعر بين الباقتين عن الأيام اللي فاضلة في باقتك بس.</span></li></ul>' +
+      '<div class="ex">مثال بأرقامك:</div>' +
+      '<div class="calc-line">فاضلك <b>' + fmt(ch.days) + ' يوم</b> في باقة ' + cur + ' (' + fmt(ch.curPrice) + ' ج.م في الشهر)، وباقة ' + name + ' بـ ' + fmt(ch.newPrice) + ' ج.م في الشهر.</div>' + calc +
+      '<p class="hint">يعني بتدفع ' + fmt(ch.amount) + ' ج.م بس بدل ' + fmt(ch.newPrice) + '. ولما ييجي ميعاد التجديد يوم ' + dateAr(ends) + '، بتجدد بسعر باقة ' + name + ' العادي.</p>';
+    $("rqExplain").hidden = false;
+  }
+  // lower plan: the current one keeps running to its last day, then the lower one starts by itself
+  function explainDowngrade(ch, months, total) {
+    var name = esc(rq.plan.name), cur = esc(ch.curName), next = me.plan && me.plan.next;
+    var start = ch.startsAt, end = addDays(start, ch.newDuration * months), curEnds = me.plan && me.plan.endsAt;
+    var more = next && next.id === rq.plan.id;   // more time on the lower plan that's already waiting
+    $("rqExplain").innerHTML = '<h4>⬇️ النزول لباقة أقل بيتم إزاي؟</h4><ul>' +
+      (more ? '<li><span>📅</span><span>باقة <b>' + name + '</b> مستنية تبدأ يوم ' + dateAr(next.startsAt) + '. المدة دي بتتضاف بعدها على طول.</span></li>'
+            : '<li><span>✅</span><span>هتفضل على باقة <b>' + cur + '</b> بكل مميزاتها لحد آخر يوم فيها، فمش هتخسر ولا يوم دفعت تمنه.</span></li>' +
+              '<li><span>📅</span><span>باقة <b>' + name + '</b> بتبدأ لوحدها يوم <b>' + dateAr(start) + '</b>، لمدة ' + monthsAr(months) + '.</span></li>') +
+      '<li><span>💰</span><span>بتدفع سعر باقة ' + name + ' (' + fmt(total) + ' ج.م) دلوقتي، والإدارة بتسجّلها تبدأ في ميعادها.</span></li></ul>' +
+      '<div class="ex">مثال بأرقامك:</div>' +
+      (more ? '' : '<div class="calc-line">من النهارده لحد ' + dateAr(curEnds) + ' (فاضل ' + fmt(ch.days) + ' يوم): باقة <b>' + cur + '</b> زي ما هي</div>') +
+      '<div class="calc-line">من ' + dateAr(start) + ' لحد ' + dateAr(end) + ': باقة <b>' + name + '</b></div>' +
+      (more ? '' : '<p class="hint">لو باقة ' + cur + ' فيها مميزات مش موجودة في ' + name + '، المميزات دي بتقف من يوم ' + dateAr(start) + '.</p>');
+    $("rqExplain").hidden = false;
   }
   $("rqClose").onclick = function () { $("reqForm").hidden = true; };
+  $("rqPayCopy").onclick = function () { copy($("rqPayNum").textContent); toast("اتنسخ الرقم ✅"); };
+  // the reference number as the server keeps it: Arabic digits -> 0-9, letters upper case, spaces and dashes out
+  function normRef(v) {
+    return String(v || "").replace(/[٠-٩]/g, function (d) { return String(d.charCodeAt(0) - 0x660); }).replace(/[۰-۹]/g, function (d) { return String(d.charCodeAt(0) - 0x6F0); })
+      .toUpperCase().replace(/[^A-Z0-9]/g, "");
+  }
   $("reqForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("rqMsg", "");
-    if (!$("rqMethod").value) { setMsg("rqMsg", "اختار دفعت بإيه."); return; }
-    if ($("rqRef").value.trim().length < 3) { setMsg("rqMsg", "اكتب رقم العملية أو الرقم اللي حوّلت منه."); $("rqRef").focus(); return; }
+    if (waAddOn() && ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length < 8) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waAddPhone").focus(); return; }
+    var nothingToPay = rq.kind === "upgrade" && rq.change && rq.change.amount <= 0 && !waAddOn();   // a plan at the same price, no WhatsApp service
+    if (!nothingToPay && !$("rqMethod").value) { setMsg("rqMsg", "اختار دفعت بإيه."); return; }
+    var refNo = normRef($("rqRefNo").value);
+    if (!nothingToPay && (refNo.length < 6 || refNo.length > 30 || !/[0-9]/.test(refNo))) { setMsg("rqMsg", "اكتب الرقم المرجعي اللي ظهرلك في InstaPay بعد التحويل (أرقام، من 6 لـ 30)."); $("rqRefNo").focus(); return; }
+    if (!nothingToPay && $("rqRef").value.trim().length < 3) { setMsg("rqMsg", "اكتب الرقم أو الحساب اللي حوّلت منه."); $("rqRef").focus(); return; }
     var b = $("rqSend"); b.disabled = true;
     try {
-      var body = rq.kind === "topup"
-        ? { kind: "topup", pct: rq.pct, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
+      // the WhatsApp service alone (kind "wa", no plan in it), extra quota, or a plan (the service may be ticked with it, below)
+      var body = rq.kind === "wa" ? { kind: "wa", method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
+        : rq.kind === "topup" ? { kind: "topup", msgs: rq.msgs, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
         : { planId: rq.plan.id, months: rq.months, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() };
+      if (waAddOn()) { body.wa = true; body.waPhone = $("waAddPhone").value.trim(); }
+      body.refNo = refNo;
       await api("api/plans.ashx?action=request", { method: "POST", json: body });
-      $("reqForm").hidden = true; toast(rq.kind === "topup" ? "اتبعت الطلب ✅ هنضيف الرصيد أول ما نتأكد من الدفع" : "اتبعت الطلب ✅ هنفعّل الباقة أول ما نتأكد من الدفع");
+      var down = rq.change && rq.change.kind === "downgrade";
+      if (rq.kind === "wa" || body.wa) refreshMe();   // the banners and cards know a renewal is waiting
+      $("reqForm").hidden = true; toast(rq.kind === "wa" ? "اتبعت الطلب ✅ هنفعّل خدمة الواتساب أول ما نتأكد من الدفع" : rq.kind === "topup" ? "اتبعت الطلب ✅ هنضيف الرصيد أول ما نتأكد من الدفع"
+        : rq.kind === "upgrade" ? "اتبعت طلب الترقية ✅ الباقة الجديدة هتشتغل أول ما نتأكد من الدفع"
+        : down ? "اتبعت الطلب ✅ الباقة الجديدة هتبدأ بعد ما باقتك الحالية تخلص" : "اتبعت الطلب ✅ هنفعّل الباقة أول ما نتأكد من الدفع");
       await loadMine(); $("reqPending").scrollIntoView({ behavior: "smooth", block: "center" });
     } catch (err) { setMsg("rqMsg", err.message); }
     finally { b.disabled = false; }
@@ -2688,12 +3060,24 @@
         '<a href="#plan" data-goto="plan" class="bn-cta">' + cta + '</a>';
       pb.hidden = false;
     }
-    if (pl.name && pl.expired) bn("full", "⛔", "اشتراكك في باقة " + esc(pl.name) + " خلص", "المساعد واقف على موقعك ومش بيرد على زباينك. جدّد ويرجع يشتغل في ساعتها.", "🔁 جدّد دلوقتي");
-    else if (pl.name && pl.daysLeft <= 5) bn("", "⏳", "باقتك هتخلص بعد " + fmt(pl.daysLeft) + " يوم", "جدّد من دلوقتي عشان المساعد مايقفش لحظة، والمدة الجديدة بتبدأ بعد آخر يوم في باقتك.", "🔁 جدّد الباقة");
-    else if (upct >= 100) bn("full", "🪫", "رصيد الشهر خلص", "المساعد واقف لحد أول الشهر. رقّي باقتك ويرجع يرد على زباينك على طول.", "🚀 رقّي باقتك", 100);
-    else if (upct >= 90) bn("", "⚡", "استهلكت " + Math.round(upct) + "% من رصيد الشهر", "زباينك بيسألوا كتير 👏 رقّي باقتك قبل ما الرصيد يخلص والمساعد يقف.", "🚀 رقّي باقتك", upct);
-    else pb.hidden = true;
-    pb.querySelectorAll("[data-goto]").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); go("plan"); }; });
+    // ending soon or ended: the date, and the button opens the renewal request itself (unless one is already waiting for the admin)
+    var asked = me.pendingRequest && me.pendingRequest !== "wa" && me.pendingRequest !== "topup", renewId = 0;
+    // the month's messages running out on a running plan: extra messages worked out from the store's pace (or the request already sent)
+    var running = pl.name && !pl.expired, topupAsked = me.pendingRequest === "topup", topupCta = running && !topupAsked;
+    if (pl.name && pl.expired) { bn("full", "⛔", "اشتراكك في باقة " + esc(pl.name) + " خلص يوم " + dateAr(pl.endsAt),
+      asked ? "طلب التجديد وصلنا وبيتراجع، والمساعد هيرجع يرد أول ما نتأكد من الدفع." : "المساعد واقف على موقعك ومش بيرد على زباينك. جدّد ويرجع يشتغل في ساعتها.", asked ? "شوف الطلب" : "🔁 جدّد دلوقتي"); renewId = asked ? 0 : pl.id; }
+    else if (pl.name && pl.daysLeft <= 5 && !pl.next) { bn("", "⏳", "تجديد باقتك قرّب: بتخلص يوم " + dateAr(pl.endsAt) + (pl.daysLeft <= 1 ? " (بكرة)" : " (بعد " + fmt(pl.daysLeft) + " يوم)"),
+      asked ? "طلب التجديد وصلنا وبيتراجع، والمدة الجديدة بتبدأ بعد آخر يوم في باقتك." : "جدّد من دلوقتي عشان المساعد مايقفش لحظة، والمدة الجديدة بتبدأ بعد آخر يوم في باقتك.", asked ? "شوف الطلب" : "🔁 جدّد الباقة"); renewId = asked ? 0 : pl.id; }
+    else if (!pl.expired && upct >= 100) bn("full", "🪫", "رصيد الشهر خلص",
+      topupAsked ? "طلب الرسايل الإضافية وصلنا وبيتراجع، والمساعد هيرجع يرد أول ما نتأكد من الدفع." : running ? "المساعد واقف لحد أول الشهر. زوّد رسايل تكمّل بيها الشهر، وإحنا هنحسبلك العدد المناسب من استهلاكك." : "المساعد واقف لحد أول الشهر. اشترك في باقة ويرجع يرد على زباينك على طول.",
+      topupAsked ? "شوف الطلب" : running ? "➕ زوّد رسايل" : "🚀 اشترك في باقة", 100);
+    else if (!pl.expired && upct >= 90) bn("", "⚡", "استهلكت " + Math.round(upct) + "% من رصيد الشهر",
+      topupAsked ? "طلب الرسايل الإضافية وصلنا وبيتراجع." : running ? "زباينك بيسألوا كتير 👏 زوّد رسايل قبل ما الرصيد يخلص، وهنقترحلك العدد اللي يكفيك لآخر الشهر." : "زباينك بيسألوا كتير 👏 اشترك في باقة قبل ما الرصيد يخلص والمساعد يقف.",
+      topupAsked ? "شوف الطلب" : running ? "➕ زوّد رسايل" : "🚀 اشترك في باقة", upct);
+    else { pb.hidden = true; topupCta = false; }
+    if (pl.name && (pl.expired || (pl.daysLeft <= 5 && !pl.next))) topupCta = false;   // the banner is about the plan's end, not the messages
+    pb.querySelectorAll("[data-goto]").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); if (renewId) upgradeTo(renewId); else if (topupCta) openTopupAnywhere(); else go("plan"); }; });
+    renderWaBanner();
     // storage
     var st = me.storage || {}, bn = $("storageBanner");
     var mb = st.capacityMB > 0 ? " (" + fmt(st.usedMB) + " من " + fmt(st.capacityMB) + " ميجا)" : "";
@@ -2704,9 +3088,25 @@
     // messages used and left: the free trial has a fixed number, a plan's are estimated from its units (server side)
     var mu = me.usage, pct = Math.round(mu.pct);
     $("usageVal").textContent = "استخدمت " + fmt(mu.messages) + " رسالة";
-    $("usageBar").querySelector("i").style.width = Math.max(pct, mu.messages > 0 ? 1 : 0) + "%"; $("usageBar").classList.toggle("hot", pct >= 85);
-    $("usageHint").textContent = mu.trial ? "فاضل " + fmt(mu.msgLeft) + " رسالة من " + fmt(mu.msgLimit) + " في التجربة المجانية"
-      : (me.plan && me.plan.expired) ? "الباقة خلصت، جدّدها عشان المساعد يرجع يرد" : "فاضل حوالي " + fmt(mu.msgLeft) + " رسالة في باقتك";
+    // nearly used up (80%+): the bar, the number and the line under it turn red
+    var low = pct >= 80;
+    $("usageBar").querySelector("i").style.width = Math.max(pct, mu.messages > 0 ? 1 : 0) + "%"; $("usageBar").classList.toggle("hot", low);
+    $("usageCard").classList.toggle("low", low);
+    $("usageHint").className = "hint" + (low ? " warn" : "");
+    $("usageHint").textContent = (low && !(me.plan && me.plan.expired) ? "⚠️ " : "") + (mu.trial ? "فاضل " + fmt(mu.msgLeft) + " رسالة من " + fmt(mu.msgLimit) + " في التجربة المجانية"
+      : (me.plan && me.plan.expired) ? "الباقة خلصت، جدّدها عشان المساعد يرجع يرد" : "فاضل حوالي " + fmt(mu.msgLeft) + " رسالة في باقتك");
+    // until when: the plan's end date (the trial's messages come back on the 1st of the month)
+    var upl = me.plan || {};
+    $("usageEnds").textContent = !upl.name ? "📅 التجربة المجانية: الرصيد بيتجدد أول كل شهر"
+      : upl.expired ? "📅 باقة " + upl.name + " خلصت يوم " + dateAr(upl.endsAt) : "📅 باقة " + upl.name + " لحد يوم " + dateAr(upl.endsAt) + " (فاضل " + fmt(upl.daysLeft) + " يوم)";
+    // nearly used up on a running plan: extra messages, worked out from the store's pace
+    if (low && upl.name && !upl.expired) {
+      var tb = document.createElement(me.pendingRequest === "topup" ? "div" : "button");
+      if (me.pendingRequest === "topup") tb.textContent = "⏳ طلب الرسايل الإضافية بيتراجع";
+      else { tb.type = "button"; tb.className = "btn sm st-act"; tb.style.display = "block"; tb.textContent = "➕ زوّد رسايل تكمّل بيها الشهر"; tb.onclick = openTopupAnywhere; }
+      $("usageEnds").appendChild(tb);
+    }
+    renderWaStat();
     var dpct = Math.min(100, Math.round(me.knowledge.chars * 100 / me.knowledge.maxChars));
     $("dataVal").textContent = fmtSize(me.knowledge.chars);
     $("dataBar").querySelector("i").style.width = Math.max(dpct, me.knowledge.chars > 0 ? 1 : 0) + "%";
@@ -2964,6 +3364,7 @@
           : "محتاج صلاحية read_orders: ضيفها في Scopes، اعمل Release ووافق عليها في متجرك، وبعدين اربط تاني.";
         loadCo();
         renderOc();
+        renderDn();
       }
     } else {
       // suggest the Shopify domain from the domains the owner already added
@@ -3034,6 +3435,42 @@
   document.querySelectorAll("#ocScope button").forEach(function (b) {
     b.onclick = async function () { if (b.classList.contains("on")) return; if (await saveOc(true, b.dataset.v)) toast("اتحفظ ✓"); };
   });
+  // ---------- delivery-day message on WhatsApp (Shopify here, EasyOrders in renderEoDn) ----------
+  var DN_STATUS = { sent: "✅ اتبعتت", failed: "⚠️ محتاج تبص عليه", skipped: "— ماتبعتتش" };
+  function dnList(list, rows) {
+    list.textContent = "";
+    if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = "لسه مفيش أوردرات خرجت للتوصيل من ساعة ما فعّلتها. أول واحد هيظهر هنا."; list.appendChild(e); return; }
+    rows.forEach(function (r) {
+      var row = document.createElement("div"); row.className = "oc-row";
+      var b = document.createElement("b"); b.className = "ltr"; b.textContent = r.order;
+      var who = document.createElement("span"); who.textContent = [r.customer, r.total ? "💵 " + r.total : ""].filter(Boolean).join(" · ");
+      var st = document.createElement("span"); st.className = "oc-st " + (r.status === "sent" ? "confirmed" : r.status); st.textContent = DN_STATUS[r.status] || r.status;
+      var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "");
+      row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
+    });
+  }
+  function dnWarn(el, warn) { el.hidden = !warn.length; el.textContent = warn.join("\n"); el.style.whiteSpace = "pre-line"; }
+  function renderDn() {
+    var dn = (me && me.delivery) || {};
+    $("dnToggle").checked = !!dn.on; $("dnOpts").hidden = !dn.on;
+    var warn = [];
+    if (dn.on && !dn.whatsapp) warn.push("⚠️ واتساب المتجر مش مربوط، فالرسايل مش هتتبعت. اربطه من صفحة الواتساب.");
+    if (dn.on && !dn.scope) warn.push("⚠️ التطبيق ناقصه صلاحية read_fulfillments، فمش هنعرف إن الأوردر خرج للتوصيل. ضيفها في Scopes واعمل Release ووافق عليها، وبعدين اربط تاني.");
+    dnWarn($("dnWarn"), warn);
+    dnList($("dnList"), dn.recent || []);
+  }
+  // the plan doesn't include it: show what it does and the plan that has it, instead of switching it on
+  async function saveDelivery(url, t, msgId, after) {
+    var want = t.checked;
+    if (want && locks.delivery) { t.checked = false; openLock("delivery"); return; }
+    t.disabled = true; setMsg(msgId, "");
+    try {
+      await api(url, { method: "POST", json: { enabled: want } }); await refreshMe(); if (after) after();
+      toast(want ? "رسالة يوم التوصيل اتفعّلت ✅" : "رسالة يوم التوصيل اتقفلت");
+    } catch (err) { t.checked = !want; setMsg(msgId, err.message); }
+    t.disabled = false;
+  }
+  $("dnToggle").onchange = function () { saveDelivery("api/knowledge.ashx?action=delivery-msg", this, "shopMsg", function () { renderShop(); }); };
   // ---------- ordering from the chat ----------
   var co = null;
   var CO_STATUS = { placed: "✅ اتعمل في Shopify", awaiting_payment: "💳 مستني الدفع", failed: "⚠️ محتاج تبص عليه" };
@@ -3156,6 +3593,15 @@
     }
     $("eoOrdersToggle").checked = !!eo.orders;
     renderEoOc(eo.confirm || {});
+    renderEoDn(eo.delivery || {});
+  }
+  function renderEoDn(dn) {
+    $("eoDnToggle").checked = !!dn.on; $("eoDnOpts").hidden = !dn.on;
+    var warn = [];
+    if (dn.on && !dn.whatsapp) warn.push("⚠️ واتساب المتجر مش مربوط، فالرسايل مش هتتبعت. اربطه من صفحة الواتساب.");
+    if (dn.on && !eoState().hookAt) warn.push("⚠️ لسه ماوصلناش أي حاجة من EasyOrders. اتأكد إن الـ Webhook بتاع «Order Status Update» معمول.");
+    dnWarn($("eoDnWarn"), warn);
+    dnList($("eoDnList"), dn.recent || []);
   }
   function renderEoOc(oc) {
     $("eoOcToggle").checked = !!oc.on; $("eoOcOpts").hidden = !oc.on;
@@ -3247,6 +3693,7 @@
   document.querySelectorAll("#eoOcScope button").forEach(function (b) {
     b.onclick = async function () { if (b.classList.contains("on")) return; if (await saveEoOc(true, b.dataset.v)) toast("اتحفظ ✓"); };
   });
+  $("eoDnToggle").onchange = function () { saveDelivery("api/easyorders.ashx?action=delivery", this, "eoMsg", function () { renderEo(); }); };
   // EasyOrders vs Shopify, said plainly: [icon, feature, EasyOrders has it, EasyOrders note, Shopify note].
   // The gaps are EasyOrders' public API (no courier, tracking number, delivery date, policies or create-order), not ours.
   var EO_CMP = [
@@ -3313,6 +3760,7 @@
     wa: { ac: "#25d366", ac2: "#1fae55", ph: "#075e54", av: "🛍️", what: "الواتساب",
       head: 'خلّي المساعد يرد على <span class="g">واتساب متجرك</span> وإنت مرتاح',
       renewHead: 'جدّد باقتك ورجّع المساعد يرد على <span class="g">واتساب متجرك</span>',
+      addonRenewHead: 'جدّد خدمة الواتساب ورجّع المساعد يرد على <span class="g">واتساب متجرك</span>',
       p: "زباينك بيسألوا على واتساب أكتر من أي مكان. المساعد يرد عليهم في ثواني، بنفس داتا متجرك وطريقة كلامك، ليل ونهار، ومايسيبش زبون مستني.",
       list: [["⚡", "يرد في ثواني بدل ما الزبون يستنى ساعات ويمشي"], ["🛒", "يجاوب على الأسعار والمقاسات والشحن ويتابع الأوردرات"], ["🙋", "لو رديت إنت بنفسك، بيسكت ويسيبلك المحادثة"]],
       chat: [["cu", "السلام عليكم، القميص الأبيض ده متوفر مقاس L؟", "10:41", 0.5], ["typing", 1.6, 3.0],
@@ -3334,6 +3782,13 @@
       chat: [["cu", "طلبي رقم 46 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
         ["bot", "طلبك خرج مع شركة الشحن النهارده 🚚 وهيوصلك خلال يومين إن شاء الله.", "8:15", 3.0],
         ["cu", "والطقم الأزرق مقاس L لسه موجود؟", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه 🔥 فاضل قطعتين بس، سعره 650 ج.م. تحب أبعتلك لينكه؟", "8:16", 7.0]] },
+    delivery: { ac: "#0e9f8e", ac2: "#0b7d70", ph: "#075e54", av: "🚚", what: "رسالة يوم التوصيل",
+      head: 'قلّل الأوردرات اللي <span class="g">بترجع مع المندوب</span>',
+      p: "أغلب المرتجعات في الدفع عند الاستلام سببها إن الزبون ماكانش مستني المندوب أو مارَدّش عليه. أول ما الأوردر يخرج للتوصيل، يوصل للزبون من رقم متجرك إن طلبه جاي، والمبلغ اللي يجهّزه.",
+      list: [["🚚", "رسالة لوحدها أول ما الأوردر يخرج للتوصيل"], ["💵", "الزبون يعرف المبلغ ويجهّزه قبل ما المندوب يوصل"], ["📱", "يخلّي موبايله جنبه، ولو مش موجود يقولك من بدري"]],
+      chips: ["🚚 خرج للتوصيل", "💵 جهّز المبلغ", "📉 مرتجعات أقل"],
+      chat: [["bot", "أهلًا أحمد 👋 طلبك #1048 خرج مع المندوب، وهيوصلك النهارده 🚚 جهّز 450 ج.م كاش، وخلّي موبايلك جنبك.", "11:02", 0.5],
+        ["cu", "تمام، أنا في البيت لحد العصر 👍", "11:05", 2.6], ["typing", 3.5, 4.8], ["bot", "تمام 🙏 المندوب هيكلّمك قبل ما يوصل.", "11:05", 4.8]] },
     bothstores: { ac: "#22c55e", ac2: "#6f9e35", ph: "#5a3a14", av: "🔗", what: "Shopify و EasyOrders مع بعض",
       head: 'اربط <span class="g">Shopify و EasyOrders</span> مع بعض',
       p: "باقتك بتسمح بمتجر واحد. لو بتبيع على الاتنين (مثلًا Shopify للبراند و EasyOrders لصفحات الطلب)، رقّي باقتك والمساعد يرد من منتجات المتجرين ويتابع أوردراتهم. داتا متجرين في كل رد بتستهلك من الرصيد أكتر، عشان كده الميزة دي في باقة أعلى.",
@@ -3370,12 +3825,18 @@
     var F = LOCK[key]; if (!box || !F || !up) return;
     stopLock(box);
     box.style.setProperty("--ac", F.ac); box.style.setProperty("--ac2", F.ac2); box.style.setProperty("--ph", F.ph);
-    if (!up.id) {   // no plan includes it right now
+    // WhatsApp is a service added to any plan (up.addon, from api/whatsapp.ashx): a monthly price on top, not a plan to move to
+    var A = !!up.addon, AE = A && !!up.until;   // AE: it ran before and ended
+    if (!up.id && !A) {   // no plan includes it right now
       box.innerHTML = '<div><span class="wa-up-badge">🔒 ' + F.what + '</span><h3>' + F.head + '</h3><p>' + F.p + '</p><span class="wa-up-note">الميزة دي مش متاحة في الباقات دلوقتي. كلّمنا من «الدعم» ونفتحهالك.</span></div>';
       return;
     }
-    var per = up.days === 30 ? "في الشهر" : "لـ " + fmt(up.days) + " يوم";
-    var note = up.renew ? "باقة " + esc(up.name) + " فيها " + F.what + "، والمدة الجديدة بتكمّل من آخر يوم في اشتراكك."
+    var per = A ? "في الشهر، اشتراك لوحده" : up.days === 30 ? "في الشهر" : "لـ " + fmt(up.days) + " يوم";
+    // the free trial doesn't include WhatsApp: even while trying Sellybot it takes its own paid subscription, asked for and approved like any request
+    var onTrial = !!(me && me.usage && me.usage.trial);
+    var note = A ? (onTrial ? "الواتساب مش ضمن التجربة المجانية: حتى وانت بتجرّب، ليه اشتراك لوحده. بتبعت طلب، والإدارة بتفعّله بعد ما تتأكد من الدفع. " : "") +
+      "اشتراك شهري لوحده، تفعّله في أي وقت مع باقة أو من غيرها، وتجديده مش مرتبط بتجديد الباقة. رسايل الواتساب غير محدودة، وردود المساعد بتتحسب من رصيدك زي الموقع."
+             : up.renew ? "باقة " + esc(up.name) + " فيها " + F.what + "، والمدة الجديدة بتكمّل من آخر يوم في اشتراكك."
              : up.current ? "باقتك دلوقتي: " + esc(up.current) + " ← الترقية بتفتح " + F.what + " على طول، من غير عقود."
              : "من غير عقود، وتقدر توقف وقت ما تحب.";
     var screen = F.site
@@ -3384,12 +3845,13 @@
       : '<div class="wa-ph-msgs">' + chatHtml(F.chat) + '</div>';
     box.innerHTML =
       '<div>' +
-        '<span class="wa-up-badge">' + (up.renew ? "⏳ باقتك خلصت" : "🔒 ميزة باقة " + esc(up.name)) + '</span>' +
-        '<h3>' + (up.renew && F.renewHead ? F.renewHead : F.head) + '</h3>' +
+        '<span class="wa-up-badge">' + (A ? (AE ? "⏳ خدمة الواتساب خلصت يوم " + dateAr(up.until) : "📱 اشتراك شهري، في أي وقت") : up.renew ? "⏳ باقتك خلصت" : "🔒 ميزة باقة " + esc(up.name)) + '</span>' +
+        '<h3>' + (AE && F.addonRenewHead ? F.addonRenewHead : up.renew && F.renewHead ? F.renewHead : F.head) + '</h3>' +
         '<p>' + F.p + '</p>' +
         '<ul class="wa-up-list">' + F.list.map(function (x) { return '<li><i>' + x[0] + '</i>' + x[1] + '</li>'; }).join("") + '</ul>' +
         '<div class="wa-up-price"><b>' + fmt(up.price) + '</b><small>ج.م ' + per + '</small>' + (up.listPrice > up.price ? '<s>' + fmt(up.listPrice) + '</s>' : '') + '</div>' +
-        '<div class="wa-up-cta"><button type="button" class="wa-up-btn" data-go>' + (up.renew ? "🔁 جدّد باقة " : "🚀 رقّي لباقة ") + esc(up.name) + '</button>' +
+        '<div class="wa-up-cta"><button type="button" class="wa-up-btn" data-go>' + (A ? (AE ? "🔁 جدّد خدمة الواتساب" : "📱 فعّل خدمة الواتساب")
+          : (up.renew ? "🔁 جدّد باقة " : "🚀 رقّي لباقة ") + esc(up.name)) + '</button>' +
           '<button type="button" class="wa-up-more" data-plans>قارن الباقات</button></div>' +
         '<span class="wa-up-note">' + note + '</span>' +
       '</div>' +
@@ -3398,7 +3860,7 @@
           '<div class="wa-ph-top"><span class="av">' + F.av + '</span><div><b>' + esc(me && me.name || "متجرك") + '</b><small>' + (F.top || "متصل الآن") + '</small></div></div>' + screen +
         '</div></div>' +
       '</div>';
-    box.querySelector("[data-go]").onclick = function () { closeLock(); upgradeTo(up.id); };
+    box.querySelector("[data-go]").onclick = function () { closeLock(); if (A) addWaService(); else upgradeTo(up.id); };
     box.querySelector("[data-plans]").onclick = function () { closeLock(); go("plan"); };
     var n = 0;
     lockTimers[box.id] = setInterval(function () {   // replay the chat (or switch the bubble) while the card is on screen
@@ -3476,7 +3938,7 @@
     $("waOff").hidden = on; $("waOn").hidden = !on;
     if (!on) {
       var blocked = wa.platformAvailable ? wa.platformBlocked : "ربط الواتساب هيتفعّل قريب.";
-      var up = wa.platformAvailable && wa.upsell;   // the plan is what's in the way: sell the plan instead of a plain notice
+      var up = wa.platformAvailable && wa.upsell;   // the WhatsApp service is what's in the way: sell it instead of a plain notice
       $("waUp").hidden = !up; $("waWhy").hidden = $("waStepsT").hidden = $("waSteps").hidden = !!up;
       if (up) { renderUpsell(up); blocked = ""; } else stopUpsell();
       $("waPlatBlocked").hidden = !blocked; $("waPlatBlocked").textContent = blocked ? "ℹ️ " + blocked : "";
@@ -3486,10 +3948,17 @@
     stopUpsell();
     var platform = wa.mode === "platform", linked = !!wa.linked;
     var live = (wa.live || "").toUpperCase(), liveOk = !live || WA_LIVE[live] === "متصل";
-    var warn = wa.status || wa.liveError || (!liveOk && !platform ? "رقم الواتساب مش متصل دلوقتي (" + (WA_LIVE[live] || live) + ")." : "");
+    // the WhatsApp service ended: the number stays, but nothing goes out until it's renewed
+    var svcOff = !!(wa.service && !wa.service.on);
+    var warn = svcOff ? "خدمة الواتساب خلصت" + (wa.service.until ? " يوم " + dateAr(wa.service.until) : "") + "، فالمساعد مش بيرد على الواتساب ومفيش رسايل بتطلع منه. جدّدها وكل حاجة ترجع زي ما كانت."
+      : wa.status || wa.liveError || (!liveOk && !platform ? "رقم الواتساب مش متصل دلوقتي (" + (WA_LIVE[live] || live) + ")." : "");
     $("waUnlink").hidden = !(platform && linked);
-    $("waQrBox").hidden = !(platform && !linked);
-    if (platform && !linked) {
+    $("waQrBox").hidden = !(platform && !linked) || svcOff;
+    if (platform && !linked && svcOff) {
+      stopQr();
+      $("waPill").className = "warn-pill"; $("waPill").textContent = "⏳ خدمة الواتساب خلصت";
+      $("waInfo").textContent = "جدّد الخدمة، وبعدها امسح الكود من موبايل المتجر.";
+    } else if (platform && !linked) {
       $("waPill").className = "warn-pill"; $("waPill").textContent = "📱 مستني تمسح الـ QR";
       $("waInfo").textContent = "امسح الكود من موبايل المتجر وهيتربط على طول.";
       startQr();
@@ -3500,6 +3969,10 @@
       $("waInfo").textContent = wa.lastIncoming ? "آخر رسالة من زبون وصلت " + ago(wa.lastIncoming) : (platform ? "مربوط ✅ ابعت سؤال لرقم المتجر من موبايل تاني وشوف المساعد بيرد إزاي." : "لسه ماوصلتش رسايل.");
     }
     $("waWarn").hidden = !warn; $("waWarn").textContent = warn ? "⚠️ " + warn.replace(/^⚠️\s*/, "") : "";
+    if (svcOff) {
+      var rb = document.createElement("button"); rb.type = "button"; rb.className = "btn sm"; rb.style.marginInlineStart = "8px";
+      rb.textContent = "🔁 جدّد خدمة الواتساب"; rb.onclick = addWaService; $("waWarn").appendChild(rb);
+    }
     $("waToggle").checked = !!wa.enabled;
     var st = $("waStats"); st.textContent = "";
     [["💬", fmt(wa.chats30) + " محادثة في آخر 30 يوم"], ["🤖", fmt(wa.replies30) + " رد من المساعد"], ["⏸️", "بيسكت " + fmt(wa.pauseHours) + " ساعة لما ترد بنفسك"]]

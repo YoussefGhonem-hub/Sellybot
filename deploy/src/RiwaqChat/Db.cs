@@ -21,6 +21,7 @@ namespace RiwaqChat
         public string WaInstance, WaToken, WaHookKey, WaNumber, WaStatus;
         public bool WaEnabled;
         public DateTime? WaLastAt;
+        public DateTime? WaUntil;          // the WhatsApp service (an add-on on any plan) runs until then (WaAccount.HasService)
         public bool CoOn;                  // ordering from the chat (Shopify draft orders)
         public string CoPay;               // "cod", "card" or "both"
         public bool OcOn, OcHooked;        // order confirmation on WhatsApp
@@ -30,6 +31,8 @@ namespace RiwaqChat
         public string EoKey, EoMode, EoStoreId, EoUrl, EoStatus, EoOcScope, EoHookKey;
         public DateTime? EoSyncedAt, EoHookAt;
         public bool EoOrders, EoOcOn;
+        // the delivery-day message on WhatsApp (Delivery.cs): DnOn/DnHooked for Shopify, EoDnOn for EasyOrders
+        public bool DnOn, DnHooked, EoDnOn;
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -37,6 +40,10 @@ namespace RiwaqChat
         public int? PlanId;
         public string PlanName;
         public DateTime? PlanEndsAt;
+        // a move to a lower plan waits for the current one to end: then NextPlan runs for NextDays (Db.RollOverPlans)
+        public int? NextPlanId;
+        public string NextPlanName;
+        public int NextDays;
     }
 
     public class UsageInfo
@@ -149,15 +156,34 @@ namespace RiwaqChat
         public static StoreInfo StoreById(SqlConnection c, int id) { return OneStore(c, "WHERE Id=@v", id); }
         public static StoreInfo StoreByEmail(SqlConnection c, string email) { return OneStore(c, "WHERE OwnerEmail=@v", email); }
 
-        static StoreInfo OneStore(SqlConnection c, string where, object v)
+        static StoreInfo OneStore(SqlConnection c, string where, object v, bool rolled = false)
         {
+            StoreInfo s;
             using (var cmd = Cmd(c, "SELECT TOP 1 * FROM dbo.Stores " + where, "@v", v))
             using (var r = cmd.ExecuteReader())
-                return r.Read() ? ReadStore(r) : null;
+                s = r.Read() ? ReadStore(r) : null;
+            // a scheduled lower plan whose turn has come: switch first, so every check sees the plan that runs now
+            if (!rolled && s != null && s.NextPlanId.HasValue && s.PlanEndsAt.HasValue && s.PlanEndsAt.Value <= DateTime.UtcNow)
+            {
+                RollOverPlans(c);
+                return OneStore(c, where, v, true);
+            }
+            return s;
+        }
+
+        // Starts every scheduled plan (Stores.Next*) whose current plan has ended. The new period starts where the old one ended.
+        public static void RollOverPlans(SqlConnection c)
+        {
+            using (var cmd = Cmd(c, @"UPDATE s SET PlanId = s.NextPlanId, PlanName = s.NextPlanName, PlanEndsAt = DATEADD(DAY, s.NextDays, s.PlanEndsAt),
+                                             MonthlyTokenLimit = ISNULL(p.TokenLimit, s.MonthlyTokenLimit),
+                                             NextPlanId = NULL, NextPlanName = NULL, NextDays = NULL
+                                      FROM dbo.Stores s LEFT JOIN dbo.Plans p ON p.Id = s.NextPlanId
+                                      WHERE s.NextPlanId IS NOT NULL AND s.PlanEndsAt <= SYSUTCDATETIME()")) cmd.ExecuteNonQuery();
         }
 
         public static List<StoreInfo> AllStores(SqlConnection c)
         {
+            RollOverPlans(c);
             var list = new List<StoreInfo>();
             using (var cmd = Cmd(c, "SELECT * FROM dbo.Stores ORDER BY CreatedAt"))
             using (var r = cmd.ExecuteReader())
@@ -199,6 +225,7 @@ namespace RiwaqChat
                 WaStatus = r["WaStatus"] as string,
                 WaEnabled = r["WaEnabled"] is bool && (bool)r["WaEnabled"],
                 WaLastAt = r["WaLastAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["WaLastAt"], DateTimeKind.Utc),
+                WaUntil = r["WaUntil"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["WaUntil"], DateTimeKind.Utc),
                 CoOn = r["CoOn"] is bool && (bool)r["CoOn"],
                 CoPay = r["CoPay"] as string ?? "cod",
                 OcOn = r["OcOn"] is bool && (bool)r["OcOn"],
@@ -212,6 +239,9 @@ namespace RiwaqChat
                 EoSyncedAt = r["EoSyncedAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["EoSyncedAt"], DateTimeKind.Utc),
                 EoOrders = r["EoOrders"] is bool && (bool)r["EoOrders"],
                 EoOcOn = r["EoOcOn"] is bool && (bool)r["EoOcOn"],
+                DnOn = r["DnOn"] is bool && (bool)r["DnOn"],
+                DnHooked = r["DnHooked"] is bool && (bool)r["DnHooked"],
+                EoDnOn = r["EoDnOn"] is bool && (bool)r["EoDnOn"],
                 EoOcScope = r["EoOcScope"] as string ?? "all",
                 EoHookKey = r["EoHookKey"] as string,
                 EoHookAt = r["EoHookAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["EoHookAt"], DateTimeKind.Utc),
@@ -222,6 +252,9 @@ namespace RiwaqChat
                 PlanId = r["PlanId"] is int ? (int)r["PlanId"] : (int?)null,
                 PlanName = r["PlanName"] as string,
                 PlanEndsAt = r["PlanEndsAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["PlanEndsAt"], DateTimeKind.Utc),
+                NextPlanId = r["NextPlanId"] is int ? (int)r["NextPlanId"] : (int?)null,
+                NextPlanName = r["NextPlanName"] as string,
+                NextDays = r["NextDays"] is int ? (int)r["NextDays"] : 0,
             };
         }
 
@@ -328,6 +361,8 @@ BEGIN
   -- Wapilot may deliver the same message twice: answer it once
   CREATE UNIQUE INDEX UX_WaMessages_MsgId ON dbo.WaMessages(StoreId, MsgId) WHERE MsgId IS NOT NULL;
 END
+-- the WhatsApp service (WaAccount.HasService): an add-on on any plan, paid by the month; WhatsApp works while WaUntil is ahead
+IF COL_LENGTH('dbo.Stores', 'WaUntil') IS NULL ALTER TABLE dbo.Stores ADD WaUntil DATETIME2 NULL;
 -- Order confirmation on WhatsApp: a new Shopify order -> a message to the customer; their answer confirms it or cancels it in Shopify
 IF COL_LENGTH('dbo.Stores', 'OcOn') IS NULL ALTER TABLE dbo.Stores ADD OcOn BIT NOT NULL CONSTRAINT DF_Stores_OcOn DEFAULT 0,
   OcScope NVARCHAR(10) NOT NULL CONSTRAINT DF_Stores_OcScope DEFAULT 'all', OcHooked BIT NOT NULL CONSTRAINT DF_Stores_OcHooked DEFAULT 0;
@@ -347,6 +382,23 @@ BEGIN
     AnsweredAt DATETIME2 NULL);
   CREATE UNIQUE INDEX UX_OrderConfirms_Order ON dbo.OrderConfirms(StoreId, OrderId);   -- Shopify may deliver a webhook twice
   CREATE INDEX IX_OrderConfirms_Pending ON dbo.OrderConfirms(StoreId, Status, Id);
+END
+-- Delivery-day message on WhatsApp (Delivery.cs): an order goes out for delivery -> the courier is coming, have the cash ready
+IF COL_LENGTH('dbo.Stores', 'DnOn') IS NULL ALTER TABLE dbo.Stores ADD DnOn BIT NOT NULL CONSTRAINT DF_Stores_DnOn DEFAULT 0,
+  DnHooked BIT NOT NULL CONSTRAINT DF_Stores_DnHooked DEFAULT 0, EoDnOn BIT NOT NULL CONSTRAINT DF_Stores_EoDnOn DEFAULT 0;
+IF OBJECT_ID('dbo.DeliveryNotices') IS NULL
+BEGIN
+  CREATE TABLE dbo.DeliveryNotices(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Source NVARCHAR(10) NOT NULL,          -- shopify / eo
+    OrderId NVARCHAR(64) NOT NULL,
+    OrderName NVARCHAR(40) NULL, Customer NVARCHAR(100) NULL, Phone NVARCHAR(20) NULL, Due NVARCHAR(40) NULL,
+    Status NVARCHAR(12) NOT NULL,          -- sent / failed / skipped
+    Note NVARCHAR(300) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE UNIQUE INDEX UX_DeliveryNotices_Order ON dbo.DeliveryNotices(StoreId, Source, OrderId);   -- one message per order
+  CREATE INDEX IX_DeliveryNotices_Store ON dbo.DeliveryNotices(StoreId, Source, Id);
 END
 IF OBJECT_ID('dbo.Migrations') IS NULL CREATE TABLE dbo.Migrations(Name NVARCHAR(100) NOT NULL PRIMARY KEY, RanAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
 IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'drop-default-bot-name')
@@ -444,6 +496,13 @@ END
 -- a request is either a plan (Kind 'plan') or extra quota for the current month (Kind 'topup', Units added to Month when approved)
 IF COL_LENGTH('dbo.PlanRequests', 'Kind') IS NULL
   ALTER TABLE dbo.PlanRequests ADD Kind NVARCHAR(10) NOT NULL CONSTRAINT DF_PlanRequests_Kind DEFAULT 'plan', Units BIGINT NULL, Month CHAR(7) NULL;
+-- the WhatsApp service asked for with a plan (WaAddon = 1), or alone (Kind 'wa'): its share of AmountEgp and the number the owner will link
+IF COL_LENGTH('dbo.PlanRequests', 'WaAddon') IS NULL
+  ALTER TABLE dbo.PlanRequests ADD WaAddon BIT NOT NULL CONSTRAINT DF_PlanRequests_WaAddon DEFAULT 0, WaEgp DECIMAL(12,2) NULL, WaPhone NVARCHAR(20) NULL;
+-- what the request meant when it was sent (new / renew / upgrade / downgrade / wa-new / wa-renew / topup), and for extra messages
+-- how many were asked for and how the suggestion was worked out (the admin sees both)
+IF COL_LENGTH('dbo.PlanRequests', 'What') IS NULL
+  ALTER TABLE dbo.PlanRequests ADD What NVARCHAR(20) NULL, Msgs INT NULL, Calc NVARCHAR(400) NULL;
 IF OBJECT_ID('dbo.Tickets') IS NULL
 BEGIN
   CREATE TABLE dbo.Tickets(
@@ -491,6 +550,14 @@ BEGIN
     WHERE Name = N'الاحترافية' AND Features LIKE N'%تتبع الأوردرات في الشات%' AND Features NOT LIKE N'%EasyOrders%';
   INSERT INTO dbo.Migrations(Name) VALUES ('plans-easyorders');
 END
+-- the delivery-day message in the plan lines (next to the store link), and the 30 bubble styles
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'plans-delivery')
+BEGIN
+  UPDATE dbo.Plans SET Features = REPLACE(Features, N'ربط متجر Shopify أو EasyOrders', N'ربط متجر Shopify أو EasyOrders' + NCHAR(10) + N'رسالة يوم التوصيل على واتساب')
+    WHERE Features LIKE N'%ربط متجر Shopify أو EasyOrders%' AND Features NOT LIKE N'%يوم التوصيل%';
+  UPDATE dbo.Plans SET Features = REPLACE(Features, N'20 شكل للشات', N'30 شكل للشات') WHERE Features LIKE N'%20 شكل للشات%';
+  INSERT INTO dbo.Migrations(Name) VALUES ('plans-delivery');
+END
 -- ---------- ordering from the chat (Shopify draft orders), one row per order being built in a chat ----------
 IF COL_LENGTH('dbo.Stores', 'CoOn') IS NULL ALTER TABLE dbo.Stores ADD CoOn BIT NOT NULL CONSTRAINT DF_Stores_CoOn DEFAULT 0,
   CoPay NVARCHAR(10) NOT NULL CONSTRAINT DF_Stores_CoPay DEFAULT 'cod';
@@ -527,6 +594,24 @@ BEGIN
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), AnsweredAt DATETIME2 NULL);
   CREATE UNIQUE INDEX UX_EoConfirms_Order ON dbo.EoConfirms(StoreId, OrderId);   -- EasyOrders may deliver a webhook twice
   CREATE INDEX IX_EoConfirms_Pending ON dbo.EoConfirms(StoreId, Status, Id);
-END";
+END
+-- ---------- changing plans: a lower plan waits for the current one to end (Stores.Next*), a payment row says what it was for ----------
+IF COL_LENGTH('dbo.Stores', 'NextPlanId') IS NULL ALTER TABLE dbo.Stores ADD NextPlanId INT NULL, NextPlanName NVARCHAR(100) NULL, NextDays INT NULL;
+-- Subscriptions.Kind: 'plan' (a period), 'topup' (extra quota for one month), 'upgrade' (price difference for a higher plan, same end date)
+IF COL_LENGTH('dbo.Subscriptions', 'Kind') IS NULL
+BEGIN
+  ALTER TABLE dbo.Subscriptions ADD Kind NVARCHAR(10) NOT NULL CONSTRAINT DF_Subscriptions_Kind DEFAULT 'plan';
+  -- own statement: the column is added in this same batch
+  EXEC sp_executesql N'UPDATE dbo.Subscriptions SET Kind = ''topup'' WHERE Months = 0;';
+END
+-- the reference number InstaPay shows after a transfer (normalized: A-Z 0-9). One payment backs one request:
+-- no two pending or approved requests may share it (a cancelled or rejected one frees it to be sent again)
+IF COL_LENGTH('dbo.PlanRequests', 'RefNo') IS NULL ALTER TABLE dbo.PlanRequests ADD RefNo NVARCHAR(40) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_PlanRequests_RefNo' AND object_id = OBJECT_ID('dbo.PlanRequests'))
+  EXEC sp_executesql N'CREATE UNIQUE INDEX UX_PlanRequests_RefNo ON dbo.PlanRequests(RefNo) WHERE RefNo IS NOT NULL AND Status IN (''pending'', ''approved'');';
+-- pictures the super admin uploads (InstaPay's QR for owners who pay): kept here, never in the (public) code
+IF OBJECT_ID('dbo.AppFiles') IS NULL
+  CREATE TABLE dbo.AppFiles([Key] NVARCHAR(60) NOT NULL PRIMARY KEY, ContentType NVARCHAR(40) NOT NULL, Data VARBINARY(MAX) NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());";
     }
 }

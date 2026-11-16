@@ -263,6 +263,59 @@
   .tabpane{animation:fadeUp .3s both}
   .danger-zone{border:1px solid color-mix(in srgb,var(--err) 40%,var(--line));border-radius:14px;padding:14px;margin-top:18px}
   .danger-zone h4{margin:0 0 4px;color:var(--err)}
+  /* ---------- plan requests: a card per request, coloured by its type ---------- */
+  .rq-types{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .rq-types button{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer;transition:transform .15s,box-shadow .2s,border-color .2s}
+  .rq-types button:hover{transform:translateY(-1px);box-shadow:0 8px 18px -12px var(--tc,#888)}
+  .rq-types button.on{border-color:var(--tc,var(--brand));background:color-mix(in srgb,var(--tc,var(--brand)) 12%,var(--card));font-weight:700}
+  .rq-types .n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;display:inline-grid;place-items:center;font-size:11.5px;color:#fff;background:var(--tc,var(--brand))}
+  .rq-types .n.z{background:var(--line);color:var(--muted)}
+  .rq-list{display:grid;gap:14px}
+  .rq-card{--rc:var(--brand);position:relative;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:16px;padding:18px 18px 16px;border-radius:20px;background:var(--card);
+    border:1px solid color-mix(in srgb,var(--rc) 28%,var(--line));box-shadow:0 16px 34px -26px color-mix(in srgb,var(--rc) 80%,transparent);overflow:hidden;animation:fadeUp .4s both}
+  .rq-card:before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:5px;background:linear-gradient(180deg,var(--rc),color-mix(in srgb,var(--rc) 50%,transparent))}
+  .rq-card:after{content:"";position:absolute;inset-inline-end:-60px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--rc) 14%,transparent),transparent 70%);pointer-events:none}
+  .rq-card.done{opacity:.86;box-shadow:none}
+  .rq-ic{position:relative;width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-size:28px;background:color-mix(in srgb,var(--rc) 14%,var(--card));animation:rqBob 3.4s ease-in-out infinite}
+  .rq-ic .plus{position:absolute;bottom:-8px;inset-inline-start:-8px;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:#e6f6ec;border:2px solid var(--card)}
+  @keyframes rqBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  .rq-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .rq-type{font-weight:800;color:var(--rc);font-size:14px}
+  .rq-card h4{margin:6px 0 2px;font-size:17px}
+  .rq-card h4 .slug{font-weight:400;font-size:12px;color:var(--muted);margin-inline-start:6px}
+  .rq-say{margin:2px 0 12px;color:var(--ink);font-size:14px;line-height:1.7}
+  .rq-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .rq-box{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--soft);font-size:13px;min-width:0}
+  .rq-box h5{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600}
+  .rq-bill .ln{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+  .rq-bill .ln.tot{border-top:1px dashed var(--line);margin-top:5px;padding-top:6px;font-weight:800;font-size:15px}
+  .rq-bill .ln.off{color:var(--ok)}
+  .rq-pay .ref{font-size:17px;font-weight:800;letter-spacing:.5px}
+  /* after approval: a small calendar from today, the current plan and what starts */
+  .rq-tl{position:relative;padding-top:4px}
+  .rq-tl .row2{position:relative;height:22px;margin:5px 0;border-radius:7px;background:color-mix(in srgb,var(--line) 55%,transparent)}
+  .rq-tl .seg{position:absolute;top:0;bottom:0;border-radius:7px;display:flex;align-items:center;padding:0 7px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;
+    background:linear-gradient(90deg,var(--sc),color-mix(in srgb,var(--sc) 70%,#fff));animation:rqGrow .7s cubic-bezier(.2,.8,.2,1) both;transform-origin:right}
+  .rq-tl .seg.cur{--sc:#9a8b7d}
+  @keyframes rqGrow{from{transform:scaleX(0)}to{transform:none}}
+  .rq-tl .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+  .rq-tl .when{font-size:12px;line-height:1.7;margin-top:4px}
+  .rq-now{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .rq-calc{margin-top:10px;padding:10px 12px;border-radius:14px;font-size:13px;line-height:1.7;border:1px dashed color-mix(in srgb,var(--rc) 45%,var(--line));background:color-mix(in srgb,var(--rc) 6%,var(--card))}
+  .rq-calc .big{font-size:20px;font-weight:800;color:var(--rc)}
+  .rq-act{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:120px}
+  .rq-note{margin-top:8px;font-size:12.5px;color:var(--muted)}
+  @media (max-width:1100px){.rq-grid{grid-template-columns:1fr 1fr}.rq-grid .rq-tlbox{grid-column:1/-1}}
+  @media (max-width:760px){.rq-card{grid-template-columns:48px minmax(0,1fr)}.rq-ic{width:44px;height:44px;font-size:22px}.rq-act{grid-column:1/-1;flex-direction:row}.rq-act .btn{flex:1}.rq-grid{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){.rq-ic,.rq-tl .seg{animation:none}}
+  /* a store's history: requests and payments on one line of time */
+  .tline{position:relative;padding-inline-start:26px}
+  .tline:before{content:"";position:absolute;inset-inline-start:9px;top:6px;bottom:6px;width:2px;background:var(--line)}
+  .tline .it{position:relative;padding:8px 0 12px}
+  .tline .dot{position:absolute;inset-inline-start:-26px;top:9px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:var(--card);border:2px solid var(--tc,var(--line))}
+  .tline .it .ttl{font-weight:700;font-size:14px}
+  .tline .it .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .tline .mon{font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 2px}
 
   /* support */
   .support{display:grid;grid-template-columns:360px 1fr;gap:14px;min-height:560px}
@@ -416,13 +469,16 @@
 
       <!-- plan requests -->
       <section data-page="reqs" hidden>
-        <div class="seg" id="rqFilter" style="margin-bottom:12px">
-          <button data-f="pending" class="on">محتاجة مراجعة</button><button data-f="approved">اتوافق عليها</button><button data-f="rejected">اترفضت</button><button data-f="all">الكل</button>
+        <div class="row" style="margin-bottom:12px;gap:10px;flex-wrap:wrap;align-items:center">
+          <div class="seg" id="rqFilter">
+            <button data-f="pending" class="on">محتاجة مراجعة</button><button data-f="approved">اتوافق عليها</button><button data-f="rejected">اترفضت</button><button data-f="all">الكل</button>
+          </div>
+          <!-- search every request by the payment's reference number (الرقم المرجعي) -->
+          <input type="search" id="rqQ" autocomplete="off" spellcheck="false" placeholder="🔎 دوّر بالرقم المرجعي" aria-label="دوّر بالرقم المرجعي" style="flex:1;min-width:200px;max-width:340px">
         </div>
-        <div class="tbl-wrap"><table>
-          <thead><tr><th>المتجر</th><th>الباقة والمدة</th><th>المبلغ</th><th>الدفع</th><th>باقته الحالية</th><th>الطلب</th><th></th></tr></thead>
-          <tbody id="rqRows"></tbody>
-        </table></div>
+        <!-- each request as a card: what the store asks for, the bill, the payment, and what approving does on the calendar -->
+        <div class="rq-types" id="rqTypes" role="tablist" aria-label="نوع الطلب"></div>
+        <div class="rq-list" id="rqRows"></div>
       </section>
 
       <!-- subscriptions -->
@@ -474,14 +530,14 @@
           </form>
           <div class="card anim" style="animation-delay:.1s">
             <h3>توزيع الأرقام على المتاجر</h3>
-            <p class="sub">لما صاحب متجر يدوس «اربط واتساب المتجر» بياخد أول رقم فاضي (مش متخصص لمتجر، ومفيش موبايل مربوط عليه، ومش محجوز).</p>
+            <p class="sub">لما صاحب متجر مشترك في خدمة الواتساب يدوس «اربط واتساب المتجر» بياخد أول رقم فاضي (مش متخصص لمتجر، ومفيش موبايل مربوط عليه، ومش محجوز).</p>
             <div class="seg" id="waAuto">
-              <button data-f="paid">تلقائي للمشتركين بس</button><button data-f="all">تلقائي للكل</button><button data-f="off">أنا اللي بخصّص</button>
+              <button data-f="paid">تلقائي للمشتركين في الخدمة</button><button data-f="off">أنا اللي بخصّص</button>
             </div>
             <div style="margin-top:14px;max-width:420px">
-              <label for="waMinPlan">الواتساب متاح من باقة</label>
-              <select id="waMinPlan"></select>
-              <div class="hint" style="margin-top:4px">اللي على باقة أقل (أو من غير باقة) بيشوف كارت يعرض عليه يرقّي للباقة دي. ده ميزة تسويقية للباقات الأعلى.</div>
+              <label for="waPrice">سعر خدمة الواتساب في الشهر (ج.م)</label>
+              <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="number" id="waPrice" class="ltr" min="1" step="1"><button class="btn ghost sm" type="button" id="waPriceSave">حفظ</button></div>
+              <div class="hint" style="margin-top:4px">خدمة بيضيفها صاحب المتجر على أي باقة: بيعلّم عليها في طلب الباقة، أو بيطلبها لوحدها لو باقته شغالة، وتوافق عليها من «الطلبات». كل شهر مدفوع = 30 يوم واتساب. الطلبات اللي اتبعتت قبل كده بتفضل بسعرها.</div>
             </div>
             <div class="calc" style="margin-top:14px">
               <div class="r"><span>إزاي تزوّد أرقام</span><b>من Wapilot ← Instances ← Create</b></div>
@@ -518,6 +574,18 @@
             <p class="sub">بيظهروا لصاحب المتجر وهو بيطلب باقة.</p>
             <label for="sPay">طريقة الدفع (اللي هيحوّل عليها)</label>
             <textarea id="sPay" maxlength="400" style="min-height:70px" placeholder="مثلًا: InstaPay على youssef@instapay أو أورانج كاش على 012…"></textarea>
+            <!-- where owners send the money: shown big in the request form, with a copy button, next to InstaPay's QR -->
+            <label for="sPayNum">رقم التحويل</label>
+            <input type="text" id="sPayNum" class="ltr" maxlength="40" placeholder="01xxxxxxxxx">
+            <label for="sPayQrFile">صورة QR بتاعة InstaPay</label>
+            <div class="row" style="align-items:center;gap:12px">
+              <img id="sPayQrImg" alt="QR InstaPay" style="width:120px;height:120px;object-fit:contain;border:1px solid var(--line);border-radius:12px;background:#fff" hidden>
+              <div style="flex:1;min-width:180px">
+                <input type="file" id="sPayQrFile" accept="image/png,image/jpeg,image/webp">
+                <div class="hint" id="sPayQrHint">بتظهر لصاحب المتجر في الطلب جنب الرقم. بتتحفظ أول ما تختارها.</div>
+                <button type="button" class="btn ghost sm" id="sPayQrDel" style="margin-top:6px" hidden>شيل الصورة</button>
+              </div>
+            </div>
             <div class="cols3">
               <div><label for="sD4">خصم 4 شهور %</label><input type="number" id="sD4" class="ltr" min="0" max="89" step="0.5"></div>
               <div><label for="sD6">خصم 6 شهور %</label><input type="number" id="sD6" class="ltr" min="0" max="89" step="0.5"></div>
@@ -659,8 +727,7 @@
     $("waTokState").innerHTML = d.tokenSet ? '<span class="pill ok">✓ الـ token محفوظ (متشفّر)</span> الصق token جديد بس لو عايز تغيّره.' : '<span class="pill warn">لسه مفيش token</span>';
     $("waHookBox").hidden = !d.webhookUrl; $("waHook").value = d.webhookUrl || "";
     document.querySelectorAll("#waAuto button").forEach(function (b) { b.classList.toggle("on", b.dataset.f === d.autoAssign); });
-    $("waMinPlan").innerHTML = '<option value="0">' + (d.autoAssign === "all" ? "كل المتاجر (حتى من غير باقة)" : "أي باقة مدفوعة") + '</option>' +
-      (d.plans || []).map(function (p) { return '<option value="' + p.id + '"' + (p.id === d.minPlan ? " selected" : "") + '>' + esc(p.name) + " أو أعلى — " + money(p.price) + '</option>'; }).join("");
+    if (document.activeElement !== $("waPrice")) $("waPrice").value = d.price || "";
     var waiting = d.waiting || [];
     $("waCount").textContent = fmt(waiting.length); $("waCount").hidden = !waiting.length;
     $("waWaiting").innerHTML = waiting.length ? '<h3>متاجر مستنية رقم</h3><div class="list">' + waiting.map(function (w) {
@@ -670,7 +737,8 @@
     var stores = d.stores || [];
     var opts = function (cur) {
       return '<option value="">— مش متخصص —</option>' + stores.map(function (s) {
-        return '<option value="' + s.id + '"' + (s.id === cur ? " selected" : "") + '>' + esc(s.name) + (s.own ? " (حساب Wapilot بتاعه)" : s.instance && s.id !== cur ? " (معاه رقم)" : "") + (s.paid ? "" : " · بدون باقة") + '</option>';
+        return '<option value="' + s.id + '"' + (s.id === cur ? " selected" : "") + '>' + esc(s.name) + (s.own ? " (حساب Wapilot بتاعه)" : s.instance && s.id !== cur ? " (معاه رقم)" : "") +
+          (s.service ? "" : " · من غير خدمة الواتساب") + '</option>';
       }).join("");
     };
     var list = d.instances || [];
@@ -681,7 +749,10 @@
         return '<tr style="animation-delay:' + Math.min(n * 0.03, 0.4) + 's"><td><b>' + esc(i.name) + '</b><div class="hint ltr" style="text-align:right">' + esc(i.id) + '</div>' + (i.reserved ? '<span class="pill brand">محجوز</span>' : '') + '</td>' +
           '<td class="ltr">' + (i.number ? "+" + esc(i.number) : '<span class="hint">—</span>') + '</td>' +
           '<td>' + waStatusPill(i) + '</td>' +
-          '<td><select data-as="' + esc(i.id) + '" style="min-width:180px">' + opts(i.storeId) + '</select></td>' +
+          '<td><select data-as="' + esc(i.id) + '" style="min-width:180px">' + opts(i.storeId) + '</select>' +
+            // the store's WhatsApp service: a number whose store stopped paying can go back to the pool (and not be renewed on Wapilot)
+            (i.storeId && i.service === false ? '<div class="hint" style="color:#b23324;margin-top:4px">⏳ خدمة الواتساب خلصت' + (i.waUntil ? " يوم " + date(i.waUntil) : "") + '. لو مش هيجدد، فكّه وماتجددش الرقم على Wapilot.</div>'
+              : i.storeId && i.waUntil && !i.always ? '<div class="hint" style="margin-top:4px">الخدمة لحد ' + date(i.waUntil) + '</div>' : '') + '</td>' +
           '<td><div class="row" style="gap:6px;flex-wrap:nowrap">' +
             (i.storeId ? '<button class="btn ghost sm" data-un="' + esc(i.id) + '">فك</button>' : '<button class="btn ghost sm" data-rs="' + esc(i.id) + '" data-on="' + (i.reserved ? 0 : 1) + '">' + (i.reserved ? "إلغاء الحجز" : "احجزه") + '</button>') +
           '</div></td></tr>';
@@ -693,6 +764,7 @@
         if (!sid) { sel.value = was; unassignWa(id); return; }
         var s = stores.filter(function (x) { return x.id === sid; })[0];
         if (s && s.own && !confirm(s.name + " مربوط بحساب Wapilot بتاعه. لو خصّصت له الرقم ده هيتفك من حسابه. أكمّل؟")) { sel.value = was; return; }
+        if (s && !s.service && !confirm(s.name + " مش مشترك في خدمة الواتساب، فالمساعد مش هيرد على الرقم ده لحد ما يشترك. تخصّصه له برضه؟")) { sel.value = was; return; }
         sel.disabled = true;
         try { renderWa(await waApi("assign", { instance: id, storeId: sid })); toast("الرقم اتخصص للمتجر. صاحب المتجر هيلاقي الـ QR في لوحته."); }
         catch (e) { toast(e.message, true); sel.value = was; sel.disabled = false; }
@@ -726,8 +798,10 @@
     if (!confirm("اللينك القديم هيبطّل يشتغل فورًا، ولازم تحط الجديد في كل رقم على Wapilot. أكمّل؟")) return;
     try { renderWa(await waApi("new-key", {})); toast("اتعمل لينك جديد، حطه في Wapilot."); } catch (e) { toast(e.message, true); }
   };
-  $("waMinPlan").onchange = async function () {
-    try { renderWa(await waApi("settings", { minPlan: String(this.value) })); toast("اتحفظ ✓"); } catch (e) { toast(e.message, true); }
+  $("waPriceSave").onclick = async function () {
+    var b = this; busy(b, true);
+    try { renderWa(await waApi("settings", { price: String($("waPrice").value) })); toast("اتحفظ ✓ الطلبات الجديدة هتتحسب بالسعر ده"); } catch (e) { toast(e.message, true); }
+    finally { busy(b, false); }
   };
   document.querySelectorAll("#waAuto button").forEach(function (b) {
     b.onclick = async function () { try { renderWa(await waApi("settings", { autoAssign: b.dataset.f })); toast("اتحفظ ✓"); } catch (e) { toast(e.message, true); } };
@@ -738,42 +812,203 @@
   state.rqFilter = "pending"; state.reqs = [];
   function rqBadge(n) { $("rqCount").textContent = fmt(n); $("rqCount").hidden = !n; }
   function monthsAr(m) { return m === 1 ? "شهر" : m === 12 ? "سنة" : fmt(m) + " شهور"; }
-  var RQ = { pending: '<span class="pill warn">محتاج مراجعة</span>', approved: '<span class="pill ok">اتوافق</span>', rejected: '<span class="pill err">اترفض</span>', cancelled: '<span class="pill">اتلغى</span>' };
-  async function loadReqs() {
-    document.querySelectorAll("#rqFilter button").forEach(function (b) { b.classList.toggle("on", b.dataset.f === state.rqFilter); });
-    $("rqRows").innerHTML = '<tr><td colspan="7"><div class="skel"></div></td></tr>';
-    var d;
-    try { d = await api("requests", null, "&status=" + state.rqFilter); } catch (e) { toast(e.message, true); return; }
-    state.reqs = d.requests; rqBadge(d.pending);
-    $("rqRows").innerHTML = d.requests.length ? d.requests.map(function (r, i) {
-      var cur = r.currentPlan ? esc(r.currentPlan) + (r.currentEnds ? '<div class="hint">' + (new Date(r.currentEnds) < new Date() ? "خلصت " : "لحد ") + date(r.currentEnds) + '</div>' : '') : '<span class="hint">بدون باقة</span>';
-      return '<tr style="animation-delay:' + Math.min(i * 0.03, 0.4) + 's"><td><b>' + esc(r.store) + '</b><div class="hint ltr" style="text-align:right">' + esc(r.slug) + '</div></td>' +
-        '<td>' + (r.kind === "topup" ? '<span class="pill brand">➕ رصيد إضافي</span><div><b>' + esc(r.plan) + '</b></div><div class="hint">' + fmt(r.units / 1e6, 1) + ' مليون وحدة للشهر ده</div>'
-                                       : '<b>' + esc(r.plan) + '</b><div class="hint">' + monthsAr(r.months) + '</div>') + '</td>' +
-        '<td><b>' + money(r.amount) + '</b>' + (r.discount ? '<div class="hint">خصم ' + money(r.discount) + '</div>' : '') + '</td>' +
-        '<td>' + esc(r.method) + '<div class="hint ltr" style="text-align:right">' + esc(r.ref) + '</div>' + (r.note ? '<div class="hint">' + esc(r.note) + '</div>' : '') + '</td>' +
-        '<td>' + cur + '</td>' +
-        '<td>' + RQ[r.status] + '<div class="hint">' + date(r.at) + '</div>' + (r.adminNote ? '<div class="hint">' + esc(r.adminNote) + '</div>' : '') + '</td>' +
-        '<td>' + (r.status === "pending" ? '<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-ok="' + r.id + '">✓ وافق</button><button class="btn ghost sm" data-no="' + r.id + '">رفض</button></div>' : '<button class="btn ghost sm" data-store="' + r.storeId + '">المتجر</button>') + '</td></tr>';
-    }).join("") : '<tr><td colspan="7"><div class="empty"><span class="e-ic">📥</span>' + (state.rqFilter === "pending" ? "مفيش طلبات مستنية مراجعة 🎉" : "مفيش طلبات") + '</div></td></tr>';
+  // a payment row: a period, extra quota for one month, or the price difference of an upgrade
+  function subLen(x) { return x.kind === "topup" ? "رصيد إضافي" : x.kind === "upgrade" ? "ترقية (فرق السعر)" : x.months === 1 ? "شهر" : fmt(x.months) + " شهور"; }
+  // the WhatsApp service on a request: its share of the amount, and the number the owner will link (to get a Wapilot number ready)
+  // ---- request types: what the store asks for, in the admin's words (r.what is kept from when the request was sent) ----
+  var RT = {
+    "new":       { ic: "✨", t: "اشتراك جديد", c: "#3b7dd8" },
+    "renew":     { ic: "🔁", t: "تجديد الباقة", c: "#e8774a" },
+    "upgrade":   { ic: "⬆️", t: "ترقية لباقة أعلى", c: "#8e5bd8" },
+    "downgrade": { ic: "⬇️", t: "نزول لباقة أقل", c: "#d48a1c" },
+    "wa-new":    { ic: "📱", t: "إضافة باقة الواتساب", c: "#1fae55" },
+    "wa-renew":  { ic: "📱", t: "تجديد باقة الواتساب", c: "#1a8a47" },
+    "topup":     { ic: "➕", t: "رسايل إضافية للشهر", c: "#c0392b" }
+  };
+  // the chips above the list: the groups the admin thinks in, with how many of each
+  var RG = [
+    { k: "all", t: "الكل", ic: "📥", c: "#8a6a55", f: function () { return true; } },
+    { k: "renew", t: "تجديد", ic: "🔁", c: "#e8774a", f: function (r) { return r.what === "renew"; } },
+    { k: "new", t: "اشتراك جديد", ic: "✨", c: "#3b7dd8", f: function (r) { return r.what === "new"; } },
+    { k: "wa", t: "واتساب", ic: "📱", c: "#1fae55", f: function (r) { return r.what === "wa-new" || r.what === "wa-renew" || r.wa; } },
+    { k: "topup", t: "رسايل إضافية", ic: "➕", c: "#c0392b", f: function (r) { return r.what === "topup"; } },
+    { k: "change", t: "ترقية ونزول", ic: "↕️", c: "#8e5bd8", f: function (r) { return r.what === "upgrade" || r.what === "downgrade"; } }
+  ];
+  state.rqType = "all";
+  function rqType(r) { return RT[r.what] || RT[r.kind === "topup" ? "topup" : r.kind === "wa" ? "wa-new" : r.kind === "upgrade" ? "upgrade" : "new"]; }
+  function rqTitle(r) { var t = rqType(r); return t.ic + " " + t.t + (r.wa && r.kind !== "wa" ? " + 📱 باقة الواتساب" : ""); }
+  // one sentence: what the store wants
+  function rqSay(r) {
+    var n = r.now || {}, s = "<b>" + esc(r.store) + "</b> ", pl = "<b>" + esc(r.plan) + "</b>", wa = r.wa && r.kind !== "wa" ? "، ومعاها <b>باقة الواتساب</b> شهر" : "";
+    switch (r.what) {
+      case "renew": return s + "عايز يجدد باقة " + pl + " " + monthsAr(r.months) + " كمان" + wa + ".";
+      case "upgrade": return s + "عايز يرقّي " + (r.currentPlan ? "من " + esc(r.currentPlan) + " " : "") + "لباقة " + pl + " من دلوقتي، ويدفع فرق السعر للأيام الباقية" + wa + ".";
+      case "downgrade": return s + "عايز ينزل لباقة " + pl + " بعد ما باقته الحالية تخلص" + wa + ".";
+      case "wa-new": return s + (r.plan ? "عنده باقة " + pl + " وعايز يضيف عليها <b>باقة الواتساب</b>." : "عايز <b>باقة الواتساب</b> لوحدها، من غير باقة.");
+      case "wa-renew": return s + "عايز يجدد <b>باقة الواتساب</b> شهر كمان.";
+      case "topup": return s + "رسايل الشهر " + (n.usagePct >= 100 ? "خلصت عنده" : "قربت تخلص عنده") + "، وعايز " + (r.msgs ? "<b>" + fmt(r.msgs) + " رسالة</b>" : "رصيد") + " زيادة يكمّل بيهم الشهر.";
+      default: return s + (r.currentPlan ? "" : "مشترك جديد، ") + "عايز باقة " + pl + " لمدة " + monthsAr(r.months) + wa + ".";
+    }
+  }
+  // the bill: the plan's share, the discount, the WhatsApp month, the total
+  function rqBill(r) {
+    var ln = function (a, b, cls) { return '<div class="ln' + (cls ? " " + cls : "") + '"><span>' + a + '</span><b>' + b + '</b></div>'; };
+    var h = "";
+    if (r.kind === "wa") h += ln("📱 باقة الواتساب · شهر", money(r.amount));
+    else if (r.kind === "topup") h += ln("➕ " + (r.msgs ? fmt(r.msgs) + " رسالة" : fmt(r.units / 1e6, 1) + " مليون وحدة"), money(r.amount));
+    else {
+      h += ln("💎 " + esc(r.plan) + (r.kind === "upgrade" ? " · فرق السعر" : " · " + monthsAr(r.months)), money(r.price - r.waAmount));
+      if (r.discount > 0) h += ln("🏷️ خصم", "− " + money(r.discount), "off");
+      if (r.wa) h += ln("📱 باقة الواتساب · شهر", money(r.waAmount));
+    }
+    return '<div class="rq-box rq-bill"><h5>🧾 الفاتورة</h5>' + h + ln("الإجمالي", money(r.amount), "tot") + '</div>';
+  }
+  function rqPay(r) {
+    return '<div class="rq-box rq-pay"><h5>💳 الدفع · ' + esc(r.method) + '</h5>' +
+      (r.refNo ? '<div class="ref ltr" dir="ltr" title="الرقم المرجعي">🔖 ' + esc(r.refNo) + '</div>' : '') +
+      '<div class="hint">' + (r.refNo ? "حوّل من " : "رقم العملية: ") + '<span class="ltr" dir="ltr">' + esc(r.ref) + '</span></div>' +
+      (r.waPhone ? '<div class="hint">📱 رقم الواتساب: <a class="ltr" dir="ltr" href="https://wa.me/' + esc(r.waPhone) + '" target="_blank" rel="noopener">+' + esc(r.waPhone) + '</a></div>' : '') +
+      (r.note ? '<div class="hint">💬 ' + esc(r.note) + '</div>' : '') + '</div>';
+  }
+  // after approval, on a small calendar from today: the plan running now, the new period, the WhatsApp month, the extra messages
+  function rqWhen(r) {
+    var o = r.outcome, n = r.now || {}; if (!o) return "";
+    var now = Date.now(), bars = [], ends = [];
+    function add(cls, color, label, a, b) { a = a ? new Date(a).getTime() : now; b = new Date(b).getTime(); if (!(b > now)) return; bars.push({ cls: cls, c: color, l: label, a: Math.max(a, now), b: b }); ends.push(b); }
+    if (n.planEnds && !n.planExpired && (r.kind === "plan" || r.kind === "upgrade")) add("cur", "", "الحالية", null, n.planEnds);
+    if (o.planStarts) add("", rqType(r).c, "💎 " + r.plan, o.planStarts, o.planEnds);
+    if (o.waStarts) add("", "#1fae55", "📱 واتساب", o.waStarts, o.waEnds);
+    if (o.topupUntil) add("", "#c0392b", "➕ " + (r.msgs ? fmt(r.msgs) + " رسالة" : "رصيد"), null, o.topupUntil);
+    if (!bars.length) return "";
+    var span = Math.max.apply(null, ends) - now;
+    var rows = bars.map(function (x, i) {
+      var st = (x.a - now) / span * 100, w = Math.max(8, (x.b - x.a) / span * 100);
+      return '<div class="row2"><span class="seg ' + x.cls + '" style="--sc:' + (x.c || "#9a8b7d") + ';inset-inline-start:' + st.toFixed(1) + '%;width:' + Math.min(100 - st, w).toFixed(1) + '%;animation-delay:' + (i * 0.12) + 's">' + esc(x.l) + '</span></div>';
+    }).join("");
+    var soon = function (iso) { return new Date(iso).getTime() > now + 6e4; }, lines = [];
+    if (o.planStarts) lines.push("💎 " + (soon(o.planStarts) ? "بتبدأ " + date(o.planStarts) : "من النهارده") + " لحد " + date(o.planEnds));
+    if (o.waStarts) lines.push("📱 الواتساب " + (soon(o.waStarts) ? "من " + date(o.waStarts) : "من النهارده") + " لحد " + date(o.waEnds));
+    if (o.topupUntil) lines.push("➕ الرسايل للشهر ده بس، لحد " + date(o.topupUntil));
+    return '<div class="rq-box rq-tlbox"><h5>📅 لو وافقت</h5><div class="rq-tl">' + rows +
+      '<div class="lbl"><span>النهارده</span><span>' + date(new Date(now + span).toISOString()) + '</span></div><div class="when">' + lines.join("<br>") + '</div></div></div>';
+  }
+  // where the store stands now
+  function rqNow(r) {
+    var n = r.now; if (!n) return "";
+    var c = [];
+    c.push(n.trial ? '<span class="pill">🎁 تجربة مجانية</span>' : n.plan ? '<span class="pill ' + (n.planExpired ? "err" : "") + '">💎 ' + esc(n.plan) + (n.planExpired ? " · خلصت " : " · لحد ") + date(n.planEnds) + '</span>' : '<span class="pill">من غير باقة</span>');
+    c.push(n.waOn ? '<span class="pill ok">📱 واتساب لحد ' + date(n.waUntil) + '</span>' : n.waUntil ? '<span class="pill err">📱 الواتساب خلص ' + date(n.waUntil) + '</span>' : '<span class="pill">📱 مش مشترك في الواتساب</span>');
+    c.push('<span class="pill ' + (n.usagePct >= 100 ? "err" : n.usagePct >= 80 ? "warn" : "") + '">📊 استهلاك الشهر ' + fmt(n.usagePct) + '% · ' + fmt(n.messages) + ' رسالة</span>');
+    return '<div class="rq-now"><span class="hint" style="margin:0;align-self:center">دلوقتي:</span>' + c.join("") + '</div>';
+  }
+  function rqCard(r, i) {
+    var t = rqType(r), pend = r.status === "pending";
+    return '<article class="rq-card' + (pend ? "" : " done") + '" style="--rc:' + t.c + ';animation-delay:' + Math.min(i * 0.05, 0.5) + 's">' +
+      '<div><div class="rq-ic">' + t.ic + (r.wa && r.kind !== "wa" ? '<span class="plus">📱</span>' : '') + '</div></div>' +
+      '<div style="min-width:0"><div class="rq-head"><span class="rq-type">' + rqTitle(r) + '</span>' + RQ[r.status] + '<span class="hint" style="margin:0">' + ago(r.at) + '</span></div>' +
+        '<h4>' + esc(r.store) + '<span class="slug ltr">' + esc(r.slug) + '</span></h4>' +
+        '<p class="rq-say">' + rqSay(r) + '</p>' +
+        '<div class="rq-grid">' + rqBill(r) + rqPay(r) + (pend ? rqWhen(r) : '') + '</div>' +
+        (r.calc ? '<div class="rq-calc">📊 <b>حسبناها له إزاي:</b> ' + esc(r.calc) + '</div>' : '') +
+        (pend ? rqNow(r) : '') +
+        (r.blocked && pend ? '<p class="msg err" style="display:block">' + esc(r.blocked) + '</p>' : '') +
+        (r.adminNote ? '<div class="rq-note">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظتك: ") + esc(r.adminNote) + (r.decidedAt ? " · " + date(r.decidedAt) : "") + '</div>' : '') +
+      '</div>' +
+      '<div class="rq-act">' + (pend ? '<button class="btn" data-ok="' + r.id + '">✓ وافق</button><button class="btn ghost" data-no="' + r.id + '">رفض</button>' : '') +
+        '<button class="btn ghost sm" data-store="' + r.storeId + '">📜 سجل المتجر</button></div></article>';
+  }
+  // a store's history on one line of time: every request it sent (and what happened to it) and every payment recorded, newest first
+  function storeHistory(d) {
+    var reqs = (d.store && d.store.requests) || [], subs = d.subscriptions || [], items = [];
+    reqs.forEach(function (r) { items.push({ at: r.at, req: r }); });
+    subs.forEach(function (x) { items.push({ at: x.at || x.startsAt, sub: x }); });
+    if (!items.length) return '<div class="empty"><span class="e-ic">🧾</span>لسه مفيش طلبات ولا اشتراكات</div>';
+    items.sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+    var paid = subs.reduce(function (s, x) { return s + (+x.paid || 0); }, 0);
+    var by = function (st) { return reqs.filter(function (r) { return r.status === st; }).length; };
+    var head = '<div class="rq-now" style="margin:0 0 12px"><span class="pill">📨 ' + fmt(reqs.length) + ' طلب</span>' +
+      (by("pending") ? '<span class="pill warn">⏳ ' + fmt(by("pending")) + ' مستني</span>' : '') + '<span class="pill ok">✓ ' + fmt(by("approved")) + ' اتوافق</span>' +
+      (by("rejected") ? '<span class="pill err">✕ ' + fmt(by("rejected")) + ' اترفض</span>' : '') + '<span class="pill brand">💳 ' + fmt(subs.length) + ' دفعة · ' + money(paid) + '</span></div>';
+    var mon = "", h = "";
+    items.forEach(function (it) {
+      var m = new Date(it.at).toLocaleDateString("ar-EG", { month: "long", year: "numeric" });
+      if (m !== mon) { h += '<div class="mon">' + m + '</div>'; mon = m; }
+      if (it.req) {
+        var r = it.req, t = rqType(r);
+        h += '<div class="it" style="--tc:' + t.c + '"><span class="dot">' + t.ic + '</span><div class="ttl">📨 طلب ' + rqTitle(r) + ' ' + RQ[r.status] + '</div>' +
+          '<div class="meta">' + date(r.at) + ' · ' + money(r.amount) + ' · ' + esc(r.method) + (r.refNo ? ' · 🔖 <span class="ltr" dir="ltr">' + esc(r.refNo) + '</span>' : '') +
+            (r.msgs ? ' · ' + fmt(r.msgs) + ' رسالة' : '') + (r.waPhone ? ' · 📱 <span class="ltr" dir="ltr">+' + esc(r.waPhone) + '</span>' : '') + '</div>' +
+          (r.adminNote ? '<div class="meta">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظة: ") + esc(r.adminNote) + '</div>' : '') +
+          (r.calc ? '<div class="meta">📊 ' + esc(r.calc) + '</div>' : '') + '</div>';
+      } else {
+        var x = it.sub, ic = x.kind === "wa" ? "📱" : x.kind === "topup" ? "➕" : x.kind === "upgrade" ? "⬆️" : "💳";
+        h += '<div class="it" style="--tc:#2e9d5b"><span class="dot">' + ic + '</span><div class="row" style="gap:8px;align-items:flex-start;flex-wrap:nowrap"><div class="grow" style="min-width:0">' +
+          '<div class="ttl">✓ اتسجّل: ' + esc(x.plan) + (x.kind === "topup" ? "" : ' · ' + subLen(x)) + ' · ' + money(x.paid) + '</div>' +
+          '<div class="meta">' + date(x.startsAt) + ' ← ' + date(x.endsAt) + ' · ' + esc(x.method || "—") + (x.notes ? " · " + esc(x.notes) : "") + '</div></div>' +
+          '<button class="btn danger sm" data-delsub="' + x.id + '" title="امسح السجل ده">✕</button></div></div>';
+      }
+    });
+    return head + '<div class="tline">' + h + '</div>';
+  }
+  function renderReqs() {
+    var all = state.reqs || [], g = RG.filter(function (x) { return x.k === state.rqType; })[0] || RG[0];
+    $("rqTypes").innerHTML = RG.map(function (x) {
+      var n = all.filter(x.f).length;
+      return '<button type="button" role="tab" data-t="' + x.k + '" class="' + (x.k === g.k ? "on" : "") + '" style="--tc:' + x.c + '" aria-selected="' + (x.k === g.k) + '">' + x.ic + ' ' + x.t + ' <span class="n' + (n ? "" : " z") + '">' + fmt(n) + '</span></button>';
+    }).join("");
+    $("rqTypes").querySelectorAll("[data-t]").forEach(function (b) { b.onclick = function () { state.rqType = b.dataset.t; renderReqs(); }; });
+    var list = all.filter(g.f), q = $("rqQ").value.trim();
+    $("rqRows").innerHTML = list.length ? list.map(rqCard).join("")
+      : '<div class="card"><div class="empty"><span class="e-ic">' + (q ? "🔎" : "📥") + '</span>' + (q ? "مفيش طلب بالرقم ده" : state.rqFilter === "pending" ? "مفيش طلبات مستنية مراجعة 🎉" : "مفيش طلبات") + '</div></div>';
     $("rqRows").querySelectorAll("[data-ok]").forEach(function (b) { b.onclick = function () { approveReq(+b.dataset.ok); }; });
     $("rqRows").querySelectorAll("[data-no]").forEach(function (b) { b.onclick = function () { rejectReq(+b.dataset.no); }; });
     $("rqRows").querySelectorAll("[data-store]").forEach(function (b) { b.onclick = function () { openStore(+b.dataset.store, "hist"); }; });
   }
-  document.querySelectorAll("#rqFilter button").forEach(function (b) { b.onclick = function () { state.rqFilter = b.dataset.f; loadReqs(); }; });
+  var RQ = { pending: '<span class="pill warn">محتاج مراجعة</span>', approved: '<span class="pill ok">اتوافق</span>', rejected: '<span class="pill err">اترفض</span>', cancelled: '<span class="pill">اتلغى</span>' };
+  async function loadReqs() {
+    var q = $("rqQ").value.trim();   // a search looks in every request, whatever the filter
+    document.querySelectorAll("#rqFilter button").forEach(function (b) { b.classList.toggle("on", !q && b.dataset.f === state.rqFilter); });
+    $("rqRows").innerHTML = '<div class="card"><div class="skel"></div><div class="skel" style="margin-top:10px;width:70%"></div></div>';
+    var d;
+    try { d = await api("requests", null, "&status=" + state.rqFilter + (q ? "&q=" + encodeURIComponent(q) : "")); } catch (e) { toast(e.message, true); return; }
+    if (q !== $("rqQ").value.trim()) return;   // typed more while this was loading
+    state.reqs = d.requests; rqBadge(d.pending);
+    renderReqs();
+  }
+  document.querySelectorAll("#rqFilter button").forEach(function (b) { b.onclick = function () { state.rqFilter = b.dataset.f; $("rqQ").value = ""; loadReqs(); }; });
+  $("rqQ").oninput = function () { clearTimeout(loadReqs.t); loadReqs.t = setTimeout(loadReqs, 300); };
   function approveReq(id) {
     var r = state.reqs.filter(function (x) { return x.id === id; })[0]; if (!r) return;
-    var topup = r.kind === "topup";
-    var m = modal('<h3>' + (topup ? 'رصيد إضافي لـ ' : 'تفعيل باقة ' + esc(r.plan) + ' لـ ') + esc(r.store) + '</h3>' +
-      '<p class="sub">اتأكد إن المبلغ وصلك على ' + esc(r.method) + ' (رقم العملية: <span class="ltr">' + esc(r.ref) + '</span>). ' +
-      (topup ? 'هيتضاف ' + fmt(r.units / 1e6, 1) + ' مليون وحدة لرصيد الشهر ده بس.'
-             : 'الباقة هتشتغل ' + monthsAr(r.months) + (r.currentPlan === r.plan && r.currentEnds && new Date(r.currentEnds) > new Date() ? ' بعد ما الاشتراك الحالي يخلص' : ' من النهارده') + '.') + '</p>' +
+    var topup = r.kind === "topup", up = r.kind === "upgrade";
+    // what approving does now (the server worked it out from the store's current plan)
+    var what = topup ? 'هيتضاف ' + (r.msgs ? fmt(r.msgs) + ' رسالة (' + fmt(r.units / 1e6, 1) + ' مليون وحدة)' : fmt(r.units / 1e6, 1) + ' مليون وحدة') + ' لرصيد الشهر ده بس.'
+      : up ? 'المتجر هيتنقل لباقة ' + esc(r.plan) + ' من دلوقتي، ونهاية الاشتراك تفضل زي ما هي (' + date(r.currentEnds) + '). المبلغ ده فرق السعر عن الأيام الباقية.'
+      : r.change === "downgrade" ? 'باقة ' + esc(r.plan) + ' أقل من الحالية، فهتبدأ لوحدها يوم ' + date(r.changeStarts) + ' بعد ما ' + esc(r.currentPlan) + ' تخلص، لمدة ' + monthsAr(r.months) + '.'
+      : r.change === "renew" ? 'الباقة هتتجدد ' + monthsAr(r.months) + ' بعد ما الاشتراك الحالي يخلص.'
+      : r.change === "upgrade" ? 'الباقة هتشتغل ' + monthsAr(r.months) + ' من النهارده (طلب قديم بسعر الباقة كامل).'
+      : 'الباقة هتشتغل ' + monthsAr(r.months) + ' من النهارده.';
+    // the WhatsApp service: from today (after its current end while it still runs); the owner then links the number from their dashboard
+    if (r.kind === "wa") what = 'خدمة الواتساب هتشتغل ' + monthsAr(r.months) + ' من النهارده، أو بعد ميعادها الحالي لو لسه شغالة.';
+    else if (r.wa) what += ' و<b>خدمة الواتساب</b> (' + money(r.waAmount) + ') هتشتغل من النهارده لمدة ' + monthsAr(Math.max(1, r.months)) + '.';
+    if (r.wa) what += ' رقم الواتساب اللي هيربطه: <span class="ltr" dir="ltr">+' + esc(r.waPhone) + '</span>. لو مفيش رقم فاضي في «الواتساب»، اعمل رقم جديد على Wapilot عشان يلاقي الـ QR في لوحته.';
+    var m = modal('<h3>' + (r.kind === "wa" ? 'تفعيل خدمة الواتساب لـ ' : topup ? 'رصيد إضافي لـ ' : up ? 'ترقية ' + esc(r.store) + ' لباقة ' + esc(r.plan) : 'تفعيل باقة ' + esc(r.plan) + ' لـ ') + (up ? '' : esc(r.store)) + '</h3>' +
+      (r.refNo ? '<div class="calc" style="margin:0 0 10px"><div class="r"><span>🔖 الرقم المرجعي</span><b class="ltr" style="font-size:18px">' + esc(r.refNo) + '</b></div>' +
+        '<div class="r"><span>حوّل من</span><b class="ltr">' + esc(r.ref) + '</b></div></div>' : '') +
+      '<p class="sub">اتأكد إن المبلغ وصلك على ' + esc(r.method) + (r.refNo ? ' بنفس الرقم المرجعي ده' : ' (رقم العملية: <span class="ltr">' + esc(r.ref) + '</span>)') + '. ' + what + '</p>' +
+      (r.blocked ? '<p class="msg err" style="display:block">' + esc(r.blocked) + '</p>' : '') +
+      // the same bill and calendar as on the card
+      '<div class="rq-grid" style="--rc:' + rqType(r).c + ';grid-template-columns:1fr;margin:10px 0 4px">' + rqBill(r) + rqWhen(r) + '</div>' +
       '<label for="apPaid">المبلغ اللي وصلك فعلًا (ج.م)</label><input type="number" id="apPaid" class="ltr" min="0" step="1" value="' + r.amount + '">' +
       '<label for="apNote">ملاحظة لصاحب المتجر (اختياري)</label><input type="text" id="apNote" maxlength="500" placeholder="مثلًا: شكرًا لاشتراكك 🙏">' +
-      '<div class="msg" id="apMsg"></div><div class="row" style="margin-top:14px"><button class="btn" id="apGo">✓ فعّل الباقة</button><button class="btn ghost" data-close>إلغاء</button></div>');
+      '<div class="msg" id="apMsg"></div><div class="row" style="margin-top:14px"><button class="btn" id="apGo">' + (topup ? "✓ ضيف الرسايل" : r.kind === "wa" ? "✓ فعّل الواتساب" : "✓ فعّل الباقة") + '</button><button class="btn ghost" data-close>إلغاء</button></div>');
     m.querySelector("#apGo").onclick = async function () {
       busy(this, true);
-      try { var res = await api("request-approve", { id: id, paidEgp: m.querySelector("#apPaid").value, note: m.querySelector("#apNote").value }); closeModal(); toast("اتفعّلت الباقة لحد " + date(res.endsAt) + " ✅"); loadReqs(); }
+      try {
+        var res = await api("request-approve", { id: id, paidEgp: m.querySelector("#apPaid").value, note: m.querySelector("#apNote").value }); closeModal();
+        toast(res.kind === "wa" ? "اتفعّلت خدمة الواتساب لحد " + date(res.endsAt) + " ✅" : res.kind === "topup" ? "اتضاف الرصيد ✅" : res.kind === "upgrade" ? "اترقّت الباقة ✅ لحد " + date(res.endsAt)
+          : new Date(res.startsAt) > new Date(Date.now() + 60000) ? "اتسجلت ✅ هتبدأ يوم " + date(res.startsAt) + " لحد " + date(res.endsAt) : "اتفعّلت الباقة لحد " + date(res.endsAt) + " ✅");
+        loadReqs();
+      }
       catch (e) { setMsg(m.querySelector("#apMsg"), e.message); busy(this, false); }
     };
   }
@@ -937,15 +1172,25 @@
         (s.shopify ? '<span class="pill info">🛍️ Shopify</span>' : '') + '<span class="space"></span>' +
         '<a class="btn ghost sm" href="index.html?store=' + encodeURIComponent(s.slug) + '" target="_blank" rel="noopener">💬 افتح الشات ↗</a>' +
         '<button class="btn ghost sm" id="asStore">🔑 ادخل كصاحب المتجر</button></div>' +
-      '<div class="tabs" id="sdTabs"><button data-t="sub" class="on">💎 الاشتراك</button><button data-t="usage">📊 الاستهلاك</button><button data-t="hist">🧾 السجل (' + fmt(d.subscriptions.length) + ')</button><button data-t="edit">✏️ البيانات</button><button data-t="tk">🎧 التذاكر (' + fmt(d.tickets.length) + ')</button></div>' +
+      '<div class="tabs" id="sdTabs"><button data-t="sub" class="on">💎 الاشتراك</button><button data-t="usage">📊 الاستهلاك</button><button data-t="hist">🧾 السجل (' + fmt(d.subscriptions.length + ((d.store.requests || []).length)) + ')</button><button data-t="edit">✏️ البيانات</button><button data-t="tk">🎧 التذاكر (' + fmt(d.tickets.length) + ')</button></div>' +
       // subscription
       '<div class="tabpane" data-p="sub">' +
         (s.plan ? '<div class="calc" style="margin:0 0 14px"><div class="r"><span>الباقة الحالية</span><b>' + esc(s.plan) + '</b></div><div class="r"><span>' + (s.planExpired ? "خلصت يوم" : "بتخلص يوم") + '</span><b>' + date(s.planEndsAt) + (s.planExpired ? "" : " (فاضل " + fmt(dl) + " يوم)") + '</b></div>' +
-          '<div class="r"><span>حد الاستهلاك الشهري</span><b>' + fmt(s.limitUsd, 2) + '$ في Claude</b></div></div>' : '<div class="calc" style="margin:0 0 14px">' + (s.trial ? 'المتجر ده مالوش باقة، فهو على التجربة المجانية: ' + fmt(s.msgLimit) + ' رسالة في الشهر (استخدم منهم ' + fmt(s.messages) + ').'
+          '<div class="r"><span>حد الاستهلاك الشهري</span><b>' + fmt(s.limitUsd, 2) + '$ في Claude</b></div>' +
+          // a lower plan waiting for the current one to end
+          (s.next ? '<div class="r"><span>الباقة الجاية</span><b>⬇️ ' + esc(s.next.name) + ' · من ' + date(s.next.startsAt) + ' لحد ' + date(s.next.endsAt) +
+            ' <button type="button" class="btn ghost sm" id="sbNextCancel">إلغاء التغيير</button></b></div>' : '') + '</div>'
+          : '<div class="calc" style="margin:0 0 14px">' + (s.trial ? 'المتجر ده مالوش باقة، فهو على التجربة المجانية: ' + fmt(s.msgLimit) + ' رسالة في الشهر (استخدم منهم ' + fmt(s.messages) + ').'
           : 'المتجر ده مالوش باقة. حده الحالي ' + fmt(s.limitUsd, 2) + '$ في الشهر.') + '</div>') +
-        (activePlans.length ? '<form id="subF"><h3>' + (s.plan ? "تجديد أو تغيير الباقة" : "تسجيل اشتراك") + '</h3>' +
-          '<div class="cols"><div><label>الباقة</label><select id="sbPlan">' + activePlans.map(function (x) { return '<option value="' + x.id + '"' + (x.id === s.planId ? " selected" : "") + '>' + esc(x.name) + ' — ' + money(x.finalPrice) + '</option>'; }).join("") + '</select></div>' +
-          '<div><label>المدة</label><select id="sbMonths">' + [1, 2, 3, 6, 12].map(function (n) { return '<option value="' + n + '">' + (n === 1 ? "شهر" : fmt(n) + " شهور") + '</option>'; }).join("") + '</select></div></div>' +
+        // the WhatsApp service renews on its own monthly date (requests from «الطلبات»)
+        '<div class="calc" style="margin:0 0 14px"><div class="r"><span>📱 خدمة الواتساب</span><b>' + (s.waAlways ? "شغالة دايمًا (متجر الإدارة)"
+          : !s.waUntil ? "مش مشترك" : new Date(s.waUntil) > new Date() ? "لحد " + date(s.waUntil) + " (فاضل " + fmt(daysLeft(s.waUntil)) + " يوم)" : "خلصت يوم " + date(s.waUntil)) + '</b></div></div>' +
+        (activePlans.length ? '<form id="subF"><h3>' + (s.plan ? "تجديد أو تغيير الباقة (أعلى أو أقل)" : "تسجيل اشتراك") + '</h3>' +
+          '<div class="cols"><div><label>الباقة</label><select id="sbPlan">' + activePlans.map(function (x) {
+            var ck = (d.changes.filter(function (c) { return c.planId === x.id; })[0] || {}).kind;
+            return '<option value="' + x.id + '"' + (x.id === s.planId ? " selected" : "") + '>' + (ck === "upgrade" ? "⬆️ " : ck === "downgrade" ? "⬇️ " : "") + esc(x.name) + ' — ' + money(x.finalPrice) + '</option>'; }).join("") + '</select></div>' +
+          '<div id="sbMonthsBox"><label>المدة</label><select id="sbMonths">' + [1, 2, 3, 6, 12].map(function (n) { return '<option value="' + n + '">' + (n === 1 ? "شهر" : fmt(n) + " شهور") + '</option>'; }).join("") + '</select></div></div>' +
+          '<div class="calc" id="sbWhat" style="margin:0 0 10px"></div>' +
           '<div class="cols"><div><label>المبلغ المدفوع (ج.م)</label><input type="number" id="sbPaid" class="ltr" min="0" step="1"><div class="hint" id="sbHint"></div></div>' +
           '<div><label>طريقة الدفع</label><select id="sbMethod"><option>كاش</option><option>InstaPay</option><option>أورانج كاش</option></select></div></div>' +
           '<label>ملاحظات (اختياري)</label><input type="text" id="sbNotes" maxlength="500" placeholder="مثلًا: رقم التحويل">' +
@@ -964,10 +1209,7 @@
           return '<div class="li"><div class="grow"><div class="ttl">' + esc(u.month) + '</div><div class="meta">' + fmt(u.messages) + ' رسالة · ' + fmt(u.used) + ' وحدة</div></div><b>' + fmt(u.costEgp, 2) + ' ج.م</b></div>'; }).join("") : '<div class="empty">لسه مفيش استهلاك</div>') + '</div>' +
       '</div>' +
       // history
-      '<div class="tabpane" data-p="hist" hidden><div class="list">' + (d.subscriptions.length ? d.subscriptions.map(function (x) {
-        return '<div class="li"><div class="mini-av" style="background:linear-gradient(135deg,#2e9d5b,#46b977)">✓</div><div class="grow"><div class="ttl">' + esc(x.plan) + ' · ' + (x.months === 1 ? "شهر" : fmt(x.months) + " شهور") + '</div>' +
-          '<div class="meta">' + date(x.startsAt) + ' ← ' + date(x.endsAt) + ' · ' + esc(x.method || "—") + (x.notes ? " · " + esc(x.notes) : "") + '</div></div><b>' + money(x.paid) + '</b>' +
-          '<button class="btn danger sm" data-delsub="' + x.id + '" title="امسح السجل ده">✕</button></div>'; }).join("") : '<div class="empty"><span class="e-ic">🧾</span>مفيش اشتراكات متسجلة</div>') + '</div></div>' +
+      '<div class="tabpane" data-p="hist" hidden>' + storeHistory(d) + '</div>' +
       // edit
       '<div class="tabpane" data-p="edit" hidden><form id="edF">' +
         '<div class="cols"><div><label>اسم المتجر</label><input type="text" id="edName" maxlength="100" value="' + esc(s.name) + '"></div><div><label>إيميل صاحب المتجر</label><input type="email" id="edEmail" class="ltr" value="' + esc(s.email) + '"></div></div>' +
@@ -996,17 +1238,39 @@
     var subF = m.querySelector("#subF");
     if (subF) {
       var planSel = m.querySelector("#sbPlan"), monSel = m.querySelector("#sbMonths"), paid = m.querySelector("#sbPaid"), hint = m.querySelector("#sbHint");
+      var what = m.querySelector("#sbWhat"), btn0 = m.querySelector("#sbBtn");
+      function addDays(iso, n) { var t = new Date(iso); t.setDate(t.getDate() + n); return t.toISOString(); }
+      // what picking this plan does for this store (worked out by the server), with the numbers
       function suggest() {
         var pl = state.plansList.filter(function (x) { return x.id === +planSel.value; })[0]; if (!pl) return;
-        var n = +monSel.value; paid.value = Math.round(pl.finalPrice * n);
-        hint.textContent = pl.finalPrice < pl.priceEgp ? "السعر بعد الخصم. الأصلي " + money(pl.priceEgp * n) : "سعر الباقة × المدة";
+        var ch = d.changes.filter(function (c) { return c.planId === pl.id; })[0] || { kind: "new" }, n = +monSel.value;
+        var up = ch.kind === "upgrade";
+        m.querySelector("#sbMonthsBox").style.visibility = up ? "hidden" : "";
+        if (up) {
+          paid.value = ch.amount;
+          hint.textContent = "فرق السعر عن الأيام الباقية (تقدر تغيّره)";
+          what.innerHTML = '<div class="r"><span>⬆️ ترقية فورية</span><b>من دلوقتي، والنهاية تفضل ' + date(s.planEndsAt) + '</b></div>' +
+            '<div class="r"><span>الحساب</span><b>(' + fmt(ch.newPrice) + ' − ' + fmt(ch.curPrice) + ') × ' + fmt(ch.days) + ' يوم ÷ ' + fmt(ch.newDuration) + ' = ' + money(ch.amount) + '</b></div>';
+        } else {
+          paid.value = Math.round(pl.finalPrice * n);
+          hint.textContent = pl.finalPrice < pl.priceEgp ? "السعر بعد الخصم. الأصلي " + money(pl.priceEgp * n) : "سعر الباقة × المدة";
+          var start = ch.startsAt || new Date().toISOString(), end = addDays(start, pl.durationDays * n);
+          what.innerHTML = ch.kind === "downgrade" ? '<div class="r"><span>⬇️ نزول لباقة أقل</span><b>تبدأ لوحدها ' + date(start) + ' لحد ' + date(end) + '</b></div>' +
+              '<div class="r"><span>لحد كده</span><b>' + esc(s.plan) + ' شغالة زي ما هي</b></div>'
+            : ch.kind === "renew" ? '<div class="r"><span>🔁 تجديد</span><b>المدة الجديدة من ' + date(start) + ' لحد ' + date(end) + '</b></div>'
+            : '<div class="r"><span>اشتراك جديد</span><b>من النهارده لحد ' + date(end) + '</b></div>';
+        }
+        if (ch.blocked) what.innerHTML += '<div class="r"><span>⚠️</span><b>' + esc(ch.blocked) + '</b></div>';
+        btn0.textContent = up ? "⬆️ رقّي دلوقتي" : ch.kind === "downgrade" ? "⬇️ سجّل النزول" : "✓ تسجيل الاشتراك";
+        btn0.disabled = !!ch.blocked;
       }
       planSel.onchange = suggest; monSel.onchange = suggest; suggest();
       subF.onsubmit = async function (e) {
         e.preventDefault(); var btn = m.querySelector("#sbBtn"); busy(btn, true);
         try {
           var r = await api("subscribe", { storeId: s.id, planId: +planSel.value, months: +monSel.value, paidEgp: paid.value, method: m.querySelector("#sbMethod").value, notes: m.querySelector("#sbNotes").value });
-          toast("اتسجل الاشتراك ✓ لحد " + date(r.endsAt)); await loadStores(); openStore(s.id);
+          toast(r.kind === "upgrade" ? "اترقّت الباقة ✓ لحد " + date(r.endsAt) : r.kind === "downgrade" ? "اتسجل ✓ الباقة الجديدة هتبدأ " + date(r.startsAt) : "اتسجل الاشتراك ✓ لحد " + date(r.endsAt));
+          await loadStores(); openStore(s.id);
         } catch (err) { setMsg(m.querySelector("#sbMsg"), err.message); busy(btn, false); }
       };
       var cancel = m.querySelector("#sbCancel");
@@ -1016,6 +1280,13 @@
         });
       };
     }
+    // a lower plan waiting for the current one to end: the admin can drop it
+    var nextCancel = m.querySelector("#sbNextCancel");
+    if (nextCancel) nextCancel.onclick = function () {
+      confirmBox("إلغاء النزول لباقة " + s.next.name + "؟", "المتجر هيفضل على " + s.plan + " لحد " + date(s.planEndsAt) + " وبس. الدفعة المسجلة للباقة الجاية هتتشال من السجل، فلو العميل دفعها رجّعهاله أو سجّلها تاني.", "إلغاء التغيير", async function () {
+        await api("next-cancel", { storeId: s.id }); toast("اتلغى التغيير"); await loadStores(); openStore(s.id);
+      });
+    };
     m.querySelectorAll("[data-delsub]").forEach(function (b) {
       b.onclick = function () {
         confirmBox("مسح سجل الاشتراك؟", "هيتشال من الإيرادات بس. مش بيغيّر باقة المتجر ولا تاريخ نهايتها.", "امسح السجل", async function () {
@@ -1177,7 +1448,7 @@
     $("subKpis").querySelectorAll(".k-val").forEach(function (el, i) { countUp(el, K[i].v, K[i].f); });
     $("subRows").innerHTML = list.length ? list.map(function (s, i) {
       return '<tr style="animation-delay:' + Math.min(i * 0.03, 0.4) + 's"><td><b>' + esc(s.store) + '</b><div class="hint ltr" style="text-align:right">' + esc(s.slug) + '</div></td><td>' + esc(s.plan) + '</td>' +
-        '<td>' + (s.months === 0 ? "رصيد إضافي" : s.months === 1 ? "شهر" : fmt(s.months) + " شهور") + '</td><td>' + money(s.price) + '</td><td>' + (s.discount ? '<span class="pill brand">' + money(s.discount) + '</span>' : "—") + '</td>' +
+        '<td>' + subLen(s) + '</td><td>' + money(s.price) + '</td><td>' + (s.discount ? '<span class="pill brand">' + money(s.discount) + '</span>' : "—") + '</td>' +
         '<td><b>' + money(s.paid) + '</b></td><td>' + esc(s.method || "—") + (s.notes ? '<div class="hint">' + esc(s.notes) + '</div>' : '') + '</td>' +
         '<td class="hint">' + date(s.startsAt) + ' ← ' + date(s.endsAt) + '</td><td><button class="btn ghost sm" data-store="' + s.storeId + '">المتجر</button></td></tr>';
     }).join("") : '<tr><td colspan="9"><div class="empty"><span class="e-ic">🧾</span>مفيش اشتراكات</div></td></tr>';
@@ -1235,13 +1506,34 @@
       $("sRate").value = s.usdRate; $("sWa").value = s.whatsapp; $("sUs").value = s.unitsSmall; $("sUm").value = s.unitsMedium; $("sUl").value = s.unitsLarge;
       $("sPay").value = s.paymentInfo || ""; var pd = s.periodDiscounts || {}; $("sD4").value = pd["4"] || 0; $("sD6").value = pd["6"] || 0; $("sD12").value = pd["12"] || 0;
       $("sFree").textContent = fmt(s.freeMessages) + " رسالة في الشهر";
+      $("sPayNum").value = s.payNumber || ""; showPayQr(s.payQr);
     } catch (e) { toast(e.message, true); }
   }
+  // InstaPay's QR: saved as soon as it's picked (kept in the database, not in the site's files)
+  function showPayQr(v) {
+    $("sPayQrImg").hidden = !v; $("sPayQrDel").hidden = !v;
+    if (v) $("sPayQrImg").src = "api/superadmin.ashx?action=pay-qr&v=" + encodeURIComponent(v);
+  }
+  $("sPayQrFile").onchange = function () {
+    var f = this.files && this.files[0]; this.value = ""; if (!f) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(f.type)) { toast("ارفع صورة PNG أو JPG", true); return; }
+    if (f.size > 1000000) { toast("الصورة لازم تكون أقل من 1 ميجا", true); return; }
+    var rd = new FileReader();
+    rd.onload = async function () {
+      try { var s = await api("pay-qr", { data: rd.result }); showPayQr(s.payQr); toast("اتحفظت صورة الـ QR ✓"); } catch (e) { toast(e.message, true); }
+    };
+    rd.readAsDataURL(f);
+  };
+  $("sPayQrDel").onclick = function () {
+    confirmBox("تشيل صورة الـ QR؟", "أصحاب المتاجر هيشوفوا رقم التحويل بس.", "شيل الصورة", async function () {
+      var s = await api("pay-qr", { remove: true }); showPayQr(s.payQr); toast("اتشالت الصورة");
+    });
+  };
   $("setForm").onsubmit = async function (e) {
     e.preventDefault(); busy($("sBtn"), true);
     try {
       await api("settings", { usdRate: $("sRate").value, whatsapp: $("sWa").value, unitsSmall: $("sUs").value, unitsMedium: $("sUm").value, unitsLarge: $("sUl").value,
-        paymentInfo: $("sPay").value, periodDiscounts: { "4": $("sD4").value || 0, "6": $("sD6").value || 0, "12": $("sD12").value || 0 } });
+        paymentInfo: $("sPay").value, payNumber: $("sPayNum").value, periodDiscounts: { "4": $("sD4").value || 0, "6": $("sD6").value || 0, "12": $("sD12").value || 0 } });
       setMsg($("sMsg"), "اتحفظت الإعدادات ✓", true); toast("اتحفظت الإعدادات");
       unitsP = Promise.resolve({ small: +$("sUs").value, medium: +$("sUm").value, large: +$("sUl").value });
     } catch (err) { setMsg($("sMsg"), err.message); }

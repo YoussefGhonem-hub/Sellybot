@@ -110,7 +110,8 @@ namespace RiwaqChat
                         string siteBase = "https://" + req.Url.Host + req.ApplicationPath;
                         int hooks = await ShopifyAdmin.RegisterWebhooks(creds, siteBase, tok.Scopes);
                         bool ocHooked = s.OcOn && ShopifyAdmin.Has(tok.Scopes, "read_orders") && await ShopifyAdmin.RegisterOrderWebhook(creds, siteBase);   // re-connecting keeps order confirmation going
-                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyWebhooks=@w, OcHooked=@oh WHERE Id=@s", "@w", hooks, "@oh", ocHooked, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        bool dnHooked = s.DnOn && ShopifyAdmin.Has(tok.Scopes, Delivery.Scope) && await ShopifyAdmin.RegisterDeliveryWebhook(creds, siteBase);   // ...and the delivery-day message
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyWebhooks=@w, OcHooked=@oh, DnHooked=@dh WHERE Id=@s", "@w", hooks, "@oh", ocHooked, "@dh", dnHooked, "@s", s.Id)) cmd.ExecuteNonQuery();
 
                         var missing = new List<string>();
                         foreach (var w in ShopifyAdmin.Wanted) if (!ShopifyAdmin.Has(tok.Scopes, w)) missing.Add(w);
@@ -152,6 +153,33 @@ namespace RiwaqChat
                         }
                         using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET OcOn=@o, OcScope=@sc, OcHooked=@h WHERE Id=@s", "@o", on, "@sc", scope, "@h", hooked, "@s", s.Id)) cmd.ExecuteNonQuery();
                         Web.Json(res, 200, new { ok = true, enabled = on, scope, canCancel = ShopifyAdmin.Has(s.ShopifyScopes, OrderConfirm.Scope) });
+                        return;
+                    }
+                    // The delivery-day message on WhatsApp (Delivery.cs): Shopify tells us when a shipment is out for delivery
+                    if (action == "delivery-msg")
+                    {
+                        var body = Web.Body(req, 500);
+                        object en; bool on = body.TryGetValue("enabled", out en) && en is bool && (bool)en;
+                        var creds = ShopifyAdmin.For(s);
+                        bool hooked = s.DnHooked;
+                        if (on)
+                        {
+                            if (!PlanGate.Allows(c, s, "shopify")) { PlanGate.Deny(res, c, s, "shopify"); return; }
+                            if (!PlanGate.Allows(c, s, Delivery.Feature)) { PlanGate.Deny(res, c, s, Delivery.Feature); return; }
+                            if (creds == null) { Web.Error(res, 400, "no_shopify", "اعمل ربط كامل لمتجرك على Shopify الأول (بالـ Client ID والـ secret)."); return; }
+                            var need = new List<string>();
+                            foreach (var sc in new[] { "read_orders", Delivery.Scope }) if (!ShopifyAdmin.Has(s.ShopifyScopes, sc)) need.Add(sc);
+                            if (need.Count > 0) { Web.Error(res, 400, "no_scope", "التطبيق ناقصه صلاحية " + string.Join(" و ", need) + ". ضيفها في Scopes واعمل Release للنسخة ووافق عليها، وبعدين اربط تاني."); return; }
+                            if (string.IsNullOrEmpty(s.WaInstance) || string.IsNullOrEmpty(s.WaNumber)) { Web.Error(res, 400, "no_whatsapp", "اربط واتساب المتجر الأول من صفحة الواتساب، عشان الرسايل تتبعت من رقمك."); return; }
+                            if (!hooked)
+                            {
+                                if (!Web.Allow("dn-hook:" + s.Id, 10, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "جرّبت كتير، استنى شوية وجرّب تاني."); return; }
+                                hooked = await ShopifyAdmin.RegisterDeliveryWebhook(creds, "https://" + req.Url.Host + req.ApplicationPath);
+                                if (!hooked) { Web.Error(res, 502, "hook_failed", "Shopify مارضيتش تبعتلنا تحديثات الشحن. اتأكد إن التطبيق فيه صلاحية read_fulfillments واربط تاني، ولو فضلت كلّم الدعم."); return; }
+                            }
+                        }
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET DnOn=@o, DnHooked=@h WHERE Id=@s", "@o", on, "@h", hooked, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        Web.Json(res, 200, new { ok = true, enabled = on });
                         return;
                     }
                     if (action == "shopify-disconnect")

@@ -33,14 +33,29 @@ namespace RiwaqChat
                     { "on", s.OcOn }, { "scope", s.OcScope }, { "canCancel", ShopifyAdmin.Has(s.ShopifyScopes, OrderConfirm.Scope) },
                     { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
                     { "recent", s.OcOn || s.OcHooked ? (object)OrderConfirm.Recent(c, s.Id) : new object[0] } } },
+                // the delivery-day message on WhatsApp, Shopify side (EasyOrders' is in easyorders.delivery)
+                { "delivery", new Dictionary<string, object> {
+                    { "on", s.DnOn }, { "scope", ShopifyAdmin.Has(s.ShopifyScopes, Delivery.Scope) },
+                    { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
+                    { "recent", s.DnOn ? (object)Delivery.Recent(c, s.Id, "shopify") : new object[0] } } },
                 { "easyorders", EasyOrders.Describe(c, s) },
                 { "usage", Billing.UsageJson(c, s, u, chars) },
                 { "plan", Billing.StorePlan(s) }, { "whatsapp", Billing.WaNumber(Billing.WhatsApp(c)) },
+                // the WhatsApp service (its own monthly subscription): on / until / price / this month's numbers, for the banners, «داتا المتجر» and «باقتي»
+                { "waService", WaAccount.ServiceJson(c, s) },
+                // a request waiting for the admin ("plan", "upgrade", "topup", "wa", or ""), so the banners don't ask for one again
+                { "pendingRequest", PendingKind(c, s.Id) },
                 { "supportAnswered", SupportAnswered(c, s.Id) },
                 { "storage", storage },
                 { "knowledge", new Dictionary<string, object> { { "items", items }, { "chars", chars }, { "maxChars", KnowledgeHandler.MaxStoreChars },
                                                                 { "fullModeMaxChars", Claude.FullModeMaxChars }, { "mode", chars > Claude.FullModeMaxChars ? "search" : "full" } } },
             };
+        }
+
+        static string PendingKind(SqlConnection c, int storeId)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT TOP 1 Kind FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending' ORDER BY Id DESC", "@s", storeId))
+                return cmd.ExecuteScalar() as string ?? "";
         }
 
         // tickets where support replied and the owner hasn't answered yet (badge in the dashboard)

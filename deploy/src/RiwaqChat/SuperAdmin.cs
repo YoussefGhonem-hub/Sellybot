@@ -42,6 +42,8 @@ namespace RiwaqChat
             { "FreeMessages", "500" },
             // discount % for paying several months at once ("months:percent")
             { "PeriodDiscounts", "4:5,6:10,12:20" },
+            // the number owners send the money to (shown with InstaPay's QR in the plan request form)
+            { "PayNumber", "01229391155" },
             // shown to store owners in the plan request form
             { "PaymentInfo", "حوّل المبلغ على InstaPay أو أورانج كاش على رقم الواتساب بتاعنا، وبعدين اكتب رقم العملية (أو الرقم اللي حوّلت منه) في الطلب." },
         };
@@ -69,6 +71,38 @@ namespace RiwaqChat
                                          WHEN MATCHED THEN UPDATE SET [Value] = @v WHEN NOT MATCHED THEN INSERT ([Key], [Value]) VALUES (@k, @v);", "@k", key, "@v", value))
                 cmd.ExecuteNonQuery();
             lock (Lock) cache = null;
+        }
+
+        // ---------- InstaPay's QR, shown to owners next to the number they pay to (a picture in dbo.AppFiles) ----------
+        const string PayQrKey = "PayQr";
+        // changes whenever a new picture is uploaded ("" = none), so the page can ask for the new one
+        public static string PayQrVersion(SqlConnection c)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT UpdatedAt FROM dbo.AppFiles WHERE [Key] = @k", "@k", PayQrKey))
+            { var v = cmd.ExecuteScalar(); return v is DateTime ? ((DateTime)v).Ticks.ToString(CultureInfo.InvariantCulture) : ""; }
+        }
+        public static bool PayQrRead(SqlConnection c, out byte[] data, out string type)
+        {
+            data = null; type = null;
+            using (var cmd = Db.Cmd(c, "SELECT ContentType, Data FROM dbo.AppFiles WHERE [Key] = @k", "@k", PayQrKey))
+            using (var r = cmd.ExecuteReader()) if (r.Read()) { type = (string)r[0]; data = (byte[])r[1]; }
+            return data != null;
+        }
+        public static void PayQrSave(SqlConnection c, byte[] data, string type)
+        {
+            using (var cmd = Db.Cmd(c, @"MERGE dbo.AppFiles AS t USING (SELECT @k AS [Key]) AS s ON t.[Key] = s.[Key]
+                                         WHEN MATCHED THEN UPDATE SET ContentType = @t, Data = @d, UpdatedAt = SYSUTCDATETIME()
+                                         WHEN NOT MATCHED THEN INSERT ([Key], ContentType, Data) VALUES (@k, @t, @d);", "@k", PayQrKey, "@t", type, "@d", data))
+                cmd.ExecuteNonQuery();
+        }
+        public static void PayQrDelete(SqlConnection c) { using (var cmd = Db.Cmd(c, "DELETE FROM dbo.AppFiles WHERE [Key] = @k", "@k", PayQrKey)) cmd.ExecuteNonQuery(); }
+        // sends the picture as itself (its type was checked from its bytes when it was uploaded)
+        public static bool PayQrServe(SqlConnection c, HttpResponse res)
+        {
+            byte[] data; string type;
+            if (!PayQrRead(c, out data, out type)) return false;
+            res.ContentType = type; res.AddHeader("X-Content-Type-Options", "nosniff"); res.BinaryWrite(data);
+            return true;
         }
 
         public static decimal Dec(string s, decimal fallback)
@@ -195,26 +229,109 @@ namespace RiwaqChat
                 { "soon", !OpenPeriods.Contains(m) } }; }).ToList();
         }
 
-        // Starts (or extends) a subscription: history row + the store's plan, end date and monthly limit. Returns the new end date.
-        public static DateTime Activate(SqlConnection c, StoreInfo s, PlanInfo p, int months, decimal price, decimal paid, string method, string notes, out int subscriptionId)
+        // ---------- changing plans ----------
+        // What picking plan p means for this store right now:
+        //   new        no running plan: starts today
+        //   renew      the same plan: the new time starts after the current end
+        //   upgrade    a pricier plan (per day): starts now, same end date, pays the price difference for the days left
+        //   downgrade  a cheaper plan: starts when the current one ends (Stores.Next*, Db.RollOverPlans)
+        // Blocked: a lower plan is already waiting and this pick would clash with it (the super admin can cancel the waiting one).
+        public class Change { public string Kind, Blocked, CurName; public int Days, CurDuration, NewDuration; public decimal Amount, CurPrice, NewPrice; public DateTime StartsAt; }
+
+        public static bool Running(StoreInfo s) { return s.PlanId.HasValue && s.PlanEndsAt.HasValue && s.PlanEndsAt.Value > DateTime.UtcNow; }
+
+        public static Change ChangeFor(SqlConnection c, StoreInfo s, PlanInfo p)
         {
             var now = DateTime.UtcNow;
-            // same plan still running: the new time starts after it; otherwise from today
-            var start = (s.PlanId == p.Id && s.PlanEndsAt.HasValue && s.PlanEndsAt.Value > now) ? s.PlanEndsAt.Value : now;
-            var end = start.AddDays(p.DurationDays * months);
+            var ch = new Change { NewPrice = FinalPrice(p), NewDuration = p.DurationDays, StartsAt = now, Kind = "new" };
+            if (!Running(s)) return ch;
+            var end = s.PlanEndsAt.Value;
+            ch.CurName = s.PlanName; ch.Days = Math.Max(1, (int)Math.Ceiling((end - now).TotalDays));
+            string waiting = s.NextPlanId.HasValue
+                ? "باقة " + s.NextPlanName + " هتبدأ يوم " + end.ToString("yyyy-MM-dd") + " بدل الباقة الحالية. عشان تختار حاجة تانية لازم التغيير ده يتلغي الأول، كلّم الإدارة." : null;
+            if (s.PlanId.Value == p.Id) { ch.Kind = "renew"; ch.StartsAt = end; ch.Blocked = waiting; return ch; }
+            if (s.NextPlanId == p.Id) { ch.Kind = "downgrade"; ch.StartsAt = end.AddDays(s.NextDays); return ch; }   // more time on the plan that's already waiting
+            var cur = Plan(c, s.PlanId.Value);
+            if (cur == null) return ch;   // the current plan was deleted: a fresh start, as before
+            ch.CurPrice = FinalPrice(cur); ch.CurDuration = cur.DurationDays;
+            decimal curDaily = ch.CurPrice / Math.Max(1, cur.DurationDays), newDaily = ch.NewPrice / Math.Max(1, p.DurationDays);
+            ch.Blocked = waiting;
+            if (newDaily >= curDaily) { ch.Kind = "upgrade"; ch.Amount = Math.Max(0, Math.Round((newDaily - curDaily) * ch.Days, 0)); }
+            else { ch.Kind = "downgrade"; ch.StartsAt = end; }
+            return ch;
+        }
+
+        public static Dictionary<string, object> ChangeJson(Change ch, PlanInfo p)
+        {
+            return new Dictionary<string, object> {
+                { "planId", p.Id }, { "kind", ch.Kind }, { "blocked", ch.Blocked }, { "days", ch.Days }, { "amount", ch.Amount },
+                { "curName", ch.CurName ?? "" }, { "curPrice", ch.CurPrice }, { "curDuration", ch.CurDuration }, { "newPrice", ch.NewPrice }, { "newDuration", ch.NewDuration },
+                { "startsAt", ch.StartsAt.ToString("o") } };
+        }
+
+        // Starts, extends or schedules a period of plan p (see ChangeFor): history row + the store's plan, end date and monthly limit.
+        // A lower plan only waits (Stores.Next*). Returns the new period's end date; startsAt is when it begins.
+        public static DateTime Activate(SqlConnection c, StoreInfo s, PlanInfo p, int months, decimal price, decimal paid, string method, string notes, out int subscriptionId, out DateTime startsAt)
+        {
+            var ch = ChangeFor(c, s, p);
+            if (ch.Blocked != null) throw new BadRequestException(ch.Blocked);
+            // a full period of a pricier plan (requests sent before upgrades existed) still starts today, as it always did
+            var start = startsAt = ch.Kind == "renew" || ch.Kind == "downgrade" ? ch.StartsAt : DateTime.UtcNow;
+            int days = p.DurationDays * months;
+            var end = start.AddDays(days);
             using (var tx = c.BeginTransaction())
             {
-                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt)
-                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @paid, @method, @notes, @start, @end)",
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt, Kind)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @paid, @method, @notes, @start, @end, 'plan')",
                     "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", price, "@disc", Math.Max(0, price - paid), "@paid", paid,
                     "@method", (object)method ?? DBNull.Value, "@notes", (object)notes ?? DBNull.Value, "@start", start, "@end", end))
                 { cmd.Transaction = tx; subscriptionId = (int)cmd.ExecuteScalar(); }
-                using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET PlanId=@p, PlanName=@n, PlanEndsAt=@end, MonthlyTokenLimit=@l, Status='active' WHERE Id=@s",
-                    "@p", p.Id, "@n", p.Name, "@end", end, "@l", p.TokenLimit, "@s", s.Id))
+                using (var cmd = ch.Kind == "downgrade"
+                    ? Db.Cmd(c, "UPDATE dbo.Stores SET NextPlanId=@p, NextPlanName=@n, NextDays=ISNULL(NextDays,0)+@d WHERE Id=@s", "@p", p.Id, "@n", p.Name, "@d", days, "@s", s.Id)
+                    : Db.Cmd(c, "UPDATE dbo.Stores SET PlanId=@p, PlanName=@n, PlanEndsAt=@end, MonthlyTokenLimit=@l, Status='active' WHERE Id=@s",
+                        "@p", p.Id, "@n", p.Name, "@end", end, "@l", p.TokenLimit, "@s", s.Id))
                 { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
                 tx.Commit();
             }
             return end;
+        }
+
+        // A pricier plan right away: same end date, the store pays the price difference for the days left (ChangeFor). Returns the end date.
+        public static DateTime Upgrade(SqlConnection c, StoreInfo s, PlanInfo p, decimal amount, decimal paid, string method, string notes, out int subscriptionId)
+        {
+            var ch = ChangeFor(c, s, p);
+            if (ch.Blocked != null) throw new BadRequestException(ch.Blocked);
+            if (ch.Kind != "upgrade")
+                throw new BadRequestException(ch.Kind == "new" ? "باقة المتجر خلصت، فدي مش ترقية. ارفض الطلب وخلّي صاحب المتجر يطلب الباقة كاشتراك جديد."
+                                                                : "الباقة دي مش أعلى من باقة المتجر الحالية.");
+            var now = DateTime.UtcNow; var end = s.PlanEndsAt.Value;
+            using (var tx = c.BeginTransaction())
+            {
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt, Kind)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, 0, @price, @disc, @paid, @method, @notes, @start, @end, 'upgrade')",
+                    "@s", s.Id, "@p", p.Id, "@n", p.Name, "@price", amount, "@disc", Math.Max(0, amount - paid), "@paid", paid,
+                    "@method", (object)method ?? DBNull.Value, "@notes", (object)notes ?? DBNull.Value, "@start", now, "@end", end))
+                { cmd.Transaction = tx; subscriptionId = (int)cmd.ExecuteScalar(); }
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET PlanId=@p, PlanName=@n, MonthlyTokenLimit=@l, Status='active' WHERE Id=@s",
+                    "@p", p.Id, "@n", p.Name, "@l", p.TokenLimit, "@s", s.Id))
+                { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
+                tx.Commit();
+            }
+            return end;
+        }
+
+        // Drops a lower plan that was waiting, and its payment rows (they never started).
+        public static bool CancelNext(SqlConnection c, StoreInfo s)
+        {
+            if (!s.NextPlanId.HasValue || !s.PlanEndsAt.HasValue) return false;
+            using (var tx = c.BeginTransaction())
+            {
+                using (var cmd = Db.Cmd(c, "DELETE FROM dbo.Subscriptions WHERE StoreId=@s AND Kind='plan' AND PlanId=@p AND StartsAt >= DATEADD(SECOND, -1, @end)",
+                    "@s", s.Id, "@p", s.NextPlanId.Value, "@end", s.PlanEndsAt.Value)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET NextPlanId=NULL, NextPlanName=NULL, NextDays=NULL WHERE Id=@s", "@s", s.Id)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
+                tx.Commit();
+            }
+            return true;
         }
 
         // ---------- extra quota for the current month (when the monthly quota runs out before the month ends) ----------
@@ -240,6 +357,75 @@ namespace RiwaqChat
         {
             if (Expired(s)) return 0;
             return s.MonthlyTokenLimit + TopupUnits(c, s.Id);
+        }
+
+        // ---------- extra messages worked out from the store's own use: enough to reach the end of the month ----------
+        // Pace = this month's messages per day (last month's when it's too early to tell and last month was busier),
+        // need = pace x days left (+10% to spare) - what's left now, rounded up. Priced at the plan's own rate per unit,
+        // with this store's own units per message (its real average after 10 messages, by its data size before that).
+        public class TopupCalc
+        {
+            public long Per;                                    // units one message of this store takes
+            public int Used, Left, DaysPassed, DaysLeft, Rate, Need, Suggest, Min, Max;
+            public decimal PricePerMsg, SuggestPrice;
+            public DateTime Until;                              // what the extra messages cover: the month's end, or the plan's end when sooner
+            public bool FromLastMonth;
+        }
+        public const int TopupMinMsgs = 50;
+
+        public static TopupCalc TopupNeed(SqlConnection c, StoreInfo s, PlanInfo p)
+        {
+            var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var monthEnd = monthStart.AddMonths(1);
+            var until = s.PlanEndsAt.HasValue && s.PlanEndsAt.Value < monthEnd ? s.PlanEndsAt.Value : monthEnd;
+            var u = Db.Usage(c, s.Id, Db.Month);
+            long chars;
+            using (var cmd = Db.Cmd(c, "SELECT ISNULL(SUM(CAST(LEN(Content) AS BIGINT)),0) FROM dbo.KnowledgeItems WHERE StoreId=@s", "@s", s.Id)) chars = Convert.ToInt64(cmd.ExecuteScalar());
+            long per = Math.Max(1, u.Messages >= 10 && u.Weighted > 0 ? u.Weighted / u.Messages : Units(c, chars <= 40000 ? "UnitsSmall" : chars <= 150000 ? "UnitsMedium" : "UnitsLarge"));
+            double passed = Math.Max(1, (now - monthStart).TotalDays), rate = u.Messages / passed;
+            bool last = false;
+            if (passed < 5)
+            {
+                var pm = monthStart.AddMonths(-1);
+                var prev = Db.Usage(c, s.Id, pm.ToString("yyyy-MM"));
+                double prevRate = prev.Messages / (double)DateTime.DaysInMonth(pm.Year, pm.Month);
+                if (prevRate > rate) { rate = prevRate; last = true; }
+            }
+            double daysLeft = Math.Max(0, (until - now).TotalDays);
+            int left = (int)Math.Max(0, (TotalLimit(c, s) - u.Weighted) / per);
+            int need = (int)Math.Ceiling(rate * daysLeft * 1.1) - left;
+            int suggest = RoundMsgs(Math.Max(need, TopupMinMsgs));
+            decimal ppm = FinalPrice(p) * per / Math.Max(1, p.TokenLimit);
+            return new TopupCalc {
+                Per = per, Used = u.Messages, Left = left, DaysPassed = (int)Math.Floor(passed), DaysLeft = (int)Math.Ceiling(daysLeft), Rate = (int)Math.Round(rate),
+                Need = Math.Max(0, need), Suggest = suggest, Min = TopupMinMsgs, Max = Math.Max(suggest * 3, (int)Math.Min(int.MaxValue / 2, p.TokenLimit * 2L / per)),
+                PricePerMsg = ppm, SuggestPrice = TopupPrice(ppm, suggest), Until = until, FromLastMonth = last };
+        }
+
+        // 50s up to 500, 100s up to 3000, then 500s
+        public static int RoundMsgs(int n) { int step = n <= 500 ? 50 : n <= 3000 ? 100 : 500; return (Math.Max(1, n) + step - 1) / step * step; }
+        // rounded up to 5 EGP, at least 10
+        public static decimal TopupPrice(decimal pricePerMsg, int msgs) { return Math.Max(10, Math.Ceiling(pricePerMsg * msgs / 5m) * 5m); }
+
+        public static Dictionary<string, object> NeedJson(TopupCalc n)
+        {
+            // three ready choices around the suggestion; the owner can also type any number between Min and Max
+            var opts = new[] { RoundMsgs(Math.Max(n.Min, n.Suggest / 2)), n.Suggest, RoundMsgs(n.Suggest * 3 / 2) }.Distinct().ToList();
+            return new Dictionary<string, object> {
+                { "per", n.Per }, { "used", n.Used }, { "left", n.Left }, { "daysPassed", n.DaysPassed }, { "daysLeft", n.DaysLeft }, { "rate", n.Rate },
+                { "need", n.Need }, { "suggest", n.Suggest }, { "min", n.Min }, { "max", n.Max }, { "pricePerMsg", Math.Round(n.PricePerMsg, 10) },   // the dashboard prices a typed number the same way (TopupPrice)
+                { "until", n.Until.ToString("o") }, { "fromLastMonth", n.FromLastMonth },
+                { "options", opts.Select(m => new Dictionary<string, object> { { "msgs", m }, { "price", TopupPrice(n.PricePerMsg, m) }, { "suggest", m == n.Suggest } }).ToList() } };
+        }
+
+        // How the suggestion was worked out, in words, kept with the request for the admin
+        public static string NeedText(TopupCalc n, int asked)
+        {
+            var t = "استخدم " + n.Used + " رسالة في " + n.DaysPassed + " يوم (≈ " + n.Rate + " في اليوم" + (n.FromLastMonth ? "، حسب الشهر اللي فات" : "") + ")، " +
+                    "وفاضل " + n.DaysLeft + " يوم لحد " + n.Until.ToString("yyyy-MM-dd") + "، وفاضله " + n.Left + " رسالة. " +
+                    "محتاج حوالي " + n.Need + " رسالة، واقترحنا " + n.Suggest + (asked != n.Suggest ? "، وهو اختار " + asked : "") + ".";
+            return t.Length > 400 ? t.Substring(0, 400) : t;
         }
 
         // ---------- the free trial counts messages, a plan counts units ----------
@@ -287,11 +473,36 @@ namespace RiwaqChat
                 { "kind", r["Kind"] as string ?? "plan" }, { "units", r["Units"] == DBNull.Value ? 0L : Convert.ToInt64(r["Units"]) }, { "month", r["Month"] as string ?? "" },
                 { "id", r["Id"] }, { "storeId", r["StoreId"] }, { "planId", r["PlanId"] }, { "plan", r["PlanName"] }, { "months", r["Months"] },
                 { "price", r["PriceEgp"] }, { "discount", r["DiscountEgp"] }, { "amount", r["AmountEgp"] },
-                { "method", r["PaymentMethod"] as string ?? "" }, { "ref", r["PaymentRef"] as string ?? "" }, { "note", r["Note"] as string ?? "" },
+                { "method", r["PaymentMethod"] as string ?? "" }, { "ref", r["PaymentRef"] as string ?? "" }, { "refNo", r["RefNo"] as string ?? "" }, { "note", r["Note"] as string ?? "" },
                 { "status", r["Status"] }, { "adminNote", r["AdminNote"] as string ?? "" },
                 { "at", Iso(r["CreatedAt"]) }, { "decidedAt", Iso(r["DecidedAt"]) },
+                // the WhatsApp service with this request (or the whole request, kind "wa"): its share of the amount and the number to link
+                { "wa", r["WaAddon"] is bool && (bool)r["WaAddon"] }, { "waAmount", r["WaEgp"] == DBNull.Value ? 0m : (decimal)r["WaEgp"] }, { "waPhone", r["WaPhone"] as string ?? "" },
+                // its type when it was sent (new / renew / upgrade / downgrade / wa-new / wa-renew / topup); extra messages: how many, and how we worked them out
+                { "what", r["What"] as string ?? "" }, { "msgs", r["Msgs"] == DBNull.Value ? 0 : (int)r["Msgs"] }, { "calc", r["Calc"] as string ?? "" },
             };
         }
+
+        // ---------- the payment's reference number (الرقم المرجعي) ----------
+        // As typed: Arabic-Indic digits become 0-9, letters go upper case, spaces/dashes/anything else drop out.
+        public static string NormRef(string v)
+        {
+            var sb = new StringBuilder();
+            foreach (var ch in v ?? "")
+            {
+                if (ch >= '٠' && ch <= '٩') sb.Append((char)('0' + (ch - '٠')));
+                else if (ch >= '۰' && ch <= '۹') sb.Append((char)('0' + (ch - '۰')));
+                else if (ch < 128 && char.IsLetterOrDigit(ch)) sb.Append(char.ToUpperInvariant(ch));
+            }
+            return sb.ToString();
+        }
+        public static bool RefLooksRight(string norm) { return norm.Length >= 6 && norm.Length <= 30 && norm.Any(char.IsDigit); }
+        // already backing a request that is waiting or was approved (UX_PlanRequests_RefNo enforces the same)
+        public static bool RefUsed(SqlConnection c, string norm)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE RefNo = @r AND Status IN ('pending', 'approved')", "@r", norm)) return (int)cmd.ExecuteScalar() > 0;
+        }
+        public const string RefUsedMessage = "الرقم المرجعي ده اتسجل قبل كده في طلب تاني، وكل دفعة ليها رقم واحد بس. اتأكد إنك كاتبه صح، ولو متأكد منه كلّمنا.";
 
         // ---------- what a store may use ----------
         public static bool Expired(StoreInfo s) { return s.PlanId.HasValue && s.PlanEndsAt.HasValue && s.PlanEndsAt.Value < DateTime.UtcNow; }
@@ -305,6 +516,10 @@ namespace RiwaqChat
             {
                 { "id", s.PlanId.Value }, { "name", s.PlanName ?? "" }, { "endsAt", s.PlanEndsAt.HasValue ? s.PlanEndsAt.Value.ToString("o") : "" },
                 { "daysLeft", Math.Max(0, days) }, { "expired", Expired(s) },
+                // a lower plan waiting for this one to end
+                { "next", s.NextPlanId.HasValue && s.PlanEndsAt.HasValue ? new Dictionary<string, object> {
+                    { "id", s.NextPlanId.Value }, { "name", s.NextPlanName ?? "" }, { "startsAt", s.PlanEndsAt.Value.ToString("o") },
+                    { "endsAt", s.PlanEndsAt.Value.AddDays(s.NextDays).ToString("o") }, { "days", s.NextDays } } : null },
             };
         }
 
@@ -366,7 +581,7 @@ namespace RiwaqChat
             {
                 using (var c = Db.Open())
                 {
-                    var b = post ? Web.Body(req, 30000) : new Dictionary<string, object>();
+                    var b = post ? Web.Body(req, action == "pay-qr" ? 1500000 : 30000) : new Dictionary<string, object>();   // pay-qr carries a picture
 
                     if (action == "login" && post)
                     {
@@ -393,6 +608,7 @@ namespace RiwaqChat
                         using (var cmd = Db.Cmd(c, "SELECT Username, DefaultPassword FROM dbo.Admins WHERE Id = @id", "@id", adminId.Value))
                         using (var r = cmd.ExecuteReader()) if (r.Read()) { adminName = (string)r[0]; defaultPassword = (bool)r[1]; }
                     if (adminName == null) { Web.Error(res, 401, "not_logged_in"); return; }
+                    Db.RollOverPlans(c);   // lower plans whose turn came show as the store's plan in every list
 
                     switch (action)
                     {
@@ -410,9 +626,10 @@ namespace RiwaqChat
                         case "store-login": if (!post) break; StoreLogin(ctx, c, b, res); return;
                         case "subscribe": if (!post) break; Subscribe(c, b, res); return;
                         case "subscription-cancel": if (!post) break; SubscriptionCancel(c, b, res); return;
+                        case "next-cancel": if (!post) break; NextCancel(c, b, res); return;
                         case "subscription-delete": if (!post) break; SubscriptionDelete(c, b, res); return;
                         case "subscriptions": Web.Json(res, 200, Subscriptions(c)); return;
-                        case "requests": Web.Json(res, 200, Requests(c, req.QueryString["status"])); return;
+                        case "requests": Web.Json(res, 200, Requests(c, req.QueryString["status"], req.QueryString["q"])); return;
                         case "request-approve": if (!post) break; RequestDecide(c, b, res, true); return;
                         case "request-reject": if (!post) break; RequestDecide(c, b, res, false); return;
                         case "tickets": Web.Json(res, 200, Tickets(c, req.QueryString["status"])); return;
@@ -420,6 +637,7 @@ namespace RiwaqChat
                         case "ticket-reply": if (!post) break; TicketReply(c, b, res); return;
                         case "ticket-status": if (!post) break; TicketStatus(c, b, res); return;
                         case "settings": if (post) SettingsSave(c, b, res); else Web.Json(res, 200, SettingsGet(c)); return;
+                        case "pay-qr": if (post) PayQrUpload(c, b, res); else if (!Billing.PayQrServe(c, res)) Web.Error(res, 404, "not_found"); return;
                         case "password": if (!post) break; ChangePassword(c, adminId.Value, b, res); return;
                     }
                     Web.Error(res, 404, "unknown_action");
@@ -613,6 +831,16 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 if (r.Read()) { store = StoreRow(r, rate, free); origins = r["AllowedOrigins"] as string; style = r["BubbleStyle"] as string; color = r["BrandColor"] as string; }
             if (store == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
             store["origins"] = origins ?? ""; store["bubbleStyle"] = style ?? ""; store["brandColor"] = color ?? "";
+            // the WhatsApp service: its own monthly renewal date (the admin's own store always has it)
+            using (var cmd = Db.Cmd(c, "SELECT WaUntil, IsAdmin FROM dbo.Stores WHERE Id=@s", "@s", id))
+            using (var r = cmd.ExecuteReader()) if (r.Read()) { store["waUntil"] = Billing.Iso(r["WaUntil"]); store["waAlways"] = (bool)r["IsAdmin"]; }
+            // every request the store sent (any status), for its history timeline next to the payments
+            var storeReqs = new List<Dictionary<string, object>>();
+            using (var cmd = Db.Cmd(c, "SELECT TOP 200 * FROM dbo.PlanRequests WHERE StoreId=@s ORDER BY CreatedAt DESC", "@s", id))
+            using (var r = cmd.ExecuteReader()) while (r.Read()) storeReqs.Add(Billing.RequestJson(r));
+            foreach (var x in storeReqs)
+                if (string.IsNullOrEmpty(x["what"] as string)) x["what"] = (string)x["kind"] == "plan" ? "new" : (string)x["kind"] == "wa" ? "wa-new" : x["kind"];
+            store["requests"] = storeReqs;
 
             var subs = new List<Dictionary<string, object>>();
             using (var cmd = Db.Cmd(c, "SELECT * FROM dbo.Subscriptions WHERE StoreId = @s ORDER BY CreatedAt DESC", "@s", id))
@@ -629,7 +857,11 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             var tickets = new List<Dictionary<string, object>>();
             using (var cmd = Db.Cmd(c, "SELECT Id, Subject, Status, UpdatedAt FROM dbo.Tickets WHERE StoreId = @s ORDER BY UpdatedAt DESC", "@s", id))
             using (var r = cmd.ExecuteReader()) while (r.Read()) tickets.Add(new Dictionary<string, object> { { "id", r["Id"] }, { "subject", r["Subject"] }, { "status", r["Status"] }, { "updated", Billing.Iso(r["UpdatedAt"]) } });
-            Web.Json(res, 200, new Dictionary<string, object> { { "store", store }, { "subscriptions", subs }, { "usage", months }, { "tickets", tickets } });
+            // what picking each plan would do for this store (upgrade now / lower plan after the current one / renew / new), and a lower plan already waiting
+            var si = Db.StoreById(c, id);
+            var changes = si == null ? new List<Dictionary<string, object>>() : Billing.Plans(c, false).Select(p => Billing.ChangeJson(Billing.ChangeFor(c, si, p), p)).ToList();
+            store["next"] = si == null ? null : Billing.StorePlan(si)["next"];
+            Web.Json(res, 200, new Dictionary<string, object> { { "store", store }, { "subscriptions", subs }, { "usage", months }, { "tickets", tickets }, { "changes", changes } });
         }
 
         static void StoreCreate(SqlConnection c, Dictionary<string, object> b, HttpResponse res)
@@ -719,7 +951,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
         {
             return new Dictionary<string, object>
             {
-                { "id", r["Id"] }, { "storeId", r["StoreId"] }, { "plan", r["PlanName"] }, { "months", r["Months"] }, { "price", r["PriceEgp"] }, { "discount", r["DiscountEgp"] },
+                { "id", r["Id"] }, { "storeId", r["StoreId"] }, { "plan", r["PlanName"] }, { "months", r["Months"] }, { "kind", r["Kind"] as string ?? "plan" }, { "price", r["PriceEgp"] }, { "discount", r["DiscountEgp"] },
                 { "paid", r["PaidEgp"] }, { "method", r["PaymentMethod"] as string ?? "" }, { "notes", r["Notes"] as string ?? "" },
                 { "startsAt", Billing.Iso(r["StartsAt"]) }, { "endsAt", Billing.Iso(r["EndsAt"]) }, { "at", Billing.Iso(r["CreatedAt"]) },
             };
@@ -733,23 +965,47 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             var p = planId.HasValue ? Billing.Plan(c, planId.Value) : null;
             if (s == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
             if (p == null) { Web.Error(res, 404, "no_plan", "الباقة مش موجودة."); return; }
+            int subId;
+            var ch = Billing.ChangeFor(c, s, p);
+            if (ch.Kind == "upgrade")
+            {
+                // a pricier plan now: same end date, the price difference for the days left (the admin can change the amount)
+                var paidUp = DecOf(b, "paidEgp") ?? ch.Amount;
+                if (paidUp < 0 || paidUp > Math.Max(ch.Amount, Billing.FinalPrice(p)) * 10) { Web.Error(res, 400, "bad_paid", "المبلغ المدفوع مش منطقي."); return; }
+                var endUp = Billing.Upgrade(c, s, p, ch.Amount, paidUp, Web.Str(b, "method", 40), Web.Str(b, "notes", 500), out subId);
+                Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", "upgrade" }, { "startsAt", DateTime.UtcNow.ToString("o") }, { "endsAt", endUp.ToString("o") } });
+                return;
+            }
             if (months < 1 || months > 12) { Web.Error(res, 400, "bad_months", "المدة من شهر لـ 12 شهر."); return; }
             decimal price = p.PriceEgp * months, offer = Billing.FinalPrice(p) * months;
             var paid = DecOf(b, "paidEgp") ?? offer;
             if (paid < 0 || paid > price * 10) { Web.Error(res, 400, "bad_paid", "المبلغ المدفوع مش منطقي."); return; }
-            int subId;
-            var end = Billing.Activate(c, s, p, months, price, paid, Web.Str(b, "method", 40), Web.Str(b, "notes", 500), out subId);
-            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "endsAt", end.ToString("o") } });
+            DateTime start;
+            var end = Billing.Activate(c, s, p, months, price, paid, Web.Str(b, "method", 40), Web.Str(b, "notes", 500), out subId, out start);
+            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", ch.Kind }, { "startsAt", start.ToString("o") }, { "endsAt", end.ToString("o") } });
+        }
+
+        static void NextCancel(SqlConnection c, Dictionary<string, object> b, HttpResponse res)
+        {
+            var id = Web.Int(b, "storeId");
+            var s = id.HasValue ? Db.StoreById(c, id.Value) : null;
+            if (s == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
+            if (!Billing.CancelNext(c, s)) { Web.Error(res, 404, "no_next", "مفيش باقة مستنية تبدأ للمتجر ده."); return; }
+            Web.Json(res, 200, new { ok = true });
         }
 
         // ---------- plan requests from store owners ----------
-        static Dictionary<string, object> Requests(SqlConnection c, string status)
+        // q: search by the reference number (any part of it, typed any way) across every status; also matches the "transferred from" number
+        static Dictionary<string, object> Requests(SqlConnection c, string status, string q = null)
         {
             string where = status == "pending" || status == "approved" || status == "rejected" || status == "cancelled" ? "WHERE r.Status = @st" : "";
+            string raw = (q ?? "").Trim(), norm = Billing.NormRef(raw);
+            if (raw.Length > 0) where = "WHERE (r.RefNo LIKE @q OR r.PaymentRef LIKE @q2)";
             var list = new List<Dictionary<string, object>>();
             using (var cmd = Db.Cmd(c, @"SELECT TOP 300 r.*, s.Name AS StoreName, s.Slug, s.OwnerEmail, s.PlanName AS CurPlan, s.PlanEndsAt AS CurEnds
                                          FROM dbo.PlanRequests r JOIN dbo.Stores s ON s.Id = r.StoreId " + where +
-                                       " ORDER BY CASE r.Status WHEN 'pending' THEN 0 ELSE 1 END, r.CreatedAt DESC", "@st", status ?? ""))
+                                       " ORDER BY CASE r.Status WHEN 'pending' THEN 0 ELSE 1 END, r.CreatedAt DESC", "@st", status ?? "",
+                                       "@q", norm.Length > 0 ? "%" + norm + "%" : "", "@q2", "%" + raw.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%"))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                 {
@@ -758,9 +1014,65 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                     d["currentPlan"] = r["CurPlan"] as string ?? ""; d["currentEnds"] = Billing.Iso(r["CurEnds"]);
                     list.Add(d);
                 }
+            // pending plan requests: what approving would do now (new / renew / downgrade later / a full period of a pricier plan)
+            foreach (var d in list.Where(x => (string)x["status"] == "pending" && (string)x["kind"] == "plan"))
+            {
+                var st = Db.StoreById(c, Convert.ToInt32(d["storeId"])); var pl = Billing.Plan(c, Convert.ToInt32(d["planId"]));
+                if (st != null && pl != null) { var ch = Billing.ChangeFor(c, st, pl); d["change"] = ch.Kind; d["changeStarts"] = ch.StartsAt.ToString("o"); d["blocked"] = ch.Blocked; }
+            }
             int pending;
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE Status = 'pending'")) pending = (int)cmd.ExecuteScalar();
+            // every request: its type (kept from when it was sent; older ones worked out from kind/change), and for a pending one
+            // where the store stands now and what approving does on the calendar
+            var stores = new Dictionary<int, StoreInfo>();
+            foreach (var d in list)
+            {
+                if (string.IsNullOrEmpty(d["what"] as string))
+                    d["what"] = (string)d["kind"] == "plan" ? (d.ContainsKey("change") ? (string)d["change"] : "new") : (string)d["kind"] == "wa" ? "wa-new" : (string)d["kind"];
+                if ((string)d["status"] != "pending") continue;
+                int sid = Convert.ToInt32(d["storeId"]); StoreInfo st;
+                if (!stores.TryGetValue(sid, out st)) stores[sid] = st = Db.StoreById(c, sid);
+                if (st == null) continue;
+                d["now"] = StoreNow(c, st);
+                d["outcome"] = Outcome(c, st, d);
+            }
             return new Dictionary<string, object> { { "requests", list }, { "pending", pending } };
+        }
+
+        // Where a store stands right now: its plan, the WhatsApp service, and this month's use (for the request cards)
+        static Dictionary<string, object> StoreNow(SqlConnection c, StoreInfo st)
+        {
+            var u = Db.Usage(c, st.Id, Db.Month); long lim = Billing.TotalLimit(c, st);
+            double pct = Billing.OnTrial(st) ? u.Messages * 100.0 / Math.Max(1, Billing.FreeMessages(c)) : lim > 0 ? u.Weighted * 100.0 / lim : 100;
+            return new Dictionary<string, object> {
+                { "plan", st.PlanName ?? "" }, { "planEnds", st.PlanEndsAt.HasValue ? st.PlanEndsAt.Value.ToString("o") : "" }, { "planExpired", Billing.Expired(st) },
+                { "trial", Billing.OnTrial(st) }, { "waOn", WaAccount.HasService(st) }, { "waUntil", st.WaUntil.HasValue ? st.WaUntil.Value.ToString("o") : "" },
+                { "messages", u.Messages }, { "usagePct", Math.Round(Math.Min(999, pct), 0) } };
+        }
+
+        // What approving a pending request does on the calendar (the same rules as Activate / Upgrade / AddService / the top-up)
+        static Dictionary<string, object> Outcome(SqlConnection c, StoreInfo st, Dictionary<string, object> d)
+        {
+            var o = new Dictionary<string, object>(); var now = DateTime.UtcNow;
+            string kind = (string)d["kind"]; int months = Convert.ToInt32(d["months"]);
+            if (kind == "plan" || kind == "upgrade")
+            {
+                var p = Billing.Plan(c, Convert.ToInt32(d["planId"]));
+                if (p != null)
+                {
+                    var ch = Billing.ChangeFor(c, st, p);
+                    DateTime start = kind == "upgrade" || ch.Kind == "upgrade" || ch.Kind == "new" ? now : ch.StartsAt;
+                    DateTime end = kind == "upgrade" && st.PlanEndsAt.HasValue ? st.PlanEndsAt.Value : start.AddDays(p.DurationDays * Math.Max(1, months));
+                    o["planStarts"] = start.ToString("o"); o["planEnds"] = end.ToString("o");
+                }
+            }
+            if (kind == "wa" || (d["wa"] is bool && (bool)d["wa"]))
+            {
+                var ws = st.WaUntil.HasValue && st.WaUntil.Value > now ? st.WaUntil.Value : now;
+                o["waStarts"] = ws.ToString("o"); o["waEnds"] = ws.AddDays(WaAccount.ServiceDays).ToString("o");
+            }
+            if (kind == "topup") o["topupUntil"] = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1).AddSeconds(-1).ToString("o");
+            return o;
         }
 
         static void RequestDecide(SqlConnection c, Dictionary<string, object> b, HttpResponse res, bool approve)
@@ -768,13 +1080,18 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             var id = Web.Int(b, "id");
             if (id == null) { Web.Error(res, 400, "bad_request"); return; }
             int storeId = 0, planId = 0, months = 0; decimal price = 0, amount = 0; string status = null, method = null, refNo = null, note = null, kind = "plan"; long units = 0;
+            bool waAddon = false; decimal waEgp = 0;   // the WhatsApp service asked for with this request, and its share of the amount
+            int reqMsgs = 0;                           // extra messages: how many were asked for (0 = an older +% request)
+            string payRef = null;                       // the payment's reference number (الرقم المرجعي), kept with the payment record
             using (var cmd = Db.Cmd(c, "SELECT * FROM dbo.PlanRequests WHERE Id = @id", "@id", id.Value))
             using (var r = cmd.ExecuteReader())
                 if (r.Read())
                 {
                     storeId = (int)r["StoreId"]; planId = (int)r["PlanId"]; months = (int)r["Months"]; price = (decimal)r["PriceEgp"]; amount = (decimal)r["AmountEgp"];
-                    status = (string)r["Status"]; method = r["PaymentMethod"] as string; refNo = r["PaymentRef"] as string; note = r["Note"] as string;
+                    status = (string)r["Status"]; method = r["PaymentMethod"] as string; refNo = r["PaymentRef"] as string; note = r["Note"] as string; payRef = r["RefNo"] as string;
                     kind = r["Kind"] as string ?? "plan"; units = r["Units"] == DBNull.Value ? 0 : Convert.ToInt64(r["Units"]);
+                    waAddon = r["WaAddon"] is bool && (bool)r["WaAddon"]; waEgp = r["WaEgp"] == DBNull.Value ? 0 : (decimal)r["WaEgp"];
+                    reqMsgs = r["Msgs"] == DBNull.Value ? 0 : (int)r["Msgs"];
                 }
             if (status == null) { Web.Error(res, 404, "not_found", "الطلب مش موجود."); return; }
             if (status != "pending") { Web.Error(res, 409, "decided", "الطلب ده اتراجع قبل كده."); return; }
@@ -791,38 +1108,56 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             var s = Db.StoreById(c, storeId);
             var p = Billing.Plan(c, planId);
             if (s == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
-            if (p == null) { Web.Error(res, 404, "no_plan", "الباقة دي اتمسحت. ارفض الطلب واطلب من صاحب المتجر يختار باقة تانية."); return; }
+            if (p == null && kind != "wa") { Web.Error(res, 404, "no_plan", "الباقة دي اتمسحت. ارفض الطلب واطلب من صاحب المتجر يختار باقة تانية."); return; }
             var paid = DecOf(b, "paidEgp") ?? amount;
             if (paid < 0 || paid > price * 10) { Web.Error(res, 400, "bad_paid", "المبلغ المدفوع مش منطقي."); return; }
-            string notes = string.Join(" · ", new[] { string.IsNullOrWhiteSpace(refNo) ? null : "رقم العملية: " + refNo, note, adminNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            string notes = string.Join(" · ", new[] { string.IsNullOrWhiteSpace(payRef) ? null : "الرقم المرجعي: " + payRef,
+                string.IsNullOrWhiteSpace(refNo) || refNo == "—" ? null : (payRef == null ? "رقم العملية: " : "من: ") + refNo, note, adminNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
             if (notes.Length > 500) notes = notes.Substring(0, 500);
             int subId;
+            if (kind == "wa")
+            {
+                // the WhatsApp service alone: its months from today, or after the end of the service that's still running
+                var waEnd = WaAccount.AddService(c, s, planId, Math.Max(1, months), price, paid, method, notes, out subId);
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
+                    "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
+                Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", "wa" }, { "endsAt", waEnd.ToString("o") } });
+                return;
+            }
             if (kind == "topup")
             {
                 // extra quota counts for the month it is approved in; recorded with the payments (Months = 0) for the revenue page
                 if (Billing.Expired(s)) { Web.Error(res, 400, "expired", "باقة المتجر ده خلصت. الرصيد الإضافي مش هيفيده، ارفض الطلب وخليه يجدد الباقة الأول."); return; }
                 var now = DateTime.UtcNow;
                 var monthEnd = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1).AddSeconds(-1);
-                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt)
-                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, 0, @price, @disc, @paid, @method, @notes, @start, @end)",
-                    "@s", s.Id, "@p", p.Id, "@n", "رصيد إضافي · " + p.Name, "@price", price, "@disc", Math.Max(0, price - paid), "@paid", paid,
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt, Kind)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, 0, @price, @disc, @paid, @method, @notes, @start, @end, 'topup')",
+                    "@s", s.Id, "@p", p.Id, "@n", "رصيد إضافي · " + (reqMsgs > 0 ? reqMsgs + " رسالة · " : "") + p.Name, "@price", price, "@disc", Math.Max(0, price - paid), "@paid", paid,
                     "@method", (object)method ?? DBNull.Value, "@notes", notes, "@start", now, "@end", monthEnd)) subId = (int)cmd.ExecuteScalar();
                 using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, Month=@m, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
                     "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@m", Db.Month, "@id", id.Value)) cmd.ExecuteNonQuery();
                 Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "units", units }, { "endsAt", monthEnd.ToString("o") } });
                 return;
             }
-            var end = Billing.Activate(c, s, p, months, price, paid, method, notes, out subId);
+            // the WhatsApp service bought with the plan: the plan's payment row gets the plan's share, the service its own row (below)
+            decimal waPaid = 0;
+            if (waAddon && waEgp > 0) { waPaid = Math.Min(waEgp, paid); price = Math.Max(0, price - waEgp); paid -= waPaid; }
+            // upgrade: the higher plan now, same end date (the amount was the price difference when the owner asked)
+            DateTime start = DateTime.UtcNow;
+            var end = kind == "upgrade" ? Billing.Upgrade(c, s, p, price, paid, method, notes, out subId)
+                                        : Billing.Activate(c, s, p, months, price, paid, method, notes, out subId, out start);
+            // after the plan (a plan that can't start leaves the service alone): a month from today, or after the running service
+            if (waAddon && waEgp > 0) { int waSub; WaAccount.AddService(c, s, p.Id, 1, waEgp, waPaid, method, notes, out waSub); }   // always one month: it renews on its own
             using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
                 "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
-            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "endsAt", end.ToString("o") } });
+            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", kind }, { "startsAt", start.ToString("o") }, { "endsAt", end.ToString("o") } });
         }
 
         static void SubscriptionCancel(SqlConnection c, Dictionary<string, object> b, HttpResponse res)
         {
             var id = Web.Int(b, "storeId");
             if (id == null) { Web.Error(res, 400, "bad_request"); return; }
-            using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET PlanId=NULL, PlanName=NULL, PlanEndsAt=NULL, MonthlyTokenLimit=@l WHERE Id=@id", "@l", FreeLimit(), "@id", id.Value)) cmd.ExecuteNonQuery();
+            using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET PlanId=NULL, PlanName=NULL, PlanEndsAt=NULL, NextPlanId=NULL, NextPlanName=NULL, NextDays=NULL, MonthlyTokenLimit=@l WHERE Id=@id", "@l", FreeLimit(), "@id", id.Value)) cmd.ExecuteNonQuery();
             Web.Json(res, 200, new { ok = true });
         }
 
@@ -913,8 +1248,29 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 { "unitsSmall", Billing.Units(c, "UnitsSmall") }, { "unitsMedium", Billing.Units(c, "UnitsMedium") }, { "unitsLarge", Billing.Units(c, "UnitsLarge") },
                 { "freeLimitUsd", Billing.UsdForUnits(FreeLimit()) }, { "freeMessages", Billing.FreeMessages(c) },
                 { "paymentInfo", Billing.Get(c, "PaymentInfo") ?? "" },
+                { "payNumber", Billing.Get(c, "PayNumber") ?? "" }, { "payQr", Billing.PayQrVersion(c) },
                 { "periodDiscounts", Billing.PeriodDiscounts(c).Where(kv => kv.Key > 1).ToDictionary(kv => kv.Key.ToString(CultureInfo.InvariantCulture), kv => (object)kv.Value) },
             };
+        }
+
+        // InstaPay's QR for the plan request form: { data: "data:image/png;base64,..." } or { remove: true }
+        static void PayQrUpload(SqlConnection c, Dictionary<string, object> b, HttpResponse res)
+        {
+            if (BoolOf(b, "remove")) { Billing.PayQrDelete(c); Web.Json(res, 200, SettingsGet(c)); return; }
+            var s = Web.Str(b, "data", 1450000) ?? "";
+            var m = System.Text.RegularExpressions.Regex.Match(s, @"^data:(image/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$");
+            if (!m.Success) { Web.Error(res, 400, "bad_image", "ارفع صورة PNG أو JPG."); return; }
+            byte[] d;
+            try { d = Convert.FromBase64String(m.Groups[2].Value); } catch (FormatException) { Web.Error(res, 400, "bad_image", "الصورة دي مش سليمة."); return; }
+            if (d.Length < 100 || d.Length > 1000000) { Web.Error(res, 400, "bad_image_size", "الصورة لازم تكون أقل من 1 ميجا."); return; }
+            string type = m.Groups[1].Value;
+            // the bytes must really be that kind of picture
+            bool real = type == "image/png" ? d[0] == 0x89 && d[1] == 0x50 && d[2] == 0x4E && d[3] == 0x47
+                      : type == "image/jpeg" ? d[0] == 0xFF && d[1] == 0xD8 && d[2] == 0xFF
+                      : d[0] == 'R' && d[1] == 'I' && d[2] == 'F' && d[3] == 'F' && d[8] == 'W' && d[9] == 'E' && d[10] == 'B' && d[11] == 'P';
+            if (!real) { Web.Error(res, 400, "bad_image", "الصورة دي مش سليمة."); return; }
+            Billing.PayQrSave(c, d, type);
+            Web.Json(res, 200, SettingsGet(c));
         }
 
         static void SettingsSave(SqlConnection c, Dictionary<string, object> b, HttpResponse res)
@@ -939,6 +1295,12 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 var pi = (Web.Str(b, "paymentInfo", 400) ?? "").Trim();
                 if (pi.Length < 5) { Web.Error(res, 400, "bad_payment_info", "اكتب طريقة الدفع اللي هتظهر لأصحاب المتاجر."); return; }
                 Billing.Set(c, "PaymentInfo", pi);
+            }
+            if (b.ContainsKey("payNumber"))
+            {
+                var pn = (Web.Str(b, "payNumber", 40) ?? "").Trim();
+                if (pn.Count(char.IsDigit) < 8) { Web.Error(res, 400, "bad_pay_number", "اكتب رقم التحويل صح، مثلًا 01001234567."); return; }
+                Billing.Set(c, "PayNumber", pn);
             }
             object pd;
             if (b.TryGetValue("periodDiscounts", out pd) && pd is Dictionary<string, object>)
@@ -987,6 +1349,13 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 using (var c = Db.Open())
                 {
                     bool post = req.HttpMethod == "POST";
+                    // InstaPay's QR: only for a signed-in store owner (it's on the plan request form)
+                    if (!post && req.QueryString["payqr"] == "1")
+                    {
+                        if (Me.Require(ctx, c) == null) { Web.Error(res, 401, "not_logged_in"); return; }
+                        if (!Billing.PayQrServe(c, res)) Web.Error(res, 404, "not_found");
+                        return;
+                    }
                     if (post || req.QueryString["mine"] == "1") { Mine(ctx, c, post); return; }
                     var wa = Billing.WhatsApp(c);
                     Web.Json(res, 200, new Dictionary<string, object>
@@ -995,8 +1364,12 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                         { "whatsapp", wa }, { "wa", Billing.WaNumber(wa) },
                         { "units", new Dictionary<string, object> { { "small", Billing.Units(c, "UnitsSmall") }, { "medium", Billing.Units(c, "UnitsMedium") }, { "large", Billing.Units(c, "UnitsLarge") } } },
                         { "paymentInfo", Billing.Get(c, "PaymentInfo") ?? "" },
+                        // where owners send the money: the number, and whether there's an InstaPay QR (its version; the picture itself is ?payqr=1)
+                        { "payNumber", Billing.Get(c, "PayNumber") ?? "" }, { "payQr", Billing.PayQrVersion(c) },
                         // the lowest plan that includes each locked feature (0 = every plan), for the features list on the pricing page
-                        { "gates", PlanGate.Features.ToDictionary(f => f, f => (object)PlanGate.MinPlanId(c, f)).Concat(new[] { new KeyValuePair<string, object>("whatsapp", WaAccount.MinPlanId(c)) }).ToDictionary(kv => kv.Key, kv => kv.Value) },
+                        { "gates", PlanGate.Features.ToDictionary(f => f, f => (object)PlanGate.MinPlanId(c, f)) },
+                        // WhatsApp isn't in any plan: it's a service added to any plan, for this much a month
+                        { "waAddon", new Dictionary<string, object> { { "price", WaAccount.ServicePrice(c) }, { "days", WaAccount.ServiceDays } } },
                     });
                 }
             }
@@ -1021,8 +1394,10 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 using (var r = cmd.ExecuteReader())
                     while (r.Read())
                         subs.Add(new Dictionary<string, object> {
-                            { "id", r["Id"] }, { "plan", r["PlanName"] }, { "months", r["Months"] }, { "paid", r["PaidEgp"] }, { "topup", (int)r["Months"] == 0 },
-                            { "startsAt", Billing.Iso(r["StartsAt"]) }, { "endsAt", Billing.Iso(r["EndsAt"]) } });
+                            { "id", r["Id"] }, { "plan", r["PlanName"] }, { "months", r["Months"] }, { "paid", r["PaidEgp"] }, { "kind", r["Kind"] as string ?? "plan" },
+                            { "topup", (r["Kind"] as string) == "topup" }, { "startsAt", Billing.Iso(r["StartsAt"]) }, { "endsAt", Billing.Iso(r["EndsAt"]) } });
+                // what picking each plan means for this store right now (upgrade / lower plan later / renew / new), for the plan cards and the request form
+                var changes = Billing.Plans(c, false).Select(p => Billing.ChangeJson(Billing.ChangeFor(c, s, p), p)).ToList();
                 // extra quota options for the running plan (none when there's no plan or it ended)
                 var topups = new List<Dictionary<string, object>>();
                 var cur = s.PlanId.HasValue && !Billing.Expired(s) ? Billing.Plan(c, s.PlanId.Value) : null;
@@ -1032,7 +1407,9 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                         long u; var tq = Billing.TopupQuote(cur, pct, out u);
                         topups.Add(new Dictionary<string, object> { { "pct", pct }, { "units", u }, { "total", tq.Total } });
                     }
-                Web.Json(res, 200, new Dictionary<string, object> { { "requests", requests }, { "subscriptions", subs }, { "methods", Methods }, { "topups", topups } });
+                // extra messages worked out from this store's own pace, with a suggested number and its price
+                var topupNeed = cur != null ? Billing.NeedJson(Billing.TopupNeed(c, s, cur)) : null;
+                Web.Json(res, 200, new Dictionary<string, object> { { "requests", requests }, { "subscriptions", subs }, { "methods", Methods }, { "topups", topups }, { "changes", changes }, { "topupNeed", topupNeed } });
                 return;
             }
             if (!Web.CsrfOk(req)) { Web.Error(res, 400, "bad_request"); return; }
@@ -1052,40 +1429,105 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
 
             if (!Web.Allow("planreq:" + s.Id, 6, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "بعت طلبات كتير، استنى شوية."); return; }
             bool topup = (Web.Str(b, "kind", 10) ?? "") == "topup";
-            PlanInfo p; int months; Billing.Quote q; long units = 0;
-            if (topup)
+            PlanInfo p; int months; Billing.Quote q; long units = 0; string kind = topup ? "topup" : "plan";
+            bool waOnly = (Web.Str(b, "kind", 10) ?? "") == "wa";
+            int topupMsgs = 0; string topupCalc = null;   // extra messages: how many, and how the suggestion was worked out
+            if (waOnly)
+            {
+                // the WhatsApp service alone, at any time: a new month, or the next one while it still runs (its own monthly cycle).
+                // The request keeps the store's current plan for reference (0 = no plan).
+                p = s.PlanId.HasValue ? (Billing.Plan(c, s.PlanId.Value) ?? new PlanInfo { Id = s.PlanId.Value, Name = s.PlanName ?? "" }) : new PlanInfo { Id = 0, Name = "" };
+                kind = "wa"; months = 1;
+                q = new Billing.Quote { Months = 1 };   // the service's price is added below
+            }
+            else if (topup)
             {
                 // extra quota for this month: only on a running plan, priced from that plan
                 if (!s.PlanId.HasValue || Billing.Expired(s)) { Web.Error(res, 400, "no_active_plan", "الرصيد الإضافي للباقات الشغالة بس. لو باقتك خلصت، جدّدها الأول."); return; }
                 p = Billing.Plan(c, s.PlanId.Value);
                 if (p == null) { Web.Error(res, 404, "no_plan", "باقتك مش متاحة دلوقتي، كلّمنا."); return; }
-                int pct = Web.Int(b, "pct") ?? 0;
-                if (!Billing.TopupPcts.Contains(pct)) { Web.Error(res, 400, "bad_pct", "اختار كمية الرصيد الإضافي."); return; }
-                q = Billing.TopupQuote(p, pct, out units); months = 0;
+                int askMsgs = Web.Int(b, "msgs") ?? 0;
+                if (askMsgs > 0)
+                {
+                    // a number of messages (suggested from the store's own pace, or typed), priced at the plan's rate per unit
+                    var nd = Billing.TopupNeed(c, s, p);
+                    if (askMsgs < nd.Min || askMsgs > nd.Max) { Web.Error(res, 400, "bad_msgs", "اختار من " + nd.Min + " لـ " + nd.Max + " رسالة."); return; }
+                    units = askMsgs * nd.Per;
+                    var tp = Billing.TopupPrice(nd.PricePerMsg, askMsgs);
+                    q = new Billing.Quote { Months = 0, Price = tp, Discount = 0, Total = tp, Pct = 0 }; months = 0;
+                    topupMsgs = askMsgs; topupCalc = Billing.NeedText(nd, askMsgs);
+                }
+                else
+                {
+                    int pct = Web.Int(b, "pct") ?? 0;   // the older choice: +25/50/100% of the plan's quota
+                    if (!Billing.TopupPcts.Contains(pct)) { Web.Error(res, 400, "bad_pct", "اختار كمية الرصيد الإضافي."); return; }
+                    q = Billing.TopupQuote(p, pct, out units); months = 0;
+                }
             }
             else
             {
                 var planId = Web.Int(b, "planId"); months = Web.Int(b, "months") ?? 1;
                 p = planId.HasValue ? Billing.Plan(c, planId.Value) : null;
                 if (p == null || !p.IsActive) { Web.Error(res, 404, "no_plan", "الباقة دي مش متاحة دلوقتي."); return; }
-                if (!Billing.Periods.Contains(months)) { Web.Error(res, 400, "bad_months", "اختار مدة: شهر أو 4 أو 6 أو 12 شهر."); return; }
-                if (!Billing.OpenPeriods.Contains(months)) { Web.Error(res, 400, "period_soon", "الاشتراك لأكتر من شهر هيكون متاح قريب. اختار شهر دلوقتي."); return; }
-                q = Billing.QuoteFor(c, p, months);
+                var ch = Billing.ChangeFor(c, s, p);
+                if (ch.Blocked != null) { Web.Error(res, 409, "next_waiting", ch.Blocked); return; }
+                if (ch.Kind == "upgrade")
+                {
+                    // a higher plan from now on: same end date, the price difference for the days left
+                    kind = "upgrade"; months = 0;
+                    q = new Billing.Quote { Months = 0, Price = ch.Amount, Discount = 0, Total = ch.Amount, Pct = 0 };
+                }
+                else
+                {
+                    if (!Billing.Periods.Contains(months)) { Web.Error(res, 400, "bad_months", "اختار مدة: شهر أو 4 أو 6 أو 12 شهر."); return; }
+                    if (!Billing.OpenPeriods.Contains(months)) { Web.Error(res, 400, "period_soon", "الاشتراك لأكتر من شهر هيكون متاح قريب. اختار شهر دلوقتي."); return; }
+                    q = Billing.QuoteFor(c, p, months);
+                }
             }
+            // the WhatsApp service: asked for with a plan (wa: true) or alone (kind "wa"). Its own monthly price, no period discount,
+            // and the number the owner will link, so the admin can get a number ready on Wapilot
+            object waAsk; bool wantWa = waOnly || (!topup && b.TryGetValue("wa", out waAsk) && waAsk is bool && (bool)waAsk);
+            string waPhone = null; decimal waEgp = 0;
+            // renewing the plan never renews the service: while it runs, it's renewed alone (kind "wa") on its own date
+            if (wantWa && !waOnly && WaAccount.HasService(s) && s.WaUntil.HasValue)
+            { Web.Error(res, 400, "wa_running", "خدمة الواتساب شغالة عندك لحد يوم " + s.WaUntil.Value.ToString("yyyy-MM-dd") + "، وتجديدها شهري لوحده. ابعت طلب الباقة من غيرها."); return; }
+            if (wantWa)
+            {
+                waPhone = WaChat.Phone(Web.Str(b, "waPhone", 40));
+                if (waPhone == null) { Web.Error(res, 400, "bad_wa_phone", "اكتب رقم الواتساب اللي هتربطه بالمساعد، مثلًا 01001234567."); return; }
+                waEgp = WaAccount.ServicePrice(c);   // one month, whatever the plan's period: the service renews monthly on its own
+                q.Price += waEgp; q.Total += waEgp;
+            }
+            // nothing to pay (a plan at the same price): no transfer to check
+            bool free = q.Total <= 0;
             string method = (Web.Str(b, "method", 40) ?? "").Trim();
-            if (!Methods.Contains(method)) { Web.Error(res, 400, "bad_method", "اختار طريقة الدفع."); return; }
+            if (!free && !Methods.Contains(method)) { Web.Error(res, 400, "bad_method", "اختار طريقة الدفع."); return; }
             string refNo = (Web.Str(b, "ref", 100) ?? "").Trim();
-            if (refNo.Length < 3) { Web.Error(res, 400, "need_ref", "اكتب رقم العملية أو الرقم اللي حوّلت منه، عشان نقدر نتأكد من الدفع."); return; }
+            if (!free && refNo.Length < 3) { Web.Error(res, 400, "need_ref", "اكتب رقم العملية أو الرقم اللي حوّلت منه، عشان نقدر نتأكد من الدفع."); return; }
+            if (free) { method = Methods.Contains(method) ? method : "—"; refNo = refNo.Length > 0 ? refNo : "—"; }
+            // the reference number InstaPay shows after the transfer: required, and one payment backs one request only
+            string payRef = Billing.NormRef(Web.Str(b, "refNo", 80));
+            if (!free && !Billing.RefLooksRight(payRef)) { Web.Error(res, 400, "need_refno", "اكتب الرقم المرجعي اللي ظهرلك في InstaPay بعد التحويل (أرقام، من 6 لـ 30)."); return; }
+            if (!free && Billing.RefUsed(c, payRef)) { Web.Error(res, 409, "ref_used", Billing.RefUsedMessage); return; }
             string note = (Web.Str(b, "note", 500) ?? "").Trim();
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending'", "@s", s.Id))
                 if ((int)cmd.ExecuteScalar() > 0) { Web.Error(res, 409, "has_pending", "عندك طلب لسه بيتراجع. استنى الرد عليه، أو الغيه وابعت طلب جديد."); return; }
 
+            // what the request means right now, kept for the admin's cards and the store's history
+            string what = kind == "topup" ? "topup" : kind == "upgrade" ? "upgrade" : kind == "wa" ? (s.WaUntil.HasValue ? "wa-renew" : "wa-new") : Billing.ChangeFor(c, s, p).Kind;
             int newId;
-            using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note, Kind, Units)
-                                         OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note, @kind, @units)",
-                "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", q.Price, "@disc", q.Discount, "@amt", q.Total,
-                "@method", method, "@ref", refNo, "@note", note.Length == 0 ? (object)DBNull.Value : note,
-                "@kind", topup ? "topup" : "plan", "@units", topup ? (object)units : DBNull.Value)) newId = (int)cmd.ExecuteScalar();
+            try
+            {
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note, Kind, Units, WaAddon, WaEgp, WaPhone, RefNo, What, Msgs, Calc)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note, @kind, @units, @wa, @waEgp, @waPhone, @refNo, @what, @msgs, @calc)",
+                    "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", q.Price, "@disc", q.Discount, "@amt", q.Total,
+                    "@wa", wantWa, "@waEgp", wantWa ? (object)waEgp : DBNull.Value, "@waPhone", (object)waPhone ?? DBNull.Value,
+                    "@what", what, "@msgs", topupMsgs > 0 ? (object)topupMsgs : DBNull.Value, "@calc", (object)topupCalc ?? DBNull.Value,
+                    "@method", method, "@ref", refNo, "@note", note.Length == 0 ? (object)DBNull.Value : note,
+                    "@kind", kind, "@units", topup ? (object)units : DBNull.Value, "@refNo", free ? DBNull.Value : (object)payRef)) newId = (int)cmd.ExecuteScalar();
+            }
+            // two requests with the same reference at the same moment: the unique index lets only one in
+            catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { Web.Error(res, 409, "ref_used", Billing.RefUsedMessage); return; }
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "id", newId }, { "amount", q.Total } });
         }
     }

@@ -495,6 +495,9 @@ namespace RiwaqChat
         // New orders -> order confirmation on WhatsApp. False when it couldn't subscribe (or the site isn't public).
         public static Task<bool> RegisterOrderWebhook(Creds c, string siteBase) { return Subscribe(c, siteBase, "ORDERS_CREATE"); }
 
+        // Shipping updates (out for delivery) -> the delivery-day message on WhatsApp. Needs read_fulfillments.
+        public static Task<bool> RegisterDeliveryWebhook(Creds c, string siteBase) { return Subscribe(c, siteBase, "FULFILLMENT_EVENTS_CREATE"); }
+
         static async Task<bool> Subscribe(Creds c, string siteBase, string topic)
         {
             Uri u;
@@ -599,6 +602,7 @@ namespace RiwaqChat
                     if (!Secrets.Same(expect, got)) { res.StatusCode = 401; return; }
                     string topic = (req.Headers["X-Shopify-Topic"] ?? "").ToLowerInvariant();
                     if (topic == "orders/create") OrderConfirm.OnOrder(c, s, body);
+                    else if (topic == "fulfillment_events/create") Delivery.OnShopifyEvent(s, body);
                     else ShopifyAdmin.QueueResync(s.Id);
                     res.StatusCode = 200;
                 }

@@ -271,8 +271,63 @@ namespace RiwaqChat
         public static bool Linked(string upper) { return upper == "WORKING" || upper == "CONNECTED" || upper == "AUTHENTICATED" || upper == "OPEN" || upper == "READY"; }
         public static bool Stopped(string upper) { return upper == "STOPPED" || upper == "FAILED" || upper == "DISCONNECTED" || upper == "CLOSED" || upper == ""; }
 
-        // "paid" (default): only stores on an active paid plan get a number by themselves; "all"; "off": the admin assigns every number
-        public static string AutoAssign(SqlConnection c) { var v = (Billing.Get(c, "WaAutoAssign") ?? "paid").Trim().ToLowerInvariant(); return v == "all" || v == "off" ? v : "paid"; }
+        // ---------- the WhatsApp service: its own monthly subscription (AppSettings "WaAddonPrice", 300 EGP by default) ----------
+        // While Stores.WaUntil is in the future the store may take a number, and the bot, order confirmations, delivery messages and
+        // chat-order codes go out on its WhatsApp. Each paid month adds ServiceDays: from today, or after the current end while it still runs.
+        // It renews on its own cycle, never with the plan: any store can ask for it at any time (with a plan request, or alone),
+        // and renewing the plan leaves it alone. The bot's replies still count from the plan's quota, the same as the site chat.
+        // The admin's own store always has it.
+        public const int ServiceDays = 30;
+        public static decimal ServicePrice(SqlConnection c) { var p = Billing.Dec(Billing.Get(c, "WaAddonPrice"), 300); return p > 0 ? p : 300; }
+        public static bool HasService(StoreInfo s) { return s != null && (s.IsAdmin || (s.WaUntil.HasValue && s.WaUntil.Value > DateTime.UtcNow)); }
+
+        // A paid period of the service: its own payment row (Subscriptions.Kind 'wa') and the store's new WaUntil. Returns the new end.
+        public static DateTime AddService(SqlConnection c, StoreInfo s, int planId, int months, decimal price, decimal paid, string method, string notes, out int subscriptionId)
+        {
+            var now = DateTime.UtcNow;
+            var start = s.WaUntil.HasValue && s.WaUntil.Value > now ? s.WaUntil.Value : now;
+            var end = start.AddDays(ServiceDays * Math.Max(1, months));
+            using (var tx = c.BeginTransaction())
+            {
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt, Kind)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @paid, @method, @notes, @start, @end, 'wa')",
+                    "@s", s.Id, "@p", planId > 0 ? (object)planId : DBNull.Value, "@n", ServiceName, "@m", Math.Max(1, months), "@price", price, "@disc", Math.Max(0, price - paid), "@paid", paid,
+                    "@method", (object)method ?? DBNull.Value, "@notes", (object)notes ?? DBNull.Value, "@start", start, "@end", end))
+                { cmd.Transaction = tx; subscriptionId = (int)cmd.ExecuteScalar(); }
+                // the "service ended" warning the bot left goes with it
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET WaUntil=@end, WaStatus=CASE WHEN WaStatus LIKE @lapsed THEN NULL ELSE WaStatus END WHERE Id=@s",
+                    "@end", end, "@lapsed", "%" + ServiceName + " خلصت%", "@s", s.Id)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
+                tx.Commit();
+            }
+            s.WaUntil = end;
+            return end;
+        }
+        public const string ServiceName = "خدمة الواتساب";
+
+        // Days before the end when the dashboard starts warning on every page (with the date and a renew button)
+        public const int WarnDays = 2;
+
+        // For the dashboard: is it on, until when, what a month costs, a renewal already asked for, and this month's WhatsApp numbers
+        public static Dictionary<string, object> ServiceJson(SqlConnection c, StoreInfo s)
+        {
+            var now = DateTime.UtcNow;
+            int replies = 0, chats = 0; bool pending;
+            using (var cmd = Db.Cmd(c, @"SELECT ISNULL(SUM(CASE WHEN FromCustomer=0 AND MsgId IS NULL THEN 1 ELSE 0 END),0), COUNT(DISTINCT CASE WHEN FromCustomer=1 THEN ChatId END)
+                FROM dbo.WaMessages WHERE StoreId=@s AND CreatedAt >= @m", "@s", s.Id, "@m", new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc)))
+            using (var r = cmd.ExecuteReader()) if (r.Read()) { replies = Convert.ToInt32(r[0]); chats = Convert.ToInt32(r[1]); }
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending' AND WaAddon=1", "@s", s.Id)) pending = (int)cmd.ExecuteScalar() > 0;
+            return new Dictionary<string, object> {
+                { "on", HasService(s) }, { "until", s.WaUntil.HasValue ? s.WaUntil.Value.ToString("o") : "" }, { "always", s.IsAdmin },
+                { "daysLeft", s.WaUntil.HasValue ? Math.Max(0, (int)Math.Ceiling((s.WaUntil.Value - now).TotalDays)) : 0 }, { "warnDays", WarnDays },
+                { "price", ServicePrice(c) }, { "days", ServiceDays }, { "planRunning", s.PlanId.HasValue && !Billing.Expired(s) },
+                { "connected", !string.IsNullOrEmpty(s.WaInstance) }, { "pending", pending }, { "number", s.WaNumber ?? "" },   // the linked phone, filled in on a renewal
+                // this calendar month on WhatsApp: the assistant's replies, and the customers who wrote
+                { "replies", replies }, { "chats", chats } };
+        }
+
+        // "paid" (default): a store with the WhatsApp service takes a free number by itself; "off": the admin assigns every number.
+        // ("all" from before the service existed counts as "paid": no store gets WhatsApp without the service now.)
+        public static string AutoAssign(SqlConnection c) { var v = (Billing.Get(c, "WaAutoAssign") ?? "paid").Trim().ToLowerInvariant(); return v == "off" ? v : "paid"; }
 
         // numbers the admin keeps out of the pool (e.g. Sellybot's own support number), comma separated
         public static HashSet<string> Reserved(SqlConnection c)
@@ -284,23 +339,13 @@ namespace RiwaqChat
         public static string CanAutoAssign(SqlConnection c, StoreInfo s)
         {
             if (PlatformToken(c) == null) return "ربط الواتساب بالـ QR مش متاح لسه.";
-            PlanInfo offer;
-            if (!PlanAllows(c, s, out offer)) return offer != null ? "واتساب المتجر متاح من باقة «" + offer.Name + "»." : "ربط واتساب المتجر مش متاح في باقتك دلوقتي.";
+            if (!HasService(s)) return "خدمة الواتساب مش مفعّلة على متجرك. ضيفها من «باقتي».";
             return null;
         }
 
-        // The lowest plan that includes WhatsApp (admin setting; 0 = any paid plan when auto-assign is "paid")
-        public static int MinPlanId(SqlConnection c) { int id; return int.TryParse(Billing.Get(c, "WaMinPlan") ?? "", out id) && id > 0 ? id : 0; }
-
-        // Is the store's plan enough to link WhatsApp? When not, offer = the plan to suggest: its own plan to renew if that
-        // one qualifies, otherwise the first active plan from the minimum up (plans rank by SortOrder, then price).
-        public static bool PlanAllows(SqlConnection c, StoreInfo s, out PlanInfo offer)
-        {
-            offer = null;
-            var mode = AutoAssign(c); int minId = MinPlanId(c);
-            if (mode == "off" || (mode == "all" && minId == 0)) return true;
-            return PlanGate.Check(c, s, minId, out offer);   // same plan rule as the other locked features
-        }
+        // "May this store use WhatsApp now?" = the WhatsApp service is on. The name and the (always null) offer are from when
+        // some plans included WhatsApp; order confirmations, delivery messages and chat-order codes still call it this way.
+        public static bool PlanAllows(SqlConnection c, StoreInfo s, out PlanInfo offer) { offer = null; return HasService(s); }
 
         // Takes the first free number of the platform account for the store. null = none free.
         public static async Task<string> AssignFree(SqlConnection c, int storeId)
@@ -467,7 +512,7 @@ END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عاي�
             if (text.Length == 0)
             {
                 if (!m.HasMedia) return true;   // reactions, receipts…
-                if (!s.WaEnabled || !Web.Allow("wa-media:" + s.Id + ":" + key, 1, TimeSpan.FromHours(1))) return true;
+                if (!s.WaEnabled || !WaAccount.HasService(s) || !Web.Allow("wa-media:" + s.Id + ":" + key, 1, TimeSpan.FromHours(1))) return true;
                 var token = WaAccount.Token(c, s);
                 if (token != null) HostingEnvironment.QueueBackgroundWorkItem(async ct =>
                 {
@@ -539,6 +584,7 @@ ELSE
                     PlanGate.Apply(c, s);   // e.g. no order tracking when the plan doesn't include Shopify
                     var token = WaAccount.Token(c, s);
                     if (token == null) return;
+                    if (!WaAccount.HasService(s)) { SetStatus(c, s.Id, "⚠️ خدمة الواتساب خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها من «باقتي»."); return; }
                     if (Billing.Expired(s)) { SetStatus(c, s.Id, "⚠️ الباقة خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها."); return; }
                     if (Billing.LimitReached(c, s)) { SetStatus(c, s.Id, "⚠️ رصيد الشهر خلص، فالمساعد مش بيرد على الواتساب لحد ما تزوّد الرصيد أو يبدأ شهر جديد."); return; }
                     if (!Web.Allow("wa-chat:" + s.Id + ":" + chatKey, 30, TimeSpan.FromHours(1))) return;   // one customer can't burn the quota
@@ -547,7 +593,7 @@ ELSE
 
                     ChatHandler.LoopResult res;
                     try { res = await ChatHandler.Answer(c, s, History(rows), "wa:" + chatKey, ChannelNote(s, chatKey) + OrderConfirm.PendingNote(c, s.Id, chatKey)
-                        + EoConfirm.PendingNote(c, s.Id, chatKey)); }
+                        + EoConfirm.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey)); }
                     catch (Exception ex) { Log.Error(ex); SetStatus(c, s.Id, "⚠️ حصلت مشكلة وإحنا بنجهّز رد على آخر رسالة. لو اتكررت كلّم الدعم."); return; }
                     Db.AddUsage(c, s.Id, 1, res.In, res.CacheRead, res.CacheWrite, res.Out);
 
@@ -764,6 +810,9 @@ ELSE
                     }
                     if (string.IsNullOrEmpty(s.WaInstance)) { Web.Error(res, 400, "not_connected", "اربط الواتساب الأول."); return; }
                     bool platformMode = WaAccount.IsPlatform(s);
+                    // linking a phone and test messages need the service; switching the bot off, unlinking and disconnecting never do
+                    if ((action == "qr" || action == "test") && !WaAccount.HasService(s))
+                    { Web.Error(res, 400, "no_service", "خدمة الواتساب مش مفعّلة على متجرك دلوقتي. ضيفها أو جدّدها من «باقتي»."); return; }
 
                     if (action == "qr")
                     {
@@ -857,20 +906,15 @@ ELSE
         {
             bool on = !string.IsNullOrEmpty(s.WaInstance), platform = WaAccount.IsPlatform(s);
             var d = new Dictionary<string, object> { { "connected", on }, { "mode", on ? (platform ? "platform" : "own") : "" } };
+            // the WhatsApp service (an add-on on any plan): when it's off, the dashboard sells it instead of the link button
+            var svc = WaAccount.ServiceJson(c, s);
+            d["service"] = svc;
+            if (!(bool)svc["on"]) d["upsell"] = new Dictionary<string, object>(svc) { { "addon", true } };
             if (!on)
             {
-                // can the owner just scan a QR (Sellybot's account), or do they need their own Wapilot account?
+                // can the owner just scan a QR (Sellybot's account)?
                 d["platformAvailable"] = WaAccount.PlatformToken(c) != null;
                 d["platformBlocked"] = WaAccount.CanAutoAssign(c, s) ?? "";
-                // the plan is what's in the way: the dashboard shows an upgrade card for this plan
-                PlanInfo offer;
-                if (!WaAccount.PlanAllows(c, s, out offer) && offer != null)
-                {
-                    var cur = s.PlanId.HasValue ? Billing.Plan(c, s.PlanId.Value) : null;
-                    d["upsell"] = new Dictionary<string, object> {
-                        { "id", offer.Id }, { "name", offer.Name }, { "price", Billing.FinalPrice(offer) }, { "listPrice", offer.PriceEgp }, { "days", offer.DurationDays },
-                        { "renew", s.PlanId == offer.Id }, { "expired", Billing.Expired(s) }, { "current", cur != null ? cur.Name : "" } };
-                }
                 return d;
             }
             d["instance"] = s.WaInstance; d["number"] = s.WaNumber ?? ""; d["enabled"] = s.WaEnabled;
@@ -886,7 +930,7 @@ ELSE
                 d["chats30"] = Convert.ToInt32(r[0]); d["replies30"] = Convert.ToInt32(r[1]);
                 d["lastIncoming"] = r[2] == DBNull.Value ? "" : DateTime.SpecifyKind((DateTime)r[2], DateTimeKind.Utc).ToString("o");
             }
-            // live state from Wapilot (is the phone still linked?)
+            // live state from Wapilot (is the phone still linked?), also while the service is off
             try
             {
                 var token = WaAccount.Token(c, s);
@@ -937,14 +981,20 @@ ELSE
                     if (action == "settings")
                     {
                         var mode = (Web.Str(b, "autoAssign", 10) ?? "").ToLowerInvariant();
-                        var minPlan = Web.Str(b, "minPlan", 12);
-                        if (mode.Length == 0 && minPlan == null) { Web.Error(res, 400, "bad_request"); return; }
+                        var price = Web.Str(b, "price", 12);
+                        if (mode.Length == 0 && price == null) { Web.Error(res, 400, "bad_request"); return; }
                         if (mode.Length > 0)
                         {
-                            if (mode != "paid" && mode != "all" && mode != "off") { Web.Error(res, 400, "bad_request"); return; }
+                            if (mode != "paid" && mode != "off") { Web.Error(res, 400, "bad_request"); return; }
                             Billing.Set(c, "WaAutoAssign", mode);
                         }
-                        if (minPlan != null) { int mp; Billing.Set(c, "WaMinPlan", int.TryParse(minPlan, out mp) && mp > 0 ? mp.ToString() : ""); }
+                        if (price != null)
+                        {
+                            // the WhatsApp service's monthly price (new requests use it; ones already sent keep their amount)
+                            decimal pr = Billing.Dec(ShopifyAdmin.ToLatinDigits(price).Trim(), -1);
+                            if (pr < 1 || pr > 100000) { Web.Error(res, 400, "bad_price", "اكتب سعر الخدمة في الشهر بالجنيه، رقم أكبر من صفر."); return; }
+                            Billing.Set(c, "WaAddonPrice", Math.Round(pr, 0).ToString(System.Globalization.CultureInfo.InvariantCulture));
+                        }
                         Web.Json(res, 200, await State(c, req));
                         return;
                     }
@@ -1009,19 +1059,22 @@ ELSE
         static async Task<Dictionary<string, object>> State(SqlConnection c, HttpRequest req)
         {
             var token = WaAccount.PlatformToken(c);
-            var d = new Dictionary<string, object> { { "tokenSet", token != null }, { "autoAssign", WaAccount.AutoAssign(c) }, { "minPlan", WaAccount.MinPlanId(c) },
-                { "plans", Billing.Plans(c, false).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } }).ToList() } };
-            // every store, for the "assign to" list, with what it uses now
+            var d = new Dictionary<string, object> { { "tokenSet", token != null }, { "autoAssign", WaAccount.AutoAssign(c) },
+                { "price", WaAccount.ServicePrice(c) }, { "days", WaAccount.ServiceDays } };
+            // every store, for the "assign to" list, with what it uses now and until when its WhatsApp service runs
             var stores = new List<Dictionary<string, object>>();
             var byInstance = new Dictionary<string, Dictionary<string, object>>(StringComparer.OrdinalIgnoreCase);
-            using (var cmd = Db.Cmd(c, "SELECT Id, Slug, Name, WaInstance, CASE WHEN WaToken IS NULL THEN 0 ELSE 1 END AS Own, PlanId, PlanEndsAt FROM dbo.Stores ORDER BY Name"))
+            using (var cmd = Db.Cmd(c, "SELECT Id, Slug, Name, WaInstance, CASE WHEN WaToken IS NULL THEN 0 ELSE 1 END AS Own, PlanId, PlanEndsAt, WaUntil, IsAdmin FROM dbo.Stores ORDER BY Name"))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                 {
+                    var until = r["WaUntil"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["WaUntil"], DateTimeKind.Utc);
                     var st = new Dictionary<string, object> {
                         { "id", (int)r["Id"] }, { "slug", (string)r["Slug"] }, { "name", (string)r["Name"] },
                         { "instance", r["WaInstance"] as string ?? "" }, { "own", Convert.ToInt32(r["Own"]) == 1 && r["WaInstance"] != DBNull.Value },
-                        { "paid", r["PlanId"] != DBNull.Value && r["PlanEndsAt"] != DBNull.Value && (DateTime)r["PlanEndsAt"] >= DateTime.UtcNow } };
+                        { "paid", r["PlanId"] != DBNull.Value && r["PlanEndsAt"] != DBNull.Value && (DateTime)r["PlanEndsAt"] >= DateTime.UtcNow },
+                        { "service", (bool)r["IsAdmin"] || (until.HasValue && until.Value > DateTime.UtcNow) }, { "always", (bool)r["IsAdmin"] },
+                        { "waUntil", until.HasValue ? until.Value.ToString("o") : "" } };
                     stores.Add(st);
                     if (r["WaInstance"] != DBNull.Value && Convert.ToInt32(r["Own"]) == 0) byInstance[(string)r["WaInstance"]] = st;
                 }
@@ -1047,7 +1100,9 @@ ELSE
                     return new Dictionary<string, object> {
                         { "id", i.Id }, { "name", i.Name }, { "status", i.Status ?? "" }, { "number", i.Number ?? "" },
                         { "linked", WaAccount.Linked((i.Status ?? "").ToUpperInvariant()) }, { "reserved", reserved.Contains(i.Id) },
-                        { "storeId", st == null ? (object)null : st["id"] }, { "store", st == null ? "" : st["name"] } };
+                        { "storeId", st == null ? (object)null : st["id"] }, { "store", st == null ? "" : st["name"] },
+                        // the store's WhatsApp service: a number whose store stopped paying can go back to the pool (or not be renewed on Wapilot)
+                        { "service", st == null ? (object)null : st["service"] }, { "always", st != null && (bool)st["always"] }, { "waUntil", st == null ? "" : st["waUntil"] } };
                 }).ToList();
             }
             catch (WaException ex) { d["instances"] = new List<object>(); d["error"] = ex.Message; }
