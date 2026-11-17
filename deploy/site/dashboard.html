@@ -1337,6 +1337,8 @@
     .hm-lap .win,.hm-lap .wb .ch span{opacity:1;transform:none}
   }
 </style>
+<!-- Meta Pixel: quiet here (no page views of the dashboard), only a new account is reported (see pixel.js) -->
+<script src="pixel.js" data-quiet></script>
 </head>
 <body>
 
@@ -2552,6 +2554,7 @@
     e.preventDefault(); setMsg("sMsg", ""); $("sBtn").classList.add("loading");
     try {
       me = await api("api/auth.ashx?action=signup", { method: "POST", json: { name: $("sName").value, slug: $("sSlug").value, email: $("sEmail").value, password: $("sPass").value } });
+      if (window.sbTrack) window.sbTrack("CompleteRegistration");   // Sellybot's ads (pixel.js): a new account
       showApp(true); toast("تم إنشاء متجرك 🎉 ابدأ ضيف الداتا");
     } catch (err) { setMsg("sMsg", err.message); shake(); }
     finally { $("sBtn").classList.remove("loading"); }

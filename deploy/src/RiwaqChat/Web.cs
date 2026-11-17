@@ -71,17 +71,47 @@ namespace RiwaqChat
         public static string Ip(HttpRequest req) { return req.UserHostAddress ?? "unknown"; }
 
         // ---------- rate limits ----------
-        static readonly ConcurrentDictionary<string, Queue<DateTime>> Hits = new ConcurrentDictionary<string, Queue<DateTime>>();
+        // One bucket per key (e.g. "login:<ip>") with the times of its recent hits. Every few minutes the buckets whose hits
+        // are all older than their window are dropped, so each visitor who came once doesn't stay in memory until the site
+        // restarts (a flood from many addresses used to grow it without end).
+        class Bucket { public readonly Queue<DateTime> Hits = new Queue<DateTime>(); public TimeSpan Window; public bool Gone; }
+        static readonly ConcurrentDictionary<string, Bucket> Buckets = new ConcurrentDictionary<string, Bucket>();
+        static long nextSweep;
+
         public static bool Allow(string key, int perWindow, TimeSpan window)
         {
-            var q = Hits.GetOrAdd(key, k => new Queue<DateTime>());
-            lock (q)
+            var now = DateTime.UtcNow;
+            Sweep(now);
+            while (true)
             {
-                var now = DateTime.UtcNow;
-                while (q.Count > 0 && now - q.Peek() >= window) q.Dequeue();
-                if (q.Count >= perWindow) return false;
-                q.Enqueue(now);
-                return true;
+                var b = Buckets.GetOrAdd(key, k => new Bucket());
+                lock (b)
+                {
+                    if (b.Gone) continue;   // the sweep dropped it just now: take the new one
+                    b.Window = window;
+                    while (b.Hits.Count > 0 && now - b.Hits.Peek() >= window) b.Hits.Dequeue();
+                    if (b.Hits.Count >= perWindow) return false;
+                    b.Hits.Enqueue(now);
+                    return true;
+                }
+            }
+        }
+
+        static void Sweep(DateTime now)
+        {
+            long due = System.Threading.Interlocked.Read(ref nextSweep);
+            if (now.Ticks < due) return;
+            if (System.Threading.Interlocked.CompareExchange(ref nextSweep, now.AddMinutes(5).Ticks, due) != due) return;   // another request is on it
+            foreach (var kv in Buckets)
+            {
+                var b = kv.Value;
+                lock (b)
+                {
+                    while (b.Hits.Count > 0 && now - b.Hits.Peek() >= b.Window) b.Hits.Dequeue();
+                    if (b.Hits.Count > 0) continue;
+                    b.Gone = true;
+                    Bucket x; Buckets.TryRemove(kv.Key, out x);
+                }
             }
         }
 

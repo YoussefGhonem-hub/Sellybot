@@ -98,6 +98,7 @@
         var res = await h.api("api/auth.ashx?action=signup", { name: f.name, slug: f.slug, email: f.email, password: f.password });
         h.busy(false); f.password = "";
         if (res.ok && res.data && res.data.slug) {
+          if (window.sbTrack) window.sbTrack("CompleteRegistration");   // Sellybot's ads (pixel.js): a new account
           h.note("الزائر عمل حساب جديد على Sellybot من الشات: متجر «" + res.data.name + "» بالمعرّف " + res.data.slug + "، وهو مسجّل دخول دلوقتي وفي التجربة المجانية");
           if (a && a.cont) { await h.say("🎉 حسابك اتعمل وانت مسجّل دخول دلوقتي! نكمّل 👇"); return { store: res.data }; }
           return afterAccount(h, stop, res.data, true);

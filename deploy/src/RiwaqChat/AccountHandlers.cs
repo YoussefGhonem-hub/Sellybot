@@ -238,6 +238,7 @@ namespace RiwaqChat
                         ps.Add("@id"); ps.Add(s.Id);
                         using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET " + string.Join(", ", sets) + ", DataVersion=DataVersion+1 WHERE Id=@id", ps.ToArray()))
                             cmd.ExecuteNonQuery();
+                        ChatLook.Forget(s.Slug);   // the chat on the store's website shows the change right away
                     }
                     Web.Json(res, 200, Me.Describe(c, Db.StoreById(c, s.Id)));
                 }

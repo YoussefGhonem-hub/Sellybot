@@ -4,11 +4,13 @@
 // The Anthropic key stays in web.config; the system prompt is always built here, never taken from the browser.
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Anthropic.Models.Messages;
@@ -35,7 +37,31 @@ namespace RiwaqChat
             string slug = (req.QueryString["store"] ?? legacySlug).Trim().ToLowerInvariant();
             if (slug.Length > 40) { Web.Error(res, 404, "no_store"); return; }
 
-            // ---- which store? ----
+            // ---- the chat's look (GET) and the browser's cross-site check (OPTIONS): from memory (ChatLook) ----
+            // Every page of every store website asks for this when the chat loads, even when nobody opens the chat,
+            // so it mustn't be a database query each time.
+            if (req.HttpMethod == "GET" || req.HttpMethod == "OPTIONS")
+            {
+                try
+                {
+                    var look = ChatLook.Get(slug, Web.Ip(req));
+                    if (look == null) { Web.Error(res, 429, "rate_limited"); return; }
+                    if (!look.Found && slug != legacySlug) { Web.Error(res, 404, "no_store"); return; }
+                    if (!Embed(req, res, look.Origins)) return;
+                    if (look.Found && look.Status != "active") { Web.Error(res, 403, "store_off"); return; }
+                    if (req.HttpMethod == "GET") Web.Json(res, 200, look.Json);
+                    else Web.Error(res, 405, "method");
+                }
+                catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error"); }
+                return;
+            }
+            if (req.HttpMethod != "POST") { Web.Error(res, 405, "method"); return; }
+
+            // before the database, so a flood of messages from one place never reaches it
+            if (!Web.Allow("chat-m:" + Web.Ip(req), 8, TimeSpan.FromMinutes(1)) || !Web.Allow("chat-h:" + Web.Ip(req), 60, TimeSpan.FromHours(1)))
+            { Web.Error(res, 429, "rate_limited"); return; }
+
+            // ---- the chat itself (POST): the store is read fresh ----
             SqlConnection conn = null;
             StoreInfo store = null;
             try
@@ -47,44 +73,8 @@ namespace RiwaqChat
                     PlanGate.Apply(conn, store);   // what the store's plan doesn't include is off (styles, order tracking)
                 }
                 if (store == null && slug != legacySlug) { Web.Error(res, 404, "no_store"); return; }
-
-                // ---- cross-site embedding: only the store's own sites (same-site requests carry no Origin or our own) ----
-                string origin = req.Headers["Origin"];
-                if (!string.IsNullOrEmpty(origin) && !SameSite(req, origin))
-                {
-                    var allowed = (store == null || store.AllowedOrigins == null) ? new string[0] : store.AllowedOrigins.Split(',');
-                    if (!allowed.Contains(origin.TrimEnd('/'), StringComparer.OrdinalIgnoreCase)) { Web.Error(res, 403, "origin_not_allowed"); return; }
-                    res.AddHeader("Access-Control-Allow-Origin", origin);
-                    res.AddHeader("Vary", "Origin");
-                    if (req.HttpMethod == "OPTIONS")
-                    {
-                        res.AddHeader("Access-Control-Allow-Methods", "GET, POST");
-                        res.AddHeader("Access-Control-Allow-Headers", "Content-Type");
-                        res.StatusCode = 204;
-                        return;
-                    }
-                }
-
+                if (!Embed(req, res, store == null || store.AllowedOrigins == null ? new string[0] : store.AllowedOrigins.Split(','))) return;
                 if (store != null && store.Status != "active") { Web.Error(res, 403, "store_off"); return; }
-
-                if (req.HttpMethod == "GET")
-                {
-                    Web.Json(res, 200, new Dictionary<string, object>
-                    {
-                        { "ok", true },
-                        { "name", store == null ? "رِواق" : store.Name },
-                        { "botName", store == null ? "" : store.BotName },
-                        { "welcome", store == null ? null : store.Welcome },
-                        { "bubbleStyle", store == null ? "bear" : store.BubbleStyle },
-                        { "brandColor", store == null ? "#e8774a" : store.BrandColor }, { "chatTitle", store == null ? null : store.ChatTitle },
-                        { "suggestions", store == null || string.IsNullOrEmpty(store.Suggestions) ? new string[0] : store.Suggestions.Split('\n') },
-                    });
-                    return;
-                }
-                if (req.HttpMethod != "POST") { Web.Error(res, 405, "method"); return; }
-
-                if (!Web.Allow("chat-m:" + Web.Ip(req), 8, TimeSpan.FromMinutes(1)) || !Web.Allow("chat-h:" + Web.Ip(req), 60, TimeSpan.FromHours(1)))
-                { Web.Error(res, 429, "rate_limited"); return; }
 
                 // ---- monthly limit per store ----
                 // (a plan whose end date passed allows nothing until the super admin renews it)
@@ -154,6 +144,12 @@ namespace RiwaqChat
                     System = sysBlocks,
                     Messages = messages,
                 };
+                bool orderTool = store != null && OrderTracking.On(store);   // Shopify or EasyOrders
+
+                // Everything the reply needs from the database is read: the connection goes back to the pool before Claude writes.
+                // A reply takes seconds, and holding a connection for it let ~100 chats at once empty the pool and stop the whole
+                // site (dashboard included). The tools open their own short connections, and SaveUsage opens a new one at the end.
+                if (conn != null) { conn.Dispose(); conn = null; }
 
                 res.StatusCode = 200;
                 res.ContentType = "text/event-stream; charset=utf-8";
@@ -164,7 +160,6 @@ namespace RiwaqChat
                 bool wrote = false;
 
                 // ---- big store (search) and/or order tracking (Shopify): let Claude use its tools, then send the answer ----
-                bool orderTool = store != null && OrderTracking.On(store);   // Shopify or EasyOrders
                 if (Claude.UseSearch(idx) || orderTool || octx != null || extra != null)
                 {
                     try
@@ -177,7 +172,7 @@ namespace RiwaqChat
                     }
                     catch (Exception ex) { Log.Error(ex); Send(res, Oops); }
                     Done(res);
-                    if (store != null) { try { Db.AddUsage(conn, store.Id, 1, inTok, cacheRead, cacheWrite, outTok); } catch (Exception ex) { Log.Error(ex); } }
+                    SaveUsage(store, inTok, cacheRead, cacheWrite, outTok);
                     return;
                 }
 
@@ -208,7 +203,7 @@ namespace RiwaqChat
                 }
                 Done(res);
 
-                if (store != null) { try { Db.AddUsage(conn, store.Id, 1, inTok, cacheRead, cacheWrite, outTok); } catch (Exception ex) { Log.Error(ex); } }
+                SaveUsage(store, inTok, cacheRead, cacheWrite, outTok);
             }
             catch (Exception ex)
             {
@@ -226,9 +221,22 @@ namespace RiwaqChat
         // A tool a feature adds to the conversation (Restock: notify_when_back, Handoff: call_owner), with its line for the prompt
         public class ExtraTool { public Tool Def; public Func<ToolUseBlock, Task<string>> Run; public string Prompt; }
 
+        // What one reply needs from the database (Prepare, while the caller has a connection open), then the reply itself
+        // (Run, with no connection held: Claude takes seconds, and many chats at once holding connections emptied the pool).
+        public class Prepared
+        {
+            internal MessageCreateParams Params; internal List<MessageParam> Messages; internal StoreIndex Idx;
+            internal StoreInfo OrderStore; internal string Ip; internal OrderCtx Octx; internal List<ExtraTool> Extra;
+        }
+
         // The same assistant as the site chat, without streaming (WhatsApp and other channels).
         // channelNote is added after the cached system prompt, so the prompt cache still works.
         public static async Task<LoopResult> Answer(SqlConnection conn, StoreInfo store, List<MessageParam> messages, string ip, string channelNote, List<ExtraTool> extra = null)
+        {
+            return await Run(Prepare(conn, store, messages, ip, channelNote, extra));
+        }
+
+        public static Prepared Prepare(SqlConnection conn, StoreInfo store, List<MessageParam> messages, string ip, string channelNote, List<ExtraTool> extra = null)
         {
             int maxTokens;
             if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
@@ -242,10 +250,15 @@ namespace RiwaqChat
             if (octx != null) sys.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
             else sys.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
             var parameters = new MessageCreateParams { Model = Claude.Model, MaxTokens = maxTokens, System = sys, Messages = messages };
-
             bool orderTool = OrderTracking.On(store);   // Shopify or EasyOrders
-            if (Claude.UseSearch(idx) || orderTool || octx != null || (extra != null && extra.Count > 0))
-                return await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, ip, octx, extra);
+            return new Prepared { Params = parameters, Messages = messages, Idx = idx, OrderStore = orderTool ? store : null, Ip = ip, Octx = octx, Extra = extra };
+        }
+
+        public static async Task<LoopResult> Run(Prepared p)
+        {
+            var parameters = p.Params; var idx = p.Idx; var extra = p.Extra;
+            if (Claude.UseSearch(idx) || p.OrderStore != null || p.Octx != null || (extra != null && extra.Count > 0))
+                return await ToolLoop(parameters, p.Messages, Claude.UseSearch(idx) ? idx : null, p.OrderStore, p.Ip, p.Octx, extra);
 
             Message resp = await Claude.Client().Messages.Create(parameters);
             var r = new LoopResult { In = resp.Usage.InputTokens, CacheRead = resp.Usage.CacheReadInputTokens ?? 0, CacheWrite = resp.Usage.CacheCreationInputTokens ?? 0, Out = resp.Usage.OutputTokens };
@@ -357,6 +370,45 @@ namespace RiwaqChat
             };
         }
 
+        // The usage of one reply, on its own short connection (the chat's connection was given back before Claude wrote).
+        static void SaveUsage(StoreInfo store, long inTok, long cacheRead, long cacheWrite, long outTok)
+        {
+            if (store == null) return;
+            try { using (var c = Db.Open()) Db.AddUsage(c, store.Id, 1, inTok, cacheRead, cacheWrite, outTok); }
+            catch (Exception ex) { Log.Error(ex); }
+        }
+
+        // Cross-site embedding: only the store's own sites (same-site requests carry no Origin, or our own).
+        // false = already answered (403, or the browser's OPTIONS check).
+        static bool Embed(HttpRequest req, HttpResponse res, string[] allowed)
+        {
+            string origin = req.Headers["Origin"];
+            if (string.IsNullOrEmpty(origin) || SameSite(req, origin)) return true;
+            if (!allowed.Contains(origin.TrimEnd('/'), StringComparer.OrdinalIgnoreCase)) { Web.Error(res, 403, "origin_not_allowed"); return false; }
+            res.AddHeader("Access-Control-Allow-Origin", origin);
+            res.AddHeader("Vary", "Origin");
+            if (req.HttpMethod != "OPTIONS") return true;
+            res.AddHeader("Access-Control-Allow-Methods", "GET, POST");
+            res.AddHeader("Access-Control-Allow-Headers", "Content-Type");
+            res.StatusCode = 204;
+            return false;
+        }
+
+        // What the chat shows before the first message (GET): name, look, welcome, suggestions. null store = the old built-in store.
+        internal static Dictionary<string, object> LookJson(StoreInfo store)
+        {
+            return new Dictionary<string, object>
+            {
+                { "ok", true },
+                { "name", store == null ? "رِواق" : store.Name },
+                { "botName", store == null ? "" : store.BotName },
+                { "welcome", store == null ? null : store.Welcome },
+                { "bubbleStyle", store == null ? "bear" : store.BubbleStyle },
+                { "brandColor", store == null ? "#e8774a" : store.BrandColor }, { "chatTitle", store == null ? null : store.ChatTitle },
+                { "suggestions", store == null || string.IsNullOrEmpty(store.Suggestions) ? new string[0] : store.Suggestions.Split('\n') },
+            };
+        }
+
         static bool SameSite(HttpRequest req, string origin)
         {
             Uri o;
@@ -382,6 +434,68 @@ namespace RiwaqChat
         static void Done(HttpResponse res)
         {
             try { res.Write("data: [DONE]\n\n"); res.Flush(); } catch { }
+        }
+    }
+
+    // The chat's look and the sites allowed to show it, per store, kept in memory for a minute.
+    // Every page of every store website asks for it when the chat loads (most visitors never open the chat), so without
+    // this each page view was a database query. Saving the settings in the dashboard forgets the store's copy at once;
+    // other changes (the plan, a pause by the admin) show within the minute. The real chat (POST) always reads the store fresh.
+    public static class ChatLook
+    {
+        public class Entry { public bool Found; public string Status; public string[] Origins; public Dictionary<string, object> Json; public DateTime Until; }
+
+        static readonly ConcurrentDictionary<string, Entry> Cache = new ConcurrentDictionary<string, Entry>();
+        static readonly TimeSpan Keep = TimeSpan.FromMinutes(1);
+        const int MaxEntries = 20000;   // ids nobody has (someone guessing) are kept too, so they don't reach the database again
+        static long nextSweep;
+
+        // null = this visitor asked for too many stores that weren't in memory (someone guessing ids)
+        public static Entry Get(string slug, string ip)
+        {
+            var now = DateTime.UtcNow;
+            Entry e;
+            if (Cache.TryGetValue(slug, out e) && e.Until > now) return e;
+            if (!Web.Allow("chat-look:" + ip, 120, TimeSpan.FromMinutes(1))) return null;
+            e = Load(slug);
+            e.Until = now + Keep;
+            Sweep(now);
+            Cache[slug] = e;
+            return e;
+        }
+
+        public static void Forget(string slug)
+        {
+            Entry e;
+            if (!string.IsNullOrEmpty(slug)) Cache.TryRemove(slug.ToLowerInvariant(), out e);
+        }
+
+        static Entry Load(string slug)
+        {
+            StoreInfo store = null;
+            if (Db.Configured)
+                using (var c = Db.Open())
+                {
+                    store = Db.StoreBySlug(c, slug);
+                    PlanGate.Apply(c, store);   // a style the plan doesn't include shows as the default
+                }
+            return new Entry
+            {
+                Found = store != null,
+                Status = store == null ? null : store.Status,
+                Origins = store == null || store.AllowedOrigins == null ? new string[0] : store.AllowedOrigins.Split(','),
+                Json = ChatHandler.LookJson(store),
+            };
+        }
+
+        // drops the old copies every few minutes, and everything when someone fills it with made-up ids
+        static void Sweep(DateTime now)
+        {
+            long due = Interlocked.Read(ref nextSweep);
+            if (now.Ticks < due && Cache.Count < MaxEntries) return;
+            if (Interlocked.CompareExchange(ref nextSweep, now.AddMinutes(5).Ticks, due) != due) return;   // another request is on it
+            foreach (var kv in Cache) { Entry x; if (kv.Value.Until <= now) Cache.TryRemove(kv.Key, out x); }
+            if (Cache.Count >= MaxEntries) Cache.Clear();
         }
     }
 }

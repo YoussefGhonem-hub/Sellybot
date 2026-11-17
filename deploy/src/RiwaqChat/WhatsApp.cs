@@ -578,9 +578,13 @@ ELSE
             try
             {
                 await Task.Delay(Debounce, ct);
+                // The database is used in short steps, never while waiting on the network: read -> pictures -> the reply's data ->
+                // (Claude writes) -> save -> (Wapilot sends) -> status. A reply takes seconds, and holding one connection for all of
+                // it let many chats at once empty the connection pool and stop the whole site.
+                List<Row> rows; StoreInfo s; string token, pending; List<ChatHandler.ExtraTool> extra;
                 using (var c = Db.Open())
                 {
-                    var rows = new List<Row>();
+                    rows = new List<Row>();
                     using (var cmd = Db.Cmd(c, @"SELECT TOP 40 Id, FromCustomer, Body, MsgId, Media, CreatedAt FROM dbo.WaMessages
                         WHERE StoreId=@s AND ChatId=@c AND CreatedAt > DATEADD(HOUR,-24,SYSUTCDATETIME()) ORDER BY Id DESC", "@s", storeId, "@c", chatKey))
                     using (var r = cmd.ExecuteReader())
@@ -591,10 +595,10 @@ ELSE
                     // the owner is talking to this customer themselves
                     if (rows.Any(x => x.Owner && x.At > DateTime.UtcNow.AddHours(-PauseHours))) return;
 
-                    var s = Db.StoreById(c, storeId);
+                    s = Db.StoreById(c, storeId);
                     if (s == null || s.Status != "active" || !s.WaEnabled || string.IsNullOrEmpty(s.WaInstance)) return;
                     PlanGate.Apply(c, s);   // e.g. no order tracking when the plan doesn't include Shopify
-                    var token = WaAccount.Token(c, s);
+                    token = WaAccount.Token(c, s);
                     if (token == null) return;
                     if (!WaAccount.HasService(s)) { SetStatus(c, s.Id, "⚠️ خدمة الواتساب خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها من «باقتي»."); return; }
                     if (Billing.Expired(s)) { SetStatus(c, s.Id, "⚠️ الباقة خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها."); return; }
@@ -603,40 +607,57 @@ ELSE
                     try { Shopify.RefreshIfOld(s); } catch (Exception ex) { Log.Error(ex); }
                     try { EasyOrders.RefreshIfOld(s); } catch (Exception ex) { Log.Error(ex); }
 
-                    // the pictures in the customer's newest turn (newest first, up to 3)
-                    var imgs = new Dictionary<long, ImageBlockParam>();
-                    foreach (var x in rows.TakeWhile(x => x.Customer).Where(x => x.Media != null).Take(WaImages.MaxPerTurn))
-                    {
-                        var img = await WaImages.Load(x.Media, token);
-                        if (img != null) imgs[x.Id] = img;
-                    }
-
                     // tools the growth features add to this chat («بلّغني لما يرجع», handoff to the owner)
-                    var extra = new List<ChatHandler.ExtraTool>();
+                    extra = new List<ChatHandler.ExtraTool>();
                     var custPhone = WaChat.Digits(chatKey);
                     if (custPhone != null && Restock.On(c, s)) extra.Add(Restock.Tool(s, custPhone));
                     if (custPhone != null && Handoff.On(c, s)) extra.Add(Handoff.Tool(s, "wa", chatKey));
+                    pending = OrderConfirm.PendingNote(c, s.Id, chatKey) + EoConfirm.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey)
+                        + Carts.Note(c, s.Id, chatKey) + Handoff.Note(c, s.Id, chatKey);
+                }
 
-                    ChatHandler.LoopResult res;
-                    try { res = await ChatHandler.Answer(c, s, History(rows, imgs), "wa:" + chatKey, ChannelNote(s, chatKey) + (imgs.Count > 0 ? WaImages.Note : "") + OrderConfirm.PendingNote(c, s.Id, chatKey)
-                        + EoConfirm.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey) + Carts.Note(c, s.Id, chatKey) + Handoff.Note(c, s.Id, chatKey), extra); }
-                    catch (Exception ex) { Log.Error(ex); SetStatus(c, s.Id, "⚠️ حصلت مشكلة وإحنا بنجهّز رد على آخر رسالة. لو اتكررت كلّم الدعم."); return; }
+                // the pictures in the customer's newest turn (newest first, up to 3)
+                var imgs = new Dictionary<long, ImageBlockParam>();
+                foreach (var x in rows.TakeWhile(x => x.Customer).Where(x => x.Media != null).Take(WaImages.MaxPerTurn))
+                {
+                    var img = await WaImages.Load(x.Media, token);
+                    if (img != null) imgs[x.Id] = img;
+                }
+
+                ChatHandler.LoopResult res;
+                try
+                {
+                    ChatHandler.Prepared prep;
+                    using (var c = Db.Open())
+                        prep = ChatHandler.Prepare(c, s, History(rows, imgs), "wa:" + chatKey, ChannelNote(s, chatKey) + (imgs.Count > 0 ? WaImages.Note : "") + pending, extra);
+                    res = await ChatHandler.Run(prep);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex);
+                    using (var c = Db.Open()) SetStatus(c, s.Id, "⚠️ حصلت مشكلة وإحنا بنجهّز رد على آخر رسالة. لو اتكررت كلّم الدعم.");
+                    return;
+                }
+
+                string answer = Wapilot.Format(string.IsNullOrWhiteSpace(res.Text) ? Fallback : res.Text);
+                long? mine;
+                using (var c = Db.Open())
+                {
                     Db.AddUsage(c, s.Id, 1, res.In, res.CacheRead, res.CacheWrite, res.Out);
-
-                    string answer = Wapilot.Format(string.IsNullOrWhiteSpace(res.Text) ? Fallback : res.Text);
                     // saved before sending: Wapilot may echo it back (message.any) before Send returns
-                    long? mine = Save(c, s.Id, chatKey, false, answer, null);
-                    try
-                    {
-                        int i = 0;
-                        foreach (var part in Wapilot.Split(answer)) await Wapilot.Send(token, s.WaInstance, chat, part, "sb-" + rowId + "-" + (i++));
-                        SetStatus(c, s.Id, null);
-                    }
-                    catch (WaException ex)
-                    {
-                        if (mine.HasValue) using (var cmd = Db.Cmd(c, "DELETE FROM dbo.WaMessages WHERE Id=@id", "@id", mine.Value)) cmd.ExecuteNonQuery();
-                        SetStatus(c, s.Id, "⚠️ " + ex.Message);
-                    }
+                    mine = Save(c, s.Id, chatKey, false, answer, null);
+                }
+                string failed = null;
+                try
+                {
+                    int i = 0;
+                    foreach (var part in Wapilot.Split(answer)) await Wapilot.Send(token, s.WaInstance, chat, part, "sb-" + rowId + "-" + (i++));
+                }
+                catch (WaException ex) { failed = "⚠️ " + ex.Message; }
+                using (var c = Db.Open())
+                {
+                    if (failed != null && mine.HasValue) using (var cmd = Db.Cmd(c, "DELETE FROM dbo.WaMessages WHERE Id=@id", "@id", mine.Value)) cmd.ExecuteNonQuery();
+                    SetStatus(c, s.Id, failed);
                     if (new Random().Next(200) == 0) Cleanup(c);
                 }
             }
