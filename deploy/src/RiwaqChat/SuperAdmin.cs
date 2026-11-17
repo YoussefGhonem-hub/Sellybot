@@ -818,7 +818,7 @@ namespace RiwaqChat
             bool hasPlan = r["PlanId"] != DBNull.Value, trial = !hasPlan && !(bool)r["IsAdmin"];
             return new Dictionary<string, object>
             {
-                { "id", r["Id"] }, { "slug", r["Slug"] }, { "name", r["Name"] }, { "email", r["OwnerEmail"] }, { "status", r["Status"] }, { "isAdmin", r["IsAdmin"] },
+                { "id", r["Id"] }, { "slug", r["Slug"] }, { "name", r["Name"] }, { "email", r["OwnerEmail"] }, { "phone", r["OwnerPhone"] as string ?? "" }, { "status", r["Status"] }, { "isAdmin", r["IsAdmin"] },
                 { "limit", r["MonthlyTokenLimit"] }, { "limitUsd", Billing.UsdForUnits(Convert.ToInt64(r["MonthlyTokenLimit"])) },
                 { "plan", hasPlan ? r["PlanName"] as string : null }, { "planId", hasPlan ? r["PlanId"] : null }, { "planEndsAt", ends.HasValue ? ends.Value.ToString("o") : "" },
                 { "planExpired", hasPlan && ends.HasValue && ends.Value < DateTime.UtcNow },
@@ -832,7 +832,7 @@ namespace RiwaqChat
         }
 
         const string StoreSelect = @"SELECT s.Id, s.Slug, s.Name, s.OwnerEmail, s.Status, s.IsAdmin, s.MonthlyTokenLimit, s.PlanId, s.PlanName, s.PlanEndsAt, s.CreatedAt,
-  s.ShopifyDomain, s.ShopifyShop, s.AllowedOrigins, s.BubbleStyle, s.BrandColor,
+  s.ShopifyDomain, s.ShopifyShop, s.AllowedOrigins, s.BubbleStyle, s.BrandColor, s.OwnerPhone,
   ISNULL(u.Messages,0) AS Messages, ISNULL(u.InputTokens,0) AS I, ISNULL(u.CacheReadTokens,0) AS CR, ISNULL(u.CacheWriteTokens,0) AS CW, ISNULL(u.OutputTokens,0) AS O,
   (SELECT ISNULL(SUM(CAST(LEN(k.Content) AS BIGINT)),0) FROM dbo.KnowledgeItems k WHERE k.StoreId = s.Id) AS Chars,
   (SELECT COUNT(*) FROM dbo.Tickets t WHERE t.StoreId = s.Id AND t.Status = 'open') AS OpenTickets

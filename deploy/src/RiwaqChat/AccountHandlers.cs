@@ -145,15 +145,18 @@ namespace RiwaqChat
                         if (Web.Reserved(slug)) { Web.Error(res, 400, "reserved_slug", "المعرّف ده محجوز، اختار غيره."); return; }
                         if (!Web.ValidEmail(email)) { Web.Error(res, 400, "bad_email", "الإيميل مش صحيح."); return; }
                         if (password.Length < 8) { Web.Error(res, 400, "weak_password", "الباسورد لازم يكون 8 حروف على الأقل."); return; }
+                        // the owner's own WhatsApp (Stores.OwnerPhone): the weekly report and alerts go there, and the admin can reach them
+                        string phone = SignupPhone(Web.Str(b, "phone", 40));
+                        if (phone == null) { Web.Error(res, 400, "bad_phone", "اكتب رقمك على الواتساب صح، مثلًا 01001234567 (أو برمز الدولة لو برّه مصر)."); return; }
                         if (Db.StoreBySlug(c, slug) != null) { Web.Error(res, 409, "slug_taken", "المعرّف ده مستخدم، اختار غيره."); return; }
                         if (Db.StoreByEmail(c, email) != null) { Web.Error(res, 409, "email_taken", "الإيميل ده عنده حساب بالفعل، سجّل دخول."); return; }
 
                         int freeLimit;
                         if (!int.TryParse(Web.Setting("FreeMonthlyTokenLimit", "300000"), out freeLimit)) freeLimit = 300000;
                         int id;
-                        using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Stores (Slug, Name, OwnerEmail, PasswordHash, IsAdmin, MonthlyTokenLimit, Welcome, BotName)
-                                                     OUTPUT INSERTED.Id VALUES (@slug, @name, @email, @hash, @admin, @limit, @welcome, N'')",
-                            "@slug", slug, "@name", name, "@email", email, "@hash", Web.HashPassword(password), "@admin", admin,
+                        using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Stores (Slug, Name, OwnerEmail, PasswordHash, IsAdmin, MonthlyTokenLimit, Welcome, BotName, OwnerPhone)
+                                                     OUTPUT INSERTED.Id VALUES (@slug, @name, @email, @hash, @admin, @limit, @welcome, N'', @phone)",
+                            "@slug", slug, "@name", name, "@email", email, "@hash", Web.HashPassword(password), "@admin", admin, "@phone", phone,
                             "@limit", admin ? 20000000 : freeLimit,
                             "@welcome", "أهلاً بيك في **" + name + "**! 👋\nعندك أي سؤال؟ اسألني وأنا أساعدك على طول."))
                             id = (int)cmd.ExecuteScalar();
@@ -169,6 +172,17 @@ namespace RiwaqChat
             catch (SqlException ex) when (ex.Number == 2627 || ex.Number == 2601) { Web.Error(res, 409, "taken", "المعرّف أو الإيميل مستخدم بالفعل."); }
             catch (Exception ex) when (Storage.IsFull(ex)) { Log.Error(ex); Web.Error(res, 507, "storage_full", "⚠️ مساحة التخزين على السيرفر خلصت، فمش هنقدر نعمل حسابات جديدة دلوقتي. كلّم إدارة الموقع."); }
             catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error", "حصلت مشكلة، جرّب تاني."); }
+        }
+
+        // The owner's WhatsApp at sign-up, as international digits; null when it doesn't look right.
+        // A local number (leading 0) must be an Egyptian mobile (01xxxxxxxxx); with a country code anything of 10-15 digits.
+        static string SignupPhone(string raw)
+        {
+            var p = WaNotify.Phone(raw);
+            if (p != null && System.Text.RegularExpressions.Regex.IsMatch(p, "^1[0125][0-9]{8}$")) p = "20" + p;   // 1001234567: Egyptian without the 0
+            if (p == null || p.StartsWith("0") || p.Length < 10) return null;
+            if (p.StartsWith("20") && !System.Text.RegularExpressions.Regex.IsMatch(p, "^201[0125][0-9]{8}$")) return null;
+            return p;
         }
 
         // When the original store (riwaq) gets its account, bring over the data it was using from App_Data/products.txt.

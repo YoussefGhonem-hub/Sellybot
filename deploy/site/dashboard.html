@@ -847,6 +847,16 @@
   .list-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 2px 10px}
   .list-head h3{margin:0;font-size:15px}
   .list-head .n{font-size:12px;color:var(--muted);font-weight:500}
+  .detail-tip{margin-top:14px;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--brand) 7%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 30%,var(--line))}
+  .dt-head{font-size:14.5px}
+  .detail-tip p{margin:6px 0 0;font-size:13px;color:var(--muted);line-height:1.75}
+  .detail-tip p b{color:var(--ink);font-weight:600}
+  .dt-ex{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:10px;margin:10px 0 4px}
+  .dt-ex>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.75;color:var(--ink);min-width:0}
+  .dt-tag{display:block;font-size:12px;font-weight:700;margin-bottom:4px}
+  .dt-bad .dt-tag{color:var(--err)}
+  .dt-good .dt-tag{color:var(--ok)}
+  @media (max-width:640px){.dt-ex{grid-template-columns:minmax(0,1fr)}}
   .name-tip{margin-top:12px}
   .name-tip summary{margin:0}
   .name-tip div{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.7}
@@ -1461,6 +1471,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
           <input type="email" id="sEmail" class="ltr" required autocomplete="email" placeholder="you@store.com">
         </div>
+        <label for="sPhone">رقمك على الواتساب</label>
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+          <input type="tel" id="sPhone" class="ltr" required maxlength="20" autocomplete="tel" inputmode="tel" placeholder="01001234567" aria-describedby="sPhoneHint">
+        </div>
+        <div class="hint" id="sPhoneHint">رقمك <b>الشخصي</b> (مش لازم يكون رقم المتجر): عليه بيوصلك التقرير الأسبوعي والتنبيهات المهمة، ونتواصل معاك منه لو احتجت مساعدة. مش بيظهر لزباينك.</div>
         <label for="sPass">الباسورد (8 حروف على الأقل)</label>
         <div class="field pw">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
@@ -1657,6 +1673,18 @@
         </div>
         <button type="button" class="lk-strip" id="lockFiles" hidden></button>
         <div class="msg" id="upMsg"></div>
+        <!-- the assistant finds products by the words in the files (and matches customers' photos against them): ask for full details -->
+        <div class="detail-tip">
+          <div class="dt-head">📝 <b>مهم: اكتب تفاصيل كل منتج</b></div>
+          <p>إحنا <b>مش بنحفظ صور منتجاتك</b>، حتى لو جوه الملف: المساعد بيعرف منتجاتك من <b>الوصف اللي انت بتكتبه</b> بس. فلما زبون يبعت صورة منتج ويسأل «بكام؟»، المساعد بيقارن الصورة بالوصف ده.
+            كل ما تكتب لكل منتج <b>الكود والاسم والسعر وشكله</b> (اللون، الخامة، أي تفصيلة مميزة) <b>والمقاسات والألوان المتاحة</b>، كل ما المساعد يلاقي المنتج الصح أسرع ويرد صح.</p>
+          <div class="dt-ex">
+            <div class="dt-bad"><span class="dt-tag">❌ كده مش كفاية</span>فستان أسود – 350 ج</div>
+            <div class="dt-good"><span class="dt-tag">✅ كده المساعد يلاقيه على طول</span>كود 105 · فستان «ليلى» · 350 ج.م<br>فستان سواريه أسود طويل، كُم شيفون طويل، حزام دهبي على الوسط، قماش كريب.<br>المقاسات: S – M – L – XL · الألوان: أسود، كحلي</div>
+          </div>
+          <p>في Excel خلّي لكل حاجة عمود: <b>الكود · الاسم · السعر · الوصف · المقاسات · الألوان</b>.</p>
+          <p>💡 اكتب نفس الكود على صور المنتجات اللي بتنزّلها في الستوري والبوستات. لو زبون بعتلك سكرين شوت منها على الواتساب، المساعد بيقرا الكود من الصورة ويعرف المنتج على طول.</p>
+        </div>
         <details class="name-tip">
           <summary>💡 إزاي تسمّي ملفاتك عشان المساعد يلاقي المعلومة أسرع؟</summary>
           <div>سمّي كل ملف أو نص باسم بيوصف اللي جواه، مثلًا <b>"أسعار منتجات التنظيف - نوفمبر 2026"</b> أو <b>"سياسة الشحن والاسترجاع"</b> بدل "file1.pdf" أو "مستند جديد".
@@ -2440,7 +2468,7 @@
     <label>العنوان (اسم واضح بيوصف المحتوى)</label>
     <input type="text" id="edTitle" maxlength="200" required placeholder="مثلًا: أسعار المنتجات ومصاريف الشحن">
     <label>المحتوى</label>
-    <textarea id="edContent" required placeholder="اكتب أو الصق أي معلومات عن المنتجات، الأسعار، الشحن، الأسئلة الشائعة..."></textarea>
+    <textarea id="edContent" required placeholder="اكتب أو الصق أي معلومات عن المنتجات، الأسعار، الشحن، الأسئلة الشائعة...&#10;ولكل منتج: الكود، الاسم، السعر، شكله (اللون، الخامة)، المقاسات والألوان. مثلًا:&#10;كود 105 · فستان «ليلى» · 350 ج.م · سواريه أسود طويل، كُم شيفون، حزام دهبي · S – XL · أسود، كحلي"></textarea>
     <div class="msg" id="edMsg"></div>
     <div class="row">
       <button class="btn" id="edSave">حفظ</button>
@@ -2550,10 +2578,19 @@
     catch (err) { setMsg("lMsg", err.message); shake(); }
     finally { $("lBtn").classList.remove("loading"); }
   };
+  // the owner's WhatsApp at sign-up (the server checks the same): a local number must be an Egyptian mobile, otherwise a country code + 10-15 digits
+  function signupPhone(v) {
+    var d = String(v || "").replace(/[٠-٩]/g, function (x) { return String(x.charCodeAt(0) - 0x660); }).replace(/[۰-۹]/g, function (x) { return String(x.charCodeAt(0) - 0x6F0); }).replace(/\D/g, "");
+    if (d.indexOf("00") === 0) d = d.slice(2);
+    if (/^01[0125]\d{8}$/.test(d)) d = "2" + d; else if (/^1[0125]\d{8}$/.test(d)) d = "20" + d;
+    if (d.charAt(0) === "0" || d.length < 10 || d.length > 15) return null;
+    return d.indexOf("20") === 0 && !/^201[0125]\d{8}$/.test(d) ? null : d;
+  }
   $("signupForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("sMsg", ""); $("sBtn").classList.add("loading");
     try {
-      me = await api("api/auth.ashx?action=signup", { method: "POST", json: { name: $("sName").value, slug: $("sSlug").value, email: $("sEmail").value, password: $("sPass").value } });
+      if (!signupPhone($("sPhone").value)) { setMsg("sMsg", "اكتب رقمك على الواتساب صح، مثلًا 01001234567 (أو برمز الدولة لو برّه مصر)."); $("sPhone").focus(); shake(); return; }
+      me = await api("api/auth.ashx?action=signup", { method: "POST", json: { name: $("sName").value, slug: $("sSlug").value, email: $("sEmail").value, phone: $("sPhone").value, password: $("sPass").value } });
       if (window.sbTrack) window.sbTrack("CompleteRegistration");   // Sellybot's ads (pixel.js): a new account
       showApp(true); toast("تم إنشاء متجرك 🎉 ابدأ ضيف الداتا");
     } catch (err) { setMsg("sMsg", err.message); shake(); }

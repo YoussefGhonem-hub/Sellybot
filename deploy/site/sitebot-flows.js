@@ -20,6 +20,13 @@
     else if (/^1[0125]\d{8}$/.test(d)) d = "0" + d;
     return /^01[0125]\d{8}$/.test(d) ? d : null;
   }
+  function ownerPhone(v) {   // the owner's WhatsApp at sign-up (the server checks the same): Egyptian mobile, or a country code + 10-15 digits
+    var d = en(v).replace(/\D/g, "");
+    if (d.indexOf("00") === 0) d = d.slice(2);
+    if (/^01[0125]\d{8}$/.test(d)) d = "2" + d; else if (/^1[0125]\d{8}$/.test(d)) d = "20" + d;
+    if (d.charAt(0) === "0" || d.length < 10 || d.length > 15) return null;
+    return d.indexOf("20") === 0 && !/^201[0125]\d{8}$/.test(d) ? null : d;
+  }
   function dateAr(iso) { try { return new Date(iso).toLocaleDateString("ar-EG-u-nu-latn", { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return ""; } }
   function dashUrl(h) { return h.base + "dashboard.html"; }
   function goDash(h) { if (/dashboard\.html$/i.test(location.pathname)) location.reload(); else location.href = dashUrl(h); }
@@ -46,8 +53,8 @@
   async function signup(h, stop, a) {
     var cur = await whoAmI(h);
     if (cur) { await h.say("انت مسجّل دخول بالفعل بحساب **" + cur.name + "** 👋"); return afterAccount(h, stop, cur, false); }
-    await h.say("يلا بينا 🚀 هعملك حسابك في **4 أسئلة** بس، وتجربتك المجانية تبدأ على طول (شهر و500 رسالة، من غير كارت).\nأولًا: **اسم متجرك أو نشاطك** إيه؟");
-    var f = { name: "", email: "", slug: "", password: "" }, step = "name", suggest = [];
+    await h.say("يلا بينا 🚀 هعملك حسابك في **5 أسئلة** بس، وتجربتك المجانية تبدأ على طول (شهر و500 رسالة، من غير كارت).\nأولًا: **اسم متجرك أو نشاطك** إيه؟");
+    var f = { name: "", email: "", phone: "", slug: "", password: "" }, step = "name", suggest = [];
     while (!stop()) {
       if (step === "name") {
         f.name = (await h.ask({ placeholder: "مثلًا: متجر النور", max: 100, check: function (v) { return v.trim().length < 2 ? "اكتب اسم المتجر (حرفين على الأقل) 🙏" : null; } })).trim();
@@ -68,6 +75,21 @@
           await h.say("تمام، اكتب الإيميل التاني:"); continue;
         }
         f.email = em; suggest = r.data.suggest || [];
+        if (!f.phone) {
+          await h.say("تمام ✅ **رقمك على الواتساب** إيه؟\nرقمك الشخصي (مش لازم يكون رقم المتجر): عليه بيوصلك التقرير الأسبوعي والتنبيهات المهمة، ونتواصل معاك منه لو احتجت مساعدة. مش بيظهر لزباينك.");
+          step = "phone"; continue;
+        }
+        step = "slugask"; continue;
+      }
+      if (step === "phone") {
+        var ph = ownerPhone(await h.ask({ type: "tel", placeholder: "مثلًا: 01001234567", max: 20, autocomplete: "tel",
+          check: function (v) { return ownerPhone(v) ? null : "اكتب رقم واتساب صح، مثلًا 01001234567 (أو برمز الدولة لو برّه مصر)."; } }));
+        if (stop()) break;
+        f.phone = ph;
+        if (f.slug) { await h.say("تمام ✅ اكتب **الباسورد** تاني 🔒"); step = "password"; continue; }   // back here after the server refused the number
+        step = "slugask"; continue;
+      }
+      if (step === "slugask") {
         await h.say("تمام ✅ دلوقتي اختار **معرّف لمتجرك** بالإنجليزي (حروف صغيرة وأرقام وشرطة -). هيبان في لينك الشات بتاعك، مثلًا:\n" + h.base + "?store=" + (suggest[0] || "my-store") +
           (suggest.length ? "\nاختار واحد من دول أو اكتب اللي يعجبك:" : ""));
         step = "slug"; continue;
@@ -95,7 +117,7 @@
       if (step === "send") {
         if (stop()) break;
         h.busy(true); await h.say("⏳ بعمل حسابك…");
-        var res = await h.api("api/auth.ashx?action=signup", { name: f.name, slug: f.slug, email: f.email, password: f.password });
+        var res = await h.api("api/auth.ashx?action=signup", { name: f.name, slug: f.slug, email: f.email, phone: f.phone, password: f.password });
         h.busy(false); f.password = "";
         if (res.ok && res.data && res.data.slug) {
           if (window.sbTrack) window.sbTrack("CompleteRegistration");   // Sellybot's ads (pixel.js): a new account
@@ -107,6 +129,7 @@
         await h.say("⚠️ " + msgOf(res));
         if (code === "slug_taken" || code === "reserved_slug" || code === "bad_slug") { step = "slug"; suggest = []; await h.say("اكتب معرّف تاني:"); continue; }
         if (code === "email_taken" || code === "bad_email") { step = "email"; await h.say("اكتب إيميل تاني:"); continue; }
+        if (code === "bad_phone") { step = "phone"; await h.say("اكتب رقمك على الواتساب تاني:"); continue; }
         if (code === "weak_password") { step = "password"; continue; }
         if (code === "bad_name") { step = "name"; continue; }
         return { done: false };

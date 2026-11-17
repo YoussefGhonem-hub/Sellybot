@@ -1114,7 +1114,7 @@
   }
   function storeMatches(s) {
     var q = $("stQ").value.trim().toLowerCase();
-    if (q && (s.name + " " + s.slug + " " + s.email).toLowerCase().indexOf(q) < 0) return false;
+    if (q && (s.name + " " + s.slug + " " + s.email + " " + (s.phone || "")).toLowerCase().indexOf(q) < 0) return false;
     var f = state.stFilter, d = daysLeft(s.planEndsAt);
     if (f === "active") return s.plan && !s.planExpired;
     if (f === "expiring") return s.plan && !s.planExpired && d <= 7;
@@ -1167,7 +1167,9 @@
     var activePlans = state.plansList.filter(function (x) { return x.isActive; });
     var m = modal(
       '<div class="d-head"><div class="mini-av" style="width:46px;height:46px;font-size:20px">' + esc(initial(s.name)) + '</div><div><h2>' + esc(s.name) + '</h2>' +
-        '<div class="hint ltr" style="text-align:right">' + esc(s.slug) + ' · ' + esc(s.email) + '</div></div><button class="x" data-close aria-label="إغلاق">×</button></div>' +
+        '<div class="hint ltr" style="text-align:right">' + esc(s.slug) + ' · ' + esc(s.email) + '</div>' +
+        (s.phone ? '<div class="hint">📱 واتساب صاحب المتجر: <a class="ltr" dir="ltr" href="https://wa.me/' + esc(s.phone) + '" target="_blank" rel="noopener">+' + esc(s.phone) + '</a></div>' : '') +
+        '</div><button class="x" data-close aria-label="إغلاق">×</button></div>' +
       '<div class="row" style="margin-top:6px">' + planPill(s) + (s.status === "active" ? '<span class="pill ok">شغال</span>' : '<span class="pill err">موقوف</span>') +
         (s.shopify ? '<span class="pill info">🛍️ Shopify</span>' : '') + '<span class="space"></span>' +
         '<a class="btn ghost sm" href="index.html?store=' + encodeURIComponent(s.slug) + '" target="_blank" rel="noopener">💬 افتح الشات ↗</a>' +
