@@ -5,9 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>الشات</title>
 <script>
-  // The bare site address (no ?store=) is for store owners: go to the dashboard, which shows the login when not signed in.
-  // Chat links (/?store=<store id>) stay here and open the chat.
-  if (!new URLSearchParams(location.search).get("store")) location.replace("dashboard.html");
+  // The bare site address (no ?store=): a signed-in owner goes to the dashboard, everyone else to the landing page
+  // (start.html, with «تسجيل الدخول» in its bar). Chat links (/?store=<store id>) stay here and open the chat.
+  (function () {
+    if (new URLSearchParams(location.search).get("store")) return;
+    var landing = "start.html" + location.search + location.hash;
+    fetch("api/auth.ashx?action=me", { credentials: "same-origin", cache: "no-store" })
+      .then(function (r) { location.replace(r.ok ? "dashboard.html" : landing); })
+      .catch(function () { location.replace(landing); });
+  })();
 </script>
 <script>
   // Light / dark before the chat loads (the saved choice, otherwise light), so the page never flashes.
@@ -24,6 +30,6 @@
 </head>
 <body>
 <!-- The chat opens right away on this page. The store comes from the link: ?store=<store id> -->
-<script src="widget.js?v=20261117b" data-mode="page"></script>
+<script src="widget.js?v=20261117c" data-mode="page"></script>
 </body>
 </html>

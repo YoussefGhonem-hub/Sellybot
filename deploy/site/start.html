@@ -92,6 +92,12 @@
   .icon-btn svg{width:19px;height:19px}
   .nav .btn{min-height:42px;padding:0 16px;font-size:15px;border-radius:13px}
   @media (max-width:760px){.nav a.link{display:none}}
+  /* log in (or «لوحة التحكم» when already signed in) */
+  .nav .btn.nav-login{gap:7px;padding:0 14px;box-shadow:none;white-space:nowrap}
+  .nav-login svg{width:17px;height:17px;flex:none}
+  .nav-login .s{display:none}
+  @media (max-width:520px){.nav-login .l,.nav-login svg{display:none}.nav-login .s{display:inline}.nav .btn{padding:0 13px}}
+  @media (max-width:370px){#themeBtn{display:none}}
 
   /* ---------- hero ---------- */
   .hero{position:relative;overflow:hidden;padding:30px 0 40px}
@@ -430,6 +436,7 @@
   .final h2{color:#fff;margin:0;font-size:clamp(26px,6.6vw,42px)}
   .final p{margin:12px auto 0;max-width:520px;opacity:.95;font-size:17px}
   .final .row2{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:26px}
+  .final .btn.ghost-light{background:rgba(255,255,255,.14);color:#fff;border:1.5px solid rgba(255,255,255,.55)}
   .final .btn.light{background:#fff;color:var(--brand3);box-shadow:0 14px 30px rgba(0,0,0,.18)}
   .final .btn{flex:1 1 220px;max-width:300px}
   .final .fs{position:absolute;width:220px;height:auto;opacity:.16;pointer-events:none}
@@ -464,6 +471,8 @@
   .hero-wa i svg{width:20px;height:20px}
   .hero-wa b{font-weight:700;letter-spacing:.3px}
   .hero-txt>.hero-wa{animation-delay:1s}
+  .hero-flow{margin:12px 0 0;font-size:14.5px;color:var(--muted)}
+  .hero-txt>.hero-flow{animation-delay:.78s}
   .wa-float{position:fixed;left:max(18px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));z-index:50;display:flex;align-items:center;gap:10px;direction:ltr;
     text-decoration:none;opacity:0;transform:translateY(24px) scale(.7);pointer-events:none;transition:opacity .4s,transform .6s cubic-bezier(.34,1.56,.64,1)}
   .wa-float.on{opacity:1;transform:none;pointer-events:auto}
@@ -501,6 +510,7 @@
     <a class="link" href="#faq">الأسئلة</a>
     <a class="icon-btn wa-nav" data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%AC%D8%A7%D9%8A%20%D9%85%D9%86%20%D8%B5%D9%81%D8%AD%D8%A9%20Sellybot%20%D9%88%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1" target="_blank" rel="noopener" aria-label="كلّمنا على واتساب" title="كلّمنا على واتساب"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></a>
     <button class="icon-btn" id="themeBtn" type="button" aria-label="الوضع الفاتح / الغامق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+    <a class="btn ghost nav-login" id="navLogin" href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg><span class="l">تسجيل الدخول</span><span class="s">دخول</span></a>
     <a class="btn primary" href="dashboard.html?signup=1">ابدأ مجانًا</a>
   </div>
 </header>
@@ -519,6 +529,7 @@
           <a class="btn primary magnet" href="dashboard.html?signup=1"><span>ابدأ تجربتك المجانية</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
           <button class="btn ghost" type="button" data-chat="">جرّب المساعد دلوقتي 💬</button>
         </div>
+        <p class="hero-flow">أو <button class="linkbtn" type="button" data-flow="signup">خلّي المساعد يعملك الحساب من الشات في دقيقة 💬</button></p>
         <ul class="trust"><li>شهر تجربة مجانًا</li><li>من غير كارت</li><li>حسابك جاهز في دقيقة</li></ul>
         <a class="hero-wa" data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%AC%D8%A7%D9%8A%20%D9%85%D9%86%20%D8%B5%D9%81%D8%AD%D8%A9%20Sellybot%20%D9%88%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1" target="_blank" rel="noopener"><i><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></i><span>عندك سؤال؟ كلّمنا مباشرة على واتساب <b class="num" data-wa-num>0122 939 1155</b></span></a>
       </div>
@@ -804,6 +815,7 @@
       <p>اعمل حسابك في دقيقة، وجرّب المساعد على داتا متجرك شهر كامل مجانًا.</p>
       <div class="row2">
         <a class="btn light magnet" href="dashboard.html?signup=1">🚀 ابدأ تجربتك المجانية</a>
+        <button class="btn ghost-light" type="button" data-flow="signup">💬 اعمل حسابك من الشات</button>
         <a class="btn wa" id="waCta" data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1%20%D8%B9%D9%86%20Sellybot" target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>كلّمنا على واتساب</a>
       </div>
       <p class="wa-line">📱 أو كلّمنا مباشرة على واتساب: <a data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%AC%D8%A7%D9%8A%20%D9%85%D9%86%20%D8%B5%D9%81%D8%AD%D8%A9%20Sellybot%20%D9%88%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1" target="_blank" rel="noopener"><b class="num" data-wa-num>0122 939 1155</b></a></p>
@@ -847,6 +859,22 @@
   window.addEventListener("scroll", function () { nav.classList.toggle("scrolled", scrollY > 8); }, { passive: true });
 
   setTimeout(function () { $("waFloat").classList.add("on"); }, 1400);
+
+  // already signed in (or just signed up / logged in from the chat): the bar's login button becomes «لوحة التحكم»
+  function signedInBar() {
+    var b = $("navLogin"); b.querySelector(".l").textContent = "لوحة التحكم"; b.querySelector(".s").textContent = "لوحتي";
+  }
+  fetch("api/auth.ashx?action=me", { credentials: "same-origin", cache: "no-store" }).then(function (r) { if (r.ok) signedInBar(); }).catch(function () {});
+  document.addEventListener("sellybot:signed-in", signedInBar);
+
+  // ---------- a form inside the real chat (sign up...), otherwise the normal page ----------
+  document.querySelectorAll("[data-flow]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var f = b.getAttribute("data-flow");
+      if (window.storeChat && typeof window.storeChat.flow === "function") { window.storeChat.flow(f); return; }
+      location.href = "dashboard.html?signup=1";
+    });
+  });
 
   // ---------- open the real Sellybot chat (widget.js), otherwise show the demo ----------
   document.querySelectorAll("[data-chat]").forEach(function (b) {
@@ -1061,6 +1089,6 @@
   }
 })();
 </script>
-<script src="widget.js?v=20261117b" data-store="sellybot" defer></script>
+<script src="widget.js?v=20261117c" data-store="sellybot" defer></script>
 </body>
 </html>

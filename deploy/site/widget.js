@@ -10,8 +10,10 @@
 
   // ---------------------------------------------------------------- setup
   var BASE = new URL(me.src, location.href).href.replace(/widget\.js(\?.*)?$/, "");
+  var VER = ((me.src || "").match(/[?&]v=([^&]+)/) || [])[1] || "1";
   var qs = new URLSearchParams(location.search);
   var MODE = me.getAttribute("data-mode") || "bubble";            // "bubble" = floating button on a website, "page" = full chat page
+  if (MODE === "page" && !me.getAttribute("data-store") && !qs.get("store")) return;   // the bare site address isn't a chat link (index.html sends it on)
   var STORE = (me.getAttribute("data-store") || qs.get("store") || "riwaq").toLowerCase().replace(/[^a-z0-9-]/g, "");
   if (!ART_ONLY) { var LOADED = window.__storeChatLoaded = (typeof window.__storeChatLoaded === "object" && window.__storeChatLoaded) || {}; if (LOADED[STORE]) return; LOADED[STORE] = true; }
   var PREVIEW = qs.get("preview") === "1";                          // dashboard preview: style/color come from the link
@@ -801,6 +803,24 @@ button{font:inherit;cursor:pointer;color:inherit}
 @media (hover:hover){.chip:hover{transform:translateY(-2px);border-color:var(--c)}}
 @keyframes chipIn{0%{opacity:0;transform:translateY(12px) scale(.8)}100%{opacity:1;transform:none}}
 form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line);background:var(--card)}
+/* guided forms inside the chat (Sellybot's own chat): answer buttons under a question, and the bar while a form runs */
+.fch{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-start;padding:0 2px 0 42px;animation:inBot .45s cubic-bezier(.34,1.56,.64,1) both}
+.fch button{border:1.5px solid color-mix(in srgb,var(--c) 45%,var(--line));background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:13.5px;line-height:1.35;
+  text-align:right;transition:transform .2s,background .2s,border-color .2s}
+.fch button small{display:block;font-size:11.5px;color:var(--muted)}
+.fch button:hover:not(:disabled){transform:translateY(-1px);border-color:var(--c);background:var(--soft)}
+.fch button.pick{background:linear-gradient(135deg,var(--c),var(--c2));color:var(--on);border-color:transparent}
+.fch button.pick small{color:inherit;opacity:.85}
+.fch button:disabled{cursor:default}
+.fch button:disabled:not(.pick){opacity:.45}
+.w.dark .fch button{background:var(--bot)}
+.fbar{display:flex;align-items:center;gap:8px;padding:7px 14px;border-top:1px solid var(--line);background:var(--soft);font-size:13px;color:var(--ink)}
+.w.dark .fbar{background:var(--bot)}
+.fbar .ft{flex:1;font-weight:600}
+.fbar .fx{border:0;background:none;color:var(--muted);font-size:12.5px;padding:2px 4px}
+.fbar[hidden]{display:none}
+.m.a .qr{display:block;width:150px;max-width:100%;margin:6px 0;border-radius:12px;background:#fff;padding:6px}
+.m.a .copy{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:2px 8px;font-size:12px;margin-inline-start:6px}
 .q{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:999px;padding:10px 16px;font:inherit;background:var(--bg);color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s}
 .q:focus{border-color:var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 18%,transparent)}
 .send{width:44px;height:44px;flex:none;border:0;border-radius:50%;color:var(--on);background:linear-gradient(135deg,var(--c),var(--c2));display:grid;place-items:center;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
@@ -929,6 +949,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
         '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>' : "") +
       '<button class="close" aria-label="إغلاق">✕</button></div>' +
       '<div class="msgs"></div><div class="chips" hidden></div>' +
+      '<div class="fbar" hidden><span class="ft"></span><button type="button" class="fx">إلغاء ✕</button></div>' +
       '<form><input class="q" autocomplete="off" maxlength="600" aria-label="رسالتك"><button class="send" aria-label="إرسال"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z"/></svg></button></form>' +
     "</section>";
   root.appendChild(w);
@@ -1035,6 +1056,112 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   }
   function finishBot(bot) { bot.bubble.classList.remove("streaming"); talk(bot, false); bot.av.classList.remove("thinking"); bot.bubble.classList.add("done"); sparkle(bot.row); wiggle(); }
 
+  // ---------------------------------------------------------------- guided forms (Sellybot's own chat)
+  // sitebot-flows.js (loaded for store "sellybot" only) asks questions one by one inside the chat. While a form runs, what the
+  // visitor types goes to the form instead of the assistant; a password shows as dots and never joins the conversation.
+  var flow = null, flowsP = null;
+  function flowsPlugin() {
+    if (!SELLY) return Promise.resolve(null);
+    if (!flowsP) flowsP = new Promise(function (ok) {
+      var sc = document.createElement("script"); sc.src = BASE + "sitebot-flows.js?v=" + VER;
+      sc.onload = function () { ok(window.SellybotFlows || null); }; sc.onerror = function () { flowsP = null; ok(null); };
+      (document.head || document.documentElement).appendChild(sc);
+    });
+    return flowsP;
+  }
+  function quietBot(bot) { bot.bubble.classList.remove("streaming"); talk(bot, false); bot.av.classList.remove("thinking"); bot.bubble.classList.add("done"); }
+  function setInput(o) {
+    var q = $(".q"); o = o || {};
+    q.type = o.type === "password" ? "password" : o.type === "email" ? "email" : o.type === "tel" ? "tel" : "text";
+    q.setAttribute("inputmode", o.type === "tel" || o.type === "number" ? "numeric" : o.type === "email" ? "email" : "text");
+    q.setAttribute("autocomplete", o.autocomplete || "off");
+    q.placeholder = o.placeholder || "اكتب سؤالك هنا...";
+    q.maxLength = o.max || 600;
+  }
+  function endFlow() { flow = null; $(".fbar").hidden = true; setInput(); $(".send").disabled = false; }
+  var flowHost = {
+    base: BASE,
+    // a form's line: a moment of typing dots, then the whole line (a form should feel quick)
+    say: function (text) {
+      var bot = addBot();
+      return new Promise(function (ok) { setTimeout(function () { bot.bubble.innerHTML = md(String(text)); quietBot(bot); scrollDown(); ok(); }, 420); });
+    },
+    // a bot bubble with ready HTML (only this plugin, from our own site, uses it)
+    html: function (html) {
+      var row = document.createElement("div"); row.className = "row bot";
+      var b = document.createElement("div"); b.className = "m a done"; b.innerHTML = html;
+      var av = document.createElement("div"); av.className = "av"; av.innerHTML = STYLES[styleOf(cfg.style)].art();
+      row.appendChild(b); row.appendChild(av); $(".msgs").appendChild(row); scrollDown(); return b;
+    },
+    err: function (text) { addErr(text); },
+    md: md, esc: esc,
+    // answer buttons; resolves with the picked option, or {typed: text} when the visitor types instead (if allowed)
+    choose: function (opts, o) {
+      o = o || {};
+      return new Promise(function (resolve, reject) {
+        var box = document.createElement("div"); box.className = "fch";
+        function done(val, btn) {
+          box.querySelectorAll("button").forEach(function (x) { x.disabled = true; }); if (btn) btn.classList.add("pick");
+          if (flow) flow.onInput = null;
+          resolve(val);
+        }
+        opts.forEach(function (op) {
+          var b = document.createElement("button"); b.type = "button";
+          b.innerHTML = esc(op.label) + (op.sub ? "<small>" + esc(op.sub) + "</small>" : "");
+          b.onclick = function () { if (o.echo !== false) addMe(op.label); done(op, b); };
+          box.appendChild(b);
+        });
+        $(".msgs").appendChild(box); scrollDown();
+        if (flow) {
+          flow.onInput = o.typed ? function (t) { addMe(t); done({ typed: t }); } : function (t) { addMe(t); addErr("اختار من الاختيارات اللي فوق 👆 أو دوس «إلغاء»."); };
+          flow.cancelChoice = function () { box.querySelectorAll("button").forEach(function (x) { x.disabled = true; }); };
+        }
+        setInput({ placeholder: o.placeholder || "اختار من فوق 👆" });
+      });
+    },
+    // one typed answer; check(value) returns an error text (shown, then asked again) or nothing
+    ask: function (o) {
+      o = o || {};
+      return new Promise(function (resolve) {
+        setInput(o); var q = $(".q");
+        if (o.value) q.value = o.value;
+        setTimeout(function () { try { q.focus(); } catch (e) {} }, 60);
+        if (!flow) return;
+        flow.onInput = function (t) {
+          addMe(o.type === "password" ? "••••••••" : t);
+          var bad = o.check ? o.check(t) : null;
+          Promise.resolve(bad).then(function (msg) {
+            if (msg) { flowHost.say(msg); return; }   // stays on the same question
+            flow.onInput = null; setInput(); resolve(t);
+          });
+        };
+      });
+    },
+    busy: function (on) { $(".send").disabled = !!on; },
+    api: function (path, body) {
+      return fetch(BASE + path, { method: body ? "POST" : "GET", credentials: "same-origin", cache: "no-store",
+          headers: { "Content-Type": "application/json", "X-Requested-With": "fetch" }, body: body ? JSON.stringify(body) : undefined })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, status: r.status, data: d || {} }; }); })
+        .catch(function () { return { ok: false, status: 0, data: { message: "مفيش اتصال بالنت دلوقتي. جرّب تاني." } }; });
+    },
+    // what happened, for the assistant's next replies (added to its last message; passwords never go here)
+    note: function (text) { var last = history[history.length - 1]; if (last && last.role === "assistant") last.content += "\n\n(" + text + ")"; },
+    signedIn: function () { try { document.dispatchEvent(new CustomEvent("sellybot:signed-in")); } catch (e) {} }
+  };
+  async function startFlow(act) {
+    var plugin = await flowsPlugin(); if (!plugin) return;
+    if (flow && flow.cancel) flow.cancel(true);
+    var me = { onInput: null, cancelled: false };
+    var cancelP = new Promise(function (r) { me.cancel = function (silent) { if (me.cancelled) return; me.cancelled = true; if (me.cancelChoice) me.cancelChoice(); r({ cancelled: true, silent: silent }); }; });
+    flow = me; $(".chips").classList.add("gone");
+    $(".ft").textContent = "📝 " + (plugin.title(act.form) || "فورم"); $(".fbar").hidden = false;
+    try {
+      var res = await Promise.race([plugin.run(act, flowHost, function () { return me.cancelled; }), cancelP]);
+      if (res && res.cancelled && !res.silent && flow === me) { await flowHost.say("تمام، لغيت الفورم 👍 لو احتجت حاجة تانية أنا هنا."); flowHost.note("الزائر لغى فورم " + (plugin.title(act.form) || "")); }
+    } catch (e) { if (window.console) console.warn(e); addErr("حصلت مشكلة في الفورم 😕 جرّب تاني."); }
+    if (flow === me) endFlow();
+  }
+
   // ---------------------------------------------------------------- texts
   var RIWAQ = STORE === "riwaq", SELLY = STORE === "sellybot";
   var HELLO = SELLY
@@ -1063,6 +1190,11 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     open: function (q) {
       if (MODE !== "page" && $(".chat").classList.contains("closed")) openChat();
       if (q) setTimeout(function () { Promise.resolve(welcomeP || ready).then(function () { ask(String(q).slice(0, 600)); }); }, MODE === "page" ? 0 : 320);
+    },
+    flow: function (name, extra) {
+      if (MODE !== "page" && $(".chat").classList.contains("closed")) openChat();
+      var a = { form: name }; if (extra) for (var k in extra) a[k] = extra[k];
+      setTimeout(function () { Promise.resolve(welcomeP || ready).then(function () { startFlow(a); }); }, MODE === "page" ? 0 : 320);
     },
     remove: function () {
       host.remove(); delete LOADED[STORE];
@@ -1103,7 +1235,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     if (q.length > 600) { addErr("السؤال طويل شوية 😅 اختصره في أقل من 600 حرف."); return; }
     busy = true; $(".send").disabled = true; $(".chips").classList.add("gone");
     addMe(q); history.push({ role: "user", content: q });
-    var bot = addBot(), tw = typer(bot.bubble, function () { talk(bot, true); });
+    var bot = addBot(), tw = typer(bot.bubble, function () { talk(bot, true); }), act = null;
     try {
       var r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-12), sid: SID }) });
       if (!r.ok) { var e = new Error("http"); e.status = r.status; throw e; }
@@ -1118,6 +1250,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
             if (line === "") { evt = ""; continue; }
             if (line.charAt(0) === ":") continue;
             if (line.indexOf("event:") === 0) { evt = line.slice(6).trim(); continue; }
+            if (evt === "action" && line.indexOf("data:") === 0) { try { act = JSON.parse(line.slice(5).trim()); } catch (x) {} continue; }   // Sellybot's own chat: a form to open
             if (line.indexOf("data:") !== 0 || (evt && evt !== "message")) continue;
             var data = line.slice(5).trim(); if (data === "[DONE]") continue;
             try { var j = JSON.parse(data), d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content; if (d) tw.push(d); } catch (x) {}
@@ -1130,6 +1263,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
       tw.end(); await tw.finished; finishBot(bot);
       history.push({ role: "assistant", content: tw.text() });
       setStatus("ok", "متصل وجاهز يساعدك");
+      if (act && act.form) setTimeout(function () { startFlow(act); }, 250);
     } catch (err) {
       bot.row.remove(); history.pop(); talk(null, false);
       var n = cfg.botName || "المساعد", msg = "حصلت مشكلة صغيرة 😕 جرّب تاني بعد شوية، أو كلّم المتجر مباشرة.";
@@ -1158,7 +1292,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
       $(".hello").hidden = true;
       var badge = $(".badge"); if (badge) badge.remove();
       setTimeout(function () { $(".q").focus(); }, 350);
-      if (!opened) { opened = true; welcomeP = welcome(); }
+      if (!opened) { opened = true; welcomeP = welcome(); flowsPlugin(); }
     }, 240);
   }
   function closeChat() {
@@ -1227,7 +1361,12 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     setDark(on);
   };
   $(".hdr").onclick = wiggle;
-  $("form").onsubmit = function (e) { e.preventDefault(); var q = $(".q").value.trim(); $(".q").value = ""; ask(q); };
+  $("form").onsubmit = function (e) {
+    e.preventDefault(); var q = $(".q").value.trim(); $(".q").value = "";
+    if (flow) { if (q && flow.onInput) flow.onInput(q); return; }   // a form is asking: the answer goes to it, not to the assistant
+    ask(q);
+  };
+  $(".fx").onclick = function () { if (flow && flow.cancel) flow.cancel(); };
   var peekT; $(".q").addEventListener("input", function () { $(".hdr").classList.add("peek"); clearTimeout(peekT); peekT = setTimeout(function () { $(".hdr").classList.remove("peek"); }, 900); });
 
   if (MODE === "page") { opened = true; welcome(); }

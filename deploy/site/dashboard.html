@@ -2472,7 +2472,7 @@
 </div>
 <script src="whats-new.js"></script>
 <script src="feat-icons.js"></script>
-<script src="widget.js?v=20261117b" data-art-only="1"></script>
+<script src="widget.js?v=20261117c" data-art-only="1"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -3461,7 +3461,7 @@
     var nothingToPay = rq.kind === "upgrade" && rq.change && rq.change.amount <= 0 && !waAddOn();   // a plan at the same price, no WhatsApp service
     if (!nothingToPay && !$("rqMethod").value) { setMsg("rqMsg", "اختار دفعت بإيه."); return; }
     var refNo = normRef($("rqRefNo").value);
-    if (!nothingToPay && (refNo.length < 6 || refNo.length > 30 || !/[0-9]/.test(refNo))) { setMsg("rqMsg", "اكتب الرقم المرجعي اللي ظهرلك في InstaPay بعد التحويل (أرقام، من 6 لـ 30)."); $("rqRefNo").focus(); return; }
+    if (!nothingToPay && (refNo.length < 6 || refNo.length > 30)) { setMsg("rqMsg", "اكتب الرقم المرجعي اللي ظهرلك في InstaPay بعد التحويل (من 6 لـ 30 حرف أو رقم)."); $("rqRefNo").focus(); return; }
     if (!nothingToPay && $("rqRef").value.trim().length < 3) { setMsg("rqMsg", "اكتب الرقم أو الحساب اللي حوّلت منه."); $("rqRef").focus(); return; }
     var b = $("rqSend"); b.disabled = true;
     try {

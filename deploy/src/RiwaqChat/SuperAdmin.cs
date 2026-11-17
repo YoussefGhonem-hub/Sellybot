@@ -521,7 +521,7 @@ namespace RiwaqChat
             }
             return sb.ToString();
         }
-        public static bool RefLooksRight(string norm) { return norm.Length >= 6 && norm.Length <= 30 && norm.Any(char.IsDigit); }
+        public static bool RefLooksRight(string norm) { return norm.Length >= 6 && norm.Length <= 30; }   // English letters and/or digits
         // already backing a request that is waiting or was approved (UX_PlanRequests_RefNo enforces the same)
         public static bool RefUsed(SqlConnection c, string norm)
         {
@@ -1533,7 +1533,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             if (free) { method = Methods.Contains(method) ? method : "—"; refNo = refNo.Length > 0 ? refNo : "—"; }
             // the reference number InstaPay shows after the transfer: required, and one payment backs one request only
             string payRef = Billing.NormRef(Web.Str(b, "refNo", 80));
-            if (!free && !Billing.RefLooksRight(payRef)) { Web.Error(res, 400, "need_refno", "اكتب الرقم المرجعي اللي ظهرلك في InstaPay بعد التحويل (أرقام، من 6 لـ 30)."); return; }
+            if (!free && !Billing.RefLooksRight(payRef)) { Web.Error(res, 400, "need_refno", "اكتب الرقم المرجعي اللي ظهرلك في InstaPay بعد التحويل (من 6 لـ 30 حرف أو رقم)."); return; }
             if (!free && Billing.RefUsed(c, payRef)) { Web.Error(res, 409, "ref_used", Billing.RefUsedMessage); return; }
             string note = (Web.Str(b, "note", 500) ?? "").Trim();
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending'", "@s", s.Id))

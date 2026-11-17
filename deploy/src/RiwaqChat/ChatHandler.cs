@@ -143,6 +143,9 @@ namespace RiwaqChat
                 // handoff to the owner from the site chat (the assistant asks for the customer's number first)
                 List<ExtraTool> extra = null;
                 if (store != null && Handoff.On(conn, store)) extra = new List<ExtraTool> { Handoff.Tool(store, "web", chatSid ?? "ip:" + Web.Ip(req)) };
+                // Sellybot's own chat: forms the visitor fills inside the chat (sign up, log in, subscribe...) and their own account
+                var siteBot = SiteBotActions.For(conn, ctx, store);
+                if (siteBot != null) { if (extra == null) extra = new List<ExtraTool>(); extra.AddRange(siteBot.Tools); }
                 if (extra != null) sysBlocks.Add(new TextBlockParam { Text = "المحادثة دي على موقع المتجر." + string.Concat(extra.Select(x => x.Prompt)) });
                 var parameters = new MessageCreateParams
                 {
@@ -170,6 +173,7 @@ namespace RiwaqChat
                         inTok = u.In; cacheRead = u.CacheRead; cacheWrite = u.CacheWrite; outTok = u.Out;
                         string answer = string.IsNullOrWhiteSpace(u.Text) ? Fallback : u.Text;
                         for (int i = 0; i < answer.Length; i += 60) Send(res, answer.Substring(i, Math.Min(60, answer.Length - i)));
+                        if (siteBot != null && siteBot.Action != null) SendEvent(res, "action", siteBot.Action);   // the widget opens that form
                     }
                     catch (Exception ex) { Log.Error(ex); Send(res, Oops); }
                     Done(res);
@@ -367,6 +371,12 @@ namespace RiwaqChat
             };
             res.Write("data: " + Web.Js.Serialize(chunk) + "\n\n");
             res.Flush();
+        }
+
+        // a named SSE event (the widget ignores names it doesn't know), e.g. "action" for Sellybot's own chat forms
+        static void SendEvent(HttpResponse res, string name, string json)
+        {
+            try { res.Write("event: " + name + "\ndata: " + json + "\n\n"); res.Flush(); } catch { }
         }
 
         static void Done(HttpResponse res)
