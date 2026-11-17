@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ريلز Sellybot · اتعلم الموقع في دقيقة</title>
-<meta name="description" content="فيديوهات قصيرة بتشرحلك Sellybot خطوة بخطوة: إزاي ترفع داتا متجرك، وتربط Shopify و EasyOrders، وتخلّي المساعد يرد على زباينك.">
+<meta name="description" content="فيديوهات قصيرة بتشرحلك Sellybot خطوة بخطوة: إزاي ترفع داتا متجرك، وتربط Shopify و EasyOrders، وتضيف الشات لمتجرك.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ar_EG">
 <meta property="og:site_name" content="Sellybot">
@@ -191,24 +191,31 @@
 var REELS = [
   {
     id: "files", src: "reels/01-files.mp4", poster: "reels/01-files.jpg", v: 1,
-    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 1 من 3",
+    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 1",
     title: "ملفاتك ونصوصك: إزاي المساعد يعرف منتجاتك",
     text: "ارفع الكتالوج وليستة الأسعار (PDF أو Word أو Excel) أو اكتب نص. سمّي كل حاجة باسم واضح، واكتب لكل منتج الكود والاسم والسعر وشكله ومقاساته وألوانه، عشان المساعد يلاقيه على طول، حتى لو الزبون بعتلك صورة المنتج وسأل «بكام؟». ولو معلومة اتغيّرت، عدّل الملف القديم بدل ما ترفع نسخة جديدة جنبه.",
     cta: { label: "ارفع داتا متجرك", href: "dashboard.html" }
   },
   {
     id: "shopify", src: "reels/02-shopify.mp4", poster: "reels/02-shopify.jpg", v: 1,
-    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 2 من 3",
+    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 2",
     title: "اربط متجرك على Shopify في 5 دقايق",
     text: "من «داتا المتجر» اختار Shopify واعمل الربط الكامل، من غير برمجة: افتح Dev Dashboard بتاع Shopify، واعمل تطبيق اسمه Sellybot، واختار الصلاحيات (Scopes) وبيانات الزبون، وبعدين انسخ الـ Client ID والـ secret وحطهم في Sellybot. كده المساعد يعرف المنتجات والمخزون والمقاسات بالظبط، ويرد على «الأوردر بتاعي فين؟»، ويأكّد الطلبات على واتساب.",
     cta: { label: "اربط متجرك", href: "dashboard.html" }
   },
   {
     id: "easyorders", src: "reels/03-easyorders.mp4", poster: "reels/03-easyorders.jpg", v: 1,
-    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 3 من 3",
+    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 3",
     title: "اربط متجرك على EasyOrders",
     text: "من «داتا المتجر» دوس «ربط بضغطة»، ووافق في EasyOrders، وترجع لوحدك والربط جاهز. ولو حابب تربط بـ API Key: من Settings ← Public API في EasyOrders اعمل مفتاح جديد، وعلّم على Read Products و Read Orders و Update Orders وخلّيه Is Active، وانسخه في Sellybot ودوس «احفظ واختبر الربط». وبعدين اعمل Webhook بلينك Sellybot مرتين: نوع «Orders» ونوع «Order Status Update»، عشان تأكيد الطلبات على واتساب ويعرف الزبون أوردره فين. وفي الآخر دوس «اكتب معلومات الشحن» وكمّل أسعار الشحن والاسترجاع اللي EasyOrders مابتبعتهاش.",
     cta: { label: "اربط متجرك", href: "dashboard.html" }
+  },
+  {
+    id: "install", src: "reels/04-install.mp4", poster: "reels/04-install.jpg", v: 1,
+    series: "خطوة بخطوة · ضيف الشات", ep: "الحلقة 4",
+    title: "ضيف الشات لمتجرك بكود واحد",
+    text: "من «ضيفه لمتجرك» اختار متجرك وانسخ الكود زي ما هو. على Shopify: من Online Store ← Themes ← Edit code افتح theme.liquid، والصق الكود قبل </body> ودوس Save. ولو Shopify Inbox شغال اقفله من App embeds، عشان ماتبقاش فيه فقاعتين. على EasyOrders: الصقه في صفحة Add Custom Code. وعلى WordPress أو أي موقع: في مكان الأكواد المخصصة. بعدها ضيف دومين متجرك، عشان الشات مايشتغلش على موقع غيرك ويستهلك رصيدك. ومعندكش موقع؟ شارك لينك الشات في البايو وعلى واتساب وفي إعلاناتك. الكود بيتحط مرة واحدة بس، وأي شكل جديد تختاره للشات بيوصل لوحده.",
+    cta: { label: "ضيف الشات لمتجرك", href: "dashboard.html#install" }
   }
 ];
 
@@ -263,9 +270,9 @@ var REELS = [
   end.innerHTML =
     '<div class="bg" aria-hidden="true" style="--poster:url(' + REELS[REELS.length - 1].poster + ')"></div>' +
     '<div class="card"><span class="av">' + SVG.logo + '</span>' +
-    '<h2>خلّصت سلسلة «داتا المتجر» 🎉</h2>' +
+    '<h2>شفت كل حلقات «خطوة بخطوة» 🎉</h2>' +
     '<p>جرّب اللي اتعلمته على متجرك دلوقتي، شهر كامل ببلاش ومن غير كارت.</p>' +
-    '<div class="soon"><span class="n" aria-hidden="true">🛍️</span><span><b>الحلقة الجاية: ضيف الشات لمتجرك</b><small>قريب في الريلز</small></span></div>' +
+    '<div class="soon"><span class="n" aria-hidden="true">🎬</span><span><b>حلقات جديدة قريب</b><small>تابعها هنا في الريلز</small></span></div>' +
     '<a class="cta" href="dashboard.html?signup=1">ابدأ تجربتك المجانية' + SVG.arrow + '</a>' +
     '<button type="button" class="again" id="again">شوف من الأول</button></div>';
   feed.appendChild(end);

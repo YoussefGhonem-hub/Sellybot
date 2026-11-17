@@ -40,7 +40,7 @@
 
   /* ---------- navbar ---------- */
   .nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
-  .nav-in{max-width:1240px;margin:0 auto;padding:0 16px;height:64px;display:flex;align-items:center;gap:16px}   /* wider than the page: room for all the tabs */
+  .nav-in{padding:0 clamp(16px,2.4vw,40px);height:64px;display:flex;align-items:center;gap:16px}   /* the full width of the screen: room for all the tabs */
   .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);flex:none}
   .logo .mark{width:30px;height:36px;flex:none;color:var(--ink);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
   .logo:hover .mark{transform:rotate(-8deg) scale(1.06)}
@@ -55,8 +55,28 @@
   .links button.on:after{content:"";position:absolute;inset:auto 10px 0 10px;height:3px;border-radius:3px 3px 0 0;background:var(--brand)}
   .theme-btn{flex:none;margin-inline-start:auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;overflow:hidden;transition:border-color .2s,transform .2s}
   .theme-btn:hover{border-color:var(--brand);transform:rotate(-12deg)}
+  @media (min-width:1440px){.nav-in{gap:24px}.links{gap:6px}.links button{padding:0 14px;font-size:14.5px}}
   @media (min-width:761px) and (max-width:1150px){.links button{padding:0 9px}}
   @media (min-width:761px) and (max-width:1100px){.links button{padding:0 6px;font-size:13.5px}.logo small{display:none}.nav-in{gap:10px}}
+  @media (min-width:761px) and (max-width:960px){.acct .acct-txt{display:none}.acct .acct-btn{padding:4px 8px 4px 4px}}   /* just the picture, so every tab fits */
+  @media (min-width:761px) and (max-width:840px){.logo > span{display:none}}   /* and just the logo's mark */
+  /* dropdowns in the navbar (الشات · المزيد): the menu hangs from the header (.nav), so the tabs' scroll box doesn't cut it off; JS lines it up under its button */
+  .dd{display:flex;height:100%;flex:none}
+  .links .dd-btn{display:flex;align-items:center;gap:4px}
+  .dd-car{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.7;transition:transform .2s}
+  .dd.open .dd-car{transform:rotate(180deg)}
+  .dd-menu{position:absolute;top:calc(100% + 6px);min-width:250px;padding:6px;display:none;flex-direction:column;gap:2px;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 44px rgba(0,0,0,.16)}
+  .dd.open .dd-menu{display:flex;animation:ddIn .16s ease-out}
+  @keyframes ddIn{from{opacity:0;transform:translateY(-6px)}}
+  .links .dd-menu button{height:auto;display:flex;align-items:center;gap:11px;width:100%;padding:8px 10px;border-radius:10px;text-align:start;color:var(--ink);font-size:14px}
+  .links .dd-menu button:hover,.links .dd-menu button:focus-visible{background:var(--soft);outline:none}
+  .links .dd-menu button.on{background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+  .links .dd-menu button.on:after{display:none}
+  .dd-ic{width:36px;height:36px;flex:none;border-radius:10px;display:grid;place-items:center;background:var(--soft);font-size:17px}
+  .links .dd-menu button.on .dd-ic{background:var(--card)}
+  .dd-menu b{display:block;font-weight:600}
+  .dd-menu small{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
   .theme-btn svg{width:18px;height:18px;grid-area:1/1;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
   .theme-btn .moon{transform:translateY(130%) rotate(-90deg);opacity:0}
   [data-theme=dark] .theme-btn .sun{transform:translateY(-130%) rotate(90deg);opacity:0}
@@ -92,6 +112,17 @@
     .links button:hover{background:var(--soft)}
     .links button.on{background:color-mix(in srgb,var(--brand) 12%,var(--card))}
     .links button.on:after{inset:10px 0 10px auto;width:3px;height:auto;border-radius:3px 0 0 3px}
+    /* in the sidebar a dropdown is just a titled group, always open */
+    .dd{display:block;height:auto;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+    .links .dd-btn{width:100%;padding:6px 14px 4px;font-size:12px;font-weight:600;color:var(--muted);cursor:default;pointer-events:none}
+    .links .dd-btn.on{background:none}
+    .links .dd-btn:after,.dd-car{display:none}
+    .dd-menu,.dd.open .dd-menu{position:static;display:flex;min-width:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;animation:none}
+    .links .dd-menu button{gap:0;padding:12px 14px;border-radius:12px;font-size:15px}
+    .links .dd-menu button.on:after{display:block}
+    .dd-ic,.links .dd-menu button.on .dd-ic{width:auto;height:auto;background:none;font-size:inherit;margin-inline-end:5px}
+    .dd-menu b{font-weight:inherit}
+    .dd-menu small{display:none}
     .side-head{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px;margin-bottom:6px;border-bottom:1px solid var(--line)}
     .side-head b{font-size:16px}
     .side-head button{width:36px;height:36px;padding:0;border-radius:10px;display:grid;place-items:center;font-size:18px;color:var(--muted)}
@@ -1382,13 +1413,23 @@
       <div class="side-head"><b>القائمة</b><button type="button" id="navClose" aria-label="اقفل القائمة">✕</button></div>
       <button data-tab="home" class="on">🏠 الرئيسية</button>
       <button data-tab="data">📚 داتا المتجر</button>
-      <button data-tab="look">🎨 شكل الشات</button>
-      <button data-tab="install">🛍️ ضيفه لمتجرك</button>
+      <div class="dd">
+        <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddChat">🤖 الشات <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd-menu" id="ddChat" role="menu" aria-label="الشات">
+          <button data-tab="look" role="menuitem"><span class="dd-ic">🎨</span><span><b>شكل الشات</b><small>الفقاعة والألوان واللوجو</small></span></button>
+          <button data-tab="settings" role="menuitem"><span class="dd-ic">⚙️</span><span><b>المساعد</b><small>اسمه وأسلوبه في الرد</small></span></button>
+          <button data-tab="install" role="menuitem"><span class="dd-ic">🛍️</span><span><b>ضيفه لمتجرك</b><small>سطر الكود ولينك الشات</small></span></button>
+        </div>
+      </div>
       <button data-tab="wa">💬 واتساب</button>
-      <button data-tab="settings">⚙️ المساعد</button>
       <button data-tab="plan">💎 باقتي <span class="nb" id="planNb" hidden title="رد جديد من الإدارة على طلبك">1</span></button>
-      <button type="button" data-href="reels.html">🎬 ريلز</button>
-      <button type="button" data-href="about.html">ℹ️ من نحن</button>
+      <div class="dd">
+        <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddMore">✨ المزيد <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd-menu" id="ddMore" role="menu" aria-label="المزيد">
+          <button type="button" data-href="reels.html" role="menuitem"><span class="dd-ic">🎬</span><span><b>ريلز</b><small>فيديوهات بتشرح الموقع</small></span></button>
+          <button type="button" data-href="about.html" role="menuitem"><span class="dd-ic">ℹ️</span><span><b>من نحن</b><small>مين إحنا وخدماتنا</small></span></button>
+        </div>
+      </div>
       <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
     </nav>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="غيّر الوضع الفاتح / الغامق" title="الوضع الفاتح / الغامق">
@@ -2722,7 +2763,7 @@
   }
   $("menuBtn").onclick = function () { sideNav(!document.body.classList.contains("nav-open")); };
   $("navBack").onclick = $("navClose").onclick = function () { sideNav(false); };
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") sideNav(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { sideNav(false); ddClose(); } });
   matchMedia("(min-width:761px)").addEventListener("change", function (m) { if (m.matches) sideNav(false); });
 
   // ---------------- navigation ----------------
@@ -2731,8 +2772,9 @@
     current = tab;
     if (tab === "home") homeShow(); else homeStop();
     document.querySelectorAll("[data-tab]").forEach(function (x) { x.classList.toggle("on", x.dataset.tab === tab); });
+    document.querySelectorAll(".dd").forEach(function (d) { d.querySelector(".dd-btn").classList.toggle("on", !!d.querySelector('.dd-menu [data-tab="' + tab + '"]')); });
     document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== tab; });
-    $("acctMenu").hidden = true; sideNav(false);
+    $("acctMenu").hidden = true; sideNav(false); ddClose();
     if (tab === "admin") loadAdmin();
     if (tab === "look") initLook();
     if (tab === "plan") loadPlanTab();
@@ -2747,7 +2789,38 @@
   document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { go(b.dataset.tab); }; });
   document.querySelectorAll("[data-goto]").forEach(function (b) { b.onclick = function () { go(b.dataset.goto); }; });
   document.querySelectorAll("[data-href]").forEach(function (b) { b.onclick = function () { location.href = b.dataset.href; }; });   // nav items that are their own page (من نحن)
-  $("acctBtn").onclick = function (e) { e.stopPropagation(); $("acctMenu").hidden = !$("acctMenu").hidden; };
+  // dropdowns in the navbar (الشات · المزيد): click to open, arrows to move, Esc / a click outside to close.
+  // In the mobile sidebar they're always open (CSS), so nothing to place.
+  function ddClose(keep) {
+    document.querySelectorAll(".dd.open").forEach(function (d) {
+      if (d === keep) return;
+      d.classList.remove("open"); d.querySelector(".dd-btn").setAttribute("aria-expanded", "false");
+    });
+  }
+  function ddOpen(d) {
+    ddClose(d); $("acctMenu").hidden = true;
+    var btn = d.querySelector(".dd-btn"), menu = d.querySelector(".dd-menu");
+    d.classList.add("open"); btn.setAttribute("aria-expanded", "true");
+    if (matchMedia("(max-width:760px)").matches) return;
+    var nav = document.querySelector(".nav").getBoundingClientRect(), b = btn.getBoundingClientRect(), w = menu.offsetWidth;
+    var right = nav.right - b.right;                           // the menu's right edge under its button's (RTL)
+    if (nav.right - right - w < 8) right = nav.right - w - 8;  // but never past the left edge of the screen
+    menu.style.right = Math.max(8, right) + "px";
+  }
+  document.querySelectorAll(".dd").forEach(function (d) {
+    var btn = d.querySelector(".dd-btn");
+    btn.onclick = function (e) { e.stopPropagation(); if (d.classList.contains("open")) ddClose(); else ddOpen(d); };
+    d.addEventListener("keydown", function (e) {
+      var items = [].slice.call(d.querySelectorAll(".dd-menu button")), i = items.indexOf(document.activeElement);
+      if (e.key === "ArrowDown") { e.preventDefault(); if (!d.classList.contains("open")) ddOpen(d); (items[i + 1] || items[0]).focus(); }
+      else if (e.key === "ArrowUp" && d.classList.contains("open")) { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
+      else if (e.key === "Escape" && d.classList.contains("open")) { e.stopPropagation(); ddClose(); btn.focus(); }
+    });
+  });
+  document.addEventListener("click", function (e) { if (!e.target.closest(".dd")) ddClose(); });
+  $("navLinks").addEventListener("scroll", function () { ddClose(); });
+  addEventListener("resize", function () { ddClose(); });
+  $("acctBtn").onclick = function (e) { e.stopPropagation(); ddClose(); $("acctMenu").hidden = !$("acctMenu").hidden; };
   document.addEventListener("click", function (e) { if (!e.target.closest("#acct")) $("acctMenu").hidden = true; });
 
   // fresh = just logged in or signed up: always the home page. A reload keeps the tab in the address (#look...).
