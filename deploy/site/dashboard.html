@@ -2472,7 +2472,7 @@
 </div>
 <script src="whats-new.js"></script>
 <script src="feat-icons.js"></script>
-<script src="widget.js?v=20261112145445" data-art-only="1"></script>
+<script src="widget.js?v=20261117b" data-art-only="1"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -2628,7 +2628,24 @@
   function showLiveChat(on) { var h = liveChat && document.getElementById(liveChat); if (h) h.style.display = on ? "" : "none"; }
   $("logoutBtn").onclick = logout;
 
-  function showAuth() { $("authView").hidden = false; $("appView").hidden = true; $("navLinks").hidden = true; $("menuBtn").hidden = true; $("acct").hidden = true; sideNav(false); heroStart(); }
+  function showAuth() { $("authView").hidden = false; $("appView").hidden = true; $("navLinks").hidden = true; $("menuBtn").hidden = true; $("acct").hidden = true; sideNav(false); heroStart(); mountHelpChat(); }
+
+  // ---------------- Sellybot's own chat: on the login / sign-up screen only. After login the owner's own chat floats here instead ----------------
+  function mountHelpChat() {
+    if (document.querySelector("script[data-help-chat]")) return;
+    var art = document.querySelector("script[data-art-only]");
+    var s = document.createElement("script");
+    s.src = art ? art.getAttribute("src") : "widget.js";
+    s.setAttribute("data-store", "sellybot"); s.setAttribute("data-help-chat", "1");
+    document.body.appendChild(s);
+  }
+  function unmountHelpChat() {
+    var c = window.storeChats && window.storeChats.sellybot;
+    if (c && document.querySelector("script[data-help-chat]")) c.remove();
+    var tag = document.querySelector("script[data-help-chat]"); if (tag) tag.remove();
+  }
+  // dashboard.html?signup=1 (the landing page's buttons) opens on the sign-up form
+  if (/[?&]signup=1\b/.test(location.search)) { var sb = document.querySelector('[data-auth="signup"]'); if (sb) sb.click(); }
 
   // ---------------- mobile sidebar ----------------
   function sideNav(open) {
@@ -2670,7 +2687,7 @@
   function showApp(fresh) {
     $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("menuBtn").hidden = false; $("acct").hidden = false; heroStop();
     $("adminTabBtn").hidden = !me.isAdmin;
-    render(); loadItems(); mountLiveChat();
+    unmountHelpChat(); render(); loadItems(); mountLiveChat();
     var want = fresh ? "" : (location.hash || "").replace("#", "");
     go(["home", "data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "home");
     setTimeout(showNews, 1200);   // what's new since this browser last looked

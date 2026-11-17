@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sellybot · موظف المبيعات اللي مابينامش</title>
+<meta name="description" content="Sellybot مساعد ذكي بيرد على زباين متجرك في ثانية، 24 ساعة، من داتا متجرك وبأسلوبك، على موقعك وواتساب. بيشتغل مع Shopify و EasyOrders. جرّبه شهر مجانًا.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_EG">
+<meta property="og:site_name" content="Sellybot">
+<meta property="og:url" content="https://sellybot.online/start.html">
+<meta property="og:title" content="Sellybot · موظف المبيعات اللي مابينامش">
+<meta property="og:description" content="مساعد ذكي بيرد على زباينك في ثانية، 24 ساعة، على موقعك وواتساب. شهر تجربة مجانًا.">
+<meta name="theme-color" content="#faf6f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#120d0a" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 2 60 72'%3E%3Cpath d='M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15' fill='none' stroke='%23E8774A' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15' fill='none' stroke='%233a2a20' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  (function () {
+    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}   // the saved choice, otherwise light
+    function apply() { document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light"); }
+    apply();
+    window.sbTheme = function (v) { t = v; try { localStorage.setItem("sb-theme", v); } catch (e) {} apply(); };
+    document.documentElement.classList.add("js");
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme:light;
+    --bg:#faf6f1; --bg2:#f3ebe1; --card:#ffffff; --ink:#221a14; --muted:#7f7266; --line:#ece4db; --soft:#fbf7f3;
+    --brand:#e8774a; --brand2:#f5a25d; --brand3:#c95a2e; --ok:#2e9d5b; --bad:#d9534f; --wa:#25d366; --wad:#008069;
+    --wabg:#efeae2; --wain:#ffffff; --waout:#d9fdd3;
+    --shadow:0 1px 2px rgba(40,25,10,.05),0 12px 34px rgba(40,25,10,.08); --lift:0 30px 80px rgba(60,35,15,.16);
+    --blob1:#ffd9c2; --blob2:#ffe7c9; --blob3:#ffd2bb;
+  }
+  :root[data-theme=dark]{
+    color-scheme:dark;
+    --bg:#120d0a; --bg2:#18110d; --card:#1d1611; --ink:#f4ebe2; --muted:#b0a193; --line:#33281f; --soft:#261d17; --ok:#4cc27e; --bad:#ef6f6a;
+    --wabg:#0b141a; --wain:#202c33; --waout:#005c4b;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.4); --lift:0 30px 80px rgba(0,0,0,.55);
+    --blob1:#4a2412; --blob2:#3d2610; --blob3:#47200f;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:76px}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  @supports (overflow-x:clip){body{overflow-x:clip}}
+  button{font:inherit;color:inherit;cursor:pointer}
+  a{color:var(--brand)}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+  .theme-anim,.theme-anim *{transition:background-color .35s,border-color .35s,color .35s,box-shadow .35s!important}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 16px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+  /* ---------- reveal on scroll ---------- */
+  .js .rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1);transition-delay:var(--d,0s)}
+  .js .rv.in{opacity:1;transform:none}
+
+  /* ---------- buttons ---------- */
+  .btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 24px;border-radius:16px;border:0;
+    font-weight:700;font-size:16.5px;text-decoration:none;white-space:nowrap;overflow:hidden;isolation:isolate;
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s,background-color .25s}
+  .btn.primary{color:#fff;background:linear-gradient(135deg,var(--brand2),var(--brand) 55%,var(--brand3));box-shadow:0 12px 30px rgba(232,119,74,.38),inset 0 1px 0 rgba(255,255,255,.25)}
+  .btn.primary:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(120%);animation:shine 4.2s ease-in-out 1.6s infinite}
+  @keyframes shine{0%,60%{transform:translateX(120%)}85%,100%{transform:translateX(-120%)}}
+  .btn.primary svg{width:18px;height:18px;transition:transform .3s}
+  .btn.ghost{color:var(--ink);background:var(--card);border:1.5px solid var(--line);box-shadow:var(--shadow)}
+  .btn.wa{color:#fff;background:var(--wa);box-shadow:0 12px 28px rgba(37,211,102,.32)}
+  .btn.wa svg{width:22px;height:22px}
+  @media (hover:hover){
+    .btn:hover{transform:translateY(-2px)}
+    .btn.primary:hover svg{transform:translateX(-4px)}
+    .btn.ghost:hover{border-color:var(--brand)}
+  }
+  .btn:active{transform:scale(.97)}
+
+  /* ---------- nav ---------- */
+  .nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid transparent;transition:border-color .3s}
+  .nav.scrolled{border-bottom-color:var(--line)}
+  .nav-in{height:64px;display:flex;align-items:center;gap:10px}
+  .logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--ink);flex:none}
+  .logo svg{width:26px;height:31px;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+  .logo:hover svg{transform:rotate(-10deg) scale(1.1)}
+  .logo b{font-size:21px;direction:ltr;letter-spacing:-.4px}
+  .logo b span{color:var(--brand)}
+  .space{flex:1}
+  .nav a.link{color:var(--muted);text-decoration:none;font-size:15px;padding:8px 10px;border-radius:10px;white-space:nowrap;transition:color .2s}
+  .nav a.link:hover{color:var(--ink)}
+  .icon-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;flex:none}
+  .icon-btn svg{width:19px;height:19px}
+  .nav .btn{min-height:42px;padding:0 16px;font-size:15px;border-radius:13px}
+  @media (max-width:760px){.nav a.link{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;overflow:hidden;padding:30px 0 40px}
+  .hero-bg{position:absolute;inset:0;pointer-events:none;z-index:0}
+  .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.85;animation:drift 18s ease-in-out infinite}
+  .b1{width:520px;height:520px;background:var(--blob1);top:-160px;left:-180px}
+  .b2{width:440px;height:440px;background:var(--blob2);top:120px;right:-200px;animation-delay:-6s;animation-duration:22s}
+  .b3{width:380px;height:380px;background:var(--blob3);bottom:-200px;left:30%;animation-delay:-11s;animation-duration:26s}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(50px,-36px) scale(1.08)}66%{transform:translate(-40px,26px) scale(.94)}}
+  .dots{position:absolute;inset:0;background-image:radial-gradient(color-mix(in srgb,var(--ink) 9%,transparent) 1.3px,transparent 1.4px);background-size:28px 28px;
+    -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000,transparent 75%)}
+  .grain{position:absolute;inset:0;opacity:.07;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  [data-theme=dark] .grain{mix-blend-mode:screen;opacity:.05}
+  .glow{position:absolute;width:520px;height:520px;border-radius:50%;left:var(--mx,50%);top:var(--my,30%);transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(232,119,74,.16),transparent 62%);opacity:0;transition:opacity .4s}
+  .hero:hover .glow{opacity:1}
+  .hero-in{position:relative;z-index:1;display:grid;gap:34px;align-items:center}
+  @media (min-width:980px){.hero{padding:56px 0 70px}.hero-in{grid-template-columns:1.05fr .95fr;gap:40px}}
+
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;padding:7px 14px 7px 16px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);font-size:14px;font-weight:600;color:var(--muted)}
+  .eyebrow b{color:var(--ink)}
+  .live{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(46,157,91,.5);animation:live 1.8s ease-out infinite}
+  @keyframes live{0%{box-shadow:0 0 0 0 rgba(46,157,91,.55)}100%{box-shadow:0 0 0 10px rgba(46,157,91,0)}}
+  h1{margin:18px 0 0;font-size:clamp(40px,10.5vw,74px);line-height:1.12;letter-spacing:-.5px;font-weight:700}
+  h1 .w{display:inline-block;opacity:0;transform:translateY(.5em) rotate(-3deg);animation:wordIn .9s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(.15s + var(--i) * .11s)}
+  @keyframes wordIn{to{opacity:1;transform:none}}
+  h1 .g{padding:.06em 0 .24em;margin:-.06em 0 -.24em;background:linear-gradient(90deg,var(--brand3),var(--brand),var(--brand2),var(--brand),var(--brand3));background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:wordIn .9s cubic-bezier(.2,.9,.25,1.15) forwards,shift 6s linear infinite;animation-delay:calc(.15s + var(--i) * .11s),1.4s}
+  @keyframes shift{to{background-position:-220% 0}}
+  .lead{margin:16px 0 0;font-size:clamp(17px,4.4vw,20px);color:var(--muted);max-width:560px}
+  .lead b{color:var(--ink);font-weight:600}
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+  .cta-row .btn{flex:1 1 220px}
+  @media (min-width:600px){.cta-row .btn{flex:0 0 auto}}
+  .trust{display:flex;flex-wrap:wrap;gap:8px 18px;margin:18px 0 0;padding:0;list-style:none;font-size:14.5px;color:var(--muted)}
+  .trust li{display:flex;align-items:center;gap:6px}
+  .trust li:before{content:"";width:18px;height:18px;border-radius:50%;flex:none;background:color-mix(in srgb,var(--ok) 16%,transparent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232e9d5b' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/12px no-repeat}
+  .hero-txt>*{animation:fadeUp .9s cubic-bezier(.2,.8,.2,1) both}
+  .hero-txt>.eyebrow{animation-delay:.05s}.hero-txt>.lead{animation-delay:.55s}.hero-txt>.cta-row{animation-delay:.7s}.hero-txt>.trust{animation-delay:.85s}
+  .hero-txt>h1{animation:none}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+  /* ---------- the phone demo ---------- */
+  .vis{position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;animation:phoneIn 1.1s cubic-bezier(.2,.9,.25,1.1) .35s both}
+  @keyframes phoneIn{from{opacity:0;transform:translateY(60px) rotate(4deg) scale(.94)}to{opacity:1;transform:none}}
+  .big-s{position:absolute;top:50%;left:50%;width:min(640px,150vw);height:auto;transform:translate(-50%,-53%);z-index:0;opacity:.9;pointer-events:none}
+  .big-s path{fill:none;stroke-linecap:round;stroke-dasharray:110;stroke-dashoffset:110;animation:draw 1.8s cubic-bezier(.65,0,.35,1) forwards}
+  .big-s .s1{stroke:color-mix(in srgb,var(--brand) 26%,transparent);stroke-width:9;animation-delay:.5s}
+  .big-s .s2{stroke:color-mix(in srgb,var(--ink) 8%,transparent);stroke-width:9;animation-delay:1.1s}
+  .big-s .t{stroke-width:5;stroke-dasharray:12;stroke-dashoffset:12;animation-duration:.5s}
+  .big-s .t1{stroke:color-mix(in srgb,var(--brand) 26%,transparent);animation-delay:1.9s}
+  .big-s .t2{stroke:color-mix(in srgb,var(--ink) 10%,transparent);animation-delay:2.3s}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .phone{position:relative;z-index:1;width:min(312px,86vw);height:560px;border-radius:44px;padding:10px;background:linear-gradient(160deg,#3a2a20,#1d1611);
+    box-shadow:0 0 0 1.5px rgba(255,255,255,.06) inset,0 40px 90px rgba(60,35,15,.32),0 8px 22px rgba(60,35,15,.18);animation:float 6s ease-in-out 1.5s infinite}
+  [data-theme=dark] .phone{background:linear-gradient(160deg,#4a3a30,#2a1f18);box-shadow:0 0 0 1.5px rgba(255,255,255,.08) inset,0 40px 90px rgba(0,0,0,.6)}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .scr{position:relative;height:100%;border-radius:35px;overflow:hidden;display:flex;flex-direction:column;background:var(--soft);transition:background-color .5s}
+  .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:92px;height:24px;border-radius:14px;background:#120d0a;z-index:3}
+  .sbar{display:flex;justify-content:space-between;align-items:center;padding:9px 22px 2px;font-size:12px;font-weight:700;direction:ltr;color:#fff;height:32px;flex:none;transition:color .5s}
+  .sbar i{display:inline-flex;gap:2px;align-items:flex-end}.sbar i b{width:3px;border-radius:1px;background:currentColor}
+  .ph-head{display:flex;align-items:center;gap:10px;padding:8px 14px 12px;color:#fff;flex:none;transition:background .5s}
+  .scr{--hd:linear-gradient(135deg,var(--brand2),var(--brand))}
+  .scr .sbar,.scr .ph-head{background:var(--hd)}
+  .ph-av{width:38px;height:38px;border-radius:13px;background:#fff8f3;display:grid;place-items:center;flex:none;transition:border-radius .5s}
+  .ph-av svg{width:22px;height:26px}
+  .ph-head b{display:block;font-size:15px;line-height:1.25}
+  .ph-head small{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.95}
+  .ph-head small:before{content:"";width:7px;height:7px;border-radius:50%;background:#b9ffcf}
+  .msgs{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding:12px 12px 8px;overflow:hidden;
+    -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 34px);mask-image:linear-gradient(to bottom,transparent 0,#000 34px)}
+  .row{display:flex;flex:none;animation:msgIn .45s cubic-bezier(.34,1.56,.64,1) both}
+  .row.u{justify-content:flex-start}.row.b{justify-content:flex-end}
+  @keyframes msgIn{from{opacity:0;transform:translateY(14px) scale(.92)}to{opacity:1;transform:none}}
+  .m{max-width:84%;padding:9px 13px;border-radius:18px;font-size:14px;line-height:1.55;white-space:pre-line;box-shadow:0 1px 1.5px rgba(40,25,10,.08)}
+  .row.u .m{background:color-mix(in srgb,var(--ink) 7%,var(--card));border-bottom-right-radius:6px}
+  .row.b .m{background:var(--card);border:1px solid color-mix(in srgb,var(--brand) 22%,var(--line));border-bottom-left-radius:6px}
+  .typing{display:inline-flex;gap:4px;padding:3px 2px}
+  .typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);opacity:.4;animation:dots 1.1s infinite}
+  .typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+  @keyframes dots{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+  .pcard{width:200px;padding:0!important;overflow:hidden}
+  .pcard .pi{height:96px;display:grid;place-items:center;font-size:48px;background:linear-gradient(135deg,#ffe2cf,#ffc9a8)}
+  [data-theme=dark] .pcard .pi{background:linear-gradient(135deg,#4a2b1b,#5c331d)}
+  .pcard .pt{padding:8px 11px 10px}
+  .pcard .pt b{display:block;font-size:13.5px}
+  .pcard .pt .pp{display:block;color:var(--brand);font-weight:700;font-size:13.5px}
+  .pcard .pb{display:block;margin-top:8px;text-align:center;border-radius:10px;padding:6px;font-size:13px;font-weight:700;color:#fff;background:var(--brand);transition:transform .2s}
+  .pcard .pb.press{animation:press .5s ease}
+  @keyframes press{40%{transform:scale(.9);filter:brightness(.9)}}
+  .img{width:170px;padding:4px!important}
+  .img .ii{height:120px;border-radius:14px;display:grid;place-items:center;font-size:62px;background:linear-gradient(135deg,#e9f1ff,#d4e4ff)}
+  [data-theme=dark] .img .ii{background:linear-gradient(135deg,#1c2a3f,#22334e)}
+  .img p{margin:4px 8px 2px}
+  .ph-in{display:flex;align-items:center;gap:8px;margin:0 10px 12px;padding:7px 8px 7px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;color:var(--muted);flex:none}
+  .ph-in span{flex:1}
+  .ph-in i{width:30px;height:30px;border-radius:50%;background:var(--brand);display:grid;place-items:center;flex:none}
+  .ph-in i svg{width:15px;height:15px;fill:#fff;transform:scaleX(-1)}
+  .toast{position:absolute;top:96px;left:12px;right:12px;z-index:4;display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:16px;background:var(--card);
+    box-shadow:0 14px 34px rgba(40,25,10,.22);font-size:13.5px;font-weight:600;transform:translateY(-140%) scale(.9);opacity:0;transition:transform .55s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+  .toast.on{transform:none;opacity:1}
+  .toast em{font-style:normal;font-size:20px}
+  .toast small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+  /* WhatsApp look */
+  .scr.wa{--hd:var(--wad);background:var(--wabg);background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparent) 1px,transparent 1.2px);background-size:16px 16px}
+  [data-theme=dark] .scr.wa{--hd:#202c33}
+  .scr.wa .ph-av{border-radius:50%}
+  .scr.wa .row.u .m{background:var(--waout);border-radius:12px 12px 4px 12px}
+  .scr.wa .row.b .m{background:var(--wain);border:0;border-radius:12px 12px 12px 4px}
+  .scr.wa .ph-in i{background:var(--wad)}
+  .tick{display:inline-block;margin-inline-start:6px;color:#53bdeb;font-size:11px;letter-spacing:-3px}
+  .scenes{position:relative;z-index:1;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .scenes button{position:relative;overflow:hidden;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--muted);transition:color .2s,border-color .2s}
+  .scenes button.on{color:var(--ink);border-color:var(--brand)}
+  .scenes button i{position:absolute;inset:auto 0 0 auto;height:3px;width:0;background:var(--brand);transition:width .5s}
+  .fl{position:absolute;z-index:2;display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:16px;background:var(--card);border:1px solid var(--line);
+    box-shadow:0 18px 40px rgba(60,35,15,.16);font-size:13px;font-weight:600;white-space:nowrap;animation:bob 5s ease-in-out infinite}
+  .fl em{font-style:normal;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:color-mix(in srgb,var(--brand) 14%,transparent)}
+  .fl small{display:block;font-weight:500;color:var(--muted);font-size:11.5px;line-height:1.3}
+  .fl b{display:block;line-height:1.3}
+  .fl1{top:46px;left:-6px;animation-delay:-1s}
+  .fl2{top:120px;right:-6px;animation-delay:-2.6s}
+  .fl3{bottom:70px;left:-6px;animation-delay:-3.8s}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-9px) rotate(1.5deg)}}
+  @media (max-width:520px){.fl{padding:7px 10px;font-size:12px;border-radius:13px}.fl em{width:24px;height:24px;font-size:13px}.fl small{display:none}.fl2{display:none}.fl1{top:50px;left:-4px}.fl3{bottom:72px;left:-4px}.scenes button{font-size:12px;padding:5px 9px}}
+  @media (min-width:521px){.fl1{left:2%}.fl2{right:2%}.fl3{left:3%}}
+
+  /* ---------- stats ---------- */
+  .stats{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:34px}
+  @media (min-width:800px){.stats{grid-template-columns:repeat(4,1fr);gap:14px;margin-top:50px}}
+  .stat{background:color-mix(in srgb,var(--card) 82%,transparent);border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .stat b{display:block;font-size:clamp(24px,6vw,32px);line-height:1.15;font-weight:700}
+  .stat b .pl{color:var(--brand)}
+  .stat b .u{font-size:.55em;color:var(--brand);margin-inline-start:4px}
+  .stat span{font-size:13.5px;color:var(--muted)}
+
+  /* ---------- sections ---------- */
+  .sec{padding:64px 0;position:relative}
+  @media (min-width:900px){.sec{padding:96px 0}}
+  .head{text-align:center;max-width:680px;margin:0 auto 34px}
+  .kicker{display:inline-block;font-size:13.5px;font-weight:700;color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,transparent);padding:5px 13px;border-radius:999px}
+  h2{margin:12px 0 0;font-size:clamp(28px,7vw,44px);line-height:1.25;letter-spacing:-.3px;text-wrap:balance}
+  h2 .g{color:var(--brand)}
+  .head p{margin:12px 0 0;color:var(--muted);font-size:17px}
+
+  /* ---------- works with (marquee) ---------- */
+  .logos{padding:10px 0 6px}
+  .logos .lbl{text-align:center;color:var(--muted);font-size:14px;font-weight:600;margin:0 0 12px}
+  .marq{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+  .track{display:flex;width:max-content;animation:marq 34s linear infinite}
+  .marq:hover .track{animation-play-state:paused}
+  @keyframes marq{to{transform:translateX(50%)}}
+  .lg{display:flex;align-items:center;gap:9px;margin-inline-end:12px;padding:10px 18px;border-radius:16px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:15px;white-space:nowrap;box-shadow:var(--shadow)}
+  .lg img{height:24px;width:auto}
+  .lg svg{width:24px;height:24px}
+  .lg .e{font-size:19px}
+
+  /* ---------- the 3 AM story ---------- */
+  .two{display:grid;gap:30px;align-items:center}
+  @media (min-width:900px){.two{grid-template-columns:1fr 1fr;gap:56px}}
+  .story h2{text-align:right}
+  .story .txt p{color:var(--muted);font-size:17px;margin:14px 0 0}
+  .pains{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:10px}
+  .pains li{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow)}
+  .pains li em{font-style:normal;flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:15px;background:color-mix(in srgb,var(--bad) 13%,transparent)}
+  .pains li b{display:block}
+  .pains li span{font-size:14.5px;color:var(--muted)}
+  .scard{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:18px;box-shadow:var(--lift)}
+  .sw{position:relative;display:grid;grid-template-columns:1fr 1fr;background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:4px;margin-bottom:16px}
+  .sw button{position:relative;z-index:1;border:0;background:none;padding:10px 6px;border-radius:12px;font-weight:700;font-size:14.5px;color:var(--muted);transition:color .3s}
+  .sw button.on{color:#fff}
+  .sw .knob{position:absolute;top:4px;bottom:4px;right:4px;width:calc(50% - 4px);border-radius:12px;background:var(--bad);transition:transform .5s cubic-bezier(.34,1.56,.64,1),background-color .4s}
+  .sw.with .knob{transform:translateX(-100%);background:var(--ok)}
+  .panes{display:grid}
+  .pane{grid-area:1/1;display:flex;flex-direction:column;gap:9px;min-height:318px;opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+  .pane.on{opacity:1;visibility:visible}
+  .pane>*{opacity:0}
+  .pane.on>*{animation:msgIn .5s cubic-bezier(.34,1.56,.64,1) both;animation-delay:var(--t)}
+  .clock{align-self:center;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px 12px}
+  .pane:not(.on)>*{animation:none}
+  .pane .note{align-self:center;font-size:13px;color:var(--muted)}
+  .seen{align-self:flex-start;font-size:12px;color:var(--muted);margin-top:-4px}
+  .ghost-dots{align-self:center;display:flex;gap:6px}
+  .ghost-dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .end{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;font-weight:700;font-size:15px}
+  .end em{font-style:normal;font-size:24px}
+  .end.bad{background:color-mix(in srgb,var(--bad) 12%,transparent);color:color-mix(in srgb,var(--bad) 80%,var(--ink))}
+  .end.good{background:color-mix(in srgb,var(--ok) 14%,transparent);color:color-mix(in srgb,var(--ok) 75%,var(--ink))}
+
+  /* ---------- features ---------- */
+  .feats{display:grid;gap:12px;grid-template-columns:1fr}
+  @media (min-width:640px){.feats{grid-template-columns:repeat(2,1fr)}}
+  @media (min-width:1000px){.feats{grid-template-columns:repeat(4,1fr);gap:14px}}
+  .fc{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:var(--shadow);transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .35s,border-color .35s}
+  .fc:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(400px circle at var(--x,50%) var(--y,0%),color-mix(in srgb,var(--brand) 10%,transparent),transparent 45%);opacity:0;transition:opacity .3s}
+  @media (hover:hover){.fc:hover{transform:translateY(-4px);box-shadow:var(--lift);border-color:color-mix(in srgb,var(--brand) 40%,var(--line))}.fc:hover:before{opacity:1}}
+  .fc.big{padding:22px 22px 0;display:flex;flex-direction:column}
+  @media (min-width:1000px){.fc.big{grid-column:span 2}}
+  .fc h3{margin:12px 0 6px;font-size:18px;line-height:1.35}
+  .fc p{margin:0;color:var(--muted);font-size:14.5px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .tag{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+  .tag.w{background:color-mix(in srgb,var(--wa) 13%,transparent);border-color:transparent;color:color-mix(in srgb,var(--wad) 85%,var(--ink))}
+  [data-theme=dark] .tag.w{color:#7be3a4}
+  .tag.n{background:var(--brand);border-color:transparent;color:#fff}
+  .fi{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;font-size:25px;background:color-mix(in srgb,var(--brand) 12%,transparent);position:relative;overflow:hidden}
+  .fi span{display:inline-block}
+  .a-swing span{transform-origin:50% 10%;animation:swing 2.2s ease-in-out infinite}
+  @keyframes swing{0%,50%,100%{transform:rotate(0)}10%{transform:rotate(18deg)}20%{transform:rotate(-14deg)}30%{transform:rotate(9deg)}40%{transform:rotate(-5deg)}}
+  .a-drive span{animation:drive 2.6s ease-in-out infinite}
+  @keyframes drive{0%{transform:translateX(26px)}45%,55%{transform:translateX(0)}100%{transform:translateX(-30px)}}
+  .a-bob span{animation:bob2 2s ease-in-out infinite}
+  @keyframes bob2{0%,100%{transform:translateY(2px)}50%{transform:translateY(-4px) rotate(-6deg)}}
+  .a-pop span{animation:pop 2.4s cubic-bezier(.34,1.56,.64,1) infinite}
+  @keyframes pop{0%,70%,100%{transform:scale(1)}80%{transform:scale(1.28) rotate(-8deg)}90%{transform:scale(.95)}}
+  .a-scan:after{content:"";position:absolute;left:8px;right:8px;height:2px;border-radius:2px;background:var(--brand);box-shadow:0 0 10px var(--brand);top:10px;animation:scan 1.8s ease-in-out infinite alternate}
+  @keyframes scan{to{top:38px}}
+  .a-buzz span{animation:buzz 2.4s linear infinite}
+  @keyframes buzz{0%,60%,100%{transform:none}62%,66%,70%,74%{transform:translateX(-2px) rotate(-6deg)}64%,68%,72%,76%{transform:translateX(2px) rotate(6deg)}}
+  .a-hue{background:conic-gradient(from 0deg,#e8774a,#f5a25d,#2e9d5b,#3b82f6,#7c5cff,#e8774a);animation:spin 5s linear infinite}
+  .a-hue span{background:var(--card);width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:20px;animation:spin 5s linear infinite reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .a-shake span{animation:shake 2.6s ease-in-out infinite}
+  @keyframes shake{0%,70%,100%{transform:none}75%{transform:rotate(-12deg)}85%{transform:rotate(10deg)}92%{transform:rotate(-4deg)}}
+  .a-spin span{animation:spin 9s linear infinite}
+  .a-bars{display:flex;align-items:flex-end;justify-content:center;gap:4px;padding-bottom:12px}
+  .a-bars i{width:7px;border-radius:3px;background:var(--brand);animation:bar 1.6s ease-in-out infinite}
+  .a-bars i:nth-child(1){height:12px}.a-bars i:nth-child(2){height:20px;animation-delay:.2s;background:var(--brand2)}.a-bars i:nth-child(3){height:28px;animation-delay:.4s}
+  @keyframes bar{0%,100%{transform:scaleY(.55);transform-origin:bottom}50%{transform:scaleY(1);transform-origin:bottom}}
+  .a-check svg{width:28px;height:28px}
+  .a-check path{stroke-dasharray:30;stroke-dashoffset:30;animation:chk 2.4s ease-in-out infinite}
+  @keyframes chk{0%,15%{stroke-dashoffset:30}45%,85%{stroke-dashoffset:0}100%{stroke-dashoffset:30}}
+  .feats:not(.in) *,.feats:not(.in) .fi{animation-play-state:paused!important}
+  /* big card illustrations */
+  .ill{margin:18px -22px 0;flex:1;min-height:150px;position:relative;overflow:hidden;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--brand) 7%,transparent));border-top:1px dashed var(--line)}
+  .day{position:absolute;top:16px;left:22px;width:70px;height:70px}
+  .orb{position:absolute;inset:0;animation:spin 8s linear infinite}
+  .orb i{position:absolute;font-style:normal;font-size:22px;line-height:1}
+  .orb i:first-child{top:-4px;left:50%;transform:translateX(-50%)}
+  .orb i:last-child{bottom:-4px;left:50%;transform:translateX(-50%) rotate(180deg)}
+  .day:after{content:"";position:absolute;inset:14px;border-radius:50%;border:2px dashed color-mix(in srgb,var(--brand) 35%,transparent)}
+  .bubbles{position:absolute;right:22px;bottom:16px;left:110px;display:flex;flex-direction:column;gap:7px}
+  .bubbles i{display:block;height:24px;border-radius:12px;background:var(--card);border:1px solid var(--line);animation:grow 3.6s ease-in-out infinite;transform-origin:right}
+  .bubbles i:nth-child(1){width:70%;animation-delay:0s}
+  .bubbles i:nth-child(2){width:55%;align-self:flex-end;transform-origin:left;background:color-mix(in srgb,var(--brand) 16%,var(--card));animation-delay:.5s}
+  .bubbles i:nth-child(3){width:80%;align-self:flex-end;transform-origin:left;background:color-mix(in srgb,var(--brand) 16%,var(--card));animation-delay:1s}
+  @keyframes grow{0%{transform:scaleX(0);opacity:0}15%,80%{transform:none;opacity:1}100%{opacity:0}}
+  .cart{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:200px;height:130px}
+  .cart .c{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:58px;line-height:1;animation:cartHop 2.4s ease-in-out infinite}
+  @keyframes cartHop{0%,30%,100%{transform:translateX(-50%)}38%{transform:translateX(-50%) translateY(4px) scale(1.06,.94)}46%{transform:translateX(-50%) translateY(-6px)}}
+  .cart .it{position:absolute;top:0;font-size:24px;opacity:0;animation:drop 2.4s cubic-bezier(.55,0,1,.45) infinite}
+  .cart .it:nth-child(2){left:62px}.cart .it:nth-child(3){left:96px;animation-delay:.8s}.cart .it:nth-child(4){left:80px;animation-delay:1.6s}
+  @keyframes drop{0%{opacity:0;transform:translateY(-10px) rotate(-20deg)}10%{opacity:1}35%{opacity:1;transform:translateY(62px) rotate(10deg)}45%,100%{opacity:0;transform:translateY(70px) scale(.6)}}
+  .cart .sum{position:absolute;top:8px;right:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 10px;font-weight:700;font-size:13px;box-shadow:var(--shadow)}
+  .cart .ok{position:absolute;top:44px;right:-6px;background:var(--ok);color:#fff;border-radius:10px;padding:3px 9px;font-size:12px;font-weight:700;animation:okIn 2.4s ease-in-out infinite}
+  @keyframes okIn{0%,55%{opacity:0;transform:scale(.6)}65%,92%{opacity:1;transform:none}100%{opacity:0}}
+  @media (max-width:639px){
+    .fc:not(.big){display:grid;grid-template-columns:46px 1fr;column-gap:14px;padding:16px}
+    .fc:not(.big)>*:not(.fi){grid-column:2}
+    .fc:not(.big) .fi{grid-row:1/span 3;width:46px;height:46px;font-size:22px;border-radius:14px}
+    .fc:not(.big) h3{margin:0 0 4px;font-size:16.5px}
+    .fc:not(.big) .tags{margin-top:10px}
+    .a-hue span{width:32px;height:32px}
+  }
+  .wa-note{text-align:center;color:var(--muted);font-size:14px;margin:18px 0 0}
+
+  /* ---------- steps ---------- */
+  .steps{position:relative;display:grid;gap:18px;max-width:880px;margin:0 auto;padding-right:44px}
+  .rail{position:absolute;top:10px;bottom:10px;right:15px;width:3px;border-radius:3px;background:var(--line);overflow:hidden}
+  .rail i{position:absolute;inset:0 0 auto 0;height:calc(var(--p,0) * 100%);background:linear-gradient(var(--brand2),var(--brand));border-radius:3px}
+  .step{position:relative;display:grid;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:var(--shadow)}
+  @media (min-width:760px){.step{grid-template-columns:1.1fr .9fr;align-items:center}}
+  .step>*{min-width:0}
+  .step .num{position:absolute;top:18px;right:-44px;width:33px;height:33px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--card);border:2px solid var(--line);color:var(--muted);transition:all .4s cubic-bezier(.34,1.56,.64,1)}
+  .step.done .num{background:var(--brand);border-color:var(--brand);color:#fff;transform:scale(1.12)}
+  .step h3{margin:0;font-size:20px}
+  .step p{margin:6px 0 0;color:var(--muted);font-size:15px}
+  .sv{border-radius:18px;background:var(--soft);border:1px solid var(--line);padding:14px;min-height:96px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;direction:ltr}
+  .chipf{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:600;direction:rtl}
+  .chipf img{height:16px}
+  .step.done .chipf{animation:fly .6s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--k) * .12s)}
+  @keyframes fly{from{opacity:0;transform:translateY(16px) scale(.8)}to{opacity:1;transform:none}}
+  .code{font:600 12.5px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;text-align:left;color:var(--ink);white-space:normal;overflow-wrap:anywhere;max-width:100%;min-height:40px}
+  .code .k{color:var(--brand)}.code .s{color:var(--ok)}
+  .code .cur{display:inline-block;width:7px;height:15px;background:var(--brand);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .form{width:100%;max-width:240px;display:grid;gap:7px;direction:rtl}
+  .form i{display:block;height:26px;border-radius:9px;background:var(--card);border:1px solid var(--line);position:relative;overflow:hidden}
+  .form i:after{content:"";position:absolute;inset:0 0 0 auto;width:0;background:color-mix(in srgb,var(--brand) 18%,transparent)}
+  .step.done .form i:after{animation:fill .8s ease forwards;animation-delay:calc(var(--k) * .25s)}
+  @keyframes fill{to{width:70%}}
+  .form b{height:28px;border-radius:9px;background:var(--brand);color:#fff;font-size:12.5px;display:grid;place-items:center}
+
+  /* ---------- pricing ---------- */
+  .plans{display:grid;gap:14px;align-items:stretch}
+  @media (min-width:900px){.plans{grid-template-columns:repeat(3,1fr);gap:18px}}
+  .pc{position:relative;display:flex;flex-direction:column;background:var(--card);border:1.5px solid var(--line);border-radius:26px;padding:24px 20px 20px;box-shadow:var(--shadow);transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .35s}
+  @media (hover:hover){.pc:hover{transform:translateY(-6px);box-shadow:var(--lift)}}
+  .pc.feat{border-color:var(--brand);box-shadow:0 24px 60px rgba(232,119,74,.22);background:linear-gradient(180deg,color-mix(in srgb,var(--brand) 7%,var(--card)),var(--card) 40%)}
+  @media (max-width:899px){.pc.feat{order:-1}}
+  .pc .badge{position:absolute;top:-13px;right:20px;background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;font-size:12.5px;font-weight:700;padding:4px 12px;border-radius:999px;box-shadow:0 8px 18px rgba(232,119,74,.35)}
+  .pc .badge.d{right:auto;left:20px;background:var(--ok);box-shadow:none}
+  .pc h3{margin:0;font-size:21px}
+  .pc .ds{color:var(--muted);font-size:14.5px;margin-top:2px}
+  .pc .pr{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+  .pc .pr b{font-size:40px;line-height:1;letter-spacing:-1px}
+  .pc .pr small{color:var(--muted);font-size:14px}
+  .pc .pr s{color:var(--muted);font-size:15px}
+  .pc .mq{display:flex;gap:10px;align-items:center;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:9px 12px;margin:10px 0 4px;font-size:13.5px}
+  .pc .mq b{font-size:15px}
+  .pc .mq small{display:block;color:var(--muted);font-size:12px}
+  .pc ul{list-style:none;margin:12px 0 18px;padding:0;display:grid;gap:8px;font-size:14.5px}
+  .pc li{display:flex;gap:9px;align-items:flex-start}
+  .pc li:before{content:"✓";flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);margin-top:2px}
+  .pc .btn{margin-top:auto;width:100%}
+  .sk{min-height:420px;background:linear-gradient(100deg,var(--card) 30%,var(--soft) 50%,var(--card) 70%);background-size:300% 100%;animation:skel 1.4s ease-in-out infinite}
+  @keyframes skel{from{background-position:100% 0}to{background-position:-100% 0}}
+  .pnotes{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:22px}
+  .pn{display:flex;align-items:center;gap:7px;font-size:14px;padding:8px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+  .more{text-align:center;margin-top:16px;font-size:15px}
+  .more a{font-weight:700;text-decoration:none}
+  .linkbtn{border:0;background:none;padding:0;color:var(--brand);font-weight:700;text-decoration:underline;text-underline-offset:4px}
+
+  /* ---------- faq ---------- */
+  .faq{max-width:780px;margin:0 auto;display:grid;gap:10px}
+  .faq details{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2px 18px;box-shadow:var(--shadow);transition:border-color .25s}
+  .faq details[open]{border-color:var(--brand)}
+  .faq summary{cursor:pointer;list-style:none;padding:15px 0;font-weight:700;display:flex;align-items:center;gap:10px}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary:after{content:"+";margin-inline-start:auto;font-size:24px;line-height:1;color:var(--brand);transition:transform .3s}
+  .faq details[open] summary:after{transform:rotate(45deg)}
+  .faq details p{margin:0 0 16px;color:var(--muted);animation:fadeUp .4s ease both}
+
+  /* ---------- final CTA ---------- */
+  .final{position:relative;overflow:hidden;border-radius:32px;padding:44px 22px;text-align:center;color:#fff;
+    background:linear-gradient(135deg,#f5a25d,#e8774a 45%,#b8502a);box-shadow:0 30px 80px rgba(232,119,74,.35)}
+  .final h2{color:#fff;margin:0;font-size:clamp(26px,6.6vw,42px)}
+  .final p{margin:12px auto 0;max-width:520px;opacity:.95;font-size:17px}
+  .final .row2{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:26px}
+  .final .btn.light{background:#fff;color:var(--brand3);box-shadow:0 14px 30px rgba(0,0,0,.18)}
+  .final .btn{flex:1 1 220px;max-width:300px}
+  .final .fs{position:absolute;width:220px;height:auto;opacity:.16;pointer-events:none}
+  .final .fs path{fill:none;stroke:#fff;stroke-linecap:round}
+  .final .fs.a{top:-40px;right:-50px;animation:spinS 22s linear infinite}
+  .final .fs.b{bottom:-60px;left:-40px;width:180px;animation:spinS 28s linear infinite reverse}
+  @keyframes spinS{to{transform:rotate(360deg)}}
+  .final .sp{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff;opacity:.5;animation:rise 6s linear infinite}
+  @keyframes rise{from{transform:translateY(40px);opacity:0}20%{opacity:.6}to{transform:translateY(-260px);opacity:0}}
+
+  /* ---------- footer ---------- */
+  footer{padding:40px 0 calc(110px + env(safe-area-inset-bottom));color:var(--muted);font-size:14.5px}
+  .foot{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+  .foot nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px}
+  .foot nav a{color:var(--muted);text-decoration:none}
+  .foot nav a:hover{color:var(--ink)}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.01ms!important}
+    .js .rv{opacity:1;transform:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="#top" aria-label="Sellybot">
+      <svg viewBox="12 2 60 72" aria-hidden="true">
+        <path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/>
+        <path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+        <path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <b>Selly<span>bot</span></b>
+    </a>
+    <span class="space"></span>
+    <a class="link" href="#features">المميزات</a>
+    <a class="link" href="#pricing">الأسعار</a>
+    <a class="link" href="#faq">الأسئلة</a>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="الوضع الفاتح / الغامق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+    <a class="btn primary" href="dashboard.html?signup=1">ابدأ مجانًا</a>
+  </div>
+</header>
+
+<main>
+<!-- ======================= HERO ======================= -->
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i><div class="dots"></div><div class="grain"></div><div class="glow" id="glow"></div></div>
+  <div class="wrap">
+    <div class="hero-in">
+      <div class="hero-txt">
+        <span class="eyebrow"><i class="live"></i><span><b>متصل دلوقتي</b> · بيرد في ثانية</span></span>
+        <h1><span class="w" style="--i:0">موظف</span> <span class="w" style="--i:1">المبيعات</span><br><span class="w g" style="--i:2">اللي</span> <span class="w g" style="--i:3">مابينامش</span></h1>
+        <p class="lead">مساعد ذكي بيرد على زباينك <b>في ثانية، 24 ساعة</b>، من داتا متجرك وبأسلوبك. على <b>موقعك</b> وعلى <b>واتساب</b>، ومربوط بـ Shopify و EasyOrders.</p>
+        <div class="cta-row">
+          <a class="btn primary magnet" href="dashboard.html?signup=1"><span>ابدأ تجربتك المجانية</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+          <button class="btn ghost" type="button" data-chat="">جرّب المساعد دلوقتي 💬</button>
+        </div>
+        <ul class="trust"><li>شهر تجربة مجانًا</li><li>من غير كارت</li><li>حسابك جاهز في دقيقة</li></ul>
+      </div>
+
+      <div class="vis" id="demo">
+        <svg class="big-s" viewBox="12 2 60 72" aria-hidden="true">
+          <path class="s1" d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15"/>
+          <path class="s2" d="M42 37c10 3 18 6 18 15s-9 14-18 14-16-5-16-12"/>
+          <path class="t t1" d="M58 22l8-6"/><path class="t t2" d="M26 54l-8 6"/>
+        </svg>
+        <div class="phone" aria-label="مثال لمحادثة بين زبون والمساعد" role="img">
+          <div class="scr" id="scr">
+            <span class="notch"></span>
+            <div class="sbar"><span>3:07</span><i aria-hidden="true"><b style="height:5px"></b><b style="height:7px"></b><b style="height:9px"></b><b style="height:11px"></b></i></div>
+            <div class="ph-head">
+              <span class="ph-av"><svg viewBox="12 2 60 72"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="#3a2a20" stroke-width="9" stroke-linecap="round"/></svg></span>
+              <div><b id="phTitle">مساعد متجرك</b><small id="phSub">متصل دلوقتي</small></div>
+            </div>
+            <div class="msgs" id="msgs"></div>
+            <div class="ph-in"><span>اكتب رسالتك…</span><i><svg viewBox="0 0 24 24"><path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z"/></svg></i></div>
+            <div class="toast" id="toast"></div>
+          </div>
+        </div>
+        <div class="fl fl1"><em>⚡</em><div><b>رد في ثانية</b><small>3 الفجر زي 3 العصر</small></div></div>
+        <div class="fl fl2"><em>🗣️</em><div><b>بلهجة زبونك</b><small>ومن داتاك بس</small></div></div>
+        <div class="fl fl3"><em>📱</em><div><b>وعلى الواتساب كمان</b><small>من رقم متجرك</small></div></div>
+        <div class="scenes" id="scenes" role="tablist" aria-label="أمثلة">
+          <button type="button" role="tab"><i></i>🛍️ طلب من الشات</button>
+          <button type="button" role="tab"><i></i>✅ تأكيد على واتساب</button>
+          <button type="button" role="tab"><i></i>📷 صورة منتج</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat rv"><b><span class="cnt" data-to="24">24</span><span class="u">ساعة</span></b><span>بيرد ليل ونهار، من غير إجازات</span></div>
+      <div class="stat rv" style="--d:.08s"><b><span class="pl">+</span><span class="cnt" data-to="30">30</span><span class="u">شكل</span></b><span>للشات، وبأي لون يناسب براندك</span></div>
+      <div class="stat rv" style="--d:.16s"><b><span class="cnt" data-to="500">500</span><span class="u">رسالة</span></b><span>في التجربة المجانية، لمدة شهر</span></div>
+      <div class="stat rv" style="--d:.24s"><b><span class="cnt" data-to="1">1</span><span class="u">دقيقة</span></b><span>وحسابك جاهز تبدأ تجرّب</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= WORKS WITH ======================= -->
+<section class="logos" aria-label="بيشتغل مع">
+  <p class="lbl">بيشتغل مع</p>
+  <div class="marq"><div class="track" id="track">
+    <span class="lg"><img src="logo-shopify.svg" alt="" width="24" height="24">Shopify</span>
+    <span class="lg"><img src="logo-easyorders.png" alt="" width="24" height="24">EasyOrders</span>
+    <span class="lg"><svg viewBox="0 0 32 32" fill="#25d366" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>واتساب</span>
+    <span class="lg"><span class="e">💬</span>شات موقعك</span>
+    <span class="lg"><span class="e">🔗</span>لينك في بايو انستجرام وتيك توك</span>
+    <span class="lg"><span class="e">🌐</span>WordPress · سلة · زد</span>
+    <span class="lg"><span class="e">📄</span>PDF · Word · Excel</span>
+    <span class="lg"><span class="e">🖥️</span>Microsoft Store</span>
+  </div></div>
+</section>
+
+<!-- ======================= THE 3 AM STORY ======================= -->
+<section class="sec story" id="why">
+  <div class="wrap two">
+    <div class="txt rv">
+      <span class="kicker">🌙 ليه Sellybot؟</span>
+      <h2>الساعة 3 الفجر،<br><span class="g">زبون عايز يشتري…</span></h2>
+      <p>وانت نايم. لو محدش رد عليه، هيقفل ويطلب من حد تاني. Sellybot بيرد عليه في ثانية من داتا متجرك، ويكمّل معاه لحد ما يطلب.</p>
+      <ul class="pains">
+        <li class="rv" style="--d:.05s"><em>😩</em><div><b>نفس الأسئلة كل يوم</b><span>«بكام؟» «فيه مقاس؟» «الشحن بكام؟»: المساعد يرد عليها كلها وانت تركّز في شغلك.</span></div></li>
+        <li class="rv" style="--d:.12s"><em>⏳</em><div><b>الرد المتأخر بيضيّع البيعة</b><span>الزبون مش هيستنى للصبح. المساعد بيرد في ثانية، ليل ونهار.</span></div></li>
+        <li class="rv" style="--d:.19s"><em>🤯</em><div><b>زباين كتير في نفس الوقت</b><span>بيرد على أي عدد زباين في نفس اللحظة، من غير ما حد يستنى دوره.</span></div></li>
+      </ul>
+    </div>
+    <div class="scard rv" style="--d:.1s">
+      <div class="sw" id="sw" role="tablist">
+        <button type="button" role="tab" class="on">من غير Sellybot</button>
+        <button type="button" role="tab">مع Sellybot</button>
+        <span class="knob"></span>
+      </div>
+      <div class="panes">
+        <div class="pane on" id="p0">
+          <span class="clock" style="--t:.05s">3:07 ص</span>
+          <div class="row u" style="--t:.35s"><div class="m">الطقم ده لسه متاح؟ عايز أطلبه دلوقتي 🙏</div></div>
+          <span class="seen" style="--t:.8s">✓✓ اتشافت</span>
+          <span class="ghost-dots" style="--t:1.3s"><i></i><i></i><i></i></span>
+          <span class="clock" style="--t:1.9s">3:22 ص · مفيش رد 😶</span>
+          <div class="row u" style="--t:2.4s"><div class="m">خلاص هشوف مكان تاني</div></div>
+          <div class="end bad" style="--t:3s"><em>🚪</em>الزبون قفل وراح لمتجر تاني</div>
+        </div>
+        <div class="pane" id="p1">
+          <span class="clock" style="--t:.05s">3:07 ص</span>
+          <div class="row u" style="--t:.35s"><div class="m">الطقم ده لسه متاح؟ عايز أطلبه دلوقتي 🙏</div></div>
+          <div class="row b" style="--t:.95s"><div class="m">أيوه متاح 😍 ابعتلي اسمك والعنوان ورقم موبايلك وأسجّلهولك على طول</div></div>
+          <div class="row u" style="--t:1.6s"><div class="m">منى أحمد، مدينة نصر، 010…</div></div>
+          <div class="row b" style="--t:2.2s"><div class="m">تمام يا منى، طلبك اتسجّل ✅</div></div>
+          <div class="end good" style="--t:2.9s"><em>🎉</em>أوردر جديد… وانت نايم 😴</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FEATURES ======================= -->
+<section class="sec" id="features" style="padding-top:20px">
+  <div class="wrap">
+    <div class="head rv">
+      <span class="kicker">✨ المميزات</span>
+      <h2>مش بس بيرد…<br><span class="g">ده بيبيع ويتابع معاك</span></h2>
+      <p>من أول سؤال لحد ما الأوردر يوصل، وكمان بيرجّعلك الزباين اللي مشيوا.</p>
+    </div>
+    <div class="feats" id="feats">
+      <article class="fc big rv">
+        <span class="fi a-bob"><span>💬</span></span>
+        <h3>بيرد على كل زبون، 24 ساعة</h3>
+        <p>بيقرا داتا متجرك ويرد بأسلوبك وبلهجة زبونك في ثواني. بيرد من داتاك بس، ومابيألّفش أسعار ولا عروض.</p>
+        <div class="tags"><span class="tag">كل الباقات</span><span class="tag">شات الموقع</span><span class="tag w">واتساب</span></div>
+        <div class="ill" aria-hidden="true">
+          <div class="day"><div class="orb"><i>☀️</i><i>🌙</i></div></div>
+          <div class="bubbles"><i></i><i></i><i></i></div>
+        </div>
+      </article>
+      <article class="fc big rv" style="--d:.08s">
+        <span class="fi a-shake"><span>🛒</span></span>
+        <h3>الزبون يطلب من جوه الشات</h3>
+        <p>يختار المقاس واللون والكمية ويكتب عنوانه، والأوردر ينزل عندك في Shopify على طول، من غير ما يسيب الشات.</p>
+        <div class="tags"><span class="tag">Shopify</span></div>
+        <div class="ill" aria-hidden="true">
+          <div class="cart"><span class="c">🛒</span><span class="it">👗</span><span class="it">👟</span><span class="it">👜</span><span class="sum">850 ج.م</span><span class="ok">✓ اتطلب</span></div>
+        </div>
+      </article>
+      <article class="fc rv">
+        <span class="fi a-check"><svg viewBox="0 0 24 24" fill="none" stroke="#2e9d5b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <h3>تأكيد الطلبات على واتساب</h3>
+        <p>كل طلب جديد يوصل للزبون على واتساب: يرد 1 يأكد أو 2 يلغي، وحالة الأوردر بتتغيّر في متجرك لوحدها.</p>
+        <div class="tags"><span class="tag w">واتساب</span><span class="tag">Shopify</span><span class="tag">EasyOrders</span></div>
+      </article>
+      <article class="fc rv" style="--d:.05s">
+        <span class="fi a-drive"><span>🚚</span></span>
+        <h3>رسالة يوم التوصيل</h3>
+        <p>أول ما الأوردر يخرج للتوصيل، الزبون يعرف إن المندوب جايله والمبلغ اللي يجهّزه. مرتجعات أقل.</p>
+        <div class="tags"><span class="tag w">واتساب</span><span class="tag">Shopify</span><span class="tag">EasyOrders</span></div>
+      </article>
+      <article class="fc rv" style="--d:.1s">
+        <span class="fi a-bob"><span>📦</span></span>
+        <h3>«طلبي فين؟»</h3>
+        <p>الزبون يعرف حالة أوردره من الشات أو الواتساب، بعد ما يأكد رقم الأوردر وموبايله، من غير ما يكلّمك.</p>
+        <div class="tags"><span class="tag">Shopify</span><span class="tag">EasyOrders</span></div>
+      </article>
+      <article class="fc rv" style="--d:.15s">
+        <span class="fi a-shake"><span>🛍️</span></span>
+        <h3>استرجاع السلة المتروكة <span class="tag n">جديد</span></h3>
+        <p>زبون وصل لصفحة الدفع ومشي؟ يوصله تذكير على واتساب فيه اللي اختاره ولينك يكمّل منه، وممكن كود خصم.</p>
+        <div class="tags"><span class="tag w">واتساب</span><span class="tag">Shopify</span></div>
+      </article>
+      <article class="fc rv">
+        <span class="fi a-scan"><span>📷</span></span>
+        <h3>بيفهم صور المنتجات <span class="tag n">جديد</span></h3>
+        <p>الزبون يبعت صورة منتج على واتساب، والمساعد يلاقيله الأقرب من منتجاتك بالسعر واللينك.</p>
+        <div class="tags"><span class="tag w">واتساب</span></div>
+      </article>
+      <article class="fc rv" style="--d:.05s">
+        <span class="fi a-swing"><span>🔔</span></span>
+        <h3>«بلّغني لما يرجع» <span class="tag n">جديد</span></h3>
+        <p>مقاس أو منتج خلصان؟ الزبون يوصله واتساب أول ما يرجع المخزون، ومعاه لينك المنتج.</p>
+        <div class="tags"><span class="tag w">واتساب</span><span class="tag">Shopify</span><span class="tag">EasyOrders</span></div>
+      </article>
+      <article class="fc rv" style="--d:.1s">
+        <span class="fi a-bars"><i></i><i></i><i></i></span>
+        <h3>تقرير كل سبت <span class="tag n">جديد</span></h3>
+        <p>ملخص أسبوع متجرك على رقمك، وفيه الأسئلة اللي المساعد ماكانش عنده إجابتها عشان تضيفها.</p>
+        <div class="tags"><span class="tag w">واتساب</span></div>
+      </article>
+      <article class="fc rv" style="--d:.15s">
+        <span class="fi a-buzz"><span>🙋</span></span>
+        <h3>«الزبون محتاجك» <span class="tag n">جديد</span></h3>
+        <p>زبون عايز يكلّم حد، أو عنده شكوى، أو طلب جملة؟ يوصلك تنبيه على رقمك بالسبب ورقم الزبون.</p>
+        <div class="tags"><span class="tag w">واتساب</span><span class="tag">شات الموقع</span></div>
+      </article>
+      <article class="fc rv">
+        <span class="fi a-hue"><span>🎨</span></span>
+        <h3>شكل على مقاس براندك</h3>
+        <p>أكتر من 30 شكل للفقاعة (دبدوب، قرد مبرمج، قطة، باندا…) وأي لون، وبيتبع الوضع الفاتح والغامق بتاع موقعك.</p>
+        <div class="tags"><span class="tag">شات الموقع</span></div>
+      </article>
+      <article class="fc rv" style="--d:.05s">
+        <span class="fi a-pop"><span>🖥️</span></span>
+        <h3>برنامج على الكمبيوتر</h3>
+        <p>لوحة متجرك في برنامج على Windows، موجود على Microsoft Store، ومجاني في كل الباقات.</p>
+        <div class="tags"><span class="tag">كل الباقات</span><span class="tag">Windows</span></div>
+      </article>
+      <article class="fc rv" style="--d:.1s">
+        <span class="fi a-bob"><span>🔗</span></span>
+        <h3>لينك شات جاهز</h3>
+        <p>صفحة شات كاملة باسم متجرك من غير موقع ولا كود: حطها في بايو انستجرام وتيك توك وفيسبوك، أو في زرار «اسألنا» في إعلاناتك.</p>
+        <div class="tags"><span class="tag">كل الباقات</span></div>
+      </article>
+      <article class="fc rv" style="--d:.15s">
+        <span class="fi a-spin"><span>🌍</span></span>
+        <h3>لأي نشاط، مش متاجر بس</h3>
+        <p>عيادة أو أكاديمية أو شركة أو مطعم: ارفع داتا نشاطك (خدمات وأسعار ومواعيد)، والمساعد يرد على عملائك منها.</p>
+        <div class="tags"><span class="tag">كل الباقات</span></div>
+      </article>
+    </div>
+    <p class="wa-note rv">المميزات اللي عليها <span class="tag w">واتساب</span> محتاجة اشتراك الواتساب الشهري (<b id="waPrice">300</b> ج.م)، وتقدر تضيفه في أي وقت.</p>
+  </div>
+</section>
+
+<!-- ======================= HOW IT WORKS ======================= -->
+<section class="sec" id="how" style="background:linear-gradient(180deg,transparent,var(--bg2) 30%,var(--bg2) 70%,transparent)">
+  <div class="wrap">
+    <div class="head rv">
+      <span class="kicker">⚡ هتبدأ إزاي؟</span>
+      <h2>3 خطوات،<br><span class="g">والمساعد شغال لزباينك</span></h2>
+    </div>
+    <div class="steps" id="steps">
+      <div class="rail" aria-hidden="true"><i></i></div>
+      <div class="step rv">
+        <span class="num">1</span>
+        <div><h3>اعمل حسابك</h3><p>سجّل متجرك في أقل من دقيقة، وخد شهر تجربة مجانًا تختبر فيه المساعد على داتا متجرك.</p></div>
+        <div class="sv" aria-hidden="true"><div class="form"><i style="--k:0"></i><i style="--k:1"></i><i style="--k:2"></i><b>🚀 يلا نبدأ</b></div></div>
+      </div>
+      <div class="step rv">
+        <span class="num">2</span>
+        <div><h3>علّمه متجرك</h3><p>ارفع ملفاتك (PDF أو Word أو Excel) أو اكتب نص، أو اربط متجرك على Shopify أو EasyOrders والمنتجات تتسحب وتتحدث لوحدها.</p></div>
+        <div class="sv" aria-hidden="true">
+          <span class="chipf" style="--k:0">📄 الكتالوج PDF</span><span class="chipf" style="--k:1">📊 الأسعار Excel</span>
+          <span class="chipf" style="--k:2"><img src="logo-shopify.svg" alt="">Shopify</span><span class="chipf" style="--k:3"><img src="logo-easyorders.png" alt="">EasyOrders</span>
+        </div>
+      </div>
+      <div class="step rv">
+        <span class="num">3</span>
+        <div><h3>شغّله لزباينك</h3><p>حط سطر كود واحد في موقعك، أو اربط رقم الواتساب بمسح QR، أو ابعت لينك الشات في البايو. وخلاص!</p></div>
+        <div class="sv" aria-hidden="true"><div class="code" id="code"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= PRICING ======================= -->
+<section class="sec" id="pricing">
+  <div class="wrap">
+    <div class="head rv">
+      <span class="kicker">💎 الأسعار</span>
+      <h2>ابدأ مجانًا،<br><span class="g">واشترك لما تقتنع</span></h2>
+      <p>باقات شهرية من غير عقود. كل حساب جديد بياخد شهر تجربة مجانًا.</p>
+    </div>
+    <div class="plans" id="plans">
+      <div class="pc sk" aria-hidden="true"></div><div class="pc sk" aria-hidden="true"></div><div class="pc sk" aria-hidden="true"></div>
+    </div>
+    <div class="pnotes rv">
+      <span class="pn">🎁 تجربة مجانية شهر: 500 رسالة</span>
+      <span class="pn">📱 الواتساب: <b id="waPrice2">300</b> ج.م في الشهر، تضيفه في أي وقت</span>
+      <span class="pn">💳 InstaPay أو أورانج كاش</span>
+    </div>
+    <p class="more"><a href="pricing.html">قارن الباقات بالتفصيل ←</a> · <button class="linkbtn" type="button" data-chat="أنهي باقة تناسب متجري؟">اسأل المساعد أنهي باقة تناسبك</button></p>
+  </div>
+</section>
+
+<!-- ======================= FAQ ======================= -->
+<section class="sec" id="faq" style="padding-top:20px">
+  <div class="wrap">
+    <div class="head rv">
+      <span class="kicker">❓ أسئلة شائعة</span>
+      <h2>عندك سؤال؟</h2>
+    </div>
+    <div class="faq rv">
+      <details><summary>أقدر أجرّب قبل ما أدفع؟</summary><p>أيوه. أي حساب جديد بياخد تجربة مجانية لمدة شهر، مرة واحدة: 500 رسالة تختبر بيها المساعد على داتا متجرك، ومن غير كارت. بعد الشهر، أو لما الرسايل تخلص، المساعد بيقف لحد ما تشترك في باقة.</p></details>
+      <details><summary>بيشتغل مع Shopify و EasyOrders؟</summary><p>أيوه. تربط متجرك والمنتجات والأسعار والمقاسات والمخزون بتتسحب وتتحدث لوحدها. وكمان بيشتغل على أي موقع تاني بسطر كود واحد (WordPress وسلة وزد وغيرهم)، أو من غير موقع خالص بلينك شات تحطه في البايو.</p></details>
+      <details><summary>لازم يكون عندي متجر إلكتروني؟</summary><p>لأ. عيادة أو أكاديمية أو شركة أو مطعم: ارفع داتا نشاطك (خدمات، أسعار، مواعيد، أسئلة شائعة) والمساعد يرد على عملائك منها. الربط بالمتاجر اختياري.</p></details>
+      <details><summary>الواتساب بيشتغل إزاي؟</summary><p>بتربط رقم واتساب متجرك بمسح QR في دقيقة، ونفس المساعد بنفس الداتا يرد على زباينك هناك. الواتساب اشتراك شهري لوحده تضيفه في أي وقت، ولو رديت إنت بنفسك على زبون، المساعد بيسكت ساعتين ويسيبلك المحادثة.</p></details>
+      <details><summary>ممكن المساعد يقول معلومة غلط؟</summary><p>المساعد بيرد من داتاك بس، ومابيألّفش أسعار ولا عروض. ولو حاجة مش موجودة في داتاك بيقول إنه مش متأكد منها، وتقدر تخليه يبلّغك لما زبون يحتاج يكلّمك بنفسك.</p></details>
+      <details><summary>بدفع إزاي؟ وأقدر أغيّر الباقة؟</summary><p>مفيش دفع أونلاين: بتحوّل على InstaPay أو أورانج كاش وإحنا بنفعّل الباقة على حسابك. ومن «باقتي» في لوحتك تقدر ترقّي أو تنزل لباقة تانية في أي وقت، من غير عقود.</p></details>
+    </div>
+    <p class="more">لسه عندك سؤال؟ <button class="linkbtn" type="button" data-chat="">اسأل المساعد بتاعنا 💬</button></p>
+  </div>
+</section>
+
+<!-- ======================= FINAL CTA ======================= -->
+<section class="sec" style="padding-top:10px">
+  <div class="wrap">
+    <div class="final rv" id="final">
+      <svg class="fs a" viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" stroke-width="9"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" stroke-width="9"/></svg>
+      <svg class="fs b" viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" stroke-width="9"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" stroke-width="9"/></svg>
+      <h2>خلّي متجرك يرد على كل زبون، من النهارده</h2>
+      <p>اعمل حسابك في دقيقة، وجرّب المساعد على داتا متجرك شهر كامل مجانًا.</p>
+      <div class="row2">
+        <a class="btn light magnet" href="dashboard.html?signup=1">🚀 ابدأ تجربتك المجانية</a>
+        <a class="btn wa" id="waCta" href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1%20%D8%B9%D9%86%20Sellybot" target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>كلّمنا على واتساب</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a class="logo" href="#top" aria-label="Sellybot">
+      <svg viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/></svg>
+      <b>Selly<span>bot</span></b>
+    </a>
+    <nav><a href="about.html">من نحن وخدماتنا</a><a href="pricing.html">الباقات والأسعار</a><a href="download.html">برنامج الكمبيوتر</a><a href="privacy.html">الخصوصية</a><a href="dashboard.html">دخول</a></nav>
+    <span>منتج مصري · © <span id="yr">2026</span> Sellybot</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function fmt(n) { return Math.round(n || 0).toLocaleString("en-US"); }
+
+  $("yr").textContent = new Date().getFullYear();
+
+  // ---------- theme + nav ----------
+  $("themeBtn").onclick = function () {
+    var dark = document.documentElement.getAttribute("data-theme") !== "dark";
+    document.documentElement.classList.add("theme-anim"); window.sbTheme(dark ? "dark" : "light");
+    setTimeout(function () { document.documentElement.classList.remove("theme-anim"); }, 450);
+  };
+  var nav = $("nav");
+  window.addEventListener("scroll", function () { nav.classList.toggle("scrolled", scrollY > 8); }, { passive: true });
+
+  // ---------- open the real Sellybot chat (widget.js), otherwise show the demo ----------
+  document.querySelectorAll("[data-chat]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var q = b.getAttribute("data-chat") || "";
+      if (window.storeChat && typeof window.storeChat.open === "function") { window.storeChat.open(q || undefined); return; }
+      $("demo").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    });
+  });
+
+  // ---------- reveal on scroll ----------
+  var io = "IntersectionObserver" in window ? new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+  }, { threshold: .12, rootMargin: "0px 0px -6% 0px" }) : null;
+  function observe(root) { (root || document).querySelectorAll(".rv:not(.in)").forEach(function (el) { if (io) io.observe(el); else el.classList.add("in"); }); }
+  observe();
+  // features play their small animations only while on screen
+  function onScreen(el, cb, th) {
+    if (!("IntersectionObserver" in window)) { cb(true); return; }
+    new IntersectionObserver(function (es) { es.forEach(function (e) { cb(e.isIntersecting); }); }, { threshold: th || 0 }).observe(el);
+  }
+  onScreen($("feats"), function (on) { $("feats").classList.toggle("in", on); });
+
+  // ---------- desktop: cursor glow, magnetic buttons, card spotlight ----------
+  if (fine && !reduce) {
+    var hero = document.querySelector(".hero"), glow = $("glow");
+    hero.addEventListener("pointermove", function (e) { var r = hero.getBoundingClientRect(); glow.style.setProperty("--mx", (e.clientX - r.left) + "px"); glow.style.setProperty("--my", (e.clientY - r.top) + "px"); });
+    document.querySelectorAll(".magnet").forEach(function (b) {
+      b.addEventListener("pointermove", function (e) { var r = b.getBoundingClientRect(); b.style.transform = "translate(" + ((e.clientX - r.left - r.width / 2) * .18) + "px," + ((e.clientY - r.top - r.height / 2) * .3) + "px)"; });
+      b.addEventListener("pointerleave", function () { b.style.transform = ""; });
+    });
+    document.querySelectorAll(".fc").forEach(function (c) {
+      c.addEventListener("pointermove", function (e) { var r = c.getBoundingClientRect(); c.style.setProperty("--x", (e.clientX - r.left) + "px"); c.style.setProperty("--y", (e.clientY - r.top) + "px"); });
+    });
+  }
+
+  // ---------- counters (real numbers only) ----------
+  document.querySelectorAll(".cnt").forEach(function (el) {
+    var to = +el.dataset.to; if (reduce || to < 5) return;
+    el.textContent = "0";
+    onScreen(el, function (on) {
+      if (!on || el.dataset.done) return; el.dataset.done = 1;
+      var t0 = performance.now(), dur = 1300;
+      (function step(t) { var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(to * e); if (p < 1) requestAnimationFrame(step); })(t0);
+      setTimeout(function () { el.textContent = fmt(to); }, dur + 80);
+    }, .6);
+  });
+
+  // ---------- the phone demo: real-feeling chats in a loop ----------
+  var SCENES = [
+    { wa: false, title: "مساعد متجرك", sub: "متصل دلوقتي", steps: [
+      { u: "الفستان الكحلي لسه فيه مقاس M؟" },
+      { b: "أيوه موجود 😍 وفاضل منه 3 قطع بس" },
+      { b: "", card: { e: "👗", n: "فستان كحلي ستان", p: "850 ج.م" } },
+      { press: true },
+      { u: "تمام هاخده 👌" },
+      { b: "ابعتلي اسمك والعنوان ورقم موبايلك وأنا أسجّل الطلب 📦" },
+      { toast: ["🛒", "أوردر جديد #1043", "850 ج.م · من الشات على طول"] }
+    ] },
+    { wa: true, title: "متجرك", sub: "حساب تجاري", steps: [
+      { b: "أهلاً يا منى 👋 طلبك رقم 1043 اتسجّل:\nفستان كحلي ستان، مقاس M، بـ 850 ج.م\nرد بـ 1 للتأكيد أو 2 للإلغاء", noType: true },
+      { u: "1" },
+      { b: "تم تأكيد طلبك ✅ ومتابعين معاكي لحد ما يوصل" },
+      { toast: ["✅", "الطلب اتأكد", "وحالته اتغيّرت في متجرك لوحدها"] }
+    ] },
+    { wa: true, title: "متجرك", sub: "حساب تجاري", steps: [
+      { u: "عندكم زي ده؟", img: "👟" },
+      { b: "أقرب حاجة عندنا: الكوتشي الأبيض ده بـ 1,200 ج.م 👟\nبس مقاس 42 خلصان للأسف 😔" },
+      { b: "تحب أبلّغك هنا أول ما يرجع؟" },
+      { u: "ياريت 🙏" },
+      { b: "اتفقنا 🔔 أول ما يرجع هبعتلك لينكه" },
+      { toast: ["🔔", "«بلّغني لما يرجع»", "اتسجّل للزبون على مقاس 42"] }
+    ] }
+  ];
+  var scr = $("scr"), msgs = $("msgs"), toast = $("toast"), navBtns = $("scenes").querySelectorAll("button");
+  var demo = { token: 0, visible: true };
+  onScreen($("demo"), function (on) { demo.visible = on; }, .15);
+  function sleep(ms, tok) {
+    return new Promise(function (res, rej) {
+      var left = ms, last = performance.now();
+      (function tick() {
+        if (tok !== demo.token) return rej(0);
+        var now = performance.now(); if (demo.visible && !document.hidden) left -= now - last; last = now;
+        if (left <= 0) res(); else setTimeout(tick, 60);
+      })();
+    });
+  }
+  function bubble(s) {
+    var row = document.createElement("div"); row.className = "row " + (s.u != null ? "u" : "b");
+    var m = document.createElement("div"); m.className = "m";
+    if (s.card) {
+      m.className = "m pcard";
+      m.innerHTML = '<div class="pi">' + s.card.e + '</div><div class="pt"><b>' + esc(s.card.n) + '</b><span class="pp">' + esc(s.card.p) + '</span><span class="pb">اطلبه دلوقتي</span></div>';
+    } else if (s.img) {
+      m.className = "m img"; m.innerHTML = '<div class="ii">' + s.img + '</div><p>' + esc(s.u) + '</p>';
+    } else {
+      m.textContent = s.u != null ? s.u : s.b;
+      if (s.u != null && scr.classList.contains("wa")) m.insertAdjacentHTML("beforeend", '<span class="tick">✓✓</span>');
+    }
+    row.appendChild(m); return row;
+  }
+  function add(el) { msgs.appendChild(el); while (msgs.children.length > 9) msgs.removeChild(msgs.firstChild); }
+  function typing() { var r = document.createElement("div"); r.className = "row b"; r.innerHTML = '<div class="m"><span class="typing"><span></span><span></span><span></span></span></div>'; add(r); return r; }
+  function setScene(i) {
+    var sc = SCENES[i];
+    scr.classList.toggle("wa", sc.wa); $("phTitle").textContent = sc.title; $("phSub").textContent = sc.sub;
+    msgs.textContent = ""; toast.classList.remove("on");
+    navBtns.forEach(function (b, k) { b.classList.toggle("on", k === i); b.setAttribute("aria-selected", k === i); b.querySelector("i").style.width = k < i ? "100%" : "0"; });
+  }
+  function progress(i, p) { var bar = navBtns[i].querySelector("i"); bar.style.width = Math.round(p * 100) + "%"; }
+  async function play(i) {
+    var tok = ++demo.token, sc = SCENES[i];
+    setScene(i);
+    if (reduce) { sc.steps.forEach(function (s) { if (s.u != null || s.b != null) add(bubble(s)); }); progress(i, 1); return; }
+    try {
+      await sleep(500, tok);
+      for (var k = 0; k < sc.steps.length; k++) {
+        var s = sc.steps[k];
+        if (s.toast) {
+          toast.innerHTML = "<em>" + s.toast[0] + "</em><div>" + esc(s.toast[1]) + "<small>" + esc(s.toast[2]) + "</small></div>";
+          toast.classList.add("on"); progress(i, 1); await sleep(2600, tok); toast.classList.remove("on"); await sleep(500, tok); continue;
+        }
+        if (s.press) { var pb = msgs.querySelector(".pb:not(.press)"); if (pb) { pb.classList.add("press"); } await sleep(600, tok); continue; }
+        if (s.b != null && !s.noType) { var t = typing(); await sleep(s.card ? 600 : 1000, tok); t.remove(); }
+        else await sleep(s.u != null ? 750 : 300, tok);
+        add(bubble(s)); progress(i, (k + 1) / sc.steps.length);
+        await sleep(s.u != null ? 600 : 1100, tok);
+      }
+      play((i + 1) % SCENES.length);
+    } catch (e) { /* switched scene */ }
+  }
+  navBtns.forEach(function (b, k) { b.onclick = function () { play(k); }; });
+  play(0);
+
+  // ---------- the 3 AM story: without / with ----------
+  var sw = $("sw"), swBtns = sw.querySelectorAll("button"), panes = [$("p0"), $("p1")], swState = 0, swAuto = true, swTimer = null, storyOn = false;
+  function setSw(v) {
+    swState = v; sw.classList.toggle("with", v === 1);
+    swBtns.forEach(function (b, k) { b.classList.toggle("on", k === v); b.setAttribute("aria-selected", k === v); });
+    panes.forEach(function (p, k) { p.classList.remove("on"); if (k === v) { void p.offsetWidth; p.classList.add("on"); } });
+  }
+  swBtns.forEach(function (b, k) { b.onclick = function () { swAuto = false; clearTimeout(swTimer); setSw(k); }; });
+  function swLoop() { clearTimeout(swTimer); if (!swAuto || reduce) return; swTimer = setTimeout(function () { if (storyOn && !document.hidden) setSw(1 - swState); swLoop(); }, swState === 0 ? 5200 : 6200); }
+  onScreen(sw.parentNode, function (on) { var first = on && !storyOn; storyOn = on; if (first) { setSw(swState); swLoop(); } }, .35);
+
+  // ---------- how it works: the line draws as you scroll ----------
+  var steps = $("steps"), stepEls = steps.querySelectorAll(".step"), rail = steps.querySelector(".rail i");
+  function railUpdate() {
+    var r = steps.getBoundingClientRect(), vh = innerHeight, p = (vh * .62 - r.top) / r.height;
+    p = Math.max(0, Math.min(1, p)); rail.parentNode.style.setProperty("--p", p.toFixed(3));
+    stepEls.forEach(function (s) { var sr = s.getBoundingClientRect(); if (sr.top < vh * .62) s.classList.add("done"); });
+  }
+  var railRaf = 0;
+  window.addEventListener("scroll", function () { if (!railRaf) railRaf = requestAnimationFrame(function () { railRaf = 0; railUpdate(); }); }, { passive: true });
+  window.addEventListener("resize", railUpdate); railUpdate();
+  // the embed line types itself once the 3rd step is reached
+  var CODE = [["k", "<script "], ["", "src="], ["s", '"…/widget.js"'], ["", " data-store="], ["s", '"متجرك"'], ["k", "><\/script>"]];
+  var codeEl = $("code"), codeDone = false;
+  function codeFull() { codeEl.innerHTML = CODE.map(function (c) { return '<span class="' + c[0] + '">' + esc(c[1]) + "</span>"; }).join("") + '<span class="cur"></span>'; }
+  if (reduce) codeFull(); else {
+    codeEl.innerHTML = '<span class="cur"></span>';
+    onScreen(codeEl, function (on) {
+      if (!on || codeDone) return; codeDone = true;
+      var flat = []; CODE.forEach(function (c) { c[1].split("").forEach(function (ch) { flat.push([c[0], ch]); }); });
+      var n = 0;
+      (function tick() {
+        n++; var html = "", cls = null;
+        flat.slice(0, n).forEach(function (f) { if (f[0] !== cls) { if (cls !== null) html += "</span>"; html += '<span class="' + f[0] + '">'; cls = f[0]; } html += esc(f[1]); });
+        codeEl.innerHTML = html + "</span>" + '<span class="cur"></span>';
+        if (n < flat.length) setTimeout(tick, 38);
+      })();
+    }, .8);
+  }
+
+  // ---------- pricing from the live plans ----------
+  function planCard(p) {
+    var d = p.discount, label = d ? (d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "وفّر " + fmt(d.value) + " ج.م")) : "";
+    var price = p.finalPrice != null ? p.finalPrice : p.priceEgp, old = p.priceEgp > price ? p.priceEgp : 0;
+    var m = p.messages || {}, lo = m.large, hi = m.small;
+    return '<div class="pc' + (p.isFeatured ? " feat" : "") + ' rv">' +
+      (p.isFeatured ? '<span class="badge">⭐ الأكثر طلبًا</span>' : "") + (d ? '<span class="badge d">🔥 ' + esc(label) + "</span>" : "") +
+      "<h3>" + esc(p.name) + '</h3><div class="ds">' + esc(p.description || "") + "</div>" +
+      '<div class="pr"><b>' + fmt(price) + "</b><small>ج.م / شهريًا</small>" + (old ? "<s>" + fmt(old) + "</s>" : "") + "</div>" +
+      (lo && hi ? '<div class="mq"><span>💬</span><div><b>من ' + fmt(lo) + " لـ " + fmt(hi) + " رسالة</b> في الشهر<small>تقريبًا، حسب حجم داتا متجرك</small></div></div>" : "") +
+      "<ul>" + (p.features || []).map(function (f) { return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>" +
+      '<a class="btn ' + (p.isFeatured ? "primary" : "ghost") + '" href="dashboard.html?signup=1">ابدأ بالتجربة المجانية</a></div>';
+  }
+  function plansFailed() {
+    $("plans").innerHTML = '<div class="pc" style="grid-column:1/-1;text-align:center;align-items:center;gap:12px"><b style="font-size:18px">الأسعار بتبدأ من باقة شهرية من غير عقود</b><a class="btn primary" href="pricing.html" style="width:auto">شوف الأسعار</a></div>';
+  }
+  fetch("api/plans.ashx", { credentials: "same-origin" }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+    var plans = (d && d.plans) || [];
+    if (!plans.length) { plansFailed(); return; }
+    $("plans").innerHTML = plans.map(planCard).join("");
+    $("plans").querySelectorAll(".rv").forEach(function (el, i) { el.style.setProperty("--d", (i * .1) + "s"); });
+    observe($("plans"));
+    if (d.waAddon && d.waAddon.price) { $("waPrice").textContent = fmt(d.waAddon.price); $("waPrice2").textContent = fmt(d.waAddon.price); }
+    if (d.wa && /^\d{10,15}$/.test(d.wa)) $("waCta").href = $("waCta").href.replace(/wa\.me\/\d+/, "wa.me/" + d.wa);
+  }).catch(plansFailed);
+
+  // ---------- final band: a few rising sparks ----------
+  if (!reduce) {
+    var fin = $("final");
+    for (var i = 0; i < 10; i++) {
+      var sp = document.createElement("i"); sp.className = "sp";
+      sp.style.left = (5 + Math.random() * 90) + "%"; sp.style.bottom = (Math.random() * 30) + "px";
+      sp.style.animationDelay = (-Math.random() * 6) + "s"; sp.style.animationDuration = (5 + Math.random() * 4) + "s";
+      var z = 4 + Math.random() * 6; sp.style.width = sp.style.height = z + "px";
+      fin.appendChild(sp);
+    }
+  }
+})();
+</script>
+<script src="widget.js?v=20261117b" data-store="sellybot" defer></script>
+</body>
+</html>

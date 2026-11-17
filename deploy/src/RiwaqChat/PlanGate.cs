@@ -71,6 +71,7 @@ namespace RiwaqChat
         public static bool Allows(SqlConnection c, StoreInfo s, string feature, out PlanInfo offer)
         {
             offer = null;
+            if (s != null && s.IsAdmin) return true;   // the platform's own stores (Sellybot's chat) have everything
             int minId = MinPlanId(c, feature);
             if (minId == 0) return true;
             return Check(c, s, minId, out offer);

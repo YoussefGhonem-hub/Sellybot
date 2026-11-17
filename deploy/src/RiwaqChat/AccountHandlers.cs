@@ -222,7 +222,7 @@ namespace RiwaqChat
                     if (b.ContainsKey("bubbleStyle"))
                     {
                         var v = Web.Str(b, "bubbleStyle", 20);
-                        if (!BubbleStyles.Contains(v)) { Web.Error(res, 400, "bad_style", "شكل الفقاعة مش معروف."); return; }
+                        if (v != s.BubbleStyle && !BubbleStyles.Contains(v)) { Web.Error(res, 400, "bad_style", "شكل الفقاعة مش معروف."); return; }
                         if (v != s.BubbleStyle && !PlanGate.FreeStyles.Contains(v) && !PlanGate.Allows(c, s, "styles")) { PlanGate.Deny(res, c, s, "styles"); return; }
                         sets.Add("BubbleStyle=@style"); ps.Add("@style"); ps.Add(v);
                     }

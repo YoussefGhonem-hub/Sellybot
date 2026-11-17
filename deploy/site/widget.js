@@ -7,13 +7,13 @@
 (function () {
   var me = document.currentScript || (function () { var s = document.getElementsByTagName("script"); return s[s.length - 1]; })();
   var ART_ONLY = me.getAttribute("data-art-only") === "1";   // dashboard: only borrow the drawings, don't show a chat
-  if (!ART_ONLY) { if (window.__storeChatLoaded) return; window.__storeChatLoaded = true; }
 
   // ---------------------------------------------------------------- setup
   var BASE = new URL(me.src, location.href).href.replace(/widget\.js(\?.*)?$/, "");
   var qs = new URLSearchParams(location.search);
   var MODE = me.getAttribute("data-mode") || "bubble";            // "bubble" = floating button on a website, "page" = full chat page
   var STORE = (me.getAttribute("data-store") || qs.get("store") || "riwaq").toLowerCase().replace(/[^a-z0-9-]/g, "");
+  if (!ART_ONLY) { var LOADED = window.__storeChatLoaded = (typeof window.__storeChatLoaded === "object" && window.__storeChatLoaded) || {}; if (LOADED[STORE]) return; LOADED[STORE] = true; }
   var PREVIEW = qs.get("preview") === "1";                          // dashboard preview: style/color come from the link
   if (PREVIEW && qs.get("view") === "bubble") MODE = "bubble";
   var API = BASE + "api/chat.ashx?store=" + encodeURIComponent(STORE);
@@ -29,7 +29,7 @@
     return v;
   })();
 
-  var cfg = { name: "", botName: "", welcome: null, style: "bear", color: "#e8774a" };
+  var cfg = { name: "", botName: "", welcome: null, style: STORE === "sellybot" ? "sellybot" : "bear", color: "#e8774a" };
   var history = [], busy = false, opened = false, storeMissing = false;
 
   // ---------------------------------------------------------------- colors
@@ -475,6 +475,22 @@
           eyes(46, 74, 87, 4.8) + cheeks(36, 84, 95, 5.5) + mouth(60, 95, 6), "face");
       }
     },
+    // Sellybot's own chat on sellybot.online (not offered to stores): the logo tile. A comet runs around its border, the S
+    // draws itself, spins like a sync icon now and then, opens to show typing dots on hover, talks while replying, spins while thinking.
+    sellybot: {
+      name: "Sellybot", hidden: true, art: function () {
+        return svg("0 0 120 120",
+          '<rect class="sbGlow" x="10" y="10" width="100" height="100" rx="32" fill="var(--c)"/>' +
+          '<path class="sbRing" d="M40 4H80A36 36 0 0 1 116 40V80A36 36 0 0 1 80 116H40A36 36 0 0 1 4 80V40A36 36 0 0 1 40 4Z" pathLength="100" fill="none" stroke="var(--c)" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="14 86"/>' +
+          '<path class="sbRing r2" d="M40 4H80A36 36 0 0 1 116 40V80A36 36 0 0 1 80 116H40A36 36 0 0 1 4 80V40A36 36 0 0 1 40 4Z" pathLength="100" fill="none" stroke="var(--c2)" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="8 92"/>' +
+          '<rect class="sbTile" x="10" y="10" width="100" height="100" rx="32" fill="#fff8f3"/>' +
+          '<g class="sbS"><g transform="translate(60 60) scale(1.04) translate(-42 -38)">' +
+            '<g class="sbTop"><path class="sbP" pathLength="1" d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path class="sbT" d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/></g>' +
+            '<g class="sbBot"><path class="sbP p2" pathLength="1" d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="#3a2a20" stroke-width="9" stroke-linecap="round"/><path class="sbT t2" d="M26 54l-8 6" stroke="#3a2a20" stroke-width="5" stroke-linecap="round"/></g>' +
+          "</g></g>" +
+          '<g class="sbDots"><rect x="41" y="50" width="38" height="20" rx="10" fill="#fff8f3" stroke="var(--c)" stroke-width="2"/><circle cx="51" cy="60" r="3.4" fill="var(--c)"/><circle cx="60" cy="60" r="3.4" fill="var(--c)"/><circle cx="69" cy="60" r="3.4" fill="var(--c)"/></g>', "sb");
+      }
+    },
     monkey: {
       name: "قرد مبرمج", art: function () { return svg("0 0 120 120", '<g class="headG">' + monkeyHeadParts() + "</g>", "face"); }, launcher: monkeyFull, tall: true
     }
@@ -627,6 +643,45 @@ button{font:inherit;cursor:pointer;color:inherit}
 @keyframes mkWave{0%,40%,100%{transform:rotate(0)}48%{transform:rotate(-130deg)}54%{transform:rotate(-106deg)}60%{transform:rotate(-132deg)}66%{transform:rotate(-106deg)}72%{transform:rotate(-130deg)}82%{transform:rotate(0)}}
 .bubbleBtn.jump .mkWave{animation:none;transform:rotate(-140deg)}
 
+/* Sellybot logo tile */
+.art.sb{overflow:visible}
+.art.sb .sbS,.art.sb .sbTop,.art.sb .sbBot,.art.sb .sbDots,.art.sb .sbGlow{transform-box:view-box;transform-origin:60px 60px}
+.art.sb .sbRing{opacity:0}
+.art.sb .sbDots{opacity:0;transform:scale(.3);transition:opacity .25s,transform .4s cubic-bezier(.34,1.56,.64,1)}
+.art.sb .sbDots circle{transform-box:fill-box;transform-origin:center}
+.w.dark .art.sb .sbTile,.w.dark .art.sb .sbDots rect{fill:#2a1f18}
+.w.dark .art.sb .sbBot path{stroke:#f4ebe2}
+.bubbleBtn .art.sb .sbRing{opacity:1;animation:sbOrbit 3.6s linear infinite}
+.bubbleBtn .art.sb .sbRing.r2{animation-duration:5.4s;animation-direction:reverse}
+.bubbleBtn .art.sb .sbGlow{opacity:0;animation:sbRipple 2.8s ease-out 1.6s infinite}
+.bubbleBtn .art.sb .sbP{stroke-dasharray:1 1.02;animation:sbDraw .8s cubic-bezier(.6,0,.3,1) .45s both}
+.bubbleBtn .art.sb .sbP.p2{animation-delay:.85s}
+.bubbleBtn .art.sb .sbT{transform-box:fill-box;transform-origin:0 100%;animation:sbTail .45s cubic-bezier(.34,1.56,.64,1) 1.15s both}
+.bubbleBtn .art.sb .sbT.t2{transform-origin:100% 0;animation-delay:1.55s}
+.bubbleBtn .art.sb .sbS{animation:sbSync 6.5s cubic-bezier(.68,-.35,.27,1.35) 3s infinite}
+.bubbleBtn .art.sb .sbTop,.bubbleBtn .art.sb .sbBot{transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.talking .art.sb .sbTop{animation:sbTalkT .32s ease-in-out infinite alternate}
+.talking .art.sb .sbBot{animation:sbTalkB .32s ease-in-out infinite alternate}
+.av.thinking .art.sb .sbS,.hdr.thinking .art.sb .sbS{animation:sbSpin .9s cubic-bezier(.5,.1,.5,.9) infinite}
+@media (hover:hover){
+  .bubbleBtn:hover .art.sb .sbS{animation-play-state:paused}
+  .bubbleBtn:hover .art.sb .sbTop{transform:translate(-3px,-9px)}
+  .bubbleBtn:hover .art.sb .sbBot{transform:translate(3px,9px)}
+  .bubbleBtn:hover .art.sb .sbDots{opacity:1;transform:none}
+  .bubbleBtn:hover .art.sb .sbDots circle{animation:sbDot .9s ease-in-out infinite}
+  .bubbleBtn:hover .art.sb .sbDots circle:nth-of-type(2){animation-delay:.15s}
+  .bubbleBtn:hover .art.sb .sbDots circle:nth-of-type(3){animation-delay:.3s}
+}
+@keyframes sbOrbit{to{stroke-dashoffset:-100}}
+@keyframes sbRipple{0%{opacity:.26;transform:scale(1)}100%{opacity:0;transform:scale(1.32)}}
+@keyframes sbDraw{0%{stroke-dashoffset:1}100%{stroke-dashoffset:0}}
+@keyframes sbTail{0%{transform:scale(0)}100%{transform:none}}
+@keyframes sbSync{0%,78%{transform:rotate(0)}92%,100%{transform:rotate(360deg)}}
+@keyframes sbSpin{to{transform:rotate(360deg)}}
+@keyframes sbTalkT{to{transform:translate(-2px,-3px)}}
+@keyframes sbTalkB{to{transform:translate(2px,3px)}}
+@keyframes sbDot{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
 /* ----- launcher (bubble mode) ----- */
 .launcher{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));z-index:2147483000;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}
 .launcher.hide{transform:scale(0) rotate(-20deg);opacity:0;pointer-events:none}
@@ -714,6 +769,8 @@ button{font:inherit;cursor:pointer;color:inherit}
 .av.thinking{animation:think 1.2s ease-in-out infinite}
 @keyframes think{0%,100%{transform:rotate(0)}50%{transform:rotate(-12deg) translateY(-2px)}}
 .m{max-width:78%;padding:10px 14px;border-radius:18px;word-wrap:break-word;position:relative;overflow:hidden}
+.m a{color:var(--c3);font-weight:600;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.w.dark .m a{color:var(--c2)}
 .u{background:linear-gradient(135deg,var(--c),var(--c2));color:var(--on);border-bottom-right-radius:6px;white-space:pre-wrap;box-shadow:0 6px 16px rgba(0,0,0,.12)}
 .a{background:var(--bot);border:1px solid var(--line);border-bottom-left-radius:6px}
 .a p{margin:0 0 6px}.a p:last-child{margin:0}
@@ -774,7 +831,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
 
   if (ART_ONLY) {
     window.StoreChatArt = {
-      styles: Object.keys(STYLES).map(function (k) { return { id: k, name: STYLES[k].name }; }),
+      styles: Object.keys(STYLES).filter(function (k) { return !STYLES[k].hidden; }).map(function (k) { return { id: k, name: STYLES[k].name }; }),
       // Renders one style's drawing into an element, isolated in its own Shadow DOM with the animations.
       render: function (el, id, color) {
         var r = el.shadowRoot || el.attachShadow({ mode: "open" });
@@ -902,7 +959,19 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
 
   // ---------------------------------------------------------------- helpers
   function esc(s) { return s.replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function inline(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>"); }
+  function fmt(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>"); }
+  // links the assistant sends ([text](https://...) or a bare https://...) open in a new tab; the rest is escaped text
+  function inline(s) {
+    s = s.replace(/\*\*(https?:\/\/[^\s*]+)\*\*/g, "$1");
+    var re = /\[([^\]\n]{1,120})\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"'`]+)/g, out = "", last = 0, m;
+    while ((m = re.exec(s))) {
+      var url = m[2] || m[3], tail = "";
+      if (!m[1]) { var t = url.match(/[.,،؛:!?؟)\]»*]+$/); if (t) { tail = t[0]; url = url.slice(0, -tail.length); } }
+      out += fmt(s.slice(last, m.index)) + '<a href="' + esc(url) + '" target="_blank" rel="noopener nofollow">' + (m[1] ? fmt(m[1]) : esc(url)) + "</a>" + fmt(tail);
+      last = m.index + m[0].length;
+    }
+    return out + fmt(s.slice(last));
+  }
   function md(text) {
     var out = [], list = false;
     text.split("\n").forEach(function (line) {
@@ -967,8 +1036,10 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   function finishBot(bot) { bot.bubble.classList.remove("streaming"); talk(bot, false); bot.av.classList.remove("thinking"); bot.bubble.classList.add("done"); sparkle(bot.row); wiggle(); }
 
   // ---------------------------------------------------------------- texts
-  var RIWAQ = STORE === "riwaq";
-  var HELLO = RIWAQ
+  var RIWAQ = STORE === "riwaq", SELLY = STORE === "sellybot";
+  var HELLO = SELLY
+    ? ["أهلاً! 👋<br>عايز تعرف Sellybot بيعمل إيه؟", "عندك متجر؟ 🛍️<br>خلّيني أرد على زباينك بدالك", "اسألني عن الباقات والأسعار 💎", "أنا نفسي مساعد Sellybot 😉<br>جرّبني دلوقتي"]
+    : RIWAQ
     ? ["أهلاً! 👋<br>محتاج مساعدة في التنظيف؟", "بقعة عنيدة؟ 😤<br>سيبهالي أنا!", "اسألني عن أي منتج 🫧<br>مش بعضّ والله 😄", "ريحة رطوبة؟ 🤢<br>عندي الحل!"]
     : ["أهلاً! 👋<br>محتاج مساعدة؟", "عندك سؤال؟ 🤔<br>اسألني!", "أنا هنا عشان أساعدك 😊", "اسألني أي حاجة<br>مش بعضّ والله 😄"];
   $(".helloTxt").innerHTML = HELLO[0];
@@ -985,6 +1056,22 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   }
 
   // ---------------------------------------------------------------- config from the server
+  // window.storeChat.open("question?") from the page around the chat (e.g. a "try the assistant" button); .remove() takes the chat away
+  var welcomeP = null;
+  var pageApi = {
+    store: STORE,
+    open: function (q) {
+      if (MODE !== "page" && $(".chat").classList.contains("closed")) openChat();
+      if (q) setTimeout(function () { Promise.resolve(welcomeP || ready).then(function () { ask(String(q).slice(0, 600)); }); }, MODE === "page" ? 0 : 320);
+    },
+    remove: function () {
+      host.remove(); delete LOADED[STORE];
+      if (window.storeChats) delete window.storeChats[STORE];
+      if (window.storeChat === pageApi) window.storeChat = null;
+    }
+  };
+  window.storeChats = window.storeChats || {}; window.storeChats[STORE] = pageApi; window.storeChat = pageApi;
+
   var ready = (async function () {
     try {
       var r = await fetch(API, { cache: "no-store" });
@@ -997,7 +1084,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
       }
       if (MODE === "bubble" && !PREVIEW && (r.status === 403 || r.status === 404)) {
         // Not set up for this website (domain not added, store stopped or wrong id): stay hidden instead of showing a broken chat.
-        host.remove();
+        pageApi.remove();
         if (window.console) console.warn("[store chat] Hidden: " + (r.status === 404 ? "store id '" + STORE + "' was not found." : "add " + location.origin + " to the store's domains in the dashboard (Add to your store tab), or the store is paused."));
         return false;
       }
@@ -1071,7 +1158,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
       $(".hello").hidden = true;
       var badge = $(".badge"); if (badge) badge.remove();
       setTimeout(function () { $(".q").focus(); }, 350);
-      if (!opened) { opened = true; welcome(); }
+      if (!opened) { opened = true; welcomeP = welcome(); }
     }, 240);
   }
   function closeChat() {
