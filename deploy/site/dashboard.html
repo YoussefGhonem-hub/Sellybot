@@ -663,6 +663,33 @@
   .phone .seg{margin:0 0 10px;background:#222;border-color:#333}
   .phone .seg button{color:#aaa}
   .phone .seg button.on{background:#3a3a3a;color:#fff}
+  .look-side{display:flex;flex-direction:column;gap:12px;min-width:0}
+  /* on a computer the look tab fits the screen: the page doesn't scroll, only the bubble-shapes card does, and the preview fills the height.
+     (A very short window still scrolls the page a little; a browser without :has() keeps the long page.) */
+  @media (min-width:981px){
+    #appView:has(> [data-panel="look"]:not([hidden])){display:flex;flex-direction:column;height:calc(100vh - 65px);height:calc(100dvh - 65px);padding-bottom:16px}   /* 65 = the navbar and its border */
+    #appView:has(> [data-panel="look"]:not([hidden])) > .banner{flex:none}
+    [data-panel="look"]:not([hidden]){flex:1;min-height:0;display:flex;flex-direction:column}
+    [data-panel="look"] .page-title{flex:none}
+    [data-panel="look"] .look{flex:1;min-height:0;max-height:940px;align-items:stretch}
+    /* the chat name and the colour side by side on top, the shapes card takes all the height under them */
+    .look-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto minmax(0,1fr);min-height:0}
+    .look-side > .look-shapes{grid-column:1/-1;grid-row:2;min-height:250px;display:flex;flex-direction:column}
+    .look-side .colorrow{flex-wrap:wrap}
+    @media (min-width:1200px){   /* a wide screen: the page gets wider here, chat name + colour in a column, the shapes card the full height next to it */
+      #appView:has(> [data-panel="look"]:not([hidden])){max-width:1440px}
+      .look-side{grid-template-columns:300px minmax(0,1fr)}
+      .look-side > .card{grid-column:1}
+      .look-side > .look-shapes{grid-column:2;grid-row:1/-1}
+      .look-side > .card:last-child{align-self:start;max-height:100%;overflow-y:auto;scrollbar-width:thin}   /* a short window: the colour card scrolls a little instead of the page */
+    }
+    .look-shapes > :not(.look-scroll){flex:none}
+    .look-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;margin:0 -10px;padding:4px 10px 0}
+    .look-scroll > .group-title:first-of-type{margin-top:2px}
+    .look-scroll:after{content:"";position:sticky;bottom:0;display:block;height:24px;background:linear-gradient(transparent,var(--card));pointer-events:none}   /* a soft fade at the bottom while there's more below; at the end it sits under the last row */
+    .phone{position:relative;top:0;display:flex;flex-direction:column;min-height:0}
+    .phone iframe{flex:1;height:auto;min-height:0}
+  }
 
   /* ---------- install ---------- */
   /* code block (looks like a small code editor window) */
@@ -2048,16 +2075,17 @@
     <div class="page-title"><div><h2>شكل الشات</h2><p>اختار شكل الفقاعة ولون الشات اللي يناسب موقعك. التغيير بيظهر في المعاينة على طول.</p></div>
       <button class="btn" id="saveLook">حفظ الشكل</button></div>
     <div class="look">
-      <div>
-        <div class="card" style="margin-bottom:12px">
+      <div class="look-side">
+        <div class="card">
           <h3>اسم الشات</h3>
           <p class="sub">الاسم اللي بيظهر فوق في الشات جنب صورة المساعد، وفي عنوان صفحة الشات.</p>
           <input type="text" id="chatTitle" maxlength="80" aria-label="اسم الشات">
           <div class="hint">سيبه فاضي عشان يظهر اسم المتجر: <b id="chatTitleDef"></b>. مثلًا: "خدمة عملاء رِواق" أو "اسأل رِواق 💬".</div>
         </div>
-        <div class="card">
+        <div class="card look-shapes">
           <h3>شكل الفقاعة</h3>
           <p class="sub">الفقاعة اللي بتظهر في ركن موقعك، والزبون بيدوس عليها عشان يفتح الشات.</p>
+          <div class="look-scroll" id="lookScroll">
           <!-- the store's own logo as the bubble (api/logo.ashx): upload / replace / remove, inside a white circle or filling it -->
           <div class="group-title">🖼️ لوجو متجرك</div>
           <div class="logo-pick">
@@ -2076,9 +2104,10 @@
           <div class="group-title">أشكال كلاسيك</div><div class="styles" id="stylesStd"></div>
           <div class="group-title">أشكال مضحكة 😄</div><div class="styles" id="stylesFun"></div>
           <div class="group-title">تنفع لأي نوع متجر</div><div class="styles" id="stylesAny"></div>
+          </div>
           <button type="button" class="lk-strip" id="lockLook" hidden></button>
         </div>
-        <div class="card" style="margin-top:12px">
+        <div class="card">
           <h3>اللون الأساسي</h3>
           <p class="sub">اختار لون قريب من لون موقعك أو اللوجو. لون الكلام جوه الشات بيتظبط لوحده عشان يبقى واضح.</p>
           <div class="swatches" id="swatches"></div>
