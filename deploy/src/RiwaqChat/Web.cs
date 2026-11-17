@@ -68,7 +68,51 @@ namespace RiwaqChat
         // State-changing calls must come from our own pages (a plain cross-site form can't add this header).
         public static bool CsrfOk(HttpRequest req) { return req.Headers["X-Requested-With"] == "fetch"; }
 
-        public static string Ip(HttpRequest req) { return req.UserHostAddress ?? "unknown"; }
+        // The visitor's address (rate limits, logs). Behind Cloudflare every request reaches us from a Cloudflare server and the
+        // visitor's own address is in the CF-Connecting-IP header. The header is believed only when the request really comes
+        // from Cloudflare (its published ranges, https://www.cloudflare.com/ips): anyone else could write any address in it
+        // and get a fresh rate-limit bucket on every request. Without Cloudflare in front it's simply the connecting address.
+        public static string Ip(HttpRequest req) { return ClientIp(req.UserHostAddress, req.Headers["CF-Connecting-IP"]); }
+
+        public static string ClientIp(string peer, string cfConnectingIp)
+        {
+            if (string.IsNullOrEmpty(peer)) return "unknown";
+            System.Net.IPAddress real;
+            if (!string.IsNullOrEmpty(cfConnectingIp) && FromCloudflare(peer) && System.Net.IPAddress.TryParse(cfConnectingIp.Trim(), out real))
+                return real.ToString();
+            return peer;
+        }
+
+        // Checked 2026-11-17. Cloudflare changes these rarely and announces it in advance; a missing range only means the
+        // visitors it carries share that Cloudflare server's address for rate limits until it's added here.
+        static readonly string[] CloudflareRanges = {
+            "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18", "108.162.192.0/18",
+            "190.93.240.0/20", "188.114.96.0/20", "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
+            "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+            "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32" };
+        static readonly KeyValuePair<byte[], int>[] CloudflareNets = CloudflareRanges.Select(r =>
+        {
+            var p = r.Split('/');
+            return new KeyValuePair<byte[], int>(System.Net.IPAddress.Parse(p[0]).GetAddressBytes(), int.Parse(p[1]));
+        }).ToArray();
+
+        public static bool FromCloudflare(string address)
+        {
+            System.Net.IPAddress ip;
+            if (!System.Net.IPAddress.TryParse(address, out ip)) return false;
+            if (ip.IsIPv4MappedToIPv6) ip = ip.MapToIPv4();
+            var b = ip.GetAddressBytes();
+            foreach (var net in CloudflareNets)
+            {
+                var n = net.Key; int bits = net.Value;
+                if (n.Length != b.Length) continue;
+                int whole = bits / 8, rest = bits % 8, i = 0;
+                for (; i < whole && n[i] == b[i]; i++) { }
+                if (i < whole) continue;
+                if (rest == 0 || ((n[whole] ^ b[whole]) & (0xFF << (8 - rest))) == 0) return true;
+            }
+            return false;
+        }
 
         // ---------- rate limits ----------
         // One bucket per key (e.g. "login:<ip>") with the times of its recent hits. Every few minutes the buckets whose hits
