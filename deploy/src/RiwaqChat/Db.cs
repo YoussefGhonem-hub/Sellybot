@@ -142,7 +142,7 @@ namespace RiwaqChat
             {
                 lock (Lock)
                 {
-                    if (!ensured) { using (var cmd = new SqlCommand(Schema, c)) cmd.ExecuteNonQuery(); ensured = true; SiteBot.Ensure(c); Jobs.Start(); }
+                    if (!ensured) { using (var cmd = new SqlCommand(Schema, c)) cmd.ExecuteNonQuery(); ensured = true; PlanGate.Seed(c); SiteBot.Ensure(c); Jobs.Start(); }
                 }
             }
             return c;

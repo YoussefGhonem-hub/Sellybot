@@ -3890,6 +3890,7 @@
   };
   $("ordersToggle").onchange = async function () {
     var t = this, want = t.checked;
+    if (want && locks.tracking) { t.checked = false; openLock("tracking"); return; }   // order tracking isn't in this plan
     try { await api("api/knowledge.ashx?action=shopify-orders", { method: "POST", json: { enabled: want } }); await refreshMe(); toast(want ? "تتبع الأوردرات اتفعّل ✅" : "تتبع الأوردرات اتقفل"); }
     catch (err) { t.checked = !want; setMsg("shopMsg", err.message); }
   };
@@ -4173,6 +4174,7 @@
   };
   $("eoOrdersToggle").onchange = async function () {
     var t = this, want = t.checked;
+    if (want && locks.tracking) { t.checked = false; openLock("tracking"); return; }
     try { await api("api/easyorders.ashx?action=orders", { method: "POST", json: { enabled: want } }); await refreshMe(); toast(want ? "تتبع الأوردرات اتفعّل ✅" : "تتبع الأوردرات اتقفل"); }
     catch (err) { t.checked = !want; setMsg("eoMsg", err.message); }
   };
@@ -4457,6 +4459,14 @@
       chat: [["cu", "عايز 50 قطعة للمحل عندي، فيه سعر جملة؟", "3:40", 0.5], ["typing", 1.6, 3.0],
         ["bot", "طلبات الجملة صاحب المتجر بيتابعها بنفسه 🙏 بلّغته دلوقتي وهيكلّمك هنا في أقرب وقت.", "3:40", 3.0],
         ["cu", "تمام مستني 👍", "3:41", 5.0]] },
+    tracking: { ac: "#e8774a", ac2: "#c95a2e", ph: "#7a3a1c", av: "📦", what: "تتبع الأوردرات",
+      head: 'الزبون يسأل <span class="g">«طلبي فين؟»</span> ويعرف في ثانية',
+      p: "المساعد يجيب حالة أوردر الزبون من متجرك على Shopify أو EasyOrders: اتشحن ولا لأ، مع أنهي شركة، وهيوصل امتى. من غير ما تفتح موبايلك ولا ترد بنفسك.",
+      list: [["📦", "حالة الأوردر وشركة الشحن ولينك التتبع"], ["🔒", "بيتأكد من رقم الأوردر والموبايل قبل ما يقول أي حاجة"], ["⏱️", "أسئلة «طلبي فين؟» مش هتاخد من وقتك تاني"]],
+      chips: ["📦 #1048", "🚚 اتشحن", "🔗 لينك التتبع"],
+      chat: [["cu", "طلبي رقم #1048 وصل لفين؟", "8:15", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "ابعتلي رقم الموبايل اللي طلبت بيه عشان أتأكد إنه طلبك 🙏", "8:15", 3.0],
+        ["cu", "ده رقمي اللي طلبت بيه 👍", "8:16", 5.0], ["typing", 5.9, 7.0], ["bot", "طلبك اتشحن امبارح 🚚 وهيوصلك بكرة إن شاء الله. ده لينك التتبع 👇", "8:16", 7.0]] },
     bothstores: { ac: "#22c55e", ac2: "#6f9e35", ph: "#5a3a14", av: "🔗", what: "Shopify و EasyOrders مع بعض",
       head: 'اربط <span class="g">Shopify و EasyOrders</span> مع بعض',
       p: "باقتك بتسمح بمتجر واحد. لو بتبيع على الاتنين (مثلًا Shopify للبراند و EasyOrders لصفحات الطلب)، رقّي باقتك والمساعد يرد من منتجات المتجرين ويتابع أوردراتهم. داتا متجرين في كل رد بتستهلك من الرصيد أكتر، عشان كده الميزة دي في باقة أعلى.",

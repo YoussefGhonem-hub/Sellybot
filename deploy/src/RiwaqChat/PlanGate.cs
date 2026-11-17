@@ -1,8 +1,13 @@
 // Features that only some plans include. The super admin picks, per feature, the lowest plan that has it
-// (AppSettings "MinPlan_<feature>"). WhatsApp isn't gated by plan: it's a monthly service added to any plan (WaAccount.HasService).
-// No minimum set = the feature is open to every store, which is how everything worked before.
-//   shopify : linking a Shopify store (quick or full) and order tracking in the chat
-//   easyorders : linking an EasyOrders store, its order tracking and order confirmation (follows shopify's minimum until set)
+// (AppSettings "MinPlan_<feature>"; Seed() set them once to match the pricing-page cards). WhatsApp isn't gated by plan:
+// it's a monthly service added to any plan (WaAccount.HasService), asked for from «باقتي».
+// Who gets what (the user's rule, 2026-11-17):
+//   - the free trial (while it lasts): every feature;
+//   - a store on an active plan: the features whose minimum is its plan or a lower one (no minimum = every plan);
+//   - no active plan (trial over, or the plan ended): every feature is locked.
+//   shopify : linking a Shopify store (quick or full)
+//   easyorders : linking an EasyOrders store and its order confirmation (follows shopify's minimum until set)
+//   tracking: order tracking in the chat ("where's my order?"), Shopify and EasyOrders
 //   bothstores : Shopify AND EasyOrders linked together (one of them is the norm: two catalogs cost more of the quota);
 //                until the super admin picks a minimum it's the top active plan, never "open to everyone"
 //   files   : uploading PDF, Word and Excel files (typed text, .txt, .csv and .md stay open)
@@ -22,15 +27,15 @@ namespace RiwaqChat
 {
     public static class PlanGate
     {
-        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "bothstores", "delivery", "carts", "waimages", "restock", "report", "handoff" };
+        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "tracking", "bothstores", "delivery", "carts", "waimages", "restock", "report", "handoff" };
         public static readonly HashSet<string> FreeStyles = new HashSet<string> { "classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear" };
         public static readonly HashSet<string> FreeColors = new HashSet<string> { "#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222" };
         public static readonly HashSet<string> LockedFileTypes = new HashSet<string> { "pdf", "docx", "xlsx" };
         public const string DefaultStyle = "bear", DefaultColor = "#e8774a";
 
         static readonly Dictionary<string, string> Names = new Dictionary<string, string> {
-            { "shopify", "ربط Shopify وتتبع الأوردرات" }, { "files", "رفع ملفات PDF و Word و Excel" }, { "styles", "أشكال الشات والألوان" }, { "chatorders", "الطلب من الشات" },
-            { "easyorders", "ربط EasyOrders وتتبع الأوردرات" },
+            { "shopify", "ربط Shopify" }, { "tracking", "تتبع الأوردرات في الشات" }, { "files", "رفع ملفات PDF و Word و Excel" }, { "styles", "أشكال الشات والألوان" }, { "chatorders", "الطلب من الشات" },
+            { "easyorders", "ربط EasyOrders" },
             { "bothstores", "ربط Shopify و EasyOrders مع بعض" }, { "delivery", "رسالة يوم التوصيل على واتساب" },
             { "carts", "استرجاع السلة المتروكة على واتساب" }, { "waimages", "المساعد يفهم الصور على واتساب" }, { "restock", "«بلّغني لما يرجع»" },
             { "report", "التقرير الأسبوعي على واتساب" }, { "handoff", "التحويل ليك لما الزبون يحتاجك" } };
@@ -44,6 +49,27 @@ namespace RiwaqChat
             // both stores at once is an upsell: until a minimum is picked, only the top active plan has it
             if (feature == "bothstores") { var top = Billing.Plans(c, true).LastOrDefault(p => p.IsActive); return top != null ? top.Id : 0; }
             return 0;
+        }
+
+        // Once: each feature's minimum plan as the pricing-page cards say (plans by rank: الأساسية, المتقدمة, الاحترافية).
+        // The super admin can change any of them afterwards; this never runs again.
+        public static void Seed(SqlConnection c)
+        {
+            try
+            {
+                if (Billing.Get(c, "PlanGateSeed") == "1") return;
+                var plans = Billing.Plans(c, false);
+                if (plans.Count == 0) return;
+                Func<int, string> rank = i => plans[Math.Min(i, plans.Count - 1)].Id.ToString();
+                var min = new Dictionary<string, string> {
+                    { "files", rank(0) }, { "styles", rank(0) },
+                    { "carts", rank(0) }, { "waimages", rank(0) }, { "restock", rank(0) }, { "report", rank(0) }, { "handoff", rank(0) },
+                    { "shopify", rank(1) }, { "easyorders", rank(1) }, { "chatorders", rank(1) }, { "delivery", rank(1) },
+                    { "tracking", rank(2) }, { "bothstores", rank(2) } };
+                foreach (var kv in min) Billing.Set(c, "MinPlan_" + kv.Key, kv.Value);
+                Billing.Set(c, "PlanGateSeed", "1");
+            }
+            catch (Exception ex) { Log.Error(ex); }
         }
 
         // ---- one store system per plan: Shopify or EasyOrders; both together need "bothstores" ----
@@ -71,10 +97,10 @@ namespace RiwaqChat
         public static bool Allows(SqlConnection c, StoreInfo s, string feature, out PlanInfo offer)
         {
             offer = null;
-            if (s != null && s.IsAdmin) return true;   // the platform's own stores (Sellybot's chat) have everything
-            int minId = MinPlanId(c, feature);
-            if (minId == 0) return true;
-            return Check(c, s, minId, out offer);
+            if (s == null) return false;
+            if (s.IsAdmin) return true;   // the platform's own stores (Sellybot's chat) have everything
+            if (Billing.OnTrial(s) && !Billing.TrialEnded(c, s)) return true;   // the free trial has every feature
+            return Check(c, s, MinPlanId(c, feature), out offer);   // minimum 0 = any active plan; no active plan = locked
         }
 
         // Is the store on minId's plan or a higher one (active, not expired)? When not, offer = the plan to suggest:
@@ -132,6 +158,7 @@ namespace RiwaqChat
             {
                 if (s.ShopifyOrders && !Allows(c, s, "shopify")) s.ShopifyOrders = false;
                 if (s.EoOrders && !Allows(c, s, "easyorders")) s.EoOrders = false;
+                if ((s.ShopifyOrders || s.EoOrders) && !Allows(c, s, "tracking")) { s.ShopifyOrders = false; s.EoOrders = false; }
                 bool lockedStyle = !FreeStyles.Contains(s.BubbleStyle ?? ""), lockedColor = !FreeColors.Contains((s.BrandColor ?? "").ToLowerInvariant());
                 if ((lockedStyle || lockedColor) && !Allows(c, s, "styles"))
                 {
@@ -188,7 +215,7 @@ namespace RiwaqChat
 
         static Dictionary<string, object> AdminState(SqlConnection c)
         {
-            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify وتتبع الأوردرات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتتبع الأوردرات" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" },
+            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify" }, { "tracking", "📦 تتبع الأوردرات في الشات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتأكيد طلباته" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" },
                 { "carts", "🛒 استرجاع السلة المتروكة على واتساب" }, { "waimages", "📷 المساعد يفهم الصور على واتساب" }, { "restock", "🔔 «بلّغني لما يرجع»" },
                 { "report", "📊 التقرير الأسبوعي على واتساب" }, { "handoff", "🙋 التحويل لصاحب المتجر" } };
             return new Dictionary<string, object> {

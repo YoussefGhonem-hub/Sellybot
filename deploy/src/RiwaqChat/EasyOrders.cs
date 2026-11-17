@@ -972,6 +972,7 @@ namespace RiwaqChat
                     object en; bool enabled = body.TryGetValue("enabled", out en) && en is bool && (bool)en;
                     bool gated = action == "connect" || action == "sync" || ((action == "orders" || action == "confirm" || action == "delivery") && enabled);
                     if (gated && !PlanGate.Allows(c, s, EasyOrders.Feature)) { PlanGate.Deny(res, c, s, EasyOrders.Feature); return; }
+                    if (action == "orders" && enabled && !PlanGate.Allows(c, s, "tracking")) { PlanGate.Deny(res, c, s, "tracking"); return; }
                     if (action == "delivery" && enabled && !PlanGate.Allows(c, s, Delivery.Feature)) { PlanGate.Deny(res, c, s, Delivery.Feature); return; }
                     if (action == "connect" && PlanGate.BothBlocked(c, s, "easyorders")) { PlanGate.DenyBoth(res, c, s, "easyorders"); return; }   // Shopify already linked
                     if (action != "connect" && action != "disconnect" && !EasyOrders.Connected(s)) { Web.Error(res, 400, "not_connected", "اربط متجرك على EasyOrders الأول."); return; }

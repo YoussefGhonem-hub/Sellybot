@@ -100,7 +100,7 @@ namespace RiwaqChat
                         catch (ShopifyException ex) { Web.Error(res, 400, "shopify_failed", ex.Message); return; }
                         catch (Exception ex) { Log.Error(ex); Web.Error(res, 502, "shopify_failed", "مقدرناش نوصل لـ Shopify دلوقتي. جرّب تاني كمان شوية."); return; }
 
-                        bool orders = ShopifyAdmin.Has(tok.Scopes, "read_orders");
+                        bool orders = ShopifyAdmin.Has(tok.Scopes, "read_orders") && PlanGate.Allows(c, s, "tracking");   // order tracking is on when the plan has it
                         using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyShop=@sh, ShopifyClientId=@ci, ShopifySecret=@se, ShopifyScopes=@sc, ShopifyOrders=@o, ShopifyWebhooks=0 WHERE Id=@s",
                             "@sh", shop, "@ci", clientId, "@se", Secrets.Protect(secret), "@sc", tok.Scopes, "@o", orders, "@s", s.Id)) cmd.ExecuteNonQuery();
                         var saveErr = Shopify.Save(c, s.Id, r);
@@ -124,6 +124,7 @@ namespace RiwaqChat
                     {
                         var body = Web.Body(req, 500);
                         object en; bool on = body.TryGetValue("enabled", out en) && en is bool && (bool)en;
+                        if (on && !PlanGate.Allows(c, s, "tracking")) { PlanGate.Deny(res, c, s, "tracking"); return; }
                         if (on && !ShopifyAdmin.Has(s.ShopifyScopes, "read_orders")) { Web.Error(res, 400, "no_scope", "التطبيق ناقصه صلاحية read_orders. ضيفها في Scopes واعمل Release للنسخة ووافق عليها، وبعدين اربط تاني."); return; }
                         using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ShopifyOrders=@o WHERE Id=@s", "@o", on, "@s", s.Id)) cmd.ExecuteNonQuery();
                         Db.BumpVersion(c, s.Id);   // the assistant's instructions change with it

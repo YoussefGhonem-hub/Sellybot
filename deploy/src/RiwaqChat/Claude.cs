@@ -78,7 +78,8 @@ namespace RiwaqChat
         {
             idx = Search.For(c, s);
             Tuple<int, string> hit;
-            if (PromptCache.TryGetValue(s.Id, out hit) && hit.Item1 == s.DataVersion) return hit.Item2;
+            int ver = s.DataVersion * 2 + (OrderTracking.On(s) ? 1 : 0);   // the plan can switch order tracking off without a data change
+            if (PromptCache.TryGetValue(s.Id, out hit) && hit.Item1 == ver) return hit.Item2;
 
             var sb = new StringBuilder();
             if (string.IsNullOrWhiteSpace(s.BotName)) sb.Append("انت المساعد اللطيف بتاع ").Append(s.Name).Append(" (بتتكلم باسم ").Append(s.Name).Append(" نفسه).\n");
@@ -126,7 +127,7 @@ namespace RiwaqChat
             }
 
             var prompt = sb.ToString();
-            PromptCache[s.Id] = Tuple.Create(s.DataVersion, prompt);
+            PromptCache[s.Id] = Tuple.Create(ver, prompt);
             return prompt;
         }
 

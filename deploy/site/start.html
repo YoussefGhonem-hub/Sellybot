@@ -452,6 +452,35 @@
     .js .rv{opacity:1;transform:none}
     html{scroll-behavior:auto}
   }
+  /* WhatsApp: talk to us directly (nav, hero, floating button, final band, footer). The number follows the site's setting. */
+  .icon-btn.wa-nav{color:#fff;background:var(--wa);border-color:transparent;box-shadow:0 8px 20px rgba(37,211,102,.3)}
+  .icon-btn.wa-nav svg{width:21px;height:21px}
+  @media (max-width:520px){.icon-btn.wa-nav{display:none}}
+  .num{direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+  .hero-wa{display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:7px 16px 7px 7px;border-radius:999px;background:var(--card);border:1.5px solid var(--line);
+    color:var(--ink);text-decoration:none;font-size:14.5px;line-height:1.4;box-shadow:var(--shadow);transition:transform .25s,border-color .25s}
+  .hero-wa:hover{transform:translateY(-2px);border-color:var(--wa)}
+  .hero-wa i{position:relative;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--wa);color:#fff;flex:none}
+  .hero-wa i svg{width:20px;height:20px}
+  .hero-wa b{font-weight:700;letter-spacing:.3px}
+  .hero-txt>.hero-wa{animation-delay:1s}
+  .wa-float{position:fixed;left:max(18px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));z-index:50;display:flex;align-items:center;gap:10px;direction:ltr;
+    text-decoration:none;opacity:0;transform:translateY(24px) scale(.7);pointer-events:none;transition:opacity .4s,transform .6s cubic-bezier(.34,1.56,.64,1)}
+  .wa-float.on{opacity:1;transform:none;pointer-events:auto}
+  .wa-float .ic{position:relative;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:var(--wa);color:#fff;box-shadow:0 12px 28px rgba(37,211,102,.42);transition:transform .25s}
+  .wa-float:hover .ic{transform:scale(1.08) rotate(-8deg)}
+  .wa-float .ic svg{width:31px;height:31px}
+  .wa-float .ic:before,.wa-float .ic:after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--wa);animation:waPulse 2.6s ease-out infinite}
+  .wa-float .ic:after{animation-delay:1.3s}
+  .wa-float .lb{direction:rtl;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:7px 13px;font-size:14px;line-height:1.35;box-shadow:var(--shadow);text-align:right}
+  .wa-float .lb small{display:block;font-size:12.5px;color:var(--muted)}
+  @keyframes waPulse{0%{transform:scale(1);opacity:.65}100%{transform:scale(1.65);opacity:0}}
+  @media (max-width:640px){.wa-float .lb{display:none}.wa-float .ic{width:54px;height:54px}}
+  .final .wa-line{margin:16px 0 0;font-size:15px;opacity:.95}
+  .final .wa-line a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+  .foot-wa{display:inline-flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none;font-weight:600}
+  .foot-wa svg{width:20px;height:20px;color:var(--wa)}
+  @media (prefers-reduced-motion:reduce){.wa-float .ic:before,.wa-float .ic:after{animation:none;opacity:0}}
 </style>
 </head>
 <body>
@@ -470,6 +499,7 @@
     <a class="link" href="#features">المميزات</a>
     <a class="link" href="#pricing">الأسعار</a>
     <a class="link" href="#faq">الأسئلة</a>
+    <a class="icon-btn wa-nav" data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%AC%D8%A7%D9%8A%20%D9%85%D9%86%20%D8%B5%D9%81%D8%AD%D8%A9%20Sellybot%20%D9%88%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1" target="_blank" rel="noopener" aria-label="كلّمنا على واتساب" title="كلّمنا على واتساب"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></a>
     <button class="icon-btn" id="themeBtn" type="button" aria-label="الوضع الفاتح / الغامق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
     <a class="btn primary" href="dashboard.html?signup=1">ابدأ مجانًا</a>
   </div>
@@ -490,6 +520,7 @@
           <button class="btn ghost" type="button" data-chat="">جرّب المساعد دلوقتي 💬</button>
         </div>
         <ul class="trust"><li>شهر تجربة مجانًا</li><li>من غير كارت</li><li>حسابك جاهز في دقيقة</li></ul>
+        <a class="hero-wa" data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%AC%D8%A7%D9%8A%20%D9%85%D9%86%20%D8%B5%D9%81%D8%AD%D8%A9%20Sellybot%20%D9%88%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1" target="_blank" rel="noopener"><i><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></i><span>عندك سؤال؟ كلّمنا مباشرة على واتساب <b class="num" data-wa-num>0122 939 1155</b></span></a>
       </div>
 
       <div class="vis" id="demo">
@@ -773,12 +804,15 @@
       <p>اعمل حسابك في دقيقة، وجرّب المساعد على داتا متجرك شهر كامل مجانًا.</p>
       <div class="row2">
         <a class="btn light magnet" href="dashboard.html?signup=1">🚀 ابدأ تجربتك المجانية</a>
-        <a class="btn wa" id="waCta" href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1%20%D8%B9%D9%86%20Sellybot" target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>كلّمنا على واتساب</a>
+        <a class="btn wa" id="waCta" data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1%20%D8%B9%D9%86%20Sellybot" target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>كلّمنا على واتساب</a>
       </div>
+      <p class="wa-line">📱 أو كلّمنا مباشرة على واتساب: <a data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%AC%D8%A7%D9%8A%20%D9%85%D9%86%20%D8%B5%D9%81%D8%AD%D8%A9%20Sellybot%20%D9%88%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1" target="_blank" rel="noopener"><b class="num" data-wa-num>0122 939 1155</b></a></p>
     </div>
   </div>
 </section>
 </main>
+
+<a class="wa-float" id="waFloat" data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%AC%D8%A7%D9%8A%20%D9%85%D9%86%20%D8%B5%D9%81%D8%AD%D8%A9%20Sellybot%20%D9%88%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1" target="_blank" rel="noopener" aria-label="كلّمنا على واتساب"><span class="ic"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></span><span class="lb">كلّمنا على واتساب<small class="num" data-wa-num>0122 939 1155</small></span></a>
 
 <footer>
   <div class="wrap foot">
@@ -787,6 +821,7 @@
       <b>Selly<span>bot</span></b>
     </a>
     <nav><a href="about.html">من نحن وخدماتنا</a><a href="pricing.html">الباقات والأسعار</a><a href="download.html">برنامج الكمبيوتر</a><a href="privacy.html">الخصوصية</a><a href="dashboard.html">دخول</a></nav>
+    <a class="foot-wa" data-wa href="https://wa.me/201229391155?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20%F0%9F%91%8B%20%D8%AC%D8%A7%D9%8A%20%D9%85%D9%86%20%D8%B5%D9%81%D8%AD%D8%A9%20Sellybot%20%D9%88%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%B9%D8%B1%D9%81%20%D8%A3%D9%83%D8%AA%D8%B1" target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.6 12.7-12.6S23 3 16 3zm0 23.1c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.2 1.3-4-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.1 5.2 16 5.2s10.6 4.6 10.6 10.4S21.9 26.1 16 26.1zm5.8-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2.1-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg><span>واتساب: <b class="num" data-wa-num>0122 939 1155</b></span></a>
     <span>منتج مصري · © <span id="yr">2026</span> Sellybot</span>
   </div>
 </footer>
@@ -810,6 +845,8 @@
   };
   var nav = $("nav");
   window.addEventListener("scroll", function () { nav.classList.toggle("scrolled", scrollY > 8); }, { passive: true });
+
+  setTimeout(function () { $("waFloat").classList.add("on"); }, 1400);
 
   // ---------- open the real Sellybot chat (widget.js), otherwise show the demo ----------
   document.querySelectorAll("[data-chat]").forEach(function (b) {
@@ -1007,7 +1044,8 @@
     $("plans").querySelectorAll(".rv").forEach(function (el, i) { el.style.setProperty("--d", (i * .1) + "s"); });
     observe($("plans"));
     if (d.waAddon && d.waAddon.price) { $("waPrice").textContent = fmt(d.waAddon.price); $("waPrice2").textContent = fmt(d.waAddon.price); }
-    if (d.wa && /^\d{10,15}$/.test(d.wa)) $("waCta").href = $("waCta").href.replace(/wa\.me\/\d+/, "wa.me/" + d.wa);
+    if (d.wa && /^\d{10,15}$/.test(d.wa)) document.querySelectorAll("[data-wa]").forEach(function (a) { a.href = a.href.replace(/wa\.me\/\d+/, "wa.me/" + d.wa); });
+    if (d.whatsapp && /^0\d{10}$/.test(d.whatsapp)) document.querySelectorAll("[data-wa-num]").forEach(function (n) { n.textContent = d.whatsapp.replace(/^(\d{4})(\d{3})(\d{4})$/, "$1 $2 $3"); });
   }).catch(plansFailed);
 
   // ---------- final band: a few rising sparks ----------
