@@ -498,6 +498,14 @@ namespace RiwaqChat
         // Shipping updates (out for delivery) -> the delivery-day message on WhatsApp. Needs read_fulfillments.
         public static Task<bool> RegisterDeliveryWebhook(Creds c, string siteBase) { return Subscribe(c, siteBase, "FULFILLMENT_EVENTS_CREATE"); }
 
+        // Checkouts (abandoned-cart reminder, Carts.cs) + new orders (to know a checkout became an order). Needs read_orders.
+        public static async Task<bool> RegisterCartWebhooks(Creds c, string siteBase)
+        {
+            bool ok = await Subscribe(c, siteBase, "CHECKOUTS_CREATE") & await Subscribe(c, siteBase, "CHECKOUTS_UPDATE");
+            await Subscribe(c, siteBase, "ORDERS_CREATE");   // nice to have: Carts also asks Shopify right before it sends
+            return ok;
+        }
+
         static async Task<bool> Subscribe(Creds c, string siteBase, string topic)
         {
             Uri u;
@@ -601,9 +609,10 @@ namespace RiwaqChat
                     byte[] got; try { got = Convert.FromBase64String(header); } catch { got = null; }
                     if (!Secrets.Same(expect, got)) { res.StatusCode = 401; return; }
                     string topic = (req.Headers["X-Shopify-Topic"] ?? "").ToLowerInvariant();
-                    if (topic == "orders/create") OrderConfirm.OnOrder(c, s, body);
+                    if (topic == "orders/create") { OrderConfirm.OnOrder(c, s, body); Carts.OnShopifyOrder(c, s, body); }
+                    else if (topic == "checkouts/create" || topic == "checkouts/update") Carts.OnShopifyCheckout(c, s, body);
                     else if (topic == "fulfillment_events/create") Delivery.OnShopifyEvent(s, body);
-                    else ShopifyAdmin.QueueResync(s.Id);
+                    else { ShopifyAdmin.QueueResync(s.Id); if (topic == "inventory_levels/update" || topic == "products/update") Restock.StockChanged(c, s); }
                     res.StatusCode = 200;
                 }
             }

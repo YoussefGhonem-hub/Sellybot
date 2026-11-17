@@ -470,9 +470,8 @@ END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عاي�
         public const int PauseHours = 2;            // after the owner answers a customer themselves
         static readonly TimeSpan Debounce = TimeSpan.FromSeconds(4);
         const string Fallback = "مقدرش أساعد في ده 🙏 بس اسألني عن أي حاجة تخص المتجر وأنا أساعدك.";
-        const string MediaReply = "معلش، أنا بقرأ الرسايل المكتوبة بس 🙏 اكتبلي سؤالك وأنا أرد عليك على طول.";
 
-        public class Incoming { public string Event, Instance, Chat, Text, Id; public bool FromMe, HasMedia; }
+        public class Incoming { public string Event, Instance, Chat, Text, Id, Type, MediaUrl, Mime; public bool FromMe, HasMedia; }
 
         public static Incoming Parse(JsonElement root)
         {
@@ -485,7 +484,13 @@ END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عاي�
             x.Text = WaJson.S(msg, "text", "body", "caption", "content");
             x.Id = WaJson.S(msg, "id", "message_id", "messageId");
             string type = (WaJson.S(msg, "type", "message_type") ?? "").ToLowerInvariant();
-            x.HasMedia = (WaJson.B(msg, "hasMedia", "has_media") ?? false) || new[] { "image", "video", "audio", "ptt", "voice", "document", "sticker" }.Contains(type);
+            x.Type = type;
+            // a picture / voice note / file: payload.media { url, mimetype } (Wapilot's v2 contract), or flat fields from other senders
+            var media = WaJson.O(msg, "media");
+            if (media.HasValue) { x.MediaUrl = WaJson.S(media.Value, "url", "link"); x.Mime = WaJson.S(media.Value, "mimetype", "mime_type", "mimeType"); }
+            x.MediaUrl = x.MediaUrl ?? WaJson.S(msg, "media_url", "mediaUrl");
+            x.Mime = x.Mime ?? WaJson.S(msg, "mimetype", "mime_type");
+            x.HasMedia = (WaJson.B(msg, "hasMedia", "has_media") ?? false) || !string.IsNullOrEmpty(x.MediaUrl) || new[] { "image", "video", "audio", "ptt", "voice", "document", "sticker" }.Contains(type);
             return x;
         }
 
@@ -509,23 +514,28 @@ END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عاي�
                 return true;
             }
 
-            if (text.Length == 0)
+            // a picture the assistant can look at (WaImages): kept with the message, fetched when it answers
+            bool image = m.HasMedia && !string.IsNullOrEmpty(m.MediaUrl) && WaImages.IsImage(m.Type, m.Mime) && WaImages.SafeUrl(m.MediaUrl)
+                         && s.WaEnabled && WaAccount.HasService(s) && PlanGate.Allows(c, s, WaImages.Feature);
+            if (text.Length == 0 && !image)
             {
                 if (!m.HasMedia) return true;   // reactions, receipts…
                 if (!s.WaEnabled || !WaAccount.HasService(s) || !Web.Allow("wa-media:" + s.Id + ":" + key, 1, TimeSpan.FromHours(1))) return true;
                 var token = WaAccount.Token(c, s);
+                string say = WaImages.MediaReply(m.Type, m.Mime);
                 if (token != null) HostingEnvironment.QueueBackgroundWorkItem(async ct =>
                 {
-                    try { await Wapilot.Send(token, s.WaInstance, m.Chat, MediaReply, "sb-media-" + (m.Id ?? Guid.NewGuid().ToString("N"))); }
+                    try { await Wapilot.Send(token, s.WaInstance, m.Chat, say, "sb-media-" + (m.Id ?? Guid.NewGuid().ToString("N"))); }
                     catch (Exception ex) { Log.Error(ex); }
                 });
                 return true;
             }
 
-            long? row = Save(c, s.Id, key, true, text, m.Id);
+            long? row = Save(c, s.Id, key, true, text.Length > 0 ? text : WaImages.Placeholder, m.Id, image ? m.MediaUrl : null);
             if (row == null) return true;                                                // duplicate delivery
             if (OrderConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;   // "1"/"2" answering an order confirmation (works with the bot off too)
             if (EoConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;      // the same for EasyOrders orders
+            if (WaOptOut.Intercept(c, s, key, m.Chat, text)) return true;                  // «وقف» after an abandoned-cart / back-in-stock message
             if (!s.WaEnabled) return true;                                               // the bot is switched off (the message is still kept as context)
             long rowId = row.Value; int storeId = s.Id; string chat = m.Chat;
             HostingEnvironment.QueueBackgroundWorkItem(ct => Reply(storeId, key, chat, rowId, ct));
@@ -533,17 +543,19 @@ END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عاي�
         }
 
         // null = already have it (same message id, or the same text from the same customer in the last minute)
-        public static long? Save(SqlConnection c, int storeId, string chatKey, bool fromCustomer, string body, string msgId)
+        // media = a picture's URL (WaImages): two pictures in a row aren't duplicates even though their text is the same
+        public static long? Save(SqlConnection c, int storeId, string chatKey, bool fromCustomer, string body, string msgId, string media = null)
         {
             const string sql = @"
-IF @fc = 1 AND EXISTS (SELECT 1 FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=1 AND Body=@b AND CreatedAt > DATEADD(SECOND,-60,SYSUTCDATETIME()))
+IF @fc = 1 AND @md IS NULL AND EXISTS (SELECT 1 FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=1 AND Body=@b AND CreatedAt > DATEADD(SECOND,-60,SYSUTCDATETIME()))
   SELECT CAST(NULL AS BIGINT);
 ELSE
-  INSERT INTO dbo.WaMessages(StoreId, ChatId, FromCustomer, Body, MsgId) OUTPUT INSERTED.Id VALUES(@s, @c, @fc, @b, @m);";
+  INSERT INTO dbo.WaMessages(StoreId, ChatId, FromCustomer, Body, MsgId, Media) OUTPUT INSERTED.Id VALUES(@s, @c, @fc, @b, @m, @md);";
             try
             {
                 using (var cmd = Db.Cmd(c, sql, "@s", storeId, "@c", chatKey.Length > 100 ? chatKey.Substring(0, 100) : chatKey, "@fc", fromCustomer,
-                    "@b", body.Length > 4000 ? body.Substring(0, 4000) : body, "@m", msgId == null ? null : (msgId.Length > 150 ? msgId.Substring(0, 150) : msgId)))
+                    "@b", body.Length > 4000 ? body.Substring(0, 4000) : body, "@m", msgId == null ? null : (msgId.Length > 150 ? msgId.Substring(0, 150) : msgId),
+                    "@md", media == null ? (object)DBNull.Value : (media.Length > 800 ? media.Substring(0, 800) : media)))
                 {
                     var v = cmd.ExecuteScalar();
                     return v == null || v == DBNull.Value ? (long?)null : Convert.ToInt64(v);
@@ -559,7 +571,7 @@ ELSE
                 return (int)cmd.ExecuteScalar() > 0;
         }
 
-        class Row { public long Id; public bool Customer, Owner; public string Body; public DateTime At; }
+        class Row { public long Id; public bool Customer, Owner; public string Body, Media; public DateTime At; }
 
         internal static async Task Reply(int storeId, string chatKey, string chat, long rowId, CancellationToken ct)
         {
@@ -569,10 +581,10 @@ ELSE
                 using (var c = Db.Open())
                 {
                     var rows = new List<Row>();
-                    using (var cmd = Db.Cmd(c, @"SELECT TOP 40 Id, FromCustomer, Body, MsgId, CreatedAt FROM dbo.WaMessages
+                    using (var cmd = Db.Cmd(c, @"SELECT TOP 40 Id, FromCustomer, Body, MsgId, Media, CreatedAt FROM dbo.WaMessages
                         WHERE StoreId=@s AND ChatId=@c AND CreatedAt > DATEADD(HOUR,-24,SYSUTCDATETIME()) ORDER BY Id DESC", "@s", storeId, "@c", chatKey))
                     using (var r = cmd.ExecuteReader())
-                        while (r.Read()) rows.Add(new Row { Id = (long)r["Id"], Customer = (bool)r["FromCustomer"], Body = (string)r["Body"],
+                        while (r.Read()) rows.Add(new Row { Id = (long)r["Id"], Customer = (bool)r["FromCustomer"], Body = (string)r["Body"], Media = r["Media"] as string,
                             Owner = (r["MsgId"] as string ?? "").StartsWith("owner:"), At = DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc) });
                     // a newer message came in (its own run answers everything), or something was already said after this one
                     if (rows.Count == 0 || rows[0].Id != rowId) return;
@@ -591,9 +603,23 @@ ELSE
                     try { Shopify.RefreshIfOld(s); } catch (Exception ex) { Log.Error(ex); }
                     try { EasyOrders.RefreshIfOld(s); } catch (Exception ex) { Log.Error(ex); }
 
+                    // the pictures in the customer's newest turn (newest first, up to 3)
+                    var imgs = new Dictionary<long, ImageBlockParam>();
+                    foreach (var x in rows.TakeWhile(x => x.Customer).Where(x => x.Media != null).Take(WaImages.MaxPerTurn))
+                    {
+                        var img = await WaImages.Load(x.Media, token);
+                        if (img != null) imgs[x.Id] = img;
+                    }
+
+                    // tools the growth features add to this chat («بلّغني لما يرجع», handoff to the owner)
+                    var extra = new List<ChatHandler.ExtraTool>();
+                    var custPhone = WaChat.Digits(chatKey);
+                    if (custPhone != null && Restock.On(c, s)) extra.Add(Restock.Tool(s, custPhone));
+                    if (custPhone != null && Handoff.On(c, s)) extra.Add(Handoff.Tool(s, "wa", chatKey));
+
                     ChatHandler.LoopResult res;
-                    try { res = await ChatHandler.Answer(c, s, History(rows), "wa:" + chatKey, ChannelNote(s, chatKey) + OrderConfirm.PendingNote(c, s.Id, chatKey)
-                        + EoConfirm.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey)); }
+                    try { res = await ChatHandler.Answer(c, s, History(rows, imgs), "wa:" + chatKey, ChannelNote(s, chatKey) + (imgs.Count > 0 ? WaImages.Note : "") + OrderConfirm.PendingNote(c, s.Id, chatKey)
+                        + EoConfirm.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey) + Carts.Note(c, s.Id, chatKey) + Handoff.Note(c, s.Id, chatKey), extra); }
                     catch (Exception ex) { Log.Error(ex); SetStatus(c, s.Id, "⚠️ حصلت مشكلة وإحنا بنجهّز رد على آخر رسالة. لو اتكررت كلّم الدعم."); return; }
                     Db.AddUsage(c, s.Id, 1, res.In, res.CacheRead, res.CacheWrite, res.Out);
 
@@ -619,22 +645,35 @@ ELSE
         }
 
         // oldest first; messages in a row from the same side become one turn; starts and ends with the customer
-        static List<MessageParam> History(List<Row> newestFirst)
+        class Turn { public bool Customer; public string Text; public List<ImageBlockParam> Images = new List<ImageBlockParam>(); }
+
+        // imgs: pictures (by message id) that go in as real images; every other picture stays as its placeholder text
+        static List<MessageParam> History(List<Row> newestFirst, Dictionary<long, ImageBlockParam> imgs = null)
         {
-            var turns = new List<KeyValuePair<bool, string>>();
+            var turns = new List<Turn>();
             foreach (var r in Enumerable.Reverse(newestFirst))
             {
-                if (turns.Count > 0 && turns[turns.Count - 1].Key == r.Customer)
-                    turns[turns.Count - 1] = new KeyValuePair<bool, string>(r.Customer, turns[turns.Count - 1].Value + "\n" + r.Body);
-                else turns.Add(new KeyValuePair<bool, string>(r.Customer, r.Body));
+                Turn t;
+                if (turns.Count > 0 && turns[turns.Count - 1].Customer == r.Customer) { t = turns[turns.Count - 1]; t.Text += "\n" + r.Body; }
+                else turns.Add(t = new Turn { Customer = r.Customer, Text = r.Body });
+                ImageBlockParam img;
+                if (r.Customer && imgs != null && imgs.TryGetValue(r.Id, out img)) t.Images.Add(img);
             }
             if (turns.Count > 12) turns = turns.Skip(turns.Count - 12).ToList();
-            while (turns.Count > 0 && !turns[0].Key) turns.RemoveAt(0);
+            while (turns.Count > 0 && !turns[0].Customer) turns.RemoveAt(0);
             var list = new List<MessageParam>();
             foreach (var t in turns)
             {
-                var body = t.Value.Length > 4000 ? t.Value.Substring(t.Value.Length - 4000) : t.Value;
-                if (t.Key) list.Add(new UserMessageParam { Content = body }); else list.Add(new AssistantMessageParam { Content = body });
+                var body = t.Text.Length > 4000 ? t.Text.Substring(t.Text.Length - 4000) : t.Text;
+                if (!t.Customer) list.Add(new AssistantMessageParam { Content = body });
+                else if (t.Images.Count == 0) list.Add(new UserMessageParam { Content = body });
+                else
+                {
+                    var blocks = new List<ContentBlockParam>();
+                    foreach (var img in t.Images) blocks.Add(img);
+                    blocks.Add(new TextBlockParam { Text = body });
+                    list.Add(new UserMessageParam { Content = blocks });
+                }
             }
             return list;
         }

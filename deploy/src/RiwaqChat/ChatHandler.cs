@@ -140,6 +140,10 @@ namespace RiwaqChat
                 var octx = store == null ? null : ChatOrders.ForChannel(conn, store, chatSid, Web.Ip(req));
                 if (octx != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
                 else if (store != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
+                // handoff to the owner from the site chat (the assistant asks for the customer's number first)
+                List<ExtraTool> extra = null;
+                if (store != null && Handoff.On(conn, store)) extra = new List<ExtraTool> { Handoff.Tool(store, "web", chatSid ?? "ip:" + Web.Ip(req)) };
+                if (extra != null) sysBlocks.Add(new TextBlockParam { Text = "المحادثة دي على موقع المتجر." + string.Concat(extra.Select(x => x.Prompt)) });
                 var parameters = new MessageCreateParams
                 {
                     Model = Claude.Model,
@@ -158,11 +162,11 @@ namespace RiwaqChat
 
                 // ---- big store (search) and/or order tracking (Shopify): let Claude use its tools, then send the answer ----
                 bool orderTool = store != null && OrderTracking.On(store);   // Shopify or EasyOrders
-                if (Claude.UseSearch(idx) || orderTool || octx != null)
+                if (Claude.UseSearch(idx) || orderTool || octx != null || extra != null)
                 {
                     try
                     {
-                        var u = await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, Web.Ip(req), octx);
+                        var u = await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, Web.Ip(req), octx, extra);
                         inTok = u.In; cacheRead = u.CacheRead; cacheWrite = u.CacheWrite; outTok = u.Out;
                         string answer = string.IsNullOrWhiteSpace(u.Text) ? Fallback : u.Text;
                         for (int i = 0; i < answer.Length; i += 60) Send(res, answer.Substring(i, Math.Min(60, answer.Length - i)));
@@ -215,15 +219,19 @@ namespace RiwaqChat
 
         public class LoopResult { public string Text; public long In, CacheRead, CacheWrite, Out; }
 
+        // A tool a feature adds to the conversation (Restock: notify_when_back, Handoff: call_owner), with its line for the prompt
+        public class ExtraTool { public Tool Def; public Func<ToolUseBlock, Task<string>> Run; public string Prompt; }
+
         // The same assistant as the site chat, without streaming (WhatsApp and other channels).
         // channelNote is added after the cached system prompt, so the prompt cache still works.
-        public static async Task<LoopResult> Answer(SqlConnection conn, StoreInfo store, List<MessageParam> messages, string ip, string channelNote)
+        public static async Task<LoopResult> Answer(SqlConnection conn, StoreInfo store, List<MessageParam> messages, string ip, string channelNote, List<ExtraTool> extra = null)
         {
             int maxTokens;
             if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
             StoreIndex idx;
             string system = Claude.StorePrompt(conn, store, out idx);
             var sys = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
+            if (extra != null && extra.Count > 0) channelNote = (channelNote ?? "") + string.Concat(extra.Select(x => x.Prompt ?? ""));
             if (!string.IsNullOrEmpty(channelNote)) sys.Add(new TextBlockParam { Text = channelNote });
             // WhatsApp ("wa:<chat>"): the chat is the customer's own number, so ordering needs no extra code
             var octx = ip != null && ip.StartsWith("wa:") ? ChatOrders.ForChannel(conn, store, ip, ip) : null;
@@ -232,8 +240,8 @@ namespace RiwaqChat
             var parameters = new MessageCreateParams { Model = Claude.Model, MaxTokens = maxTokens, System = sys, Messages = messages };
 
             bool orderTool = OrderTracking.On(store);   // Shopify or EasyOrders
-            if (Claude.UseSearch(idx) || orderTool || octx != null)
-                return await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, ip, octx);
+            if (Claude.UseSearch(idx) || orderTool || octx != null || (extra != null && extra.Count > 0))
+                return await ToolLoop(parameters, messages, Claude.UseSearch(idx) ? idx : null, orderTool ? store : null, ip, octx, extra);
 
             Message resp = await Claude.Client().Messages.Create(parameters);
             var r = new LoopResult { In = resp.Usage.InputTokens, CacheRead = resp.Usage.CacheReadInputTokens ?? 0, CacheWrite = resp.Usage.CacheCreationInputTokens ?? 0, Out = resp.Usage.OutputTokens };
@@ -245,10 +253,11 @@ namespace RiwaqChat
 
         // Up to 3 tool rounds (data search and/or order lookup), then the answer.
         // Thinking and tool calls are echoed back unchanged, as the API requires.
-        static async Task<LoopResult> ToolLoop(MessageCreateParams first, List<MessageParam> conversation, StoreIndex idx, StoreInfo orderStore, string ip, OrderCtx octx = null)
+        static async Task<LoopResult> ToolLoop(MessageCreateParams first, List<MessageParam> conversation, StoreIndex idx, StoreInfo orderStore, string ip, OrderCtx octx = null, List<ExtraTool> extra = null)
         {
             var tools = new List<ToolUnion>();
             if (octx != null) foreach (var t in ChatOrders.Tools(octx)) tools.Add(t);
+            if (extra != null) foreach (var x in extra) tools.Add(x.Def);
             if (idx != null) tools.Add(SearchTool());
             if (orderStore != null) tools.Add(new Tool
             {
@@ -300,6 +309,11 @@ namespace RiwaqChat
                         string found;
                         if (tu.Name == Claude.SearchToolName && idx != null) found = Search.Run(idx, Arg(tu, "query"));
                         else if (octx != null && ChatOrders.ToolNames.Contains(tu.Name)) found = await ChatOrders.Run(tu.Name, tu.Input, octx);
+                        else if (extra != null && extra.Any(x => x.Def.Name == tu.Name))
+                        {
+                            try { found = await extra.First(x => x.Def.Name == tu.Name).Run(tu); }
+                            catch (Exception ex) { Log.Error(ex); found = "حصلت مشكلة. اعتذر للزبون بلطف."; }
+                        }
                         else if (tu.Name == ShopifyAdmin.OrderToolName && orderStore != null)
                         {
                             try { found = await OrderTracking.Lookup(orderStore, ip, Arg(tu, "order_number"), Arg(tu, "contact")); }
@@ -316,7 +330,7 @@ namespace RiwaqChat
             return result;
         }
 
-        static string Arg(ToolUseBlock tu, string name)
+        internal static string Arg(ToolUseBlock tu, string name)
         {
             JsonElement v;
             return tu.Input != null && tu.Input.TryGetValue(name, out v) && v.ValueKind == JsonValueKind.String ? v.GetString() : "";

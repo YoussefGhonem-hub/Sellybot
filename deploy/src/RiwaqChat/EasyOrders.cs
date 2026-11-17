@@ -186,6 +186,61 @@ namespace RiwaqChat
         const string Fields = "id,name,price,sale_price,description,slug,quantity,track_stock,hidden,is_quantity_hidden,disable_orders_for_no_stock,is_free_shipping,custom_currency,store_id";
         const string Joins = "join=categories&join=variations&join=variations.props&join=variants&join=variants.variation_props";
 
+        // ---------- «بلّغني لما يرجع» (Restock.cs): every product / variant with whether it can be ordered now ----------
+        // Available = stock isn't tracked, or there's quantity left. Hidden products are left out.
+        public class StockItem { public string Id, VariantId, Name, Variant, Url; public bool Available; }
+
+        public static async Task<List<StockItem>> StockList(Creds k, string storeUrl)
+        {
+            var list = new List<StockItem>();
+            var seen = new HashSet<string>();
+            for (int page = 1; page <= MaxPages; page++)
+            {
+                var r = await Call(k, HttpMethod.Get, "/products?fields=" + Fields + "&" + Joins + "&limit=" + PageSize + "&page=" + page);
+                int fresh = 0;
+                foreach (var p in Items(r))
+                {
+                    string id = Str(p, "id");
+                    if (id == null || !seen.Add(id)) continue;
+                    fresh++;
+                    string name = (Str(p, "name") ?? "").Trim();
+                    if (name.Length == 0 || Bool(p, "hidden")) continue;
+                    bool track = Bool(p, "track_stock");
+                    string slug = Str(p, "slug");
+                    string url = !string.IsNullOrEmpty(storeUrl) && !string.IsNullOrWhiteSpace(slug) ? storeUrl + "/products/" + Uri.EscapeDataString(slug.Trim()) : null;
+                    var labels = new Dictionary<string, string>();
+                    foreach (var v in Arr(p, "variations"))
+                    {
+                        string vn = (Str(v, "name") ?? "").Trim();
+                        foreach (var pr in Arr(v, "props"))
+                        {
+                            string label = Str(pr, "name"), value = Str(pr, "value");
+                            if (!string.IsNullOrWhiteSpace(value)) labels[vn + "|" + value.Trim()] = !string.IsNullOrWhiteSpace(label) ? label.Trim() : value.Trim();
+                        }
+                    }
+                    var variants = Arr(p, "variants");
+                    if (variants.Count == 0) { list.Add(new StockItem { Id = id, Name = name, Url = url, Available = !track || (Num(p, "quantity") ?? 0) > 0 }); continue; }
+                    foreach (var v in variants.Take(100))
+                    {
+                        var parts = new List<string>();
+                        foreach (var vp in Arr(v, "variation_props"))
+                        {
+                            string vn = (Str(vp, "variation") ?? "").Trim(), val = (Str(vp, "variation_prop") ?? "").Trim(), lbl;
+                            if (labels.TryGetValue(vn + "|" + val, out lbl)) val = lbl;
+                            if (val.Length > 0) parts.Add(val);
+                        }
+                        string label = string.Join(" / ", parts);
+                        // a variant without an id (EasyOrders doesn't always send one) is known by its options instead
+                        list.Add(new StockItem { Id = id, VariantId = Str(v, "id") ?? label, Name = name, Variant = label, Url = url, Available = !track || (Num(v, "quantity") ?? 0) > 0 });
+                    }
+                }
+                JsonElement next;
+                bool last = r.ValueKind != JsonValueKind.Object || (r.TryGetProperty("next_page", out next) && next.ValueKind == JsonValueKind.Null) || !r.TryGetProperty("next_page", out next);
+                if (last || fresh == 0) break;
+            }
+            return list;
+        }
+
         public static async Task<Sync> FetchCatalog(Creds k, string storeUrl, CancellationToken ct)
         {
             var seen = new HashSet<string>();

@@ -1044,6 +1044,38 @@
   .oc-st.cancelled{background:#fde8e8;color:#a12a2a;border-color:transparent}
   .oc-st.failed{background:#fff1d6;color:#8a5200;border-color:transparent}
   .oc-empty{padding:12px;color:var(--muted);font-size:13px;text-align:center}
+  /* «🚀 مميزات الواتساب» (WhatsApp tab) */
+  .gr-logo{font-size:24px;display:grid;place-items:center;background:linear-gradient(135deg,color-mix(in srgb,#25d366 18%,var(--card)),color-mix(in srgb,var(--brand) 14%,var(--card)))}
+  .gr-owner{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}
+  .gr-owner label{margin:0 0 8px;color:var(--ink)}
+  .gr-owner label small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.6}
+  .gr-owner .shop-form input{max-width:260px}
+  .gr-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+  .gr-row>span{min-width:110px;font-size:13.5px;color:var(--muted)}
+  .gr-row .seg{margin:0;flex:1;max-width:420px}
+  .gr-row .shop-form{flex:1;max-width:420px}
+  .gr-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
+  .gr-stats div{padding:10px 12px;border-radius:12px;background:var(--soft);border:1px solid var(--line)}
+  .gr-stats b{display:block;font-size:20px}
+  .gr-stats small{color:var(--muted);font-size:12px}
+  .gr-stats .ok b{color:var(--ok)}
+  .gr-static{display:flex;align-items:flex-start;gap:10px}
+  .gr-static .grow{flex:1;min-width:0;font-size:14px}
+  .gr-static .grow b{display:block}
+  .gr-static .grow small{display:block;color:var(--muted);font-size:12.5px;line-height:1.6;margin-top:2px}
+  .gr-ic{flex:none;width:40px;height:22px;display:grid;place-items:center;font-size:18px}
+  .gr-static .st-pill{flex:none;cursor:default}
+  .gr-static .st-pill.lock{cursor:pointer;background:#fff1d6;color:#8a5200;border-color:transparent}
+  .gr-top{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px dashed var(--line)}
+  .gr-top b{display:block;font-size:13px;margin-bottom:6px}
+  .gr-top div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:3px 0}
+  .gr-top div span:last-child{color:var(--muted);white-space:nowrap}
+  .gr-preview{margin:10px 0 0;padding:12px 14px;border-radius:12px;background:#e7f7ec;color:#14361f;border:1px solid #c9ecd5;font:inherit;font-size:13px;line-height:1.75;white-space:pre-wrap;max-height:360px;overflow:auto}
+  [data-theme=dark] .gr-preview{background:#16301f;color:#d5f0dd;border-color:#245236}
+  .oc-st.recovered{background:linear-gradient(135deg,#e6f6ec,#d4f3e1);color:#1f7a45;border-color:transparent;font-weight:700}
+  [data-theme=dark] .oc-st.recovered{background:#16301f;color:#6fd49a}
+  .oc-st.waiting{background:#eef2ff;color:#3b4cca;border-color:transparent}
+  [data-theme=dark] .oc-st.waiting{background:#23284a;color:#a9b4ff}
   .oc-need{margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--soft);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
   .oc-need span{font-size:13px;color:var(--muted);line-height:1.7}
   .oc-need .btn{margin-top:4px;text-decoration:none}
@@ -2158,6 +2190,89 @@
       </div>
       <div class="msg" id="waMsg"></div>
     </div>
+
+    <!-- WhatsApp growth features: messages Sellybot sends by itself from the store's number (Growth.cs, api/growth.ashx) -->
+    <div class="card gr" id="growth" style="max-width:880px;margin-top:16px">
+      <div class="shop-head">
+        <div class="shop-logo gr-logo" aria-hidden="true">🚀</div>
+        <div><h3 style="margin:0">مميزات الواتساب <span class="new-tag">جديد</span></h3>
+          <p class="sub" style="margin:2px 0 0">رسايل بتتبعت لوحدها من رقم متجرك، كل واحدة لزبون معيّن بسبب حاجة عملها، عشان تبيع أكتر وماتفوّتش زبون.</p></div>
+      </div>
+      <div class="gr-owner">
+        <label for="grOwner"><b>📱 رقمك انت على الواتساب</b><small>التقرير الأسبوعي وتنبيه «زبون محتاجك» بيوصلوك على الرقم ده من رقم المتجر. ممكن يكون نفس رقم المتجر.</small></label>
+        <div class="shop-form"><input type="tel" id="grOwner" class="ltr" maxlength="20" placeholder="01001234567" autocomplete="tel"><button class="btn ghost" id="grOwnerSave" type="button">💾 حفظ</button></div>
+      </div>
+      <div class="oc-box" id="gfCarts">
+        <label class="toggle"><input type="checkbox" id="cartToggle"><span class="tg" aria-hidden="true"></span>
+          <span><b>🛒 استرجاع السلة المتروكة</b><small>زبون وصل لصفحة الدفع وكتب رقمه ومشي من غير ما يطلب؟ يوصله تذكير واحد من رقم متجرك فيه اللي اختاره ولينك يكمّل منه الطلب.</small></span></label>
+        <details class="name-tip">
+          <summary>💡 إزاي بتشتغل؟ ولازمها إيه؟</summary>
+          <div>• شغالة مع <b>Shopify</b> (ربط كامل). EasyOrders مابتديش أي طريقة نعرف بيها السلات المتروكة، فمش هتشتغل معاها.<br>
+          • Shopify بيبلّغنا أول ما الزبون يوصل لصفحة الدفع. لو كتب رقم موبايله وماطلبش، بنستنى المدة اللي تختارها، <b>ونتأكد من Shopify إنه ماطلبش</b>، وبعدين نبعتله رسالة واحدة.<br>
+          • مش بنبعت بالليل (من 11 بالليل لـ 9 الصبح بتوقيت مصر)، ومش أكتر من تذكير لنفس الرقم كل 3 أيام، والزبون يقدر يبعت «وقف» فمايوصلهوش تاني.<br>
+          • لو الزبون رد على التذكير، المساعد عارف هو كان عايز يطلب إيه ومعاه اللينك، فيساعده يكمّل.<br>
+          • Shopify بيخبّي اسم الزبون ورقمه عن التطبيقات لحد ما تسمح: لو لقيت في اللستة «Shopify مخبّيه»، فعّل الوصول لـ <b class="ltr">Protected customer data</b> (الاسم ورقم الموبايل) من إعدادات التطبيق على Shopify.</div>
+        </details>
+        <div id="cartOpts" hidden>
+          <div class="gr-stats" id="cartStats"></div>
+          <div class="gr-row"><span>يتبعت بعد</span>
+            <div class="seg" id="cartDelay" role="radiogroup" aria-label="يتبعت بعد"><button type="button" data-v="30">نص ساعة</button><button type="button" data-v="60">ساعة</button><button type="button" data-v="180">3 ساعات</button></div></div>
+          <div class="gr-row"><span>كود خصم <small>(اختياري)</small></span>
+            <div class="shop-form"><input type="text" id="cartCoupon" class="ltr" maxlength="30" placeholder="مثلًا: BACK10" spellcheck="false"><button class="btn ghost sm" id="cartCouponSave" type="button">حفظ</button></div></div>
+          <div class="oc-warn" id="cartWarn" hidden></div>
+          <div class="oc-list" id="cartList"></div>
+        </div>
+      </div>
+      <div class="oc-box" id="gfImages">
+        <div class="gr-static"><span class="gr-ic" aria-hidden="true">📷</span>
+          <span class="grow"><b>المساعد بيفهم الصور</b><small>الزبون يبعت صورة منتج شافه في حتة تانية، والمساعد يدوّر في منتجاتك ويرشّحله الأقرب بسعره ولينكه. ولو صورة مشكلة، يعتذر ويقوله إنك هتتابع معاه.</small></span>
+          <span class="st-pill" id="imgState"></span></div>
+        <p class="hint" style="margin:8px 0 0">🎤 الفويس نوت لسه مش مدعومة: المساعد بيطلب من الزبون يكتب سؤاله.</p>
+      </div>
+      <div class="oc-box" id="gfRestock">
+        <label class="toggle"><input type="checkbox" id="rsToggle"><span class="tg" aria-hidden="true"></span>
+          <span><b>🔔 «بلّغني لما يرجع»</b><small>زبون سأل على منتج أو مقاس خلصان؟ المساعد يعرض يبلّغه، ولو وافق، يوصله رسالة من رقم متجرك أول ما المنتج يرجع المخزون، فيه لينكه.</small></span></label>
+        <details class="name-tip">
+          <summary>💡 إزاي بتشتغل؟ ولازمها إيه؟</summary>
+          <div>• شغالة مع <b>Shopify</b> (ربط كامل) و<b>EasyOrders</b>، لأننا بنعرف المخزون منهم.<br>
+          • المساعد مش بيسجّل الزبون إلا لو <b>وافق</b>، وبيسجّل المقاس أو اللون بالظبط. لو المنتج طلع متاح، بيقوله ويبعتله اللينك على طول.<br>
+          • بنراجع المخزون كل شوية (مع Shopify بنعرف أول ما يتغيّر)، وأول ما يرجع بنبعت لكل اللي مستنيينه رسالة واحدة. مش بنبعت بالليل.<br>
+          • الطلب بيفضل مستني 60 يوم بالكتير، والزبون يقدر يبعت «وقف».<br>
+          • هتعرف من هنا <b>أكتر منتجات الزباين مستنيينها</b>، فتعرف تجيب إيه تاني.</div>
+        </details>
+        <div id="rsOpts" hidden>
+          <div class="gr-stats" id="rsStats"></div>
+          <div class="gr-top" id="rsTop" hidden></div>
+          <div class="oc-warn" id="rsWarn" hidden></div>
+          <div class="oc-list" id="rsList"></div>
+        </div>
+      </div>
+      <div class="oc-box" id="gfReport">
+        <label class="toggle"><input type="checkbox" id="rpToggle"><span class="tg" aria-hidden="true"></span>
+          <span><b>📊 التقرير الأسبوعي على واتساب</b><small>كل يوم سبت الصبح يوصلك على رقمك: المساعد رد على كام رسالة، ونتايج المميزات، وأكتر حاجات الزباين سألوا عنها، والأسئلة اللي المساعد ماكانش عنده إجابتها عشان تضيفها.</small></span></label>
+        <div id="rpOpts" hidden>
+          <div class="gr-row"><button class="btn ghost sm" id="rpNow" type="button">📤 ابعتلي تقرير دلوقتي</button><span class="hint" id="rpLast"></span></div>
+          <div class="oc-warn" id="rpWarn" hidden></div>
+          <pre class="gr-preview" id="rpPreview" hidden></pre>
+        </div>
+      </div>
+      <div class="oc-box" id="gfHandoff">
+        <label class="toggle"><input type="checkbox" id="hoToggle"><span class="tg" aria-hidden="true"></span>
+          <span><b>🙋 «الزبون محتاجك»</b><small>زبون طلب يكلّم حد من المتجر، أو عنده شكوى، أو عايز حاجة مهمة مش في داتا متجرك (جملة، مشكلة في أوردر، استرجاع)؟ المساعد يبلّغك على رقمك بالسبب وطلبه ورقم الزبون، فتكلّمه بنفسك.</small></span></label>
+        <details class="name-tip">
+          <summary>💡 إزاي بتشتغل؟</summary>
+          <div>• شغالة على <b>الواتساب</b> و<b>شات الموقع</b>. على الموقع المساعد بياخد رقم الزبون الأول.<br>
+          • التنبيه بيوصلك من رقم المتجر على <b>رقمك انت</b> (اكتبه فوق)، ومعاه لينك تكلّم الزبون منه. مرة واحدة لكل زبون كل ساعتين.<br>
+          • لو رديت على الزبون بنفسك من رقم المتجر، المساعد بيسكت في المحادثة دي ساعتين.<br>
+          • كل الزباين اللي طلبوك بيظهروا هنا تحت، حتى لو التنبيه ماوصلكش.</div>
+        </details>
+        <div id="hoOpts" hidden>
+          <div class="oc-warn" id="hoWarn" hidden></div>
+          <div class="oc-list" id="hoList"></div>
+        </div>
+      </div>
+      <div class="msg" id="grMsg"></div>
+    </div>
   </section>
 
   <!-- settings -->
@@ -2566,7 +2681,7 @@
   // the desktop app, and what's new. Everything moves: a chat that plays itself, counters, packets on the wires, the app opening.
   var DL_EXE = "https://github.com/YoussefGhonem-hub/Sellybot/releases/latest/download/Sellybot-Setup.exe";   // newest desktop release
   // Microsoft Store: false shows "soon" while the listing is in certification. Once it is published set true here AND in download.html.
-  var STORE_LIVE = false, STORE_URL = "https://apps.microsoft.com/detail/9PF6W2MNNRK8?mode=full";
+  var STORE_LIVE = true, STORE_URL = "https://apps.microsoft.com/detail/9PF6W2MNNRK8?mode=full";
   var HM_ROT = ["في ثانية ⚡", "24 ساعة في اليوم 🌙", "على موقعك 🌐", "وعلى واتساب 💬"];
   var HM_TILES = [
     ["data", "📚", "داتا المتجر", "ارفع ملفاتك أو اربط متجرك، والمساعد يتعلّم منها"],
@@ -4114,9 +4229,141 @@
   var wa = null;
   var WA_LIVE = { WORKING: "متصل", CONNECTED: "متصل", ACTIVE: "متصل", SCAN_QR_CODE: "مستني مسح الـ QR", STARTING: "بيبدأ…", STOPPED: "متوقف", FAILED: "فيه مشكلة" };
   async function loadWa() {
+    loadGrowth(); loadLocks().then(function () { if (gr) renderGrowth(); });   // the lock badges need both
     try { wa = await api("api/whatsapp.ashx"); renderWa(); }
     catch (e) { setMsg("waMsg", e.message); }
   }
+  // ---------------- «🚀 مميزات الواتساب»: messages Sellybot sends by itself from the store's number (api/growth.ashx) ----------------
+  var gr = null;
+  async function loadGrowth() { try { gr = await api("api/growth.ashx"); } catch (e) { return; } renderGrowth(); }
+  function localPhone(p) { return /^20\d{10}$/.test(p || "") ? "0" + p.slice(2) : (p || ""); }   // 2010… -> 010…
+  function grList(list, rows, empty, labels, line) {
+    list.textContent = "";
+    if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = empty; list.appendChild(e); return; }
+    rows.forEach(function (r) {
+      var row = document.createElement("div"); row.className = "oc-row";
+      var b = document.createElement("b"); b.textContent = line(r)[0];
+      var who = document.createElement("span"); who.textContent = line(r)[1];
+      var st = document.createElement("span"); st.className = "oc-st " + r.status; st.textContent = labels[r.status] || r.status;
+      var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "");
+      row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
+    });
+  }
+  function grStats(el, cells) {
+    el.innerHTML = cells.map(function (x) { return '<div' + (x[2] ? ' class="ok"' : '') + '><b>' + fmt(x[0]) + '</b><small>' + x[1] + '</small></div>'; }).join("");
+  }
+  // what's missing for the messages to go out, shared by every feature
+  function grBase(warn) {
+    if (!gr.service) warn.push("⚠️ خدمة الواتساب مش مفعّلة، فالرسايل مش هتتبعت. فعّلها من «باقتي».");
+    else if (!gr.whatsapp) warn.push("⚠️ واتساب المتجر مش مربوط، فالرسايل مش هتتبعت. اربطه من فوق.");
+  }
+  var CART_ST = { waiting: "⏳ مستني ميعاده", sent: "📤 اتبعت", recovered: "🎉 اشترى بعد الرسالة", ordered: "✅ اشترى لوحده", skipped: "— ماتبعتتش", failed: "⚠️ محتاج تبص عليه" };
+  function renderGrowth() {
+    if (!gr) return;
+    if (document.activeElement !== $("grOwner")) $("grOwner").value = localPhone(gr.ownerPhone);
+    // abandoned carts
+    var ct = gr.carts || {};
+    $("cartToggle").checked = !!ct.on; $("cartOpts").hidden = !ct.on;
+    document.querySelectorAll("#cartDelay button").forEach(function (b) { var on = +b.dataset.v === ct.delay; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
+    if (document.activeElement !== $("cartCoupon")) $("cartCoupon").value = ct.coupon || "";
+    var st = ct.stats || {};
+    grStats($("cartStats"), [[st.sent || 0, "تذكير اتبعت (30 يوم)"], [st.recovered || 0, "رجعوا اشتروا بعده", true], [st.waiting || 0, "مستنيين ميعادهم"]]);
+    var warn = []; grBase(warn);
+    if (ct.on && !gr.shopify) warn.push("⚠️ استرجاع السلة شغال مع Shopify بس، وربط Shopify الكامل مش موجود.");
+    else if (ct.on && !ct.scope) warn.push("⚠️ التطبيق ناقصه صلاحية read_orders، فمش هنعرف السلات المتروكة. ضيفها في Scopes واعمل Release ووافق عليها، وبعدين اربط تاني.");
+    if (ct.on && st.nophone >= 5 && !st.sent) warn.push("ℹ️ " + fmt(st.nophone) + " سلة متروكة من غير رقم موبايل. لو ده بيحصل مع كل الزباين، غالبًا Shopify مخبّي الأرقام عن التطبيق: فعّل الوصول لـ Protected customer data (الاسم ورقم الموبايل) من إعدادات التطبيق.");
+    dnWarn($("cartWarn"), warn);
+    grList($("cartList"), ct.recent || [], "لسه مفيش سلات متروكة من ساعة ما فعّلتها. أول واحدة هتظهر هنا.", CART_ST,
+      function (r) { return [r.customer || "زبون", [r.items, r.total].filter(Boolean).join(" · ")]; });
+    // pictures: on with the WhatsApp service (its plan may not include it)
+    var im = $("imgState"), imOn = gr.images && gr.images.on;
+    im.className = "st-pill " + (imOn ? "answered" : locks.waimages ? "lock" : "");
+    im.textContent = imOn ? "✅ شغالة لوحدها" : locks.waimages ? "🔒 مش في باقتك" : "مع خدمة الواتساب";
+    im.onclick = locks.waimages ? function () { openLock("waimages"); } : null;
+    // back in stock
+    var rs = gr.restock || {};
+    $("rsToggle").checked = !!rs.on; $("rsOpts").hidden = !rs.on;
+    grStats($("rsStats"), [[rs.waiting || 0, "زبون مستني منتج يرجع"], [rs.sent || 0, "اتبلّغوا إنه رجع (30 يوم)", true]]);
+    var top = rs.top || [];
+    $("rsTop").hidden = !top.length;
+    $("rsTop").innerHTML = '<b>🔥 أكتر منتجات الزباين مستنيينها</b>' + top.map(function (t) {
+      return '<div><span>' + esc(t.product) + (t.variant ? ' (' + esc(t.variant) + ')' : '') + '</span><span>' + fmt(t.count) + ' زبون</span></div>'; }).join("");
+    var rw = []; grBase(rw);
+    if (rs.on && !rs.canWatch) rw.push("⚠️ عشان نعرف إن المنتج رجع، لازم متجرك يكون مربوط بـ Shopify (ربط كامل) أو EasyOrders.");
+    dnWarn($("rsWarn"), rw);
+    grList($("rsList"), rs.recent || [], "لسه محدش اتبلّغ. أول ما منتج يرجع للي مستنيينه هيظهر هنا.", RS_ST,
+      function (r) { return [r.product, r.variant || ""]; });
+    grReport(); grHandoff();
+  }
+  var RS_ST = { sent: "📤 اتبلّغ إنه رجع", expired: "— انتهى", failed: "⚠️ محتاج تبص عليه" };
+  // handoff: who asked for the owner, with a WhatsApp link to each
+  var HO_ST = { sent: "✅ وصلك تنبيه", noalert: "— مفيش رقم ليك", failed: "⚠️ التنبيه ماوصلكش", pending: "⏳" };
+  function grHandoff() {
+    var ho = gr.handoff || {};
+    $("hoToggle").checked = !!ho.on; $("hoOpts").hidden = !ho.on;
+    var w = []; grBase(w);
+    if (ho.on && !gr.ownerPhone) w.push("⚠️ اكتب رقمك انت على الواتساب فوق، عشان التنبيه يوصلك. لحد كده الزباين بيتسجّلوا هنا بس.");
+    dnWarn($("hoWarn"), w);
+    var list = $("hoList"), rows = ho.recent || []; list.textContent = "";
+    if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = "لسه محدش طلب يكلّمك. أول زبون هيظهر هنا."; list.appendChild(e); return; }
+    rows.forEach(function (r) {
+      var row = document.createElement("div"); row.className = "oc-row";
+      var b = document.createElement("b"); b.textContent = r.channel === "web" ? "🌐 الموقع" : "📱 واتساب";
+      var who = document.createElement("span"); who.textContent = r.reason;
+      var st = document.createElement("span"); st.className = "oc-st " + (r.status === "sent" ? "confirmed" : r.status === "failed" ? "failed" : ""); st.textContent = HO_ST[r.status] || r.status;
+      var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "") + " · ";
+      if (r.phone) { var a = document.createElement("a"); a.href = "https://wa.me/" + r.phone; a.target = "_blank"; a.rel = "noopener"; a.className = "ltr"; a.textContent = "💬 كلّمه +" + r.phone; sm.appendChild(a); }
+      row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
+    });
+  }
+  $("hoToggle").onchange = function () {
+    var want = this.checked;
+    if (want && locks.handoff) { this.checked = false; openLock("handoff"); return; }
+    saveGrowth("handoff", { enabled: want }, want ? "«الزبون محتاجك» اتفعّلت ✅" : "«الزبون محتاجك» اتقفلت", this);
+  };
+  // the weekly report (drawn from renderGrowth through grReport)
+  function grReport() {
+    var rp = gr.report || {};
+    $("rpToggle").checked = !!rp.on; $("rpOpts").hidden = !rp.on;
+    $("rpLast").textContent = "📅 التقرير الجاي يوم السبت الصبح";
+    var w = []; grBase(w);
+    if (rp.on && !gr.ownerPhone) w.push("⚠️ اكتب رقمك انت على الواتساب فوق، عشان التقرير يوصلك.");
+    dnWarn($("rpWarn"), w);
+  }
+  $("rpToggle").onchange = function () {
+    var want = this.checked;
+    if (want && locks.report) { this.checked = false; openLock("report"); return; }
+    saveGrowth("report", { enabled: want }, want ? "التقرير الأسبوعي اتفعّل ✅ أول واحد يوم السبت الصبح" : "التقرير الأسبوعي اتقفل", this);
+  };
+  $("rpNow").onclick = async function () {
+    var b = this; b.disabled = true; setMsg("grMsg", "");
+    try {
+      var r = await api("api/growth.ashx?action=report-now", { method: "POST", json: {} });
+      $("rpPreview").textContent = r.text.replace(/\*/g, ""); $("rpPreview").hidden = false;
+      toast("التقرير اتبعتلك على الواتساب ✅");
+    } catch (err) { setMsg("grMsg", err.message); }
+    b.disabled = false;
+  };
+  $("rsToggle").onchange = function () {
+    var want = this.checked;
+    if (want && locks.restock) { this.checked = false; openLock("restock"); return; }
+    saveGrowth("restock", { enabled: want }, want ? "«بلّغني لما يرجع» اتفعّلت ✅" : "«بلّغني لما يرجع» اتقفلت", this);
+  };
+  async function saveGrowth(action, json, okText, t) {
+    if (t) t.disabled = true; setMsg("grMsg", "");
+    try { gr = await api("api/growth.ashx?action=" + action, { method: "POST", json: json }); renderGrowth(); if (okText) toast(okText); return true; }
+    catch (err) { setMsg("grMsg", err.message); if (t && t.type === "checkbox") t.checked = !t.checked; return false; }
+    finally { if (t) t.disabled = false; }
+  }
+  $("grOwnerSave").onclick = function () { saveGrowth("owner", { phone: $("grOwner").value.trim() }, $("grOwner").value.trim() ? "اتحفظ رقمك ✓" : "اتشال رقمك", this); };
+  function cartBody(over) { var ct = (gr && gr.carts) || {}; return Object.assign({ enabled: !!ct.on, delay: ct.delay || 60, coupon: $("cartCoupon").value.trim() }, over || {}); }
+  $("cartToggle").onchange = function () {
+    var want = this.checked;
+    if (want && locks.carts) { this.checked = false; openLock("carts"); return; }
+    saveGrowth("carts", cartBody({ enabled: want }), want ? "استرجاع السلة اتفعّل ✅" : "استرجاع السلة اتقفل", this);
+  };
+  document.querySelectorAll("#cartDelay button").forEach(function (b) { b.onclick = function () { saveGrowth("carts", cartBody({ delay: +b.dataset.v }), "اتحفظ ✓"); }; });
+  $("cartCouponSave").onclick = function () { saveGrowth("carts", cartBody(), $("cartCoupon").value.trim() ? "اتحفظ كود الخصم ✓" : "اتشال كود الخصم", this); };
   // ---------------- locked features: one upgrade card for all of them ----------------
   // Every feature a plan doesn't include gets the same card: a badge, a headline, three benefits, the plan's price,
   // an upgrade button, and a phone playing what the feature does. "wa" comes from api/whatsapp.ashx, the rest from api/locks.ashx.
@@ -4154,6 +4401,45 @@
       chips: ["🚚 خرج للتوصيل", "💵 جهّز المبلغ", "📉 مرتجعات أقل"],
       chat: [["bot", "أهلًا أحمد 👋 طلبك #1048 خرج مع المندوب، وهيوصلك النهارده 🚚 جهّز 450 ج.م كاش، وخلّي موبايلك جنبك.", "11:02", 0.5],
         ["cu", "تمام، أنا في البيت لحد العصر 👍", "11:05", 2.6], ["typing", 3.5, 4.8], ["bot", "تمام 🙏 المندوب هيكلّمك قبل ما يوصل.", "11:05", 4.8]] },
+    carts: { ac: "#f59e0b", ac2: "#d97706", ph: "#075e54", av: "🛒", what: "استرجاع السلة المتروكة",
+      head: 'رجّع الزباين اللي <span class="g">سابوا السلة</span> من غير ما يطلبوا',
+      p: "زباين كتير بيوصلوا لصفحة الدفع ويمشوا. بعد الوقت اللي تختاره يوصلهم من رقم متجرك تذكير فيه اللي اختاروه ولينك يكمّلوا منه الطلب في دقيقة.",
+      list: [["⏰", "تذكير واحد بعد الوقت اللي تختاره، ومش بالليل"], ["🔗", "لينك يكمّل منه الطلب على طول"], ["🎁", "تقدر تحط كود خصم يشجّعه يكمّل"]],
+      chips: ["🛒 سلة متروكة", "🔗 كمّل طلبك", "📈 مبيعات أكتر"],
+      chat: [["bot", "أهلًا سارة 👋 شفنا إنك كنت بتطلبي الجاكيت الأسود (M) ولسه ماكمّلتيش. طلبك محفوظ، كمّليه من هنا في دقيقة 👇", "7:30", 0.5],
+        ["cu", "آه نسيت 😅 هو الشحن بكام؟", "7:34", 2.6], ["typing", 3.5, 4.8], ["bot", "الشحن 50 ج.م ويوصلك في يومين 🚚 واللينك فوق جاهز.", "7:34", 4.8]] },
+    waimages: { ac: "#8b5cf6", ac2: "#6d28d9", ph: "#075e54", av: "📷", what: "المساعد يفهم الصور",
+      head: 'زبونك يبعت <span class="g">صورة</span>، والمساعد يلاقيله المنتج',
+      p: "زباين كتير بيبعتوا صورة منتج شافوه في حتة تانية ويسألوا «عندكم ده؟». المساعد يشوف الصورة ويدوّر في منتجاتك ويرشّحله الأقرب بسعره ولينكه.",
+      list: [["📷", "يفهم صور المنتجات اللي الزبون بيبعتها"], ["🔎", "يرشّح الأقرب من منتجاتك بالسعر واللينك"], ["🙏", "صورة مشكلة؟ يعتذر ويقوله إنك هتتابع"]],
+      chips: ["📷 صورة", "🔎 أقرب منتج", "🛒 لينك الطلب"],
+      chat: [["cu", "📷 [صورة جاكيت]  عندكم زي ده؟", "5:12", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "أيوه 👌 ده قريب جدًا من الجاكيت الجلد الأسود عندنا، سعره 990 ج.م ومتاح M و L. ده لينكه 👇", "5:12", 3.0],
+        ["cu", "تمام، عايز L", "5:13", 5.0], ["typing", 5.9, 7.0], ["bot", "تمام ✅ اطلبه من اللينك، والشحن يومين 🚚", "5:13", 7.0]] },
+    restock: { ac: "#ef4444", ac2: "#b91c1c", ph: "#075e54", av: "🔔", what: "«بلّغني لما يرجع»",
+      head: 'ماتخسرش الزبون لما <span class="g">المنتج يخلص</span>',
+      p: "لما منتج أو مقاس يخلص، المساعد يعرض على الزبون يبلّغه. أول ما يرجع المخزون، يوصله من رقم متجرك إنه رجع، ومعاه لينك يطلبه منه.",
+      list: [["🔔", "رسالة لوحدها أول ما المنتج يرجع"], ["📏", "بالمقاس واللون اللي الزبون عايزه"], ["🔥", "تعرف أكتر منتجات الزباين مستنيينها"]],
+      chips: ["🔔 رجع تاني", "📏 مقاس L", "🛒 اطلبه دلوقتي"],
+      chat: [["cu", "الجاكيت الأسود مقاس L فيه؟", "1:20", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "للأسف L خلصان دلوقتي 😔 تحب أبلّغك هنا أول ما يرجع؟", "1:20", 3.0],
+        ["cu", "ياريت", "1:21", 5.0], ["typing", 5.9, 7.0], ["bot", "تمام ✅ هبعتلك أول ما يرجع، ومعاه اللينك على طول.", "1:21", 7.0]] },
+    report: { ac: "#0ea5e9", ac2: "#0369a1", ph: "#075e54", av: "📊", what: "التقرير الأسبوعي",
+      head: 'اعرف متجرك عمل إيه <span class="g">كل أسبوع</span> من غير ما تفتح اللوحة',
+      p: "كل يوم سبت الصبح يوصلك على الواتساب: المساعد رد على كام رسالة، وأكتر حاجات الزباين سألوا عنها، والأسئلة اللي ماكانش عنده إجابتها عشان تضيفها، ونتايج المميزات.",
+      list: [["📈", "أرقام الأسبوع في رسالة واحدة"], ["🔥", "أكتر حاجات الزباين سألوا عنها"], ["❓", "الأسئلة اللي محتاج تضيف إجابتها"]],
+      chips: ["📊 السبت الصبح", "🔥 أكتر سؤال", "❓ إجابات ناقصة"],
+      chat: [["bot", "📊 تقرير الأسبوع: المساعد رد على 342 رسالة، و9 زباين رجعوا كمّلوا السلة 🛒", "10:00", 0.5],
+        ["bot", "❓ زباين سألوا «فيه فرع في إسكندرية؟» ومكانش عندي إجابة. ضيفها في داتا المتجر 👈", "10:00", 2.2],
+        ["cu", "تمام هضيفها دلوقتي 👍", "10:05", 4.2]] },
+    handoff: { ac: "#f97316", ac2: "#c2410c", ph: "#075e54", av: "🙋", what: "«الزبون محتاجك»",
+      head: 'المساعد يعرف <span class="g">إمتى يناديك</span>',
+      p: "لما زبون يطلب يكلّم حد من المتجر، أو يكون زعلان، أو عايز طلب جملة أو عنده مشكلة في أوردر، المساعد يبلّغك على رقمك بالسبب وطلبه ورقم الزبون، فتلحقه بنفسك.",
+      list: [["🙋", "تنبيه على رقمك بالسبب والتفاصيل"], ["📱", "لينك تكلّم الزبون منه على طول"], ["🤫", "لما ترد بنفسك، المساعد يسيبلك المحادثة"]],
+      chips: ["🙋 الزبون محتاجك", "📝 طلب جملة", "💬 كلّمه"],
+      chat: [["cu", "عايز 50 قطعة للمحل عندي، فيه سعر جملة؟", "3:40", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "طلبات الجملة صاحب المتجر بيتابعها بنفسه 🙏 بلّغته دلوقتي وهيكلّمك هنا في أقرب وقت.", "3:40", 3.0],
+        ["cu", "تمام مستني 👍", "3:41", 5.0]] },
     bothstores: { ac: "#22c55e", ac2: "#6f9e35", ph: "#5a3a14", av: "🔗", what: "Shopify و EasyOrders مع بعض",
       head: 'اربط <span class="g">Shopify و EasyOrders</span> مع بعض',
       p: "باقتك بتسمح بمتجر واحد. لو بتبيع على الاتنين (مثلًا Shopify للبراند و EasyOrders لصفحات الطلب)، رقّي باقتك والمساعد يرد من منتجات المتجرين ويتابع أوردراتهم. داتا متجرين في كل رد بتستهلك من الرصيد أكتر، عشان كده الميزة دي في باقة أعلى.",

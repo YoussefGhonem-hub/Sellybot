@@ -1,0 +1,24 @@
+name: Background jobs
+
+# Wakes the site every 15 minutes so its background work runs on time even when nobody is visiting it:
+# abandoned-cart reminders on WhatsApp once they're due, and the weekly report to store owners.
+# The site runs the same work on its own timer while it's awake; a lease in the database stops two runs overlapping.
+# The key is derived from AUTH_SECRET exactly like Jobs.CronKey() (HMAC-SHA256 of "sellybot-cron", first 32 hex characters).
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call api/cron.ashx
+        env:
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        run: |
+          key=$(printf '%s' "sellybot-cron" | openssl dgst -sha256 -hmac "$AUTH_SECRET" -hex | sed 's/^.*= //' | cut -c1-32)
+          curl -fsS -m 90 -o /dev/null -w "cron: %{http_code}\n" "https://sellybot.online/api/cron.ashx?key=$key"

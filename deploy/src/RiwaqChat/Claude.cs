@@ -27,7 +27,13 @@ namespace RiwaqChat
             if (key == null) throw new InvalidOperationException("AnthropicApiKey is not configured");
             lock (Lock)
             {
-                if (client == null || clientKey != key) { client = new AnthropicClient { ApiKey = key }; clientKey = key; }
+                if (client == null || clientKey != key)
+                {
+                    // "AnthropicBaseUrl" is for local tests only (a fake API that records requests); production leaves it empty
+                    var baseUrl = Web.Setting("AnthropicBaseUrl");
+                    client = string.IsNullOrEmpty(baseUrl) ? new AnthropicClient { ApiKey = key } : new AnthropicClient { ApiKey = key, BaseUrl = baseUrl };
+                    clientKey = key;
+                }
                 return client;
             }
         }

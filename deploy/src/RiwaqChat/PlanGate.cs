@@ -8,6 +8,8 @@
 //   files   : uploading PDF, Word and Excel files (typed text, .txt, .csv and .md stay open)
 //   styles  : the fun and "any store" bubble styles and custom colors (classic styles, the bear and the 12 swatches stay open)
 //   delivery: the delivery-day message on WhatsApp (Delivery.cs), on top of the store link and the WhatsApp plan
+//   carts / waimages / restock / report / handoff: the WhatsApp growth features (Carts.cs, the bot reading images, Restock.cs,
+//            WeeklyReport.cs, Handoff.cs). They need the WhatsApp service; open to every plan until the super admin picks a minimum.
 // The dashboard asks api/locks.ashx which features are locked and shows an upgrade card with the plan to suggest.
 using System;
 using System.Collections.Generic;
@@ -20,7 +22,7 @@ namespace RiwaqChat
 {
     public static class PlanGate
     {
-        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "bothstores", "delivery" };
+        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "bothstores", "delivery", "carts", "waimages", "restock", "report", "handoff" };
         public static readonly HashSet<string> FreeStyles = new HashSet<string> { "classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear" };
         public static readonly HashSet<string> FreeColors = new HashSet<string> { "#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222" };
         public static readonly HashSet<string> LockedFileTypes = new HashSet<string> { "pdf", "docx", "xlsx" };
@@ -29,7 +31,9 @@ namespace RiwaqChat
         static readonly Dictionary<string, string> Names = new Dictionary<string, string> {
             { "shopify", "ربط Shopify وتتبع الأوردرات" }, { "files", "رفع ملفات PDF و Word و Excel" }, { "styles", "أشكال الشات والألوان" }, { "chatorders", "الطلب من الشات" },
             { "easyorders", "ربط EasyOrders وتتبع الأوردرات" },
-            { "bothstores", "ربط Shopify و EasyOrders مع بعض" }, { "delivery", "رسالة يوم التوصيل على واتساب" } };
+            { "bothstores", "ربط Shopify و EasyOrders مع بعض" }, { "delivery", "رسالة يوم التوصيل على واتساب" },
+            { "carts", "استرجاع السلة المتروكة على واتساب" }, { "waimages", "المساعد يفهم الصور على واتساب" }, { "restock", "«بلّغني لما يرجع»" },
+            { "report", "التقرير الأسبوعي على واتساب" }, { "handoff", "التحويل ليك لما الزبون يحتاجك" } };
 
         public static int MinPlanId(SqlConnection c, string feature)
         {
@@ -183,7 +187,9 @@ namespace RiwaqChat
 
         static Dictionary<string, object> AdminState(SqlConnection c)
         {
-            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify وتتبع الأوردرات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتتبع الأوردرات" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" } };
+            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify وتتبع الأوردرات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتتبع الأوردرات" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" },
+                { "carts", "🛒 استرجاع السلة المتروكة على واتساب" }, { "waimages", "📷 المساعد يفهم الصور على واتساب" }, { "restock", "🔔 «بلّغني لما يرجع»" },
+                { "report", "📊 التقرير الأسبوعي على واتساب" }, { "handoff", "🙋 التحويل لصاحب المتجر" } };
             return new Dictionary<string, object> {
                 { "features", PlanGate.Features.Select(f => new Dictionary<string, object> { { "key", f }, { "name", names[f] }, { "minPlan", PlanGate.MinPlanId(c, f) } }).ToList() },
                 { "plans", Billing.Plans(c, false).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } }).ToList() } };

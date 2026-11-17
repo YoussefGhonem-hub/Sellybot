@@ -33,6 +33,12 @@ namespace RiwaqChat
         public bool EoOrders, EoOcOn;
         // the delivery-day message on WhatsApp (Delivery.cs): DnOn/DnHooked for Shopify, EoDnOn for EasyOrders
         public bool DnOn, DnHooked, EoDnOn;
+        // WhatsApp growth features: the owner's own number (report + handoff alerts), abandoned carts (Carts.cs),
+        // «بلّغني لما يرجع» (Restock.cs), the weekly report (WeeklyReport.cs), handoff to the owner (Handoff.cs)
+        public string OwnerPhone, CartCoupon;
+        public bool CartOn, CartHooked, RestockOn, ReportOn, HandoffOn;
+        public int CartDelay;
+        public DateTime? ReportAt;
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -136,7 +142,7 @@ namespace RiwaqChat
             {
                 lock (Lock)
                 {
-                    if (!ensured) { using (var cmd = new SqlCommand(Schema, c)) cmd.ExecuteNonQuery(); ensured = true; }
+                    if (!ensured) { using (var cmd = new SqlCommand(Schema, c)) cmd.ExecuteNonQuery(); ensured = true; Jobs.Start(); }
                 }
             }
             return c;
@@ -242,6 +248,15 @@ namespace RiwaqChat
                 DnOn = r["DnOn"] is bool && (bool)r["DnOn"],
                 DnHooked = r["DnHooked"] is bool && (bool)r["DnHooked"],
                 EoDnOn = r["EoDnOn"] is bool && (bool)r["EoDnOn"],
+                OwnerPhone = r["OwnerPhone"] as string,
+                CartOn = r["CartOn"] is bool && (bool)r["CartOn"],
+                CartDelay = r["CartDelay"] is int ? (int)r["CartDelay"] : 60,
+                CartCoupon = r["CartCoupon"] as string,
+                CartHooked = r["CartHooked"] is bool && (bool)r["CartHooked"],
+                RestockOn = r["RestockOn"] is bool && (bool)r["RestockOn"],
+                ReportOn = r["ReportOn"] is bool && (bool)r["ReportOn"],
+                ReportAt = r["ReportAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["ReportAt"], DateTimeKind.Utc),
+                HandoffOn = r["HandoffOn"] is bool && (bool)r["HandoffOn"],
                 EoOcScope = r["EoOcScope"] as string ?? "all",
                 EoHookKey = r["EoHookKey"] as string,
                 EoHookAt = r["EoHookAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["EoHookAt"], DateTimeKind.Utc),
@@ -283,7 +298,12 @@ USING (SELECT @s AS StoreId, @m AS Month) AS src ON t.StoreId = src.StoreId AND 
 WHEN MATCHED THEN UPDATE SET Messages = Messages + @n, InputTokens = InputTokens + @i, CacheReadTokens = CacheReadTokens + @cr,
      CacheWriteTokens = CacheWriteTokens + @cw, OutputTokens = OutputTokens + @o
 WHEN NOT MATCHED THEN INSERT (StoreId, Month, Messages, InputTokens, CacheReadTokens, CacheWriteTokens, OutputTokens)
-     VALUES (@s, @m, @n, @i, @cr, @cw, @o);";
+     VALUES (@s, @m, @n, @i, @cr, @cw, @o);
+-- answers per day (UTC), for the weekly report
+IF @n > 0
+  MERGE dbo.UsageDaily AS d USING (SELECT @s AS StoreId, CAST(SYSUTCDATETIME() AS DATE) AS Day) AS x ON d.StoreId = x.StoreId AND d.Day = x.Day
+  WHEN MATCHED THEN UPDATE SET Messages = Messages + @n
+  WHEN NOT MATCHED THEN INSERT (StoreId, Day, Messages) VALUES (@s, x.Day, @n);";
             using (var cmd = Cmd(c, sql, "@s", storeId, "@m", Month, "@n", messages, "@i", input, "@cr", cacheRead, "@cw", cacheWrite, "@o", output))
                 cmd.ExecuteNonQuery();
         }
@@ -612,6 +632,71 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_PlanRequests_RefNo' AN
 -- pictures the super admin uploads (InstaPay's QR for owners who pay): kept here, never in the (public) code
 IF OBJECT_ID('dbo.AppFiles') IS NULL
   CREATE TABLE dbo.AppFiles([Key] NVARCHAR(60) NOT NULL PRIMARY KEY, ContentType NVARCHAR(40) NOT NULL, Data VARBINARY(MAX) NOT NULL,
-    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());";
+    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+-- ---- WhatsApp growth features (2026-11-17) ----
+-- OwnerPhone: the owner's own WhatsApp (the weekly report and handoff alerts go there from the store's number)
+-- Cart*: abandoned-cart reminder (Carts.cs) on/off, minutes to wait, an optional coupon, Shopify's checkout webhooks registered
+-- RestockOn: «بلّغني لما يرجع» (Restock.cs) · ReportOn/ReportAt: the weekly report and when it last went out · HandoffOn: handoff alerts
+IF COL_LENGTH('dbo.Stores', 'OwnerPhone') IS NULL ALTER TABLE dbo.Stores ADD OwnerPhone NVARCHAR(20) NULL,
+  CartOn BIT NOT NULL CONSTRAINT DF_Stores_CartOn DEFAULT 0, CartDelay INT NOT NULL CONSTRAINT DF_Stores_CartDelay DEFAULT 60,
+  CartCoupon NVARCHAR(40) NULL, CartHooked BIT NOT NULL CONSTRAINT DF_Stores_CartHooked DEFAULT 0,
+  RestockOn BIT NOT NULL CONSTRAINT DF_Stores_RestockOn DEFAULT 0,
+  ReportOn BIT NOT NULL CONSTRAINT DF_Stores_ReportOn DEFAULT 0, ReportAt DATETIME2 NULL,
+  HandoffOn BIT NOT NULL CONSTRAINT DF_Stores_HandoffOn DEFAULT 0;
+IF OBJECT_ID('dbo.CartReminders') IS NULL
+BEGIN
+  CREATE TABLE dbo.CartReminders(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Source NVARCHAR(10) NOT NULL,          -- shopify / eo
+    CheckoutId NVARCHAR(64) NOT NULL,
+    Phone NVARCHAR(20) NULL, Customer NVARCHAR(100) NULL, Items NVARCHAR(500) NULL, Total NVARCHAR(40) NULL, Url NVARCHAR(800) NULL,
+    Status NVARCHAR(12) NOT NULL,          -- waiting / sent / ordered (bought before or after the message) / skipped / failed
+    Note NVARCHAR(300) NULL,
+    DueAt DATETIME2 NOT NULL, SentAt DATETIME2 NULL, OrderedAt DATETIME2 NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE UNIQUE INDEX UX_CartReminders_Checkout ON dbo.CartReminders(StoreId, Source, CheckoutId);   -- one reminder per checkout
+  CREATE INDEX IX_CartReminders_Due ON dbo.CartReminders(Status, DueAt);
+  CREATE INDEX IX_CartReminders_Store ON dbo.CartReminders(StoreId, Id);
+END
+IF OBJECT_ID('dbo.RestockWaits') IS NULL
+BEGIN
+  CREATE TABLE dbo.RestockWaits(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Source NVARCHAR(10) NOT NULL,          -- shopify / eo / site (a product typed in the store's own data)
+    ProductKey NVARCHAR(100) NOT NULL,     -- the product id in its store system
+    Product NVARCHAR(200) NOT NULL, Variant NVARCHAR(100) NULL, Url NVARCHAR(600) NULL,
+    Phone NVARCHAR(20) NOT NULL,
+    Status NVARCHAR(12) NOT NULL,          -- waiting / sent / expired / failed
+    Note NVARCHAR(300) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), SentAt DATETIME2 NULL, CheckedAt DATETIME2 NULL);
+  CREATE INDEX IX_RestockWaits_Product ON dbo.RestockWaits(StoreId, ProductKey, Status);
+  CREATE INDEX IX_RestockWaits_Store ON dbo.RestockWaits(StoreId, Id);
+END
+IF OBJECT_ID('dbo.Handoffs') IS NULL
+BEGIN
+  CREATE TABLE dbo.Handoffs(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Channel NVARCHAR(8) NOT NULL,          -- wa / web
+    ChatKey NVARCHAR(100) NOT NULL,        -- the customer's number (wa) or the site chat's session (web)
+    Phone NVARCHAR(20) NULL, Reason NVARCHAR(400) NOT NULL,
+    Status NVARCHAR(12) NOT NULL,          -- sent (the owner got the alert) / failed / noalert (no owner number)
+    Note NVARCHAR(300) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_Handoffs_Store ON dbo.Handoffs(StoreId, Id);
+END
+IF COL_LENGTH('dbo.RestockWaits', 'CheckedAt') IS NULL ALTER TABLE dbo.RestockWaits ADD CheckedAt DATETIME2 NULL;   -- when the stock was last looked at
+-- answers per day (site + WhatsApp), so the weekly report can say how many this week (UsageMonthly is per month)
+IF OBJECT_ID('dbo.UsageDaily') IS NULL
+  CREATE TABLE dbo.UsageDaily(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Day DATE NOT NULL, Messages INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (StoreId, Day));
+-- a picture the customer sent on WhatsApp (its URL at Wapilot), for the assistant to look at (WaImages)
+IF COL_LENGTH('dbo.WaMessages', 'Media') IS NULL ALTER TABLE dbo.WaMessages ADD Media NVARCHAR(800) NULL;
+-- customers who sent «وقف» after one of Sellybot's own messages (abandoned cart, back in stock): no more of those from this store
+IF OBJECT_ID('dbo.WaOptOuts') IS NULL
+  CREATE TABLE dbo.WaOptOuts(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Phone NVARCHAR(20) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), PRIMARY KEY (StoreId, Phone));";
     }
 }
