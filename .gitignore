@@ -32,3 +32,6 @@ Thumbs.db
 
 # Let's Encrypt account key, certificate key and the certificate file (never commit)
 deploy/ssl/
+
+# the owner's source videos for the reels page (the site copies live in deploy/site/reels/)
+/reels/

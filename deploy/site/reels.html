@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ريلز Sellybot · اتعلم الموقع في دقيقة</title>
+<meta name="description" content="فيديوهات قصيرة بتشرحلك Sellybot خطوة بخطوة: إزاي ترفع داتا متجرك، وتربط Shopify و EasyOrders، وتخلّي المساعد يرد على زباينك.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_EG">
+<meta property="og:site_name" content="Sellybot">
+<meta property="og:url" content="https://sellybot.online/reels.html">
+<meta property="og:title" content="ريلز Sellybot · اتعلم الموقع في دقيقة">
+<meta property="og:description" content="فيديوهات قصيرة بتشرحلك Sellybot خطوة بخطوة.">
+<meta property="og:image" content="https://sellybot.online/reels/01-files.jpg">
+<meta name="theme-color" content="#000000">
+<link rel="icon" type="image/svg+xml" href="sellybot-icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Meta Pixel (Sellybot ads): see pixel.js -->
+<script src="pixel.js"></script>
+<style>
+  :root{--brand:#e8774a;--brand2:#f5a25d;--pink:#e84a8a;--muted:rgba(255,255,255,.75);--glass:rgba(255,255,255,.14)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:#000;color:#fff;font-family:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;overflow:hidden;overscroll-behavior:none}
+  button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+  a{color:inherit}
+  svg{display:block}
+
+  /* ---- the feed: one reel per screen, snapping like Instagram / Facebook ---- */
+  .feed{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain}
+  .feed::-webkit-scrollbar{display:none}
+  .reel{position:relative;height:100vh;height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center;gap:18px;overflow:hidden}
+  .bg{display:none;position:absolute;inset:-60px;background:var(--poster) center/cover no-repeat;filter:blur(46px) brightness(.32) saturate(1.3);transform:scale(1.1)}
+  .stage{position:relative;width:100%;height:100%;overflow:hidden;background:#0b0b0b;z-index:1}
+  /* contain, never cover: these videos explain the site, so nothing at their edges may be cut off */
+  .stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+  .tap{position:absolute;inset:0;z-index:2}
+
+  /* the reel's text, over a dark gradient at the bottom */
+  /* small over the video (name, title, «المزيد»), so it hides as little of the explanation as possible */
+  .info{position:absolute;inset-inline:0;bottom:0;z-index:3;padding:64px 14px calc(16px + env(safe-area-inset-bottom));padding-inline-end:74px;
+    background:linear-gradient(to bottom,transparent,rgba(0,0,0,.62) 42%,rgba(0,0,0,.9));pointer-events:none;transition:background .25s}
+  .info>*{pointer-events:auto}
+  .info.open{background:rgba(0,0,0,.9);padding-top:20px}
+  .who{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .who .cta{margin-inline-start:auto}
+  .av{width:34px;height:34px;border-radius:50%;background:#fff8f3;display:grid;place-items:center;flex:none;box-shadow:0 0 0 2px var(--brand)}
+  .av svg{width:20px;height:20px}
+  .who b{font-size:15px;display:inline-flex;align-items:center;gap:4px}
+  .ok{width:15px;height:15px;color:#3897f0}
+  .ep{display:block;font-size:12px;font-weight:600;color:var(--brand2);margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ttl{font-size:16px;font-weight:700;line-height:1.5;margin:0;text-shadow:0 1px 8px rgba(0,0,0,.4);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .cap{display:none;font-size:14px;line-height:1.8;color:var(--muted);margin:8px 0 0}
+  .info.open .ttl{display:block}
+  .info.open .cap{display:block;max-height:42vh;overflow-y:auto}
+  .more{font-size:13px;font-weight:600;color:rgba(255,255,255,.85);margin-top:3px}
+  .cta{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:linear-gradient(135deg,var(--brand),var(--pink));
+    color:#fff;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 6px 18px rgba(232,74,138,.35);white-space:nowrap;flex:none}
+  .cta svg{width:15px;height:15px}
+  .cta.big{display:none}
+
+  /* progress: fills from the right (RTL); tap or drag on it to jump */
+  .bar{position:absolute;inset-inline:0;bottom:0;height:18px;z-index:4;display:flex;align-items:flex-end;cursor:pointer;touch-action:none}
+  .bar i{display:block;width:100%;height:3px;background:rgba(255,255,255,.25);position:relative;transition:height .15s}
+  .bar i b{position:absolute;inset:0;background:#fff;transform-origin:right center;transform:scaleX(0)}
+  .bar:hover i,.bar.drag i{height:6px}
+
+  /* big play icon (paused), buffering ring, double-tap heart */
+  .mid{position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none}
+  .mid>*{grid-area:1/1}
+  .play{width:78px;height:78px;border-radius:50%;background:rgba(0,0,0,.42);display:grid;place-items:center;opacity:0;transform:scale(.7);transition:opacity .2s,transform .25s cubic-bezier(.34,1.56,.64,1)}
+  .play svg{width:34px;height:34px;margin-inline-end:-4px}
+  .paused .play{opacity:1;transform:none}
+  .spin{width:46px;height:46px;border-radius:50%;border:3.5px solid rgba(255,255,255,.25);border-top-color:#fff;animation:spin .8s linear infinite;opacity:0;transition:opacity .2s}
+  .wait .spin{opacity:1}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .burst{position:absolute;z-index:5;width:96px;height:96px;margin:-48px 0 0 -48px;pointer-events:none;color:#ff3b5c;animation:burst .9s ease-out forwards;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
+  @keyframes burst{0%{transform:scale(.2) rotate(-12deg);opacity:0}15%{transform:scale(1.15) rotate(-12deg);opacity:1}30%{transform:scale(.95) rotate(-12deg)}70%{opacity:1;transform:scale(1) rotate(-12deg) translateY(0)}100%{opacity:0;transform:scale(1.1) rotate(-12deg) translateY(-70px)}}
+
+  /* sound off: a pill at the top of the reel until the visitor turns it on */
+  .unmute{position:absolute;top:calc(68px + env(safe-area-inset-top));inset-inline-start:50%;transform:translateX(50%);z-index:4;display:none;align-items:center;gap:7px;
+    padding:8px 15px;border-radius:999px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:13.5px;font-weight:600;white-space:nowrap}
+  .unmute svg{width:18px;height:18px}
+  .muted .unmute{display:inline-flex}
+
+  /* the actions column (left in RTL, like the Arabic apps) */
+  .acts{position:absolute;inset-inline-end:8px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:5;display:flex;flex-direction:column;align-items:center;gap:16px}
+  .act{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .act .ic{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.28);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:transform .15s}
+  .act:active .ic{transform:scale(.88)}
+  .act svg{width:26px;height:26px;filter:drop-shadow(0 1px 4px rgba(0,0,0,.35))}
+  .act.liked .ic{color:#ff3b5c}
+  .act.liked .ic svg{animation:pop .35s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop{0%{transform:scale(.6)}100%{transform:none}}
+  .act .off{display:none}
+  .muted .act.snd .on{display:none}
+  .muted .act.snd .off{display:block}
+
+  /* top bar */
+  .top{position:fixed;inset-inline:0;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 22px;
+    background:linear-gradient(rgba(0,0,0,.6),transparent);pointer-events:none}
+  .top>*{pointer-events:auto}
+  .logo{display:flex;align-items:center;gap:7px;text-decoration:none;font-weight:700;font-size:17px}
+  .logo .av{width:32px;height:32px;box-shadow:none}
+  .logo span{color:var(--brand2)}
+  .top h1{font-size:17px;margin:0;font-weight:700;display:flex;align-items:center;gap:6px}
+  .top h1 svg{width:20px;height:20px}
+  .sep{width:1px;height:20px;background:rgba(255,255,255,.3)}
+  .space{flex:1}
+  .start{padding:8px 14px;border-radius:999px;background:#fff;color:#1a1410;font-weight:700;font-size:13.5px;text-decoration:none;white-space:nowrap}
+
+  /* up / down (desktop) */
+  .arrows{display:none;position:fixed;inset-inline-start:26px;top:50%;transform:translateY(-50%);z-index:9;flex-direction:column;gap:12px}
+  .arrows button{width:46px;height:46px;border-radius:50%;background:var(--glass);display:grid;place-items:center;transition:background .2s,opacity .2s}
+  .arrows button:hover{background:rgba(255,255,255,.24)}
+  .arrows button:disabled{opacity:.3;cursor:default}
+  .arrows svg{width:24px;height:24px}
+
+  /* the last screen */
+  .end .card{position:relative;z-index:1;width:min(420px,calc(100% - 40px));text-align:center;padding:30px 24px;border-radius:22px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
+  .end .av{width:62px;height:62px;margin:0 auto 14px}
+  .end .av svg{width:36px;height:36px}
+  .end h2{margin:0 0 6px;font-size:21px}
+  .end p{margin:0 0 14px;color:var(--muted);line-height:1.8;font-size:14.5px}
+  .soon{display:flex;align-items:center;gap:10px;text-align:start;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.06);margin:0 0 18px}
+  .soon b{display:block;font-size:14px}
+  .soon small{color:var(--muted);font-size:12.5px}
+  .soon .n{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--brand),var(--pink));font-weight:700}
+  .end .cta{margin:0}
+  .again{display:block;margin:14px auto 0;color:var(--muted);font-size:14px;text-decoration:underline;text-underline-offset:4px}
+
+  .toast{position:fixed;bottom:calc(30px + env(safe-area-inset-bottom));left:50%;transform:translate(-50%,20px);z-index:20;background:#fff;color:#1a1410;padding:10px 18px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* ---- big screens: a 9:16 card in the middle, its blurred picture behind it, actions beside it ---- */
+  @media (min-width:760px){
+    .reel{padding:22px 0}
+    .bg{display:block}
+    .stage{width:auto;height:100%;aspect-ratio:9/16;max-width:calc(100vw - 260px);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+    .stage video{object-fit:contain}
+    .info{padding-inline-end:16px;border-radius:0 0 16px 16px}
+    .acts{position:relative;inset:auto;bottom:auto;align-self:flex-end;margin-bottom:34px;z-index:2}
+    .act .ic{background:var(--glass)}
+    .arrows{display:flex}
+    .top{background:none;padding:18px 22px}
+  }
+  /* wide screens: the reel's text in a panel beside the video, not over it */
+  @media (min-width:1240px){
+    .stage{overflow:visible;border-radius:16px}
+    .stage video{border-radius:16px}
+    .bar{border-radius:0 0 16px 16px;overflow:hidden}
+    /* inline-end in RTL = the left edge, so this sits to the right of the video (the actions column is on its left) */
+    .info,.info.open{position:absolute;inset-inline-end:calc(100% + 28px);inset-inline-start:auto;bottom:24px;width:320px;padding:20px;border-radius:18px;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+    .ttl{display:block;font-size:18px}
+    .cap{display:block;max-height:none}
+    .more,.who .cta{display:none}
+    .cta.big{display:inline-flex;margin-top:16px;padding:10px 18px;font-size:14px}
+  }
+  @media (max-width:380px){.start{padding:7px 11px;font-size:12.5px}.sep,.top h1 span{display:none}}
+  @media (prefers-reduced-motion:reduce){.feed{scroll-behavior:auto}*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="./" aria-label="Sellybot">
+    <span class="av"><svg viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="#3a2a20" stroke-width="9" stroke-linecap="round"/><path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="#3a2a20" stroke-width="5" stroke-linecap="round"/></svg></span>
+    <b>Selly<span>bot</span></b>
+  </a>
+  <span class="sep" aria-hidden="true"></span>
+  <h1><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M3 8.5h18M8 3l3 5.5M14 3l3 5.5"/><path d="M10 12.2v5.2l4.4-2.6z" fill="currentColor" stroke="none"/></svg><span>ريلز</span></h1>
+  <span class="space"></span>
+  <a class="start" href="dashboard.html?signup=1">ابدأ مجانًا</a>
+</header>
+
+<main class="feed" id="feed" aria-label="ريلز Sellybot"></main>
+
+<div class="arrows" aria-hidden="false">
+  <button type="button" id="prev" aria-label="الريل اللي قبله"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+  <button type="button" id="next" aria-label="الريل اللي بعده"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*
+ * Sellybot's reels: short videos that show how to use the site. Public (no sign-in).
+ * To add a reel: put the video in site/reels/ (vertical 1080x1920 MP4, H.264 + AAC, moov at the start), make its cover
+ * (the first frame as a 720x1280 JPG) and add an entry here. Change v when a file is replaced: the files are cached a month.
+ */
+var REELS = [
+  {
+    id: "files", src: "reels/01-files.mp4", poster: "reels/01-files.jpg", v: 1,
+    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 1 من 3",
+    title: "ملفاتك ونصوصك: إزاي المساعد يعرف منتجاتك",
+    text: "ارفع الكتالوج وليستة الأسعار (PDF أو Word أو Excel) أو اكتب نص. سمّي كل حاجة باسم واضح، واكتب لكل منتج الكود والاسم والسعر وشكله ومقاساته وألوانه، عشان المساعد يلاقيه على طول، حتى لو الزبون بعتلك صورة المنتج وسأل «بكام؟». ولو معلومة اتغيّرت، عدّل الملف القديم بدل ما ترفع نسخة جديدة جنبه.",
+    cta: { label: "ارفع داتا متجرك", href: "dashboard.html" }
+  },
+  {
+    id: "shopify", src: "reels/02-shopify.mp4", poster: "reels/02-shopify.jpg", v: 1,
+    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 2 من 3",
+    title: "اربط متجرك على Shopify في 5 دقايق",
+    text: "من «داتا المتجر» اختار Shopify واعمل الربط الكامل، من غير برمجة: افتح Dev Dashboard بتاع Shopify، واعمل تطبيق اسمه Sellybot، واختار الصلاحيات (Scopes) وبيانات الزبون، وبعدين انسخ الـ Client ID والـ secret وحطهم في Sellybot. كده المساعد يعرف المنتجات والمخزون والمقاسات بالظبط، ويرد على «الأوردر بتاعي فين؟»، ويأكّد الطلبات على واتساب.",
+    cta: { label: "اربط متجرك", href: "dashboard.html" }
+  },
+  {
+    id: "easyorders", src: "reels/03-easyorders.mp4", poster: "reels/03-easyorders.jpg", v: 1,
+    series: "خطوة بخطوة · داتا المتجر", ep: "الحلقة 3 من 3",
+    title: "اربط متجرك على EasyOrders",
+    text: "من «داتا المتجر» دوس «ربط بضغطة»، ووافق في EasyOrders، وترجع لوحدك والربط جاهز. ولو حابب تربط بـ API Key: من Settings ← Public API في EasyOrders اعمل مفتاح جديد، وعلّم على Read Products و Read Orders و Update Orders وخلّيه Is Active، وانسخه في Sellybot ودوس «احفظ واختبر الربط». وبعدين اعمل Webhook بلينك Sellybot مرتين: نوع «Orders» ونوع «Order Status Update»، عشان تأكيد الطلبات على واتساب ويعرف الزبون أوردره فين. وفي الآخر دوس «اكتب معلومات الشحن» وكمّل أسعار الشحن والاسترجاع اللي EasyOrders مابتبعتهاش.",
+    cta: { label: "اربط متجرك", href: "dashboard.html" }
+  }
+];
+
+(function () {
+  var feed = document.getElementById("feed");
+  var SVG = {
+    ok: '<svg class="ok" viewBox="0 0 24 24" aria-label="حساب رسمي"><path fill="currentColor" d="M12 1.5l2.6 1.9 3.2-.2 1 3 2.7 1.8-.9 3.1.9 3.1-2.7 1.8-1 3-3.2-.2L12 22.5l-2.6-1.9-3.2.2-1-3-2.7-1.8.9-3.1-.9-3.1 2.7-1.8 1-3 3.2.2z"/><path d="M8 12.3l2.6 2.6L16.2 9.3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    logo: '<svg viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="#3a2a20" stroke-width="9" stroke-linecap="round"/><path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="#3a2a20" stroke-width="5" stroke-linecap="round"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8z"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 2.9 4.5 6.7 4.1c2-.2 3.9.8 5.3 2.6 1.4-1.8 3.3-2.8 5.3-2.6 3.8.4 5.8 4.3 4.3 7.6C19.5 16.4 12 21 12 21z"/></svg>',
+    heartO: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.3s-7-4.3-9-8.7C1.6 8.5 3.5 5 7 4.6c1.9-.2 3.6.8 5 2.5 1.4-1.7 3.1-2.7 5-2.5 3.5.4 5.4 3.9 4 7-2 4.4-9 8.7-9 8.7z"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 3.5L10.2 13.8M21.5 3.5l-6.8 17-4.5-6.7-7-4.3z"/></svg>',
+    sndOn: '<svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5l5 4v-13l-5 4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.6 6.4a8 8 0 0 1 0 11.2"/></svg>',
+    sndOff: '<svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5l5 4v-13l-5 4z" fill="currentColor"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></svg>',
+    arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'
+  };
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  // ---- build the reels (+ the closing screen) ----
+  var likes = {}; try { likes = JSON.parse(localStorage.getItem("sb-reel-likes") || "{}") || {}; } catch (e) {}
+  REELS.forEach(function (r, i) {
+    var s = document.createElement("section");
+    s.className = "reel muted paused"; s.dataset.i = i; s.id = "r-" + r.id;
+    s.setAttribute("aria-label", r.title);
+    s.style.setProperty("--poster", 'url("' + r.poster + "?v=" + r.v + '")');
+    s.innerHTML =
+      '<div class="bg" aria-hidden="true"></div>' +
+      '<div class="stage">' +
+        '<video playsinline webkit-playsinline loop muted preload="none" poster="' + esc(r.poster + "?v=" + r.v) + '" aria-label="' + esc(r.title) + '"></video>' +
+        '<div class="tap"></div>' +
+        '<div class="mid"><span class="play">' + SVG.play + '</span><span class="spin"></span></div>' +
+        '<button type="button" class="unmute">' + SVG.sndOff.replace('class="off"', "") + 'دوس عشان تشغّل الصوت</button>' +
+        '<div class="info">' +
+          '<div class="who"><span class="av">' + SVG.logo + '</span><b>Sellybot ' + SVG.ok + '</b>' +
+            '<a class="cta" href="' + esc(r.cta.href) + '">' + esc(r.cta.label) + SVG.arrow + '</a></div>' +
+          '<span class="ep">' + esc(r.ep) + " · " + esc(r.series) + '</span>' +
+          '<p class="ttl">' + esc(r.title) + '</p>' +
+          '<p class="cap">' + esc(r.text) + '</p><button type="button" class="more">المزيد</button>' +
+          '<a class="cta big" href="' + esc(r.cta.href) + '">' + esc(r.cta.label) + SVG.arrow + '</a>' +
+        '</div>' +
+        '<div class="bar" role="slider" aria-label="مكان الفيديو" tabindex="0"><i><b></b></i></div>' +
+      '</div>' +
+      '<div class="acts">' +
+        '<button type="button" class="act like' + (likes[r.id] ? " liked" : "") + '" aria-pressed="' + !!likes[r.id] + '"><span class="ic">' + (likes[r.id] ? SVG.heart : SVG.heartO) + '</span>عجبني</button>' +
+        '<button type="button" class="act shr"><span class="ic">' + SVG.share + '</span>شارك</button>' +
+        '<button type="button" class="act snd" aria-label="الصوت"><span class="ic">' + SVG.sndOn + SVG.sndOff + '</span>الصوت</button>' +
+      '</div>';
+    feed.appendChild(s);
+  });
+  var end = document.createElement("section");
+  end.className = "reel end"; end.dataset.i = REELS.length; end.id = "r-end";
+  end.innerHTML =
+    '<div class="bg" aria-hidden="true" style="--poster:url(' + REELS[REELS.length - 1].poster + ')"></div>' +
+    '<div class="card"><span class="av">' + SVG.logo + '</span>' +
+    '<h2>خلّصت سلسلة «داتا المتجر» 🎉</h2>' +
+    '<p>جرّب اللي اتعلمته على متجرك دلوقتي، شهر كامل ببلاش ومن غير كارت.</p>' +
+    '<div class="soon"><span class="n" aria-hidden="true">🛍️</span><span><b>الحلقة الجاية: ضيف الشات لمتجرك</b><small>قريب في الريلز</small></span></div>' +
+    '<a class="cta" href="dashboard.html?signup=1">ابدأ تجربتك المجانية' + SVG.arrow + '</a>' +
+    '<button type="button" class="again" id="again">شوف من الأول</button></div>';
+  feed.appendChild(end);
+
+  var secs = [].slice.call(feed.querySelectorAll(".reel"));
+  var vids = secs.slice(0, REELS.length).map(function (s) { return s.querySelector("video"); });
+  var cur = -1, wantSound = false, seen = {};
+  try { wantSound = sessionStorage.getItem("sb-reel-sound") === "1"; } catch (e) {}
+
+  function toast(t) { var el = document.getElementById("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove("show"); }, 2000); }
+  function attach(i, preload) {
+    var v = vids[i]; if (!v) return;
+    if (!v.getAttribute("src")) v.src = REELS[i].src + "?v=" + REELS[i].v;
+    if (preload === "auto" || v.preload === "none") v.preload = preload;
+  }
+  function soundUI() { secs.forEach(function (s, i) { s.classList.toggle("muted", !vids[i] || vids[i].muted); }); }
+
+  // play the reel on screen: with sound when allowed (or chosen), otherwise muted with the «شغّل الصوت» pill
+  function play(i) {
+    var v = vids[i]; if (!v) return;
+    v.muted = !wantSound;
+    var p = v.play();
+    if (p && p.catch) p.catch(function () {
+      if (!v.muted) { v.muted = true; soundUI(); v.play().catch(function () { secs[i].classList.add("paused"); }); }
+      else secs[i].classList.add("paused");
+    });
+    soundUI();
+  }
+  function activate(i) {
+    if (i === cur) return;
+    cur = i;
+    vids.forEach(function (v, j) { if (j !== i && !v.paused) v.pause(); });
+    document.getElementById("prev").disabled = i <= 0;
+    document.getElementById("next").disabled = i >= secs.length - 1;
+    if (i >= REELS.length) { history.replaceState(null, "", "#end"); return; }
+    attach(i, "auto");
+    if (i + 1 < REELS.length) attach(i + 1, "metadata");
+    history.replaceState(null, "", "#" + REELS[i].id);
+    play(i);
+  }
+  function go(i) {
+    i = Math.max(0, Math.min(secs.length - 1, i));
+    feed.scrollTo({ top: secs[i].offsetTop, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
+  // which reel is on screen
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting && e.intersectionRatio >= 0.6) activate(+e.target.dataset.i); });
+  }, { root: feed, threshold: [0.6] });
+  secs.forEach(function (s) { io.observe(s); });
+
+  // ---- each reel's controls ----
+  vids.forEach(function (v, i) {
+    var s = secs[i], bar = s.querySelector(".bar"), fill = bar.querySelector("b"), r = REELS[i];
+    v.addEventListener("playing", function () {
+      s.classList.remove("paused", "wait");
+      if (!seen[r.id]) { seen[r.id] = true; if (window.sbTrack) window.sbTrack("ViewContent", { content_name: r.title, content_category: "reels" }); }
+    });
+    v.addEventListener("pause", function () { s.classList.add("paused"); });
+    v.addEventListener("waiting", function () { s.classList.add("wait"); });
+    v.addEventListener("canplay", function () { s.classList.remove("wait"); });
+    v.addEventListener("error", function () { s.classList.remove("wait"); if (i === cur) toast("الفيديو ماتحمّلش، اتأكد من النت وجرّب تاني"); });
+    v.addEventListener("volumechange", soundUI);
+
+    // tap = pause / play, double tap = like (with a heart where you tapped)
+    var tapT = null;
+    s.querySelector(".tap").addEventListener("click", function (e) {
+      if (tapT) { clearTimeout(tapT); tapT = null; like(i, true, e); return; }
+      tapT = setTimeout(function () { tapT = null; if (v.paused) { v.play().catch(function () {}); } else v.pause(); }, 230);
+    });
+    s.querySelector(".unmute").onclick = function () { setSound(true); };
+    s.querySelector(".snd").onclick = function () { setSound(v.muted); };
+    s.querySelector(".like").onclick = function () { like(i, !likes[r.id]); };
+    s.querySelector(".shr").onclick = function () { share(r); };
+    s.querySelector(".more").onclick = function () {
+      var open = s.querySelector(".info").classList.toggle("open");
+      this.textContent = open ? "أقل" : "المزيد";
+    };
+
+    // progress, and jumping by tapping / dragging the bar (it runs right to left)
+    function at(x) { var b = bar.getBoundingClientRect(); return Math.max(0, Math.min(1, (b.right - x) / b.width)); }
+    bar.addEventListener("pointerdown", function (e) {
+      if (!v.duration) return;
+      bar.setPointerCapture(e.pointerId); bar.classList.add("drag");
+      v.currentTime = at(e.clientX) * v.duration;
+      bar.onpointermove = function (m) { v.currentTime = at(m.clientX) * v.duration; fill.style.transform = "scaleX(" + at(m.clientX) + ")"; };
+    });
+    bar.addEventListener("pointerup", function () { bar.classList.remove("drag"); bar.onpointermove = null; });
+    bar.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft") { v.currentTime = Math.min(v.duration || 0, v.currentTime + 5); e.preventDefault(); }
+      if (e.key === "ArrowRight") { v.currentTime = Math.max(0, v.currentTime - 5); e.preventDefault(); }
+    });
+    v.addEventListener("loadedmetadata", function () { bar.setAttribute("aria-valuemax", Math.round(v.duration)); });
+  });
+  (function tick() {
+    if (cur >= 0 && cur < vids.length) {
+      var v = vids[cur], fill = secs[cur].querySelector(".bar b");
+      if (v.duration && !secs[cur].querySelector(".bar").classList.contains("drag")) fill.style.transform = "scaleX(" + (v.currentTime / v.duration) + ")";
+    }
+    requestAnimationFrame(tick);
+  })();
+
+  function setSound(on) {
+    wantSound = on;
+    try { sessionStorage.setItem("sb-reel-sound", on ? "1" : "0"); } catch (e) {}
+    vids.forEach(function (v) { v.muted = !on; });
+    if (on && cur >= 0 && cur < vids.length) {
+      // the browser may refuse sound (or stop the video) without a real tap: then keep it playing muted and say so
+      var v = vids[cur];
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {
+        wantSound = false; v.muted = true; soundUI();
+        v.play().catch(function () {});
+        toast("دوس على زرار الصوت تاني عشان يشتغل 🔊");
+      });
+    }
+    soundUI();
+  }
+  function like(i, on, e) {
+    var r = REELS[i], b = secs[i].querySelector(".like");
+    if (e) {   // the heart where the double tap was
+      var h = document.createElement("span"), box = secs[i].querySelector(".stage").getBoundingClientRect();
+      h.className = "burst"; h.innerHTML = SVG.heart; h.style.left = (e.clientX - box.left) + "px"; h.style.top = (e.clientY - box.top) + "px";
+      secs[i].querySelector(".stage").appendChild(h); setTimeout(function () { h.remove(); }, 950);
+    }
+    if (on) likes[r.id] = 1; else delete likes[r.id];
+    try { localStorage.setItem("sb-reel-likes", JSON.stringify(likes)); } catch (x) {}
+    b.classList.toggle("liked", !!on); b.setAttribute("aria-pressed", !!on);
+    b.querySelector(".ic").innerHTML = on ? SVG.heart : SVG.heartO;
+  }
+  function share(r) {
+    var url = location.origin + location.pathname + "#" + r.id;
+    if (navigator.share) { navigator.share({ title: r.title, text: r.title + " · Sellybot", url: url }).catch(function () {}); return; }
+    var done = function () { toast("اتنسخ لينك الريل ✅"); };
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { prompt("انسخ اللينك:", url); });
+    else prompt("انسخ اللينك:", url);
+  }
+
+  // keyboard (computer): ↓ ↑ to move, space to pause, M for sound
+  document.addEventListener("keydown", function (e) {
+    if (e.target.closest && e.target.closest(".bar")) return;
+    if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === "j") { go(cur + 1); e.preventDefault(); }
+    else if (e.key === "ArrowUp" || e.key === "PageUp" || e.key === "k") { go(cur - 1); e.preventDefault(); }
+    else if (e.key === " " && cur < vids.length && !(e.target.closest && e.target.closest("button,a"))) { var v = vids[cur]; if (v.paused) v.play().catch(function () {}); else v.pause(); e.preventDefault(); }
+    else if ((e.key === "m" || e.key === "M") && cur < vids.length) setSound(vids[cur].muted);
+  });
+  document.getElementById("prev").onclick = function () { go(cur - 1); };
+  document.getElementById("next").onclick = function () { go(cur + 1); };
+  document.getElementById("again").onclick = function () { go(0); };
+  // leaving the tab pauses; coming back plays again
+  document.addEventListener("visibilitychange", function () {
+    if (cur < 0 || cur >= vids.length) return;
+    if (document.hidden) vids[cur].pause(); else vids[cur].play().catch(function () {});
+  });
+
+  // a shared link (reels.html#shopify) opens on its reel, also when it's opened while the page is already showing
+  function indexOf(hash) { var h = (hash || "").slice(1), at = -1; REELS.forEach(function (r, i) { if (r.id === h) at = i; }); return h === "end" ? REELS.length : at; }
+  var start = indexOf(location.hash);
+  if (start > 0) feed.scrollTop = secs[start].offsetTop;
+  window.addEventListener("hashchange", function () { var i = indexOf(location.hash); if (i >= 0 && i !== cur) go(i); });
+})();
+</script>
+</body>
+</html>

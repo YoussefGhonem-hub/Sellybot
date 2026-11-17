@@ -10,6 +10,13 @@
 // - After loading, the entries this browser hasn't seen yet open once in the "الجديد في Sellybot" window.
 window.SB_NEWS = [
   {
+    id: "2026-11-17-reels", date: "2026-11-17", icon: "🎬",
+    title: "ريلز: اتعلم Sellybot في دقيقة",
+    text: "فيديوهات قصيرة زي ريلز إنستجرام بتشرحلك خطوة بخطوة: إزاي ترفع داتا متجرك، وتربط Shopify أو EasyOrders.",
+    items: ["الحلقة 1: ملفاتك ونصوصك", "الحلقة 2: اربط متجرك على Shopify", "الحلقة 3: اربط متجرك على EasyOrders"],
+    link: { href: "reels.html", label: "شوف الريلز" }
+  },
+  {
     id: "2026-11-17-logo-bubble", date: "2026-11-17", icon: "🖼️",
     title: "لوجو متجرك بقى ينفع يبقى فقاعة الشات",
     text: "ارفع اللوجو من «شكل الشات»، ويظهر هو في ركن موقعك وصورة للمساعد جوه الشات، بدايرة بلون البراند بتاعك.",
