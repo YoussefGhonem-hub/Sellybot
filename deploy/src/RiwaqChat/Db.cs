@@ -39,6 +39,8 @@ namespace RiwaqChat
         public bool CartOn, CartHooked, RestockOn, ReportOn, HandoffOn;
         public int CartDelay;
         public DateTime? ReportAt;
+        // the store's own logo as its chat bubble (style "logo", StoreLogo.cs): when it was uploaded (0 = none), contain / cover
+        public int LogoVer; public string LogoFit;
         public bool IsAdmin;
         public int MonthlyTokenLimit, DataVersion;
         public DateTime CreatedAt;
@@ -257,6 +259,8 @@ namespace RiwaqChat
                 ReportOn = r["ReportOn"] is bool && (bool)r["ReportOn"],
                 ReportAt = r["ReportAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["ReportAt"], DateTimeKind.Utc),
                 HandoffOn = r["HandoffOn"] is bool && (bool)r["HandoffOn"],
+                LogoVer = r["LogoVer"] is int ? (int)r["LogoVer"] : 0,
+                LogoFit = r["LogoFit"] as string,
                 EoOcScope = r["EoOcScope"] as string ?? "all",
                 EoHookKey = r["EoHookKey"] as string,
                 EoHookAt = r["EoHookAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["EoHookAt"], DateTimeKind.Utc),
@@ -633,6 +637,13 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_PlanRequests_RefNo' AN
 IF OBJECT_ID('dbo.AppFiles') IS NULL
   CREATE TABLE dbo.AppFiles([Key] NVARCHAR(60) NOT NULL PRIMARY KEY, ContentType NVARCHAR(40) NOT NULL, Data VARBINARY(MAX) NOT NULL,
     UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+-- ---- the store's own logo as its chat bubble (style logo, StoreLogo.cs, 2026-11-17) ----
+-- LogoVer: when it was uploaded, in Unix seconds, so its address changes with every upload (0 = no logo) · LogoFit: contain / cover
+-- The picture itself is in StoreLogos, so reading a store (SELECT *) never pulls it.
+IF COL_LENGTH('dbo.Stores', 'LogoVer') IS NULL ALTER TABLE dbo.Stores ADD LogoVer INT NOT NULL CONSTRAINT DF_Stores_LogoVer DEFAULT 0, LogoFit NVARCHAR(10) NULL;
+IF OBJECT_ID('dbo.StoreLogos') IS NULL
+  CREATE TABLE dbo.StoreLogos(StoreId INT NOT NULL PRIMARY KEY REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    ContentType NVARCHAR(20) NOT NULL, Data VARBINARY(MAX) NOT NULL, UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
 -- ---- WhatsApp growth features (2026-11-17) ----
 -- OwnerPhone: the owner's own WhatsApp (the weekly report and handoff alerts go there from the store's number)
 -- Cart*: abandoned-cart reminder (Carts.cs) on/off, minutes to wait, an optional coupon, Shopify's checkout webhooks registered

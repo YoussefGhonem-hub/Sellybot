@@ -23,6 +23,7 @@ namespace RiwaqChat
                 { "id", s.Id }, { "slug", s.Slug }, { "name", s.Name }, { "email", s.OwnerEmail }, { "isAdmin", s.IsAdmin },
                 { "status", s.Status }, { "botName", s.BotName }, { "welcome", s.Welcome ?? "" }, { "instructions", s.Instructions ?? "" },
                 { "allowedOrigins", s.AllowedOrigins ?? "" }, { "bubbleStyle", s.BubbleStyle }, { "brandColor", s.BrandColor }, { "chatTitle", s.ChatTitle ?? "" }, { "suggestions", s.Suggestions ?? "" },
+                { "logo", LogoHandler.Url(s) }, { "logoFit", LogoHandler.Fit(s) },   // the owner's logo as the chat bubble (StoreLogo.cs)
                 { "shopify", new Dictionary<string, object> {
                     { "domain", s.ShopifyDomain ?? "" }, { "status", s.ShopifyStatus ?? "" }, { "syncedAt", s.ShopifySyncedAt.HasValue ? s.ShopifySyncedAt.Value.ToString("o") : "" },
                     // full connection (never the secret itself)
@@ -238,7 +239,14 @@ namespace RiwaqChat
                         var v = Web.Str(b, "bubbleStyle", 20);
                         if (v != s.BubbleStyle && !BubbleStyles.Contains(v)) { Web.Error(res, 400, "bad_style", "شكل الفقاعة مش معروف."); return; }
                         if (v != s.BubbleStyle && !PlanGate.FreeStyles.Contains(v) && !PlanGate.Allows(c, s, "styles")) { PlanGate.Deny(res, c, s, "styles"); return; }
+                        if (v == "logo" && s.LogoVer <= 0) { Web.Error(res, 400, "no_logo", "ارفع لوجو متجرك الأول، وبعدين اختاره شكل للفقاعة."); return; }
                         sets.Add("BubbleStyle=@style"); ps.Add("@style"); ps.Add(v);
+                    }
+                    // the logo bubble: the logo inside a white circle (contain) or filling it (cover)
+                    if (b.ContainsKey("logoFit"))
+                    {
+                        var v = Web.Str(b, "logoFit", 10) == "cover" ? "cover" : "contain";
+                        sets.Add("LogoFit=@fit"); ps.Add("@fit"); ps.Add(v);
                     }
                     if (b.ContainsKey("brandColor"))
                     {
@@ -266,7 +274,8 @@ namespace RiwaqChat
         {
             "classic", "pill", "agent", "minimal", "bear", "cat", "blob", "bag", "gift", "star",
             "orb", "duo", "wave", "robot", "owl", "ghost", "bunny", "heart", "cup", "cart",
-            "mail", "phone", "penguin", "fox", "panda", "frog", "shirt", "box", "diamond", "cake", "monkey"
+            "mail", "phone", "penguin", "fox", "panda", "frog", "shirt", "box", "diamond", "cake", "monkey",
+            "logo"   // the store's own logo (StoreLogo.cs): only once one is uploaded
         };
 
         static string NullIfEmpty(string v) { return string.IsNullOrWhiteSpace(v) ? null : v; }

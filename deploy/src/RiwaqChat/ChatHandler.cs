@@ -405,6 +405,7 @@ namespace RiwaqChat
                 { "welcome", store == null ? null : store.Welcome },
                 { "bubbleStyle", store == null ? "bear" : store.BubbleStyle },
                 { "brandColor", store == null ? "#e8774a" : store.BrandColor }, { "chatTitle", store == null ? null : store.ChatTitle },
+                { "logo", LogoHandler.Url(store) }, { "logoFit", LogoHandler.Fit(store) },   // the "logo" bubble style (StoreLogo.cs)
                 { "suggestions", store == null || string.IsNullOrEmpty(store.Suggestions) ? new string[0] : store.Suggestions.Split('\n') },
             };
         }

@@ -60,6 +60,31 @@
   }
   function svg(vb, inner, cls) { return '<svg class="art ' + (cls || "") + '" viewBox="' + vb + '" aria-hidden="true">' + inner + "</svg>"; }
 
+  // The store's logo as the bubble: a ring in the store's color around a white circle with the logo inside ("contain"),
+  // or the logo filling the circle ("cover"). A light arc runs around the ring. Before an upload (the dashboard's tile):
+  // a dashed circle with a picture icon. Each drawing gets its own clip id (the bubble, header and avatars share one page).
+  var lgN = 0;
+  function logoArt(url, fit) {
+    var ring = '<circle cx="60" cy="60" r="57" fill="var(--c)"/>' +
+      '<circle class="lgArc" cx="60" cy="60" r="57" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-linecap="round" pathLength="100" stroke-dasharray="12 88"/>';
+    if (!url) {
+      return svg("0 0 120 120",
+        '<circle cx="60" cy="60" r="54" fill="#fff" stroke="var(--c)" stroke-width="4" stroke-dasharray="9 7"/>' +
+        '<g class="lgPic"><rect x="36" y="38" width="48" height="40" rx="7" fill="none" stroke="var(--c)" stroke-width="4"/><circle cx="49" cy="51" r="5" fill="var(--c)"/>' +
+        '<path d="M39 75 l14 -14 10 10 7 -7 12 12" fill="none" stroke="var(--c)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<circle cx="84" cy="80" r="11" fill="var(--c)"/><path d="M84 74v12M78 80h12" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/></g>', "logo");
+    }
+    var u = /^(https?:)?\/\//i.test(url) ? url : BASE + url;
+    u = u.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    var id = "sbLg" + (++lgN);
+    var pic = fit === "cover"
+      ? '<image href="' + u + '" x="8" y="8" width="104" height="104" preserveAspectRatio="xMidYMid slice" clip-path="url(#' + id + ')"/>'
+      : '<image href="' + u + '" x="21" y="21" width="78" height="78" preserveAspectRatio="xMidYMid meet" clip-path="url(#' + id + ')"/>';
+    return svg("0 0 120 120",
+      '<defs><clipPath id="' + id + '"><circle cx="60" cy="60" r="52"/></clipPath></defs>' + ring +
+      '<g class="lgPic"><circle cx="60" cy="60" r="52" fill="#fff"/>' + pic + "</g>", "logo");
+  }
+
   function bearHeadParts() {
     return '<g class="ear"><circle cx="27" cy="31" r="16" fill="#a86e40"/><circle cx="27" cy="31" r="8" fill="#f3d6b6"/></g>' +
       '<g class="ear r"><circle cx="93" cy="31" r="16" fill="#a86e40"/><circle cx="93" cy="31" r="8" fill="#f3d6b6"/></g>' +
@@ -477,6 +502,10 @@
           eyes(46, 74, 87, 4.8) + cheeks(36, 84, 95, 5.5) + mouth(60, 95, 6), "face");
       }
     },
+    // The store's own logo (uploaded in «شكل الشات», api/logo.ashx): see logoArt
+    logo: {
+      name: "لوجو متجرك", art: function () { return logoArt(cfg.logo, cfg.logoFit); }
+    },
     // Sellybot's own chat on sellybot.online (not offered to stores): the logo tile. A comet runs around its border, the S
     // draws itself, spins like a sync icon now and then, opens to show typing dots on hover, talks while replying, spins while thinking.
     sellybot: {
@@ -684,6 +713,14 @@ button{font:inherit;cursor:pointer;color:inherit}
 @keyframes sbTalkB{to{transform:translate(2px,3px)}}
 @keyframes sbDot{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 
+/* the store's logo (style "logo") */
+.art.logo .lgArc,.art.logo .lgPic{transform-box:view-box;transform-origin:60px 60px}
+.art.logo .lgArc{opacity:0}
+.bubbleBtn .art.logo .lgArc{opacity:1;animation:sbOrbit 3.6s linear infinite}
+.talking .art.logo .lgPic{animation:lgTalk .32s ease-in-out infinite alternate}
+.av.thinking .art.logo .lgArc,.hdr.thinking .art.logo .lgArc{opacity:1;animation:sbOrbit .9s linear infinite}
+@keyframes lgTalk{to{transform:scale(1.06)}}
+
 /* ----- launcher (bubble mode) ----- */
 .launcher{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));z-index:2147483000;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}
 .launcher.hide{transform:scale(0) rotate(-20deg);opacity:0;pointer-events:none}
@@ -853,7 +890,9 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     window.StoreChatArt = {
       styles: Object.keys(STYLES).filter(function (k) { return !STYLES[k].hidden; }).map(function (k) { return { id: k, name: STYLES[k].name }; }),
       // Renders one style's drawing into an element, isolated in its own Shadow DOM with the animations.
-      render: function (el, id, color) {
+      // logo / fit: the store's own logo (api/logo.ashx address) for the "logo" style.
+      render: function (el, id, color, logo, fit) {
+        cfg.logo = logo || null; cfg.logoFit = fit === "cover" ? "cover" : "contain";
         var r = el.shadowRoot || el.attachShadow({ mode: "open" });
         var p = palette(color), S = STYLES[styleOf(id)];
         r.innerHTML = "<style>" + CSS + ":host{display:block}.w{width:100%;height:100%}.box{width:100%;height:100%;display:flex;align-items:center;justify-content:center}.box>svg{width:auto;height:100%;max-width:100%;flex:none}</style>" +
@@ -1210,6 +1249,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
       if (r.ok) {
         var c = await r.json();
         cfg.name = c.name || ""; cfg.botName = c.botName || ""; cfg.welcome = c.welcome; cfg.style = c.bubbleStyle || "bear"; cfg.color = c.brandColor || "#e8774a"; cfg.title = c.chatTitle || ""; cfg.suggestions = c.suggestions || [];
+        cfg.logo = c.logo || null; cfg.logoFit = c.logoFit === "cover" ? "cover" : "contain";
         if (PREVIEW) { if (qs.get("style")) cfg.style = qs.get("style"); if (qs.get("color")) cfg.color = qs.get("color"); }
         applyLook(); renderChips(); setStatus("ok", "متصل وجاهز يساعدك");
         return true;
@@ -1385,6 +1425,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     var d = e.detail || {};
     if (d.store !== STORE) return;
     if (d.style) cfg.style = d.style; if (d.color) cfg.color = d.color;
+    takeLogo(d);
     if (typeof d.title === "string") cfg.title = d.title;
     if (d.name) cfg.name = d.name; if (typeof d.botName === "string") cfg.botName = d.botName;
     if (d.suggestions) { cfg.suggestions = d.suggestions; renderChips(); }
@@ -1397,6 +1438,13 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     if (e.data.theme) setDark(e.data.theme === "dark");
     if (typeof e.data.title === "string") cfg.title = e.data.title;
     if (e.data.style) cfg.style = e.data.style; if (e.data.color) cfg.color = e.data.color;
+    takeLogo(e.data);
     applyLook();
   });
+
+  // a logo from the dashboard (a new upload, or contain/cover): only our own logo address is taken
+  function takeLogo(d) {
+    if ("logo" in d) cfg.logo = typeof d.logo === "string" && /^api\/logo\.ashx\?store=[a-z0-9-]+&v=\d+$/.test(d.logo) ? d.logo : null;
+    if (d.logoFit) cfg.logoFit = d.logoFit === "cover" ? "cover" : "contain";
+  }
 })();

@@ -34,7 +34,7 @@ namespace RiwaqChat
         public const string DefaultStyle = "bear", DefaultColor = "#e8774a";
 
         static readonly Dictionary<string, string> Names = new Dictionary<string, string> {
-            { "shopify", "ربط Shopify" }, { "tracking", "تتبع الأوردرات في الشات" }, { "files", "رفع ملفات PDF و Word و Excel" }, { "styles", "أشكال الشات والألوان" }, { "chatorders", "الطلب من الشات" },
+            { "shopify", "ربط Shopify" }, { "tracking", "تتبع الأوردرات في الشات" }, { "files", "رفع ملفات PDF و Word و Excel" }, { "styles", "أشكال الشات والألوان ولوجو متجرك" }, { "chatorders", "الطلب من الشات" },
             { "easyorders", "ربط EasyOrders" },
             { "bothstores", "ربط Shopify و EasyOrders مع بعض" }, { "delivery", "رسالة يوم التوصيل على واتساب" },
             { "carts", "استرجاع السلة المتروكة على واتساب" }, { "waimages", "المساعد يفهم الصور على واتساب" }, { "restock", "«بلّغني لما يرجع»" },
@@ -215,7 +215,7 @@ namespace RiwaqChat
 
         static Dictionary<string, object> AdminState(SqlConnection c)
         {
-            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify" }, { "tracking", "📦 تتبع الأوردرات في الشات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتأكيد طلباته" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" },
+            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify" }, { "tracking", "📦 تتبع الأوردرات في الشات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة ولوجو متجرك والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتأكيد طلباته" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" },
                 { "carts", "🛒 استرجاع السلة المتروكة على واتساب" }, { "waimages", "📷 المساعد يفهم الصور على واتساب" }, { "restock", "🔔 «بلّغني لما يرجع»" },
                 { "report", "📊 التقرير الأسبوعي على واتساب" }, { "handoff", "🙋 التحويل لصاحب المتجر" } };
             return new Dictionary<string, object> {
