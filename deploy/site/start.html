@@ -404,6 +404,7 @@
   .pc .pr{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
   .pc .pr b{font-size:40px;line-height:1;letter-spacing:-1px}
   .pc .pr small{color:var(--muted);font-size:14px}
+  .pc .old-offer{font-size:13px;font-weight:600;color:#16a34a;background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.25);border-radius:12px;padding:8px 10px;margin:4px 0 6px;line-height:1.6}
   .pc .pr s{color:var(--muted);font-size:15px}
   .pc .mq{display:flex;gap:10px;align-items:center;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:9px 12px;margin:10px 0 4px;font-size:13.5px}
   .pc .mq b{font-size:15px}
@@ -1059,6 +1060,14 @@
   }
 
   // ---------- pricing from the live plans ----------
+  // «السعر القديم»: while the offer is open, the first months stay at today's price (api/plans.ashx oldOffer)
+  function oldOfferLine(o) {
+    if (!o) return "";
+    var day = new Date(o.day).toLocaleDateString("ar-EG", { day: "numeric", month: "long" });
+    var m = o.months === 1 ? "شهر" : (o.months || 0).toLocaleString("ar-EG") + " شهور";
+    return '<div class="old-offer">🔒 اشترك لحد ' + day + '، وجدّد بنفس السعر أول ' + m + ' في باقتك</div>';
+  }
+  var oldOffer = null;
   function planCard(p) {
     var d = p.discount, label = d ? (d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "وفّر " + fmt(d.value) + " ج.م")) : "";
     var price = p.finalPrice != null ? p.finalPrice : p.priceEgp, old = p.priceEgp > price ? p.priceEgp : 0;
@@ -1066,7 +1075,7 @@
     return '<div class="pc' + (p.isFeatured ? " feat" : "") + ' rv">' +
       (p.isFeatured ? '<span class="badge">⭐ الأكثر طلبًا</span>' : "") + (d ? '<span class="badge d">🔥 ' + esc(label) + "</span>" : "") +
       "<h3>" + esc(p.name) + '</h3><div class="ds">' + esc(p.description || "") + "</div>" +
-      '<div class="pr"><b>' + fmt(price) + "</b><small>ج.م / شهريًا</small>" + (old ? "<s>" + fmt(old) + "</s>" : "") + "</div>" +
+      '<div class="pr"><b>' + fmt(price) + "</b><small>ج.م / شهريًا</small>" + (old ? "<s>" + fmt(old) + "</s>" : "") + "</div>" + oldOfferLine(oldOffer) +
       (lo && hi ? '<div class="mq"><span>💬</span><div><b>من ' + fmt(lo) + " لـ " + fmt(hi) + " رسالة</b> في الشهر<small>تقريبًا، حسب حجم داتا متجرك</small></div></div>" : "") +
       "<ul>" + (p.features || []).map(function (f) { return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>" +
       '<a class="btn ' + (p.isFeatured ? "primary" : "ghost") + '" href="dashboard.html?signup=1">ابدأ بالتجربة المجانية</a></div>';
@@ -1075,7 +1084,7 @@
     $("plans").innerHTML = '<div class="pc" style="grid-column:1/-1;text-align:center;align-items:center;gap:12px"><b style="font-size:18px">الأسعار بتبدأ من باقة شهرية من غير عقود</b><a class="btn primary" href="pricing.html" style="width:auto">شوف الأسعار</a></div>';
   }
   fetch("api/plans.ashx", { credentials: "same-origin" }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
-    var plans = (d && d.plans) || [];
+    var plans = (d && d.plans) || []; oldOffer = d && d.oldOffer;
     if (!plans.length) { plansFailed(); return; }
     $("plans").innerHTML = plans.map(planCard).join("");
     $("plans").querySelectorAll(".rv").forEach(function (el, i) { el.style.setProperty("--d", (i * .1) + "s"); });

@@ -301,6 +301,7 @@
   .rq-tl .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
   .rq-tl .when{font-size:12px;line-height:1.7;margin-top:4px}
   .rq-now{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .rq-old{--rc:#16a34a}
   .rq-calc{margin-top:10px;padding:10px 12px;border-radius:14px;font-size:13px;line-height:1.7;border:1px dashed color-mix(in srgb,var(--rc) 45%,var(--line));background:color-mix(in srgb,var(--rc) 6%,var(--card))}
   .rq-calc .big{font-size:20px;font-weight:800;color:var(--rc)}
   .rq-act{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:120px}
@@ -590,6 +591,11 @@
               <div><label for="sD4">خصم 4 شهور %</label><input type="number" id="sD4" class="ltr" min="0" max="89" step="0.5"></div>
               <div><label for="sD6">خصم 6 شهور %</label><input type="number" id="sD6" class="ltr" min="0" max="89" step="0.5"></div>
               <div><label for="sD12">خصم سنة %</label><input type="number" id="sD12" class="ltr" min="0" max="89" step="0.5"></div>
+            </div>
+            <div class="cols3">
+              <div><label for="sOldDay">🔒 السعر القديم: آخر يوم</label><input type="date" id="sOldDay"></div>
+              <div><label for="sOldMonths">لأول كام شهر</label><input type="number" id="sOldMonths" class="ltr" min="0" max="24" step="1"></div>
+              <div class="hint" style="align-self:end;margin:0 0 10px">اللي يدفع لباقة لحد آخر اليوم ده بيجدد بنفس السعر لحد ما يكمّل أول الشهور دي فيها. فاضي أو 0 = مقفول.</div>
             </div>
             <div class="calc"><div class="r"><span>1 دولار في Claude</span><b>10,000,000 وحدة</b></div><div class="r"><span>باقة التجربة المجانية (للمتاجر الجديدة)</span><b id="sFree">—</b></div></div>
             <div class="msg" id="sMsg"></div>
@@ -910,6 +916,8 @@
         '<p class="rq-say">' + rqSay(r) + '</p>' +
         '<div class="rq-grid">' + rqBill(r) + rqPay(r) + (pend ? rqWhen(r) : '') + '</div>' +
         (r.calc ? '<div class="rq-calc">📊 <b>حسبناها له إزاي:</b> ' + esc(r.calc) + '</div>' : '') +
+        (r.oldPrice > 0 ? '<div class="rq-calc rq-old">🔒 <b>مشترك بالسعر القديم:</b> ' + money(r.oldPrice) + ' في الشهر · ' +
+          (r.oldLeft > 0 ? 'فاضله بعد الطلب ده <b>' + (r.oldLeft === 1 ? 'شهر واحد' : r.oldLeft === 2 ? 'شهرين' : fmt(r.oldLeft) + ' شهور') + '</b> بالسعر ده' : '<b>ده آخر شهر بالسعر القديم</b>، وبعده سعر الباقة العادي') + '</div>' : '') +
         (pend ? rqNow(r) : '') +
         (r.blocked && pend ? '<p class="msg err" style="display:block">' + esc(r.blocked) + '</p>' : '') +
         (r.adminNote ? '<div class="rq-note">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظتك: ") + esc(r.adminNote) + (r.decidedAt ? " · " + date(r.decidedAt) : "") + '</div>' : '') +
@@ -928,7 +936,9 @@
     var by = function (st) { return reqs.filter(function (r) { return r.status === st; }).length; };
     var head = '<div class="rq-now" style="margin:0 0 12px"><span class="pill">📨 ' + fmt(reqs.length) + ' طلب</span>' +
       (by("pending") ? '<span class="pill warn">⏳ ' + fmt(by("pending")) + ' مستني</span>' : '') + '<span class="pill ok">✓ ' + fmt(by("approved")) + ' اتوافق</span>' +
-      (by("rejected") ? '<span class="pill err">✕ ' + fmt(by("rejected")) + ' اترفض</span>' : '') + '<span class="pill brand">💳 ' + fmt(subs.length) + ' دفعة · ' + money(paid) + '</span></div>';
+      (by("rejected") ? '<span class="pill err">✕ ' + fmt(by("rejected")) + ' اترفض</span>' : '') + '<span class="pill brand">💳 ' + fmt(subs.length) + ' دفعة · ' + money(paid) + '</span>' +
+      (d.priceLock ? '<span class="pill ' + (d.priceLock.holds ? "ok" : "") + '">🔒 السعر القديم في ' + esc(d.priceLock.plan) + ': ' + money(d.priceLock.price) + ' · ' +
+        (d.priceLock.left > 0 && new Date(d.priceLock.expiresAt) > new Date() ? 'فاضل ' + fmt(d.priceLock.left) + ' من ' + fmt(d.priceLock.months) + ' شهور · لحد ' + date(d.priceLock.expiresAt) : 'خلص') + '</span>' : '') + '</div>';
     var mon = "", h = "";
     items.forEach(function (it) {
       var m = new Date(it.at).toLocaleDateString("ar-EG", { month: "long", year: "numeric" });
@@ -1507,7 +1517,7 @@
     try {
       var s = await api("settings");
       $("sRate").value = s.usdRate; $("sWa").value = s.whatsapp; $("sUs").value = s.unitsSmall; $("sUm").value = s.unitsMedium; $("sUl").value = s.unitsLarge;
-      $("sPay").value = s.paymentInfo || ""; var pd = s.periodDiscounts || {}; $("sD4").value = pd["4"] || 0; $("sD6").value = pd["6"] || 0; $("sD12").value = pd["12"] || 0;
+      $("sPay").value = s.paymentInfo || ""; var pd = s.periodDiscounts || {}; $("sD4").value = pd["4"] || 0; $("sD6").value = pd["6"] || 0; $("sD12").value = pd["12"] || 0; $("sOldDay").value = s.oldPriceUntil || ""; $("sOldMonths").value = s.oldPriceMonths != null ? s.oldPriceMonths : 3;
       $("sFree").textContent = fmt(s.freeMessages) + " رسالة لأول " + fmt(s.freeDays) + " يوم من التسجيل (مرة واحدة)";
       $("sPayNum").value = s.payNumber || ""; showPayQr(s.payQr);
     } catch (e) { toast(e.message, true); }
@@ -1536,7 +1546,8 @@
     e.preventDefault(); busy($("sBtn"), true);
     try {
       await api("settings", { usdRate: $("sRate").value, whatsapp: $("sWa").value, unitsSmall: $("sUs").value, unitsMedium: $("sUm").value, unitsLarge: $("sUl").value,
-        paymentInfo: $("sPay").value, payNumber: $("sPayNum").value, periodDiscounts: { "4": $("sD4").value || 0, "6": $("sD6").value || 0, "12": $("sD12").value || 0 } });
+        paymentInfo: $("sPay").value, payNumber: $("sPayNum").value, periodDiscounts: { "4": $("sD4").value || 0, "6": $("sD6").value || 0, "12": $("sD12").value || 0 },
+        oldPriceUntil: $("sOldDay").value || "", oldPriceMonths: $("sOldMonths").value === "" ? 0 : +$("sOldMonths").value });
       setMsg($("sMsg"), "اتحفظت الإعدادات ✓", true); toast("اتحفظت الإعدادات");
       unitsP = Promise.resolve({ small: +$("sUs").value, medium: +$("sUm").value, large: +$("sUl").value });
     } catch (err) { setMsg($("sMsg"), err.message); }

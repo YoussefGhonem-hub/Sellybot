@@ -120,6 +120,7 @@
   .per-save{font-size:13.5px;color:var(--muted);margin:2px 0 4px}
   .per-save b{color:var(--ok)}
   .ends{font-size:13px;color:#d4453a;font-weight:600;min-height:20px}
+  .old-offer{font-size:13px;font-weight:600;color:#15803d;background:rgba(22,163,74,.09);border:1px solid rgba(22,163,74,.22);border-radius:12px;padding:8px 10px;margin:6px 0 4px;line-height:1.6}
   .msgs-box{margin:16px 0 4px;padding:14px 16px;border-radius:18px;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;gap:12px}
   .msgs-box .em{font-size:28px;animation:floatY 3.5s ease-in-out infinite}
   .msgs-box .n{font-size:26px;font-weight:700;line-height:1.1;display:inline-block}
@@ -535,6 +536,13 @@
     });
   }
 
+  // «السعر القديم»: while the offer is open, the first months stay at today's price (api/plans.ashx oldOffer)
+  function oldOfferLine(o) {
+    if (!o) return "";
+    var day = new Date(o.day).toLocaleDateString("ar-EG", { day: "numeric", month: "long" });
+    var m = o.months === 1 ? "شهر" : (o.months || 0).toLocaleString("ar-EG") + " شهور";
+    return '<div class="old-offer">🔒 اشترك لحد ' + day + '، وجدّد بنفس السعر أول ' + m + ' في باقتك</div>';
+  }
   function render() {
     var plans = data.plans;
     if (!plans.length) { $("plans").innerHTML = ""; $("plansNote").textContent = "الباقات هتنزل قريب. كلّمنا على واتساب نعرّفك الأسعار."; return; }
@@ -546,7 +554,7 @@
         '<h3>' + esc(p.name) + '</h3><div class="desc">' + esc(p.description) + '</div>' +
         '<div class="price"><b>' + fmt(q.total) + '</b><small>ج.م ' + per + '</small>' + (q.save > 0 ? '<s>' + fmt(q.price) + '</s>' : '') + '</div>' +
         (period > 1 ? '<div class="per-save">≈ ' + fmt(q.perMonth) + ' ج.م في الشهر' + (q.save > 0 ? ' · <b>وفّرت ' + fmt(q.save) + ' ج.م</b>' : '') + '</div>' : '') +
-        '<div class="ends" data-ends="' + (d && d.endsAt ? d.endsAt : "") + '"></div>' +
+        '<div class="ends" data-ends="' + (d && d.endsAt ? d.endsAt : "") + '"></div>' + oldOfferLine(data.oldOffer) +
         '<div class="msgs-box"><span class="em">💬</span><div><span class="n" data-v="0">0</span> <span class="l">رسالة في الشهر تقريبًا</span></div></div>' +
         '<div class="per-day"></div>' +
         '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +

@@ -144,7 +144,7 @@ namespace RiwaqChat
             {
                 lock (Lock)
                 {
-                    if (!ensured) { using (var cmd = new SqlCommand(Schema, c)) cmd.ExecuteNonQuery(); ensured = true; PlanGate.Seed(c); SiteBot.Ensure(c); Jobs.Start(); }
+                    if (!ensured) { using (var cmd = new SqlCommand(Schema, c)) cmd.ExecuteNonQuery(); ensured = true; PlanGate.Seed(c); Billing.EnsurePriceLocks(c); SiteBot.Ensure(c); Jobs.Start(); }
                 }
             }
             return c;
@@ -708,6 +708,15 @@ IF COL_LENGTH('dbo.WaMessages', 'Media') IS NULL ALTER TABLE dbo.WaMessages ADD 
 -- customers who sent «وقف» after one of Sellybot's own messages (abandoned cart, back in stock): no more of those from this store
 IF OBJECT_ID('dbo.WaOptOuts') IS NULL
   CREATE TABLE dbo.WaOptOuts(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Phone NVARCHAR(20) NOT NULL,
-    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), PRIMARY KEY (StoreId, Phone));";
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), PRIMARY KEY (StoreId, Phone));
+-- «السعر القديم» (2026-11-18): a store that paid for a plan before the cut-off day (setting OldPriceUntil) keeps that monthly price
+-- for its first OldPriceMonths months on the plan (Billing.OldFor). One row per store; each request keeps what it got.
+IF OBJECT_ID('dbo.PriceLocks') IS NULL
+  CREATE TABLE dbo.PriceLocks(StoreId INT NOT NULL PRIMARY KEY REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    PlanId INT NOT NULL, PlanName NVARCHAR(100) NOT NULL, PriceEgp DECIMAL(12,2) NOT NULL,
+    MonthsUsed INT NOT NULL DEFAULT 0,      -- months paid at the old price so far (the first ones on this plan)
+    StartsAt DATETIME2 NOT NULL, ExpiresAt DATETIME2 NOT NULL,   -- the first old-price month, and the last moment to come back to it
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+IF COL_LENGTH('dbo.PlanRequests', 'OldPrice') IS NULL ALTER TABLE dbo.PlanRequests ADD OldPrice DECIMAL(12,2) NULL, OldLeft INT NULL;";
     }
 }

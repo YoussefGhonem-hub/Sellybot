@@ -287,6 +287,8 @@
   .chg-box .calc-line b{color:var(--brand)}
   .chg-box .hint{margin:8px 0 0}
   .pl .chg-note{font-size:12px;color:var(--muted);text-align:center;margin:6px 0 0}
+  .pl .old-note{font-size:12.5px;font-weight:600;color:#15803d;background:rgba(22,163,74,.09);border:1px solid rgba(22,163,74,.22);border-radius:10px;padding:7px 10px;margin:-2px 0 10px;line-height:1.6}
+  [data-theme="dark"] .pl .old-note{color:#4ade80;background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.25)}
   /* where to send the money: the number and InstaPay's QR */
   .pay-to{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 2px;padding:8px 10px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
   .pay-to span{font-size:13px;color:var(--muted)}
@@ -3077,6 +3079,11 @@
       var pl = plansData && plansData.plans.filter(function (x) { return x.id === p.id; })[0], dur = (pl && pl.durationDays) || 30;
       out.push(chip("💎", (p.expired ? "باقتك خلصت يوم " : "باقتك بتخلص يوم ") + dateAr(p.endsAt), p.expired ? "المساعد واقف لحد ما تجدّد" : "فاضل " + fmt(p.daysLeft) + " يوم",
         p.expired ? 0 : p.daysLeft * 100 / dur, p.expired || p.daysLeft <= 5, "#3b82f6"));
+      // «السعر القديم»: its first months on this plan at the price it paid before the offer ended
+      var lk = mine && mine.priceLock;
+      if (lk && lk.planId === p.id && lk.left > 0 && new Date(lk.expiresAt) > new Date()) out.push(chip("🔒",
+        "بتجدد بسعرك القديم: " + fmt(lk.price) + " ج.م" + (lk.regular > lk.price ? " بدل " + fmt(lk.regular) : ""),
+        "فاضلك " + monthsAr(lk.left) + " بالسعر ده (من أول " + monthsAr(lk.months) + " في باقتك)", lk.left * 100 / Math.max(1, lk.months), false, "#16a34a"));
       // the month's messages start again on the 1st, while the plan still runs then
       var d = new Date(), nm = new Date(d.getFullYear(), d.getMonth() + 1, 1);
       if (!p.expired && new Date(p.endsAt) > nm) out.push(chip("🔄", "رصيد الرسايل بيتجدد يوم " + dateAr(nm.toISOString()), "فاضلك " + fmt(tu.msgLeft) + " رسالة الشهر ده",
@@ -3185,10 +3192,14 @@
       var msgs = Math.floor(p.messages.small * plansData.units.small / per);
       var label = d ? (d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "وفّر " + fmt(d.value) + " ج.م")) : "";
       var maxPct = Math.max.apply(null, (p.periods || []).map(function (q) { return q.pct || 0; }).concat([0]));
+      var mine1 = oldPriceOf(p.id), offer = plansData.oldOffer;   // «السعر القديم»: this store's, or the offer for everyone
       return '<div class="card pl' + (cur ? " cur" : "") + (p.isFeatured ? " feat" : "") + '" style="animation-delay:' + (i * 0.07) + 's">' +
         '<div class="pl-top"><div><h3>' + esc(p.name) + '</h3><div class="hint">' + esc(p.description) + '</div></div>' +
           (cur ? '<span class="st-pill answered">باقتك</span>' : waiting ? '<span class="st-pill open">جاية يوم ' + dateAr(next.startsAt) + '</span>' : d ? '<span class="tagx">🔥 ' + esc(label) + '</span>' : p.isFeatured ? '<span class="tagx tagf">⭐ الأكثر طلبًا</span>' : '') + '</div>' +
-        '<div class="pr"><b>' + fmt(p.finalPrice) + '</b><small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' + (d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
+        '<div class="pr"><b>' + fmt(mine1 ? mine1.price : p.finalPrice) + '</b><small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' +
+          (mine1 ? '<s>' + fmt(mine1.regular) + '</s>' : d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
+        (mine1 ? '<div class="old-note">🔒 سعرك القديم: فاضلك ' + monthsAr(mine1.left) + ' بـ ' + fmt(mine1.price) + ' ج.م، وبعدها ' + fmt(mine1.regular) + ' ج.م</div>'
+          : offer ? '<div class="old-note">🔒 اشترك لحد ' + new Date(offer.day).toLocaleDateString("ar-EG", { day: "numeric", month: "long" }) + '، وجدّد بنفس السعر أول ' + monthsAr(offer.months) + ' في الباقة</div>' : '') +
         '<div class="est"><span class="ei">💬</span><div><b>' + fmt(msgs) + '</b> رسالة في الشهر<small>تقريبًا، محسوبة على داتا متجرك</small></div></div>' +
         '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
         (maxPct > 0 ? '<div class="soon-row">🔒 اشتراك 4 و 6 شهور وسنة بخصم لحد ' + fmt(maxPct) + '% <span class="soon">قريبًا</span></div>' : '') +
@@ -3199,6 +3210,17 @@
   }
   // what picking plan id means for this store right now (from the server): new / renew / upgrade / downgrade, with the numbers
   function changeOf(id) { return (mine.changes || []).filter(function (x) { return x.planId === id; })[0] || null; }
+  // «السعر القديم»: this store still pays its old price for plan id (renewing it, or coming back to it): { price, regular, left }
+  function oldPriceOf(id) {
+    var ch = changeOf(id);
+    return ch && ch.oldLeft > 0 && ch.regular > ch.newPrice ? { price: ch.newPrice, regular: ch.regular, left: ch.oldLeft } : null;
+  }
+  // N months of a plan for this store: its old price for the months it still has, the plan's price for the rest (the same sum as the server)
+  function storeTotal(q, id) {
+    var o = oldPriceOf(id); if (!o) return q.total;
+    var k = Math.min(q.months, o.left);
+    return Math.max(0, Math.round((o.price * k + o.regular * (q.months - k)) * (1 - (q.pct || 0) / 100)));
+  }
 
   // ---------------- plan requests: owner asks -> super admin approves or rejects ----------------
   var mine = { requests: [], subscriptions: [], methods: [] }, rq = { plan: null, months: 1 };
@@ -3565,7 +3587,7 @@
       if (q.soon) return '<button type="button" class="per locked" disabled aria-disabled="true" title="هيكون متاح قريب"><span class="soon">قريبًا</span>' +
         '<b>' + monthsAr(q.months) + '</b><div class="pp">🔒</div><small>' + (q.pct ? "بخصم " + fmt(q.pct) + "%" : "") + '</small></button>';
       return '<button type="button" class="per" role="radio" data-m="' + q.months + '">' + (q.pct ? '<span class="off">وفّر ' + fmt(q.pct) + '%</span>' : '') +
-        '<b>' + monthsAr(q.months) + '</b><div class="pp">' + fmt(q.total) + ' <small style="display:inline">ج.م</small></div>' +
+        '<b>' + monthsAr(q.months) + '</b><div class="pp">' + fmt(storeTotal(q, rq.plan.id)) + ' <small style="display:inline">ج.م</small></div>' +
         '<small>' + (q.months > 1 ? "≈ " + fmt(q.perMonth) + " ج.م في الشهر" : "بتتجدد كل شهر") + '</small></button>';
     }).join("");
     $("rqPeriods").querySelectorAll(".per:not(.locked)").forEach(function (b) { b.onclick = function () { pickPeriod(+b.dataset.m); }; });
@@ -3577,8 +3599,12 @@
     rq.months = m;
     var q = rq.plan.periods.filter(function (x) { return x.months === m; })[0];
     $("rqPeriods").querySelectorAll(".per").forEach(function (b) { var on = +b.dataset.m === m; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
-    $("rqAmount").textContent = fmt(q.total) + " ج.م";
-    $("rqSave").textContent = q.save > 0 ? "وفّرت " + fmt(q.save) + " ج.م" : "";
+    var tot = storeTotal(q, rq.plan.id), o = oldPriceOf(rq.plan.id), offer = plansData.oldOffer, lk = mine.priceLock;
+    $("rqAmount").textContent = fmt(tot) + " ج.م";
+    $("rqSave").textContent = o ? "🔒 بسعرك القديم: " + fmt(o.price) + " ج.م بدل " + fmt(o.regular) + ". فاضلك بعد الطلب ده " + monthsAr(Math.max(0, o.left - Math.min(m, o.left))) + " بالسعر ده."
+      : offer && !(lk && lk.planId === rq.plan.id && lk.left <= 0) ? "🔒 هتجدد بنفس السعر ده أول " + monthsAr(offer.months) + " في الباقة، حتى بعد ما العرض يخلص."
+      : q.save > 0 ? "وفّرت " + fmt(q.save) + " ج.م" : "";
+    q = { total: tot };
     if (rq.change && rq.change.kind === "downgrade") explainDowngrade(rq.change, m, q.total); else $("rqExplain").hidden = true;
     rq.base = q.total; waAddPaint();   // + the WhatsApp service when it's ticked
   }
