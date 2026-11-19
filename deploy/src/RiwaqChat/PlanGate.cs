@@ -15,6 +15,7 @@
 //   delivery: the delivery-day message on WhatsApp (Delivery.cs), on top of the store link and the WhatsApp plan
 //   carts / waimages / restock / report / handoff: the WhatsApp growth features (Carts.cs, the bot reading images, Restock.cs,
 //            WeeklyReport.cs, Handoff.cs). They need the WhatsApp service; open to every plan until the super admin picks a minimum.
+//   messenger / instagram: the assistant answering the store's Facebook Page / Instagram account (Meta.cs); open to every plan until set
 // The dashboard asks api/locks.ashx which features are locked and shows an upgrade card with the plan to suggest.
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace RiwaqChat
 {
     public static class PlanGate
     {
-        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "tracking", "bothstores", "delivery", "carts", "waimages", "restock", "report", "handoff" };
+        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "tracking", "bothstores", "delivery", "carts", "waimages", "restock", "report", "handoff", "messenger", "instagram" };
         public static readonly HashSet<string> FreeStyles = new HashSet<string> { "classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear" };
         public static readonly HashSet<string> FreeColors = new HashSet<string> { "#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222" };
         public static readonly HashSet<string> LockedFileTypes = new HashSet<string> { "pdf", "docx", "xlsx" };
@@ -38,7 +39,8 @@ namespace RiwaqChat
             { "easyorders", "ربط EasyOrders" },
             { "bothstores", "ربط Shopify و EasyOrders مع بعض" }, { "delivery", "رسالة يوم التوصيل على واتساب" },
             { "carts", "استرجاع السلة المتروكة على واتساب" }, { "waimages", "المساعد يفهم الصور على واتساب" }, { "restock", "«بلّغني لما يرجع»" },
-            { "report", "التقرير الأسبوعي على واتساب" }, { "handoff", "التحويل ليك لما الزبون يحتاجك" } };
+            { "report", "التقرير الأسبوعي على واتساب" }, { "handoff", "التحويل ليك لما الزبون يحتاجك" },
+            { "messenger", "المساعد على المسنجر" }, { "instagram", "المساعد على الإنستجرام" } };
 
         public static int MinPlanId(SqlConnection c, string feature)
         {

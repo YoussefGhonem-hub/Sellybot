@@ -390,6 +390,7 @@
       <button data-go="subs"><span class="ic">🧾</span>الاشتراكات والإيرادات</button>
       <button data-go="support"><span class="ic">🎧</span>الدعم الفني <span class="count" id="tkCount" hidden>0</span></button>
       <button data-go="wa"><span class="ic">💬</span>الواتساب <span class="count" id="waCount" hidden>0</span></button>
+      <button data-go="meta"><span class="ic">📨</span>مسنجر وإنستجرام</button>
       <button data-go="settings"><span class="ic">⚙️</span>الإعدادات</button>
     </nav>
     <div class="side-foot">
@@ -554,6 +555,51 @@
         </table></div>
       </section>
 
+      <!-- Messenger + Instagram: Sellybot's one Meta app (api/meta-admin.ashx, Meta.cs) -->
+      <section data-page="meta" hidden>
+        <div class="grid2b">
+          <form class="card anim" id="mtForm" autocomplete="off">
+            <h3>تطبيق Meta بتاع Sellybot</h3>
+            <p class="sub">تطبيق واحد لكل المتاجر. صاحب المتجر بيدوس «اربط» من لوحته ويدخل بفيسبوك أو إنستجرام، وصفحته أو حسابه بيترد عليه.</p>
+            <label for="mtApp">App ID (App settings ← Basic)</label>
+            <input type="text" id="mtApp" class="ltr" inputmode="numeric" maxlength="30">
+            <label for="mtSecret" style="margin-top:10px">App Secret (App settings ← Basic ← Show)</label>
+            <input type="password" id="mtSecret" class="ltr" maxlength="64" placeholder="سيبه فاضي لو مش عايز تغيّره">
+            <div class="hint" id="mtSecretState"></div>
+            <label for="mtIg" style="margin-top:10px">Configuration ID بتاع الإنستجرام (Instagram ← Configure your app)</label>
+            <input type="text" id="mtIg" class="ltr" inputmode="numeric" maxlength="30">
+            <label for="mtFb" style="margin-top:10px">Configuration ID بتاع المسنجر (Facebook Login for Business ← Configurations) — اختياري</label>
+            <input type="text" id="mtFb" class="ltr" inputmode="numeric" maxlength="30">
+            <div class="hint">من غيره المسنجر بيطلب الصلاحيات بالطريقة العادية (pages_show_list و pages_messaging و pages_manage_metadata).</div>
+            <label class="switch" style="margin-top:14px"><input type="checkbox" id="mtLive"><span class="tg"></span>الربط مفتوح لكل المتاجر (بعد ما Meta توافق على App Review)</label>
+            <label for="mtTesters" style="margin-top:10px">متاجر التجربة قبل الموافقة (روابط المتاجر، بينهم فاصلة)</label>
+            <input type="text" id="mtTesters" class="ltr" maxlength="1000" placeholder="my-store, test-shop">
+            <div class="hint">قبل الموافقة، Meta بتسمح بالدخول بس للحسابات اللي ليها دور في التطبيق (أدمن أو Tester). المتاجر دي (ومتاجر الإدارة) بتشوف زرار الربط، والباقي بيشوفوا «قريب».</div>
+            <div class="msg" id="mtMsg"></div>
+            <div class="row" style="margin-top:12px"><button class="btn" id="mtSave">حفظ والتأكد منه</button></div>
+          </form>
+          <div class="card anim" style="animation-delay:.1s">
+            <h3>انسخ دول في تطبيق Meta</h3>
+            <p class="sub">Webhooks (في المسنجر وفي الإنستجرام): Callback URL والـ Verify token دول، والحقول <b class="ltr">messages</b> (وفي المسنجر كمان <b class="ltr">messaging_postbacks</b> و <b class="ltr">message_echoes</b>).</p>
+            <label>Callback URL</label>
+            <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtHook" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtHook">نسخ</button></div>
+            <label style="margin-top:10px">Verify token</label>
+            <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtVerify" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtVerify">نسخ</button></div>
+            <label style="margin-top:10px">Redirect URL (في الـ Configuration، وفي Facebook Login for Business ← Settings ← Valid OAuth Redirect URIs)</label>
+            <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtRedirect" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtRedirect">نسخ</button></div>
+            <div class="calc" style="margin-top:14px">
+              <div class="r"><span>نسخة الـ API</span><b class="ltr" id="mtVer"></b></div>
+              <div class="r"><span>الحالة</span><b id="mtState"></b></div>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-top:16px"><h3 style="margin:0">الصفحات والحسابات المربوطة</h3><span class="space"></span><button class="btn ghost sm" id="mtReload" type="button">تحديث</button></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>القناة</th><th>الصفحة / الحساب</th><th>المتجر</th><th>الحالة</th><th>آخر رد</th></tr></thead>
+          <tbody id="mtRows"></tbody>
+        </table></div>
+      </section>
+
       <!-- settings -->
       <section data-page="settings" hidden>
         <div class="grid2b">
@@ -682,7 +728,7 @@
     $("pwWarn").hidden = !defaultPw;
     $("meName").textContent = name; $("meAv").textContent = initial(name);
     var want = (location.hash || "#home").slice(1);
-    go(["home", "stores", "plans", "reqs", "subs", "support", "wa", "settings"].indexOf(want) >= 0 ? want : "home");
+    go(["home", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "settings"].indexOf(want) >= 0 ? want : "home");
     api("requests", null, "&status=pending").then(function (d) { rqBadge(d.pending); }).catch(function () {});
   }
   $("pwEye").onclick = function () { var i = $("lPass"); i.type = i.type === "password" ? "text" : "password"; i.focus(); };
@@ -696,7 +742,8 @@
 
   // ---------- navigation ----------
   var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
-                 subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
+                 subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"],
+                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
     var on = document.querySelector("#nav button.on"); if (!on) return;
     $("navInd").style.transform = "translateY(" + (on.offsetTop) + "px)"; $("navInd").style.height = on.offsetHeight + "px";
@@ -709,8 +756,46 @@
     moveInd(); closeSide();
     if (history.replaceState) history.replaceState(null, "", "#" + page);
     window.scrollTo(0, 0);
-    ({ home: loadHome, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, settings: loadSettings })[page]();
+    ({ home: loadHome, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, settings: loadSettings })[page]();
   }
+
+  // ---------- Messenger + Instagram: one Meta app for every store ----------
+  async function metaApi(action, body) {
+    var init = { method: body ? "POST" : "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch" } };
+    if (body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
+    var r = await fetch("api/meta-admin.ashx" + (action ? "?action=" + action : ""), init), data = null;
+    try { data = await r.json(); } catch (e) {}
+    if (r.status === 401) { showLogin(); throw new Error("سجّل دخول تاني."); }
+    if (!r.ok) throw new Error((data && data.message) || "حصلت مشكلة، جرّب تاني.");
+    return data;
+  }
+  function renderMeta(d) {
+    $("mtApp").value = d.appId || ""; $("mtSecret").value = ""; $("mtIg").value = d.igConfig || ""; $("mtFb").value = d.fbConfig || "";
+    $("mtLive").checked = !!d.live; $("mtTesters").value = (d.testers || "").split(",").filter(Boolean).join(", ");
+    $("mtSecretState").textContent = d.hasSecret ? "✅ الـ Secret محفوظ (متشفّر)." : "لسه مفيش Secret.";
+    $("mtHook").value = d.hookUrl || ""; $("mtVerify").value = d.verifyToken || ""; $("mtRedirect").value = d.redirectUri || ""; $("mtVer").textContent = d.version || "";
+    $("mtState").textContent = !d.appId || !d.hasSecret ? "ناقص App ID أو Secret" : !d.igConfig ? "المسنجر جاهز · الإنستجرام ناقصه Configuration ID" : d.live ? "مفتوح لكل المتاجر ✅" : "تجربة (متاجر التجربة بس)";
+    var rows = d.links || [];
+    $("mtRows").innerHTML = rows.length ? rows.map(function (l) {
+      var st = !l.enabled ? '<span class="pill">متوقف</span>' : l.status ? '<span class="pill warn">' + esc(l.status) + '</span>' : '<span class="pill ok">شغال ✅</span>';
+      return "<tr><td>" + (l.channel === "fb" ? "💬 مسنجر" : "📸 إنستجرام") + '</td><td><span dir="auto">' + esc(l.name || l.account) + '</span><div class="hint ltr">' + esc(l.account) + "</div></td><td>" + esc(l.store) +
+        ' <span class="hint ltr">' + esc(l.slug) + "</span></td><td>" + st + "</td><td>" + (l.lastAt ? esc(new Date(l.lastAt).toLocaleString("ar-EG")) : "—") + "</td></tr>";
+    }).join("") : '<tr><td colspan="5" class="hint">لسه محدش ربط صفحة أو حساب.</td></tr>';
+  }
+  async function loadMeta() { try { renderMeta(await metaApi()); } catch (e) { toast(e.message, true); } }
+  $("mtReload").onclick = loadMeta;
+  $("mtForm").onsubmit = async function (e) {
+    e.preventDefault(); setMsg($("mtMsg"), ""); busy($("mtSave"), true);
+    try {
+      renderMeta(await metaApi("settings", { appId: $("mtApp").value.trim(), secret: $("mtSecret").value.trim(), igConfig: $("mtIg").value.trim(), fbConfig: $("mtFb").value.trim(),
+        live: $("mtLive").checked, testers: $("mtTesters").value }));
+      setMsg($("mtMsg"), "اتحفظ ✓ وفيسبوك قبل الـ App ID والـ Secret.", true);
+    } catch (err) { setMsg($("mtMsg"), err.message); }
+    busy($("mtSave"), false);
+  };
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    b.onclick = function () { var i = $(b.dataset.copy); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(function () { toast("اتنسخ ✓"); }, function () { document.execCommand("copy"); toast("اتنسخ ✓"); }); };
+  });
 
   // ---------- WhatsApp: one Wapilot account for every store ----------
   async function waApi(action, body) {

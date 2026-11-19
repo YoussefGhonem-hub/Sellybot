@@ -717,6 +717,41 @@ IF OBJECT_ID('dbo.PriceLocks') IS NULL
     MonthsUsed INT NOT NULL DEFAULT 0,      -- months paid at the old price so far (the first ones on this plan)
     StartsAt DATETIME2 NOT NULL, ExpiresAt DATETIME2 NOT NULL,   -- the first old-price month, and the last moment to come back to it
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
-IF COL_LENGTH('dbo.PlanRequests', 'OldPrice') IS NULL ALTER TABLE dbo.PlanRequests ADD OldPrice DECIMAL(12,2) NULL, OldLeft INT NULL;";
+IF COL_LENGTH('dbo.PlanRequests', 'OldPrice') IS NULL ALTER TABLE dbo.PlanRequests ADD OldPrice DECIMAL(12,2) NULL, OldLeft INT NULL;
+-- ---- Messenger and Instagram (Meta.cs, 2026-11-19) ----
+-- MetaLinks: one Facebook Page (fb) and one Instagram professional account (ig) per store. AccountId = the Page ID /
+-- the Instagram account ID (entry.id in the webhooks); Token = the Page access token / the business's system-user token,
+-- encrypted (Secrets.Protect). Subscribed = the account posts its messages to our webhook.
+IF OBJECT_ID('dbo.MetaLinks') IS NULL
+BEGIN
+  CREATE TABLE dbo.MetaLinks(
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Channel NVARCHAR(4) NOT NULL,
+    AccountId NVARCHAR(40) NOT NULL, Name NVARCHAR(200) NULL,
+    Token NVARCHAR(2000) NOT NULL, BusinessId NVARCHAR(40) NULL,
+    Enabled BIT NOT NULL DEFAULT 1, Subscribed BIT NOT NULL DEFAULT 0,
+    Status NVARCHAR(400) NULL, LastAt DATETIME2 NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    PRIMARY KEY (StoreId, Channel));
+  CREATE UNIQUE INDEX UX_MetaLinks_Account ON dbo.MetaLinks(Channel, AccountId);   -- a Page / account answers for one store only
+END
+-- the chats on Messenger / Instagram (ChatId = the customer's page-scoped / Instagram-scoped id), like WaMessages
+IF OBJECT_ID('dbo.MetaMessages') IS NULL
+BEGIN
+  CREATE TABLE dbo.MetaMessages(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Channel NVARCHAR(4) NOT NULL, ChatId NVARCHAR(64) NOT NULL,
+    FromCustomer BIT NOT NULL, Body NVARCHAR(4000) NOT NULL,
+    MsgId NVARCHAR(150) NULL,     -- Meta's mid; owner:<mid> when the owner answered by hand; NULL for the bot's own replies
+    Media NVARCHAR(800) NULL,     -- a picture the customer sent (its URL at Meta), for the assistant to look at
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_MetaMessages_Chat ON dbo.MetaMessages(StoreId, Channel, ChatId, Id);
+  CREATE UNIQUE INDEX UX_MetaMessages_MsgId ON dbo.MetaMessages(StoreId, MsgId) WHERE MsgId IS NOT NULL;   -- Meta may deliver twice
+END
+-- an owner who manages several Pages / Instagram accounts picks one in the dashboard; the choices (with tokens) wait here, encrypted
+IF OBJECT_ID('dbo.MetaConnects') IS NULL
+  CREATE TABLE dbo.MetaConnects(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Channel NVARCHAR(4) NOT NULL,
+    Choices NVARCHAR(MAX) NOT NULL, ExpiresAt DATETIME2 NOT NULL, PRIMARY KEY (StoreId, Channel));";
     }
 }

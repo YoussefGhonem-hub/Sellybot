@@ -21,6 +21,7 @@ namespace RiwaqChat
             return new Dictionary<string, object>
             {
                 { "id", s.Id }, { "slug", s.Slug }, { "name", s.Name }, { "email", s.OwnerEmail }, { "isAdmin", s.IsAdmin },
+                { "meta", MetaApp.Visible(c, s) },   // show the «مسنجر وإنستجرام» tab (Meta.cs)
                 { "status", s.Status }, { "botName", s.BotName }, { "welcome", s.Welcome ?? "" }, { "instructions", s.Instructions ?? "" },
                 { "allowedOrigins", s.AllowedOrigins ?? "" }, { "bubbleStyle", s.BubbleStyle }, { "brandColor", s.BrandColor }, { "chatTitle", s.ChatTitle ?? "" }, { "suggestions", s.Suggestions ?? "" },
                 { "logo", LogoHandler.Url(s) }, { "logoFit", LogoHandler.Fit(s) },   // the owner's logo as the chat bubble (StoreLogo.cs)

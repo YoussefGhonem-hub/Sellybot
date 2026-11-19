@@ -960,6 +960,26 @@
   .shop-fields label{margin-top:0}
   @media (max-width:860px){.shop-fields{grid-template-columns:minmax(0,1fr)}}
   .wa-logo{background:linear-gradient(135deg,#1da851,#25d366)}
+  /* Messenger + Instagram (the «social» tab) */
+  .mt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:880px;margin-bottom:12px}
+  @media (max-width:760px){.mt-grid{grid-template-columns:1fr}}
+  .mt-card{display:flex;flex-direction:column}
+  .mt-logo.mt-fb{background:linear-gradient(135deg,#0a7cff,#a334fa)}
+  .mt-logo.mt-ig{background:linear-gradient(135deg,#f9a03f,#e1306c 45%,#833ab4)}
+  .mt-logo svg{width:24px;height:24px}
+  .mt-steps{margin:14px 0 0;padding-inline-start:20px;font-size:13.5px;line-height:1.75;color:var(--muted)}
+  .mt-steps b{color:var(--ink);font-weight:600}
+  .mt-go{margin-top:14px;width:100%;justify-content:center}
+  .mt-soon{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--soft);border:1px dashed var(--line);font-size:13.5px;color:var(--muted);line-height:1.65}
+  .mt-choices{display:grid;gap:8px;margin-top:10px}
+  .mt-choice{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;text-align:start;font:inherit;color:var(--ink);transition:border-color .15s}
+  .mt-choice:hover,.mt-choice:focus-visible{border-color:var(--brand);outline:none}
+  .mt-acc{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .mt-acc b{font-size:15px}
+  .mt-stats{margin-top:8px;font-size:13px;color:var(--muted)}
+  .mt-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+  .mt-row .space{flex:1}
+  .mt-top{max-width:880px;margin:0 0 12px}
   .wa-warn{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#fff1d6;color:#8a5200;font-size:13.5px;line-height:1.6}
   [data-theme=dark] .wa-warn{background:#3d2c10;color:#f3c26b}
   .wa-pick{margin-top:10px}
@@ -1448,6 +1468,7 @@
           <button data-tab="look" role="menuitem"><span class="dd-ic">🎨</span><span><b>شكل الشات</b><small>الفقاعة والألوان واللوجو</small></span></button>
           <button data-tab="settings" role="menuitem"><span class="dd-ic">⚙️</span><span><b>المساعد</b><small>اسمه وأسلوبه في الرد</small></span></button>
           <button data-tab="install" role="menuitem"><span class="dd-ic">🛍️</span><span><b>ضيفه لمتجرك</b><small>سطر الكود ولينك الشات</small></span></button>
+          <button data-tab="social" id="socialTabBtn" role="menuitem" hidden><span class="dd-ic">📨</span><span><b>مسنجر وإنستجرام</b><small>المساعد يرد على صفحتك والدايركت</small></span></button>
         </div>
       </div>
       <button data-tab="wa">💬 واتساب</button>
@@ -2404,6 +2425,42 @@
     </div>
   </section>
 
+  <!-- Messenger + Instagram (Meta.cs, api/meta.ashx): the owner links their Facebook Page / Instagram account with Meta's login -->
+  <section data-panel="social" hidden>
+    <div class="page-title"><div><h2>مسنجر وإنستجرام</h2><p>نفس المساعد، بنفس داتا متجرك وطريقة كلامه، يرد على رسايل صفحتك على فيسبوك والدايركت على الإنستجرام.</p></div></div>
+    <div class="msg mt-top" id="mtTop" hidden></div>
+    <div class="card" style="max-width:880px;margin-bottom:16px">
+      <div class="why" style="margin:0">
+        <b>إزاي بيشتغل؟</b>
+        <ul>
+          <li><span>🔐</span><div><b>بتسجيل الدخول بس</b><small>تدوس «اربط» وتدخل بحساب فيسبوك أو إنستجرام وتوافق. مفيش أكواد ولا باسوردات بتتبعتلنا.</small></div></li>
+          <li><span>⚡</span><div><b>رد في ثواني</b><small>أي رسالة توصل لصفحتك أو للدايركت، المساعد يرد عليها من داتا متجرك، ويفهم كمان صور المنتجات.</small></div></li>
+          <li><span>🙋</span><div><b>لو رديت بنفسك بيسكت</b><small>لما ترد على زبون بنفسك، المساعد يسيبلك المحادثة دي ساعتين.</small></div></li>
+          <li><span>📊</span><div><b>من نفس رصيدك</b><small>كل رد بيتحسب رسالة من رصيد باقتك، زي الموقع والواتساب بالظبط.</small></div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-grid">
+      <div class="card mt-card" id="mtFb" data-ch="fb">
+        <div class="shop-head">
+          <div class="shop-logo mt-logo mt-fb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.4 2 2 6.1 2 11.6c0 2.9 1.2 5.4 3.1 7.1.2.1.3.4.3.6l.1 1.8c0 .6.6 1 1.2.7l2-.9c.2-.1.4-.1.6-.1.9.3 1.8.4 2.7.4 5.6 0 10-4.1 10-9.6S17.6 2 12 2zm6 7.5-2.9 4.6c-.5.7-1.5.9-2.1.4l-2.3-1.7a.6.6 0 0 0-.7 0l-3.1 2.4c-.4.3-1-.2-.7-.6L9 10c.5-.7 1.5-.9 2.1-.4l2.3 1.7c.2.2.5.2.7 0l3.1-2.4c.4-.3 1 .2.8.6z"/></svg></div>
+          <div><h3 style="margin:0">مسنجر صفحتك <span class="new-tag">جديد</span></h3>
+            <p class="sub" style="margin:2px 0 0">رسايل صفحة متجرك على فيسبوك.</p></div>
+        </div>
+        <div class="mt-body"></div>
+      </div>
+      <div class="card mt-card" id="mtIg" data-ch="ig">
+        <div class="shop-head">
+          <div class="shop-logo mt-logo mt-ig" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></div>
+          <div><h3 style="margin:0">دايركت الإنستجرام <span class="new-tag">جديد</span></h3>
+            <p class="sub" style="margin:2px 0 0">رسايل حساب متجرك على الإنستجرام.</p></div>
+        </div>
+        <div class="mt-body"></div>
+      </div>
+    </div>
+    <p class="hint" style="max-width:880px">فيسبوك وإنستجرام بيسمحوا بالرد على الزبون لحد 24 ساعة من آخر رسالة بعتها، والمساعد بيرد في ثواني، فده مش بيأثر عليه. التعليقات على البوستات مش بيرد عليها، الرسايل بس.</p>
+  </section>
+
   <!-- settings -->
   <section data-panel="settings" hidden>
     <div class="page-title"><div><h2>إعدادات المساعد</h2><p>اسمه وطريقة كلامه وأول رسالة الزبون بيشوفها</p></div></div>
@@ -2811,6 +2868,7 @@
     if (tab === "plan") loadPlanTab();
     if (tab === "support") loadSupport();
     if (tab === "wa") loadWa();
+    if (tab === "social") loadSocial();
     if (tab === "data" || tab === "look" || tab === "install") loadLocks();   // which features this store's plan doesn't include
     if (tab !== "wa") stopUpsell();
     showLiveChat(tab !== "look");   // the look tab has its own preview of the chat
@@ -2842,7 +2900,7 @@
     var btn = d.querySelector(".dd-btn");
     btn.onclick = function (e) { e.stopPropagation(); if (d.classList.contains("open")) ddClose(); else ddOpen(d); };
     d.addEventListener("keydown", function (e) {
-      var items = [].slice.call(d.querySelectorAll(".dd-menu button")), i = items.indexOf(document.activeElement);
+      var items = [].slice.call(d.querySelectorAll(".dd-menu button:not([hidden])")), i = items.indexOf(document.activeElement);
       if (e.key === "ArrowDown") { e.preventDefault(); if (!d.classList.contains("open")) ddOpen(d); (items[i + 1] || items[0]).focus(); }
       else if (e.key === "ArrowUp" && d.classList.contains("open")) { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
       else if (e.key === "Escape" && d.classList.contains("open")) { e.stopPropagation(); ddClose(); btn.focus(); }
@@ -2858,9 +2916,10 @@
   function showApp(fresh) {
     $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("menuBtn").hidden = false; $("acct").hidden = false; heroStop();
     $("adminTabBtn").hidden = !me.isAdmin;
+    $("socialTabBtn").hidden = !me.meta;   // Messenger + Instagram: hidden from owners until it opens to everyone (MetaApp.Visible)
     unmountHelpChat(); render(); loadItems(); mountLiveChat();
     var want = fresh ? "" : (location.hash || "").replace("#", "");
-    go(["home", "data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) ? want : "home");
+    go(["home", "data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && me.meta) ? want : "home");
     setTimeout(showNews, 1200);   // what's new since this browser last looked
   }
 
@@ -4439,6 +4498,85 @@
     ed.value = EO_SHIP_TPL; updateCount(); ed.focus(); ed.setSelectionRange(i, i + 3); ed.scrollTop = 0;
   };
   // ---------------- WhatsApp ----------------
+  // ---------------- Messenger + Instagram (api/meta.ashx; linking goes through api/meta-connect.ashx and Meta's own login) ----------------
+  var mt = null;
+  var MT = {
+    fb: { name: "المسنجر", lock: "messenger", go: "💬 اربط صفحتك على فيسبوك", on: "المساعد بيرد على المسنجر",
+      steps: ["دوس الزرار ده وادخل بحساب فيسبوك اللي عليه صفحة المتجر.", "اختار صفحة متجرك، ووافق على الصلاحيات.", "خلاص! أي رسالة توصل لصفحتك، المساعد يرد عليها."],
+      try_: "💬 افتح المسنجر وجرّب", pick: "اختار صفحة متجرك:" },
+    ig: { name: "الإنستجرام", lock: "instagram", go: "📸 اربط حساب الإنستجرام", on: "المساعد بيرد على الدايركت",
+      steps: ["حساب متجرك على الإنستجرام لازم يكون Professional (Business أو Creator).", "دوس الزرار ده وادخل بالإنستجرام أو بفيسبوك، واختار حساب متجرك.", "خلاص! أي رسالة في الدايركت، المساعد يرد عليها."],
+      try_: "📸 افتح الدايركت وجرّب", pick: "اختار حساب متجرك:" } };
+  async function loadSocial() {
+    loadLocks();
+    try { mt = await api("api/meta.ashx"); } catch (e) { mt = null; mtTop(e.message, false); }
+    renderMt("fb"); renderMt("ig");
+  }
+  function mtTop(text, ok) { var el = $("mtTop"); el.hidden = !text; el.textContent = text || ""; el.className = "msg mt-top " + (ok ? "ok" : "err"); }
+  function mtEl(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function renderMt(ch) {
+    var F = MT[ch], body = $(ch === "fb" ? "mtFb" : "mtIg").querySelector(".mt-body"), d = mt && mt[ch];
+    body.textContent = "";
+    if (!d) return;
+    var L = d.link;
+    if (!L && d.choices && d.choices.length) {   // back from Meta with several Pages / accounts
+      body.appendChild(mtEl("p", "sub", F.pick)).style.margin = "14px 0 0";
+      var box = mtEl("div", "mt-choices");
+      d.choices.forEach(function (c) {
+        var b = mtEl("button", "mt-choice"); b.type = "button";
+        b.appendChild(mtEl("span", "", ch === "fb" ? "📄" : "📸")); b.appendChild(mtEl("b", "", c.name)).dir = "auto";
+        b.onclick = function () { mtPost(ch, "pick", { id: c.id }, "✅ اتربط! المساعد هيرد على " + F.name + " من دلوقتي."); };
+        box.appendChild(b);
+      });
+      body.appendChild(box);
+      return;
+    }
+    if (!L) {
+      if (!d.ready) { body.appendChild(mtEl("div", "mt-soon", "🚧 الربط بـ" + F.name + " هيتفتح قريب جدًا. أول ما يجهز هتلاقي زرار الربط هنا.")); return; }
+      var ol = mtEl("ol", "mt-steps"); F.steps.forEach(function (s) { ol.appendChild(mtEl("li", "", s)); }); body.appendChild(ol);
+      var go = mtEl("button", "btn mt-go", (d.allowed ? "" : "🔒 ") + F.go); go.type = "button";
+      go.onclick = function () { if (!d.allowed) { openLock(F.lock); return; } go.disabled = true; location.href = "api/meta-connect.ashx?start=" + ch; };
+      body.appendChild(go);
+      return;
+    }
+    var acc = mtEl("div", "mt-acc");
+    acc.appendChild(mtEl("span", "ok-pill", L.enabled ? "✅ مربوط" : "⏸️ متوقف")); acc.appendChild(mtEl("b", "", L.name || L.id)).dir = "auto";   // @username reads left to right
+    body.appendChild(acc);
+    if (L.status) body.appendChild(mtEl("div", "wa-warn", L.status));
+    if (!d.allowed) { var lk = mtEl("div", "wa-warn", "🔒 باقتك مش فيها المساعد على " + F.name + "، فهو مش بيرد هناك. "); var up = mtEl("a", "", "شوف الباقات"); up.href = "#"; up.onclick = function (e) { e.preventDefault(); openLock(F.lock); }; lk.appendChild(up); body.appendChild(lk); }
+    var tg = mtEl("label", "toggle"), inp = mtEl("input"); inp.type = "checkbox"; inp.checked = !!L.enabled;
+    var txt = mtEl("span"); txt.appendChild(mtEl("b", "", F.on)); txt.appendChild(mtEl("small", "", "اقفله لو عايز ترد بنفسك على كل الرسايل لفترة. الرسايل بتتسجل برضه، فلما ترجّعه يفهم المحادثة."));
+    tg.appendChild(inp); tg.appendChild(mtEl("span", "tg")).setAttribute("aria-hidden", "true"); tg.appendChild(txt);
+    inp.onchange = function () { mtPost(ch, "enable", { enabled: inp.checked }, inp.checked ? "المساعد رجع يرد على " + F.name + " ✅" : "المساعد وقف على " + F.name); };
+    body.appendChild(tg);
+    var st = [];
+    if (L.lastAt) st.push("آخر رد: " + ago(L.lastAt));
+    st.push(d.chats7d ? fmt(d.chats7d) + " زبون كلّموك آخر 7 أيام" : "لسه محدش كلّمك من ساعة الربط");
+    body.appendChild(mtEl("div", "mt-stats", st.join(" · ")));
+    var row = mtEl("div", "mt-row");
+    if (L.chatUrl) { var a = mtEl("a", "btn ghost sm", F.try_); a.href = L.chatUrl; a.target = "_blank"; a.rel = "noopener"; row.appendChild(a); }
+    if (!L.subscribed) { var rs = mtEl("button", "btn ghost sm", "🔄 جدّد الربط"); rs.type = "button"; rs.onclick = function () { mtPost(ch, "resubscribe", {}, "✅ اتجدد"); }; row.appendChild(rs); }
+    row.appendChild(mtEl("span", "space"));
+    var un = mtEl("button", "btn danger sm", "إلغاء الربط"); un.type = "button";
+    un.onclick = function () { if (confirm("متأكد؟ المساعد هيبطّل يرد على " + F.name + ". تقدر تربط تاني في أي وقت.")) mtPost(ch, "unlink", {}, "الربط اتلغى"); };
+    row.appendChild(un);
+    body.appendChild(row);
+  }
+  async function mtPost(ch, action, body, okText) {
+    try { mt = await api("api/meta.ashx?action=" + action, { method: "POST", json: Object.assign({ channel: ch }, body || {}) }); mtTop("", true); if (okText) toast(okText); }
+    catch (e) { if (e.code === "plan_locked") openLock(MT[ch].lock); else toast(e.message); }
+    renderMt("fb"); renderMt("ig");
+  }
+  // back from Meta's login: api/meta-connect.ashx sends the owner here with ?meta=<result>[&metaMsg=<why>]#social
+  (function () {
+    var q = new URLSearchParams(location.search), k = q.get("meta"); if (!k) return;
+    var text = { ok_fb: "✅ صفحتك اتربطت! المساعد هيرد على رسايل المسنجر من دلوقتي.", ok_ig: "✅ حساب الإنستجرام اتربط! المساعد هيرد على الدايركت من دلوقتي.",
+      pick_fb: "لقينا أكتر من صفحة. اختار صفحة متجرك تحت 👇", pick_ig: "لقينا أكتر من حساب إنستجرام. اختار حساب متجرك تحت 👇",
+      cancel: "الربط اتلغى. تقدر تبدأ تاني في أي وقت.", locked: "الميزة دي مش في باقتك. رقّي باقتك من «باقتي»." }[k] || q.get("metaMsg") || "حصلت مشكلة وإحنا بنربط. جرّب تاني.";
+    mtTop(text, /^(ok|pick)_/.test(k));
+    if (history.replaceState) history.replaceState(null, "", location.pathname + "#social");
+  })();
+
   // Owners only see "scan a QR". The provider behind it is never named on this page.
   var wa = null;
   var WA_LIVE = { WORKING: "متصل", CONNECTED: "متصل", ACTIVE: "متصل", SCAN_QR_CODE: "مستني مسح الـ QR", STARTING: "بيبدأ…", STOPPED: "متوقف", FAILED: "فيه مشكلة" };
@@ -4522,7 +4660,7 @@
     if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = "لسه محدش طلب يكلّمك. أول زبون هيظهر هنا."; list.appendChild(e); return; }
     rows.forEach(function (r) {
       var row = document.createElement("div"); row.className = "oc-row";
-      var b = document.createElement("b"); b.textContent = r.channel === "web" ? "🌐 الموقع" : "📱 واتساب";
+      var b = document.createElement("b"); b.textContent = ({ web: "🌐 الموقع", fb: "💬 المسنجر", ig: "📸 الإنستجرام" })[r.channel] || "📱 واتساب";
       var who = document.createElement("span"); who.textContent = r.reason;
       var st = document.createElement("span"); st.className = "oc-st " + (r.status === "sent" ? "confirmed" : r.status === "failed" ? "failed" : ""); st.textContent = HO_ST[r.status] || r.status;
       var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "") + " · ";
@@ -4654,6 +4792,22 @@
       chat: [["cu", "عايز 50 قطعة للمحل عندي، فيه سعر جملة؟", "3:40", 0.5], ["typing", 1.6, 3.0],
         ["bot", "طلبات الجملة صاحب المتجر بيتابعها بنفسه 🙏 بلّغته دلوقتي وهيكلّمك هنا في أقرب وقت.", "3:40", 3.0],
         ["cu", "تمام مستني 👍", "3:41", 5.0]] },
+    messenger: { ac: "#0a7cff", ac2: "#0057c2", ph: "#0a5ad6", av: "💬", what: "المساعد على المسنجر",
+      head: 'رسايل <span class="g">صفحتك على فيسبوك</span> تترد لوحدها',
+      p: "زباين كتير بيسألوا على رسايل الصفحة ومحدش بيرد بسرعة. المساعد يرد على المسنجر من داتا متجرك، بالأسعار والمقاسات واللينكات، في ثواني وطول اليوم.",
+      list: [["⚡", "رد في ثواني، حتى بالليل"], ["📚", "من نفس داتا متجرك وتعليماتك"], ["🤫", "لما ترد بنفسك، المساعد يسيبلك المحادثة"]],
+      chips: ["💬 مسنجر", "⚡ رد فوري", "🛒 لينك الطلب"],
+      chat: [["cu", "السلام عليكم، الجاكيت الأسود بكام؟", "11:02", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "وعليكم السلام 👋 الجاكيت الجلد الأسود بـ 990 ج.م، ومتاح M و L. ده لينكه 👇", "11:02", 3.0],
+        ["cu", "الشحن بياخد قد إيه؟", "11:03", 5.0], ["typing", 5.9, 7.0], ["bot", "يومين لأي محافظة 🚚 والدفع عند الاستلام.", "11:03", 7.0]] },
+    instagram: { ac: "#e1306c", ac2: "#a1246f", ph: "#833ab4", av: "📸", what: "المساعد على الإنستجرام",
+      head: 'رسايل <span class="g">الإنستجرام</span> تترد لوحدها',
+      p: "اللي بيشوف بوست أو ريلز ويبعتلك «بكام؟» في الدايركت، المساعد يرد عليه في ثواني من داتا متجرك، ويفهم كمان صورة المنتج لو بعتها.",
+      list: [["📸", "يرد على الدايركت في ثواني"], ["🔎", "يفهم صورة المنتج ويرشّح الأقرب"], ["🤫", "لما ترد بنفسك، المساعد يسيبلك المحادثة"]],
+      chips: ["📸 دايركت", "💬 بكام؟", "🛒 لينك الطلب"],
+      chat: [["cu", "بكام الفستان اللي في الريلز؟ 😍", "9:41", 0.5], ["typing", 1.6, 3.0],
+        ["bot", "أهلًا 👋 فستان «ليلى» بـ 350 ج.م، ومتاح من S لـ XL. ده لينكه 👇", "9:41", 3.0],
+        ["cu", "فيه كحلي؟", "9:42", 5.0], ["typing", 5.9, 7.0], ["bot", "أيوه فيه كحلي 💙 ومتاح كل المقاسات.", "9:42", 7.0]] },
     tracking: { ac: "#e8774a", ac2: "#c95a2e", ph: "#7a3a1c", av: "📦", what: "تتبع الأوردرات",
       head: 'الزبون يسأل <span class="g">«طلبي فين؟»</span> ويعرف في ثانية',
       p: "المساعد يجيب حالة أوردر الزبون من متجرك على Shopify أو EasyOrders: اتشحن ولا لأ، مع أنهي شركة، وهيوصل امتى. من غير ما تفتح موبايلك ولا ترد بنفسك.",
