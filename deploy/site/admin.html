@@ -171,6 +171,11 @@
   .up{color:var(--ok)} .down{color:var(--err)}
   .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:16px}
   .grid2b{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+  .mt-site{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .mt-site .ch{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+  .mt-site .ch .row{flex-wrap:wrap;gap:6px}
+  .mt-site a.btn{text-decoration:none}
+  @media (max-width:1000px){.mt-site{grid-template-columns:1fr}}
   @media (max-width:1000px){.grid2,.grid2b{grid-template-columns:1fr}}
 
   /* chart */
@@ -593,6 +598,12 @@
             </div>
           </div>
         </div>
+        <!-- Sellybot's own Page / Instagram: the store SiteBot.cs runs (nobody signs in to it), linked from here (meta-connect.ashx?site=1) -->
+        <div class="card anim" id="mtSite">
+          <h3>صفحة Sellybot نفسها</h3>
+          <p class="sub">سيلّي، المساعد اللي على الموقع، يرد كمان على رسايل صفحة Sellybot على فيسبوك وحسابها على الإنستجرام، بنفس داتا الموقع. اربطهم من هنا: ادخل بحساب فيسبوك اللي أدمن على الصفحة.</p>
+          <div class="mt-site" id="mtSiteRows"></div>
+        </div>
         <div class="toolbar" style="margin-top:16px"><h3 style="margin:0">الصفحات والحسابات المربوطة</h3><span class="space"></span><button class="btn ghost sm" id="mtReload" type="button">تحديث</button></div>
         <div class="tbl-wrap"><table>
           <thead><tr><th>القناة</th><th>الصفحة / الحساب</th><th>المتجر</th><th>الحالة</th><th>آخر رد</th></tr></thead>
@@ -781,7 +792,52 @@
       return "<tr><td>" + (l.channel === "fb" ? "💬 مسنجر" : "📸 إنستجرام") + '</td><td><span dir="auto">' + esc(l.name || l.account) + '</span><div class="hint ltr">' + esc(l.account) + "</div></td><td>" + esc(l.store) +
         ' <span class="hint ltr">' + esc(l.slug) + "</span></td><td>" + st + "</td><td>" + (l.lastAt ? esc(new Date(l.lastAt).toLocaleString("ar-EG")) : "—") + "</td></tr>";
     }).join("") : '<tr><td colspan="5" class="hint">لسه محدش ربط صفحة أو حساب.</td></tr>';
+    renderSite(d);
   }
+  // Sellybot's own Page / account (api/meta-admin.ashx?action=site)
+  function renderSite(d) {
+    var box = $("mtSiteRows"), site = d.site;
+    if (!site) { box.innerHTML = '<div class="hint">متجر Sellybot لسه مااتعملش (بيتعمل لوحده أول ما الموقع يفتح).</div>'; return; }
+    var NAME = { fb: "💬 صفحة فيسبوك (مسنجر)", ig: "📸 حساب الإنستجرام" };
+    box.innerHTML = ["fb", "ig"].map(function (ch) {
+      var x = site[ch] || {}, l = x.link, h = '<div class="ch" data-ch="' + ch + '"><b>' + NAME[ch] + "</b>";
+      if (l) {
+        var st = !l.enabled ? '<span class="pill">متوقف</span>' : l.status ? '<span class="pill warn">' + esc(l.status) + "</span>" : !l.subscribed ? '<span class="pill warn">مش مشترك في الرسايل</span>' : '<span class="pill ok">شغال ✅</span>';
+        h += '<div><span dir="auto">' + esc(l.name || l.id) + "</span> " + st + '</div><div class="hint">محادثات آخر 7 أيام: ' + (x.chats7d || 0) + "</div>";
+        h += '<div class="row">' + (l.chatUrl ? '<a class="btn ghost sm" target="_blank" rel="noopener" href="' + esc(l.chatUrl) + '">افتح وجرّب</a>' : "")
+          + '<button class="btn ghost sm" type="button" data-do="enable" data-on="' + (l.enabled ? "0" : "1") + '">' + (l.enabled ? "إيقاف" : "تشغيل") + "</button>"
+          + (!l.subscribed ? '<button class="btn ghost sm" type="button" data-do="resubscribe">اشترك في الرسايل تاني</button>' : "")
+          + '<button class="btn ghost sm" type="button" data-do="unlink">إلغاء الربط</button></div>';
+      } else if (x.choices && x.choices.length) {
+        h += '<div class="hint">لقينا أكتر من واحد، اختار بتاع Sellybot:</div><div class="row">' + x.choices.map(function (o) {
+          return '<button class="btn ghost sm" type="button" data-do="pick" data-id="' + esc(o.id) + '"><span dir="auto">' + esc(o.name) + "</span></button>";
+        }).join("") + "</div>";
+      } else if (!x.ready) {
+        h += '<div class="hint">كمّل إعدادات تطبيق Meta فوق الأول' + (ch === "ig" ? " (ومعاها Configuration ID بتاع الإنستجرام)" : "") + ".</div>";
+      } else {
+        h += '<div class="hint">مش مربوط.</div><div class="row"><a class="btn sm" href="api/meta-connect.ashx?start=' + ch + '&site=1">' + (ch === "fb" ? "اربط صفحة Sellybot" : "اربط إنستجرام Sellybot") + "</a></div>";
+      }
+      return h + "</div>";
+    }).join("");
+  }
+  $("mtSiteRows").onclick = async function (e) {
+    var b = e.target.closest("[data-do]"); if (!b) return;
+    var ch = b.closest("[data-ch]").dataset.ch, what = b.dataset.do, body = { do: what, channel: ch };
+    if (what === "unlink" && !confirm("إلغاء الربط هيمسح المحادثات اللي اتحفظت من " + (ch === "fb" ? "الصفحة" : "الإنستجرام") + ". متأكد؟")) return;
+    if (what === "pick") body.id = b.dataset.id;
+    if (what === "enable") body.enabled = b.dataset.on === "1";
+    busy(b, true);
+    try { renderMeta(await metaApi("site", body)); toast(what === "unlink" ? "اتلغى الربط ✓" : "تم ✓"); } catch (err) { toast(err.message, true); busy(b, false); }
+  };
+  // back from Meta's login (api/meta-connect.ashx?site=1 sends the admin here with ?meta=<result>[&metaMsg=<why>]#meta)
+  (function () {
+    var q = new URLSearchParams(location.search), k = q.get("meta"); if (!k) return;
+    var text = { ok_fb: "✅ صفحة Sellybot اتربطت. سيلّي هيرد على المسنجر.", ok_ig: "✅ إنستجرام Sellybot اتربط. سيلّي هيرد على الدايركت.",
+      pick_fb: "لقينا أكتر من صفحة: اختار صفحة Sellybot من «صفحة Sellybot نفسها».", pick_ig: "لقينا أكتر من حساب: اختار حساب Sellybot من «صفحة Sellybot نفسها».",
+      cancel: "الربط اتلغى." }[k] || q.get("metaMsg") || "حصلت مشكلة وإحنا بنربط. جرّب تاني.";
+    setTimeout(function () { toast(text, !/^(ok|pick)_/.test(k) && k !== "cancel"); }, 600);
+    if (history.replaceState) history.replaceState(null, "", location.pathname + "#meta");
+  })();
   async function loadMeta() { try { renderMeta(await metaApi()); } catch (e) { toast(e.message, true); } }
   $("mtReload").onclick = loadMeta;
   $("mtForm").onsubmit = async function (e) {

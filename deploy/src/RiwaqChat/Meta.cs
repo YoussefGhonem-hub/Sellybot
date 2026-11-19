@@ -167,24 +167,25 @@ namespace RiwaqChat
             return new MetaException(text, status, code, sub);
         }
 
-        // ---- the OAuth state: which store and which channel, signed, good for 20 minutes ----
-        public static string State(int storeId, string ch)
+        // ---- the OAuth state: which store and which channel, who started it (o = the owner's dashboard, a = the super admin
+        // linking Sellybot's own Page from admin.html), signed, good for 20 minutes ----
+        public static string State(int storeId, string ch, bool admin = false)
         {
-            string payload = storeId + "." + ch + "." + DateTimeOffset.UtcNow.AddMinutes(20).ToUnixTimeSeconds() + "." + WhatsAppBot.NewKey().Substring(0, 12);
+            string payload = storeId + "." + ch + "." + DateTimeOffset.UtcNow.AddMinutes(20).ToUnixTimeSeconds() + "." + WhatsAppBot.NewKey().Substring(0, 12) + "." + (admin ? "a" : "o");
             return payload + "." + StateSig(payload);
         }
 
-        public static bool ReadState(string state, out int storeId, out string ch)
+        public static bool ReadState(string state, out int storeId, out string ch, out bool admin)
         {
-            storeId = 0; ch = null;
+            storeId = 0; ch = null; admin = false;
             var p = (state ?? "").Split('.');
-            if (p.Length != 5) return false;
-            string payload = string.Join(".", p.Take(4));
-            if (!Secrets.Same(Encoding.UTF8.GetBytes(StateSig(payload)), Encoding.UTF8.GetBytes(p[4]))) return false;
+            if (p.Length != 6) return false;
+            string payload = string.Join(".", p.Take(5));
+            if (!Secrets.Same(Encoding.UTF8.GetBytes(StateSig(payload)), Encoding.UTF8.GetBytes(p[5]))) return false;
             long exp;
             if (!long.TryParse(p[2], out exp) || exp < DateTimeOffset.UtcNow.ToUnixTimeSeconds()) return false;
-            if (!int.TryParse(p[0], out storeId) || !Valid(p[1])) return false;
-            ch = p[1];
+            if (!int.TryParse(p[0], out storeId) || !Valid(p[1]) || (p[4] != "a" && p[4] != "o")) return false;
+            ch = p[1]; admin = p[4] == "a";
             return true;
         }
 
@@ -439,7 +440,7 @@ ELSE
                 {
                     ChatHandler.Prepared prep;
                     using (var c = Db.Open())
-                        prep = ChatHandler.Prepare(c, s, History(rows, imgs), ch + ":" + chat, ChannelNote(ch) + (imgs.Count > 0 ? WaImages.Note : ""), extra);
+                        prep = ChatHandler.Prepare(c, s, History(rows, imgs), ch + ":" + chat, ChannelNote(ch, s) + (imgs.Count > 0 ? WaImages.Note : ""), extra);
                     res = await ChatHandler.Run(prep);
                 }
                 catch (Exception ex)
@@ -555,15 +556,22 @@ ELSE
             return list;
         }
 
-        static string ChannelNote(string ch)
+        static string ChannelNote(string ch, StoreInfo s)
         {
-            return new StringBuilder("المحادثة دي على ").Append(ch == MetaApp.Fb ? "ماسنجر (صفحة المتجر على فيسبوك)" : "إنستجرام (رسايل حساب المتجر)").Append("، مش على الموقع:\n")
+            var sb = new StringBuilder("المحادثة دي على ").Append(ch == MetaApp.Fb ? "ماسنجر (صفحة المتجر على فيسبوك)" : "إنستجرام (رسايل حساب المتجر)").Append("، مش على الموقع:\n")
                 .Append("- خلي ردودك قصيرة زي رسايل الشات العادية.\n")
                 .Append("- اكتب كلام عادي من غير أي تنسيق: من غير نجوم ولا # ولا جداول. للقوائم استخدم • أو أرقام.\n")
                 .Append("- اكتب اللينكات كاملة (https://...) مش [نص](لينك).\n")
                 .Append("- مش معاك رقم الزبون. لو احتجته (تتبع أوردر، أو صاحب المتجر يكلّمه) اطلبه منه.\n")
-                .Append("- لو فيه رسايل في المحادثة من المتجر نفسه (صاحب المتجر رد بنفسه)، كمّل على كلامه وماتناقضهوش.")
-                .ToString();
+                .Append("- لو فيه رسايل في المحادثة من المتجر نفسه (صاحب المتجر رد بنفسه)، كمّل على كلامه وماتناقضهوش.");
+            // Sellybot's own Page: its instructions talk about forms inside the site chat (sign up, plans, tickets) and the visitor's
+            // own account, and neither exists here. Links instead.
+            if (s != null && s.Slug == SiteBot.Slug)
+                sb.Append("\n- مافيش هنا فورمز جوه الشات، ومش بتشوف حساب حد. بدل الفورم ابعت اللينك:\n")
+                  .Append("  • حساب جديد وتجربة مجانية: https://sellybot.online/dashboard.html?signup=1\n")
+                  .Append("  • الأسعار والباقات: https://sellybot.online/pricing.html (والاشتراك من «باقتي» في لوحة التحكم بعد تسجيل الدخول)\n")
+                  .Append("  • مشكلة في حسابه أو دفع أو أي حاجة محتاجة متابعة: واتساب الدعم https://wa.me/201229391155");
+            return sb.ToString();
         }
     }
 
@@ -638,55 +646,71 @@ ELSE
     {
         public override bool IsReusable { get { return true; } }
 
-        static void Back(HttpResponse res, string key, string message = null)
+        // back to the owner's «مسنجر وإنستجرام» tab, or to admin.html when the super admin linked Sellybot's own Page
+        static void Back(HttpResponse res, bool admin, string key, string message = null)
         {
-            res.Redirect("../dashboard.html?meta=" + Uri.EscapeDataString(key) + (message != null ? "&metaMsg=" + Uri.EscapeDataString(MetaApp.Cut(message, 300)) : "") + "#social", false);
+            res.Redirect((admin ? "../admin.html" : "../dashboard.html") + "?meta=" + Uri.EscapeDataString(key)
+                + (message != null ? "&metaMsg=" + Uri.EscapeDataString(MetaApp.Cut(message, 300)) : "") + (admin ? "#meta" : "#social"), false);
         }
 
+        // ?start=fb|ig — from the owner's dashboard; ?start=fb|ig&site=1 — the super admin links Sellybot's own store (SiteBot.cs),
+        // which nobody signs in to. Meta comes back here with ?code&state, and the state says which of the two started it.
         public override async Task ProcessRequestAsync(HttpContext ctx)
         {
             var req = ctx.Request; var res = ctx.Response;
             res.Cache.SetCacheability(HttpCacheability.NoCache);
             if (!Db.Configured) { res.StatusCode = 503; return; }
+            bool admin = false;
             try
             {
+                string start = (req.QueryString["start"] ?? "").ToLowerInvariant();
+                int stateStore = 0; string ch = null;
+                if (start.Length > 0) admin = req.QueryString["site"] == "1";
+                else if (!MetaApp.ReadState(req.QueryString["state"], out stateStore, out ch, out admin)) { Back(res, false, "error", "الرابط ده قديم أو مش سليم. ابدأ الربط تاني من «مسنجر وإنستجرام»."); return; }
+
                 StoreInfo s; string appId, secret;
                 using (var c = Db.Open())
                 {
-                    s = Me.Require(ctx, c);
-                    if (s == null) { res.Redirect("../dashboard.html", false); return; }
+                    if (admin)
+                    {
+                        if (!MetaAdminHandler.SignedIn(ctx, c)) { res.Redirect("../admin.html", false); return; }
+                        s = Db.StoreBySlug(c, SiteBot.Slug);
+                        if (s == null) { Back(res, true, "error", "متجر Sellybot لسه مااتعملش. افتح الموقع مرة وجرّب تاني."); return; }
+                    }
+                    else
+                    {
+                        s = Me.Require(ctx, c);
+                        if (s == null) { res.Redirect("../dashboard.html", false); return; }
+                    }
                     appId = MetaApp.AppId(c); secret = MetaApp.Secret(c);
 
-                    string start = (req.QueryString["start"] ?? "").ToLowerInvariant();
                     if (start.Length > 0)
                     {
-                        if (!MetaApp.Valid(start)) { Back(res, "error", "طلب مش مفهوم."); return; }
-                        if (!MetaApp.OpenFor(c, s, start)) { Back(res, "error", "الربط بـ" + MetaApp.Label(start) + " لسه مش متاح. هيتفتح قريب."); return; }
-                        if (!PlanGate.Allows(c, s, MetaApp.Feature(start))) { Back(res, "locked"); return; }
-                        if (!Web.Allow("meta-start:" + s.Id, 20, TimeSpan.FromHours(1))) { Back(res, "error", "جرّبت كتير، استنى شوية وجرّب تاني."); return; }
-                        res.Redirect(MetaApp.DialogUrl(c, req, start, MetaApp.State(s.Id, start)), false);
+                        if (!MetaApp.Valid(start)) { Back(res, admin, "error", "طلب مش مفهوم."); return; }
+                        if (!MetaApp.OpenFor(c, s, start)) { Back(res, admin, "error", admin ? "كمّل إعدادات تطبيق Meta الأول (App ID و Secret و Configuration ID)." : "الربط بـ" + MetaApp.Label(start) + " لسه مش متاح. هيتفتح قريب."); return; }
+                        if (!PlanGate.Allows(c, s, MetaApp.Feature(start))) { Back(res, admin, "locked"); return; }
+                        if (!Web.Allow("meta-start:" + s.Id, 20, TimeSpan.FromHours(1))) { Back(res, admin, "error", "جرّبت كتير، استنى شوية وجرّب تاني."); return; }
+                        res.Redirect(MetaApp.DialogUrl(c, req, start, MetaApp.State(s.Id, start, admin)), false);
                         return;
                     }
                 }
 
-                int stateStore; string ch;
-                if (!MetaApp.ReadState(req.QueryString["state"], out stateStore, out ch)) { Back(res, "error", "الرابط ده قديم أو مش سليم. ابدأ الربط تاني من «مسنجر وإنستجرام»."); return; }
-                if (stateStore != s.Id) { Back(res, "error", "انت داخل بحساب متجر غير اللي بدأ الربط. ادخل بالمتجر الصح وابدأ تاني."); return; }
-                if (!string.IsNullOrEmpty(req.QueryString["error"])) { Back(res, "cancel"); return; }
+                if (stateStore != s.Id) { Back(res, admin, "error", "انت داخل بحساب متجر غير اللي بدأ الربط. ادخل بالمتجر الصح وابدأ تاني."); return; }
+                if (!string.IsNullOrEmpty(req.QueryString["error"])) { Back(res, admin, "cancel"); return; }
                 string code = (req.QueryString["code"] ?? "").Trim();
                 if (code.EndsWith("#_")) code = code.Substring(0, code.Length - 2);
-                if (code.Length == 0) { Back(res, "cancel"); return; }
+                if (code.Length == 0) { Back(res, admin, "cancel"); return; }
 
                 try
                 {
                     var tok = await MetaApp.Call(HttpMethod.Get, "oauth/access_token?client_id=" + Uri.EscapeDataString(appId) + "&client_secret=" + Uri.EscapeDataString(secret)
                         + "&redirect_uri=" + Uri.EscapeDataString(MetaApp.RedirectUri(req)) + "&code=" + Uri.EscapeDataString(code), null, null);
                     string token = WaJson.S(tok, "access_token");
-                    if (string.IsNullOrEmpty(token)) { Back(res, "error", "فيسبوك مارجّعش صلاحية. جرّب تاني."); return; }
+                    if (string.IsNullOrEmpty(token)) { Back(res, admin, "error", "فيسبوك مارجّعش صلاحية. جرّب تاني."); return; }
                     var choices = ch == MetaApp.Fb ? await Pages(token, appId, secret) : await IgAccounts(token, secret);
                     if (choices.Count == 0)
                     {
-                        Back(res, "error", ch == MetaApp.Fb
+                        Back(res, admin, "error", ch == MetaApp.Fb
                             ? "مالقيناش صفحة فيسبوك انت أدمن عليها. لو عندك صفحة، ابدأ تاني واختارها لما فيسبوك يسألك."
                             : "مالقيناش حساب إنستجرام. لازم يكون حساب Professional (Business أو Creator)، واختاره لما فيسبوك يسألك.");
                         return;
@@ -695,8 +719,8 @@ ELSE
                     {
                         var one = choices[0];
                         var err = await MetaApp.Save(s.Id, ch, one.Id, one.Name, one.Token, one.Business);
-                        if (err != null) { Back(res, "error", err); return; }
-                        Back(res, "ok_" + ch);
+                        if (err != null) { Back(res, admin, "error", err); return; }
+                        Back(res, admin, "ok_" + ch);
                         return;
                     }
                     // several Pages / accounts: the owner picks one in the dashboard (the tokens wait here, encrypted, for 30 minutes)
@@ -705,11 +729,11 @@ ELSE
                         INSERT INTO dbo.MetaConnects(StoreId, Channel, Choices, ExpiresAt) VALUES(@s, @ch, @j, DATEADD(MINUTE,30,SYSUTCDATETIME()));",
                         "@s", s.Id, "@ch", ch, "@j", Secrets.Protect(JsonSerializer.Serialize(choices.Take(50).Select(x => new { id = x.Id, name = x.Name, token = x.Token, business = x.Business })))))
                         cmd.ExecuteNonQuery();
-                    Back(res, "pick_" + ch);
+                    Back(res, admin, "pick_" + ch);
                 }
-                catch (MetaException ex) { Back(res, "error", ex.Message); }
+                catch (MetaException ex) { Back(res, admin, "error", ex.Message); }
             }
-            catch (Exception ex) { Log.Error(ex); Back(res, "error", "حصلت مشكلة وإحنا بنربط. جرّب تاني."); }
+            catch (Exception ex) { Log.Error(ex); Back(res, admin, "error", "حصلت مشكلة وإحنا بنربط. جرّب تاني."); }
         }
 
         public class Choice { public string Id, Name, Token, Business; }
@@ -778,75 +802,80 @@ ELSE
                 }
                 if (req.HttpMethod != "POST" || !Web.CsrfOk(req)) { Web.Error(res, 400, "bad_request"); return; }
                 if (!Web.Allow("meta:" + s.Id, 60, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "جرّبت كتير، استنى شوية وجرّب تاني."); return; }
-                string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
-                var b = Web.Body(req, 2000);
-                string ch = (Web.Str(b, "channel", 4) ?? "").ToLowerInvariant();
-                if (!MetaApp.Valid(ch)) { Web.Error(res, 400, "bad_request"); return; }
-
-                if (action == "pick")
-                {
-                    string id = Web.Str(b, "id", 40) ?? "";
-                    MetaConnectHandler.Choice pick = null;
-                    using (var c = Db.Open())
-                    {
-                        if (!PlanGate.Allows(c, s, MetaApp.Feature(ch))) { PlanGate.Deny(res, c, s, MetaApp.Feature(ch)); return; }
-                        using (var cmd = Db.Cmd(c, "SELECT Choices FROM dbo.MetaConnects WHERE StoreId=@s AND Channel=@ch AND ExpiresAt > SYSUTCDATETIME()", "@s", s.Id, "@ch", ch))
-                        {
-                            var box = cmd.ExecuteScalar() as string;
-                            var json = box == null ? null : Secrets.Unprotect(box);
-                            if (json != null)
-                                pick = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(json)
-                                    .Where(x => x.ContainsKey("id") && x["id"] == id)
-                                    .Select(x => new MetaConnectHandler.Choice { Id = x["id"], Name = x.ContainsKey("name") ? x["name"] : null, Token = x.ContainsKey("token") ? x["token"] : null, Business = x.ContainsKey("business") ? x["business"] : null })
-                                    .FirstOrDefault();
-                        }
-                    }
-                    if (pick == null || string.IsNullOrEmpty(pick.Token)) { Web.Error(res, 400, "expired", "الاختيار ده انتهى. ابدأ الربط تاني."); return; }
-                    var err = await MetaApp.Save(s.Id, ch, pick.Id, pick.Name, pick.Token, pick.Business);
-                    if (err != null) { Web.Error(res, 400, "taken", err); return; }
-                }
-                else if (action == "enable")
-                {
-                    object en; bool on = b.TryGetValue("enabled", out en) && en is bool && (bool)en;
-                    using (var c = Db.Open())
-                    {
-                        if (on && !PlanGate.Allows(c, s, MetaApp.Feature(ch))) { PlanGate.Deny(res, c, s, MetaApp.Feature(ch)); return; }
-                        using (var cmd = Db.Cmd(c, "UPDATE dbo.MetaLinks SET Enabled=@e, Status=NULL WHERE StoreId=@s AND Channel=@ch", "@e", on, "@s", s.Id, "@ch", ch)) cmd.ExecuteNonQuery();
-                    }
-                }
-                else if (action == "unlink")
-                {
-                    MetaLink link; string secret;
-                    using (var c = Db.Open()) { link = MetaApp.Link(c, s.Id, ch); secret = MetaApp.Secret(c); }
-                    if (link != null && link.Token != null)
-                        try { await MetaApp.Call(HttpMethod.Delete, Uri.EscapeDataString(link.AccountId) + "/subscribed_apps", link.Token, secret); }
-                        catch (MetaException) { }   // the owner may have removed the app on Facebook already
-                    using (var c = Db.Open())
-                    // the token and every message we kept from this account go (privacy.html#meta-delete)
-                    using (var cmd = Db.Cmd(c, @"DELETE FROM dbo.MetaLinks WHERE StoreId=@s AND Channel=@ch; DELETE FROM dbo.MetaConnects WHERE StoreId=@s AND Channel=@ch;
-                        DELETE FROM dbo.MetaMessages WHERE StoreId=@s AND Channel=@ch;", "@s", s.Id, "@ch", ch))
-                        cmd.ExecuteNonQuery();
-                }
-                else if (action == "resubscribe")
-                {
-                    MetaLink link; string secret;
-                    using (var c = Db.Open()) { link = MetaApp.Link(c, s.Id, ch); secret = MetaApp.Secret(c); }
-                    if (link == null || link.Token == null) { Web.Error(res, 400, "not_linked", "مفيش ربط. اربط الأول."); return; }
-                    var why = await MetaApp.Subscribe(ch, link.AccountId, link.Token, secret);
-                    using (var c = Db.Open())
-                    using (var cmd = Db.Cmd(c, "UPDATE dbo.MetaLinks SET Subscribed=@sub, Status=@st WHERE StoreId=@s AND Channel=@ch",
-                        "@sub", why == null, "@st", why == null ? (object)DBNull.Value : MetaApp.Cut("⚠️ " + why, 400), "@s", s.Id, "@ch", ch))
-                        cmd.ExecuteNonQuery();
-                    if (why != null) { Web.Error(res, 400, "meta", why); return; }
-                }
-                else { Web.Error(res, 400, "bad_request"); return; }
-
+                if (!await Act(res, s, (req.QueryString["action"] ?? "").ToLowerInvariant(), Web.Body(req, 2000))) return;
                 using (var c = Db.Open()) Web.Json(res, 200, State(c, Db.StoreById(c, s.Id)));
             }
             catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error", "حصلت مشكلة. جرّب تاني."); }
         }
 
-        static Dictionary<string, object> State(SqlConnection c, StoreInfo s)
+        // pick | enable | unlink | resubscribe for one channel of a store: the owner's tab, and admin.html for Sellybot's own store.
+        // false = an error was already written.
+        internal static async Task<bool> Act(HttpResponse res, StoreInfo s, string action, Dictionary<string, object> b)
+        {
+            string ch = (Web.Str(b, "channel", 4) ?? "").ToLowerInvariant();
+            if (!MetaApp.Valid(ch)) { Web.Error(res, 400, "bad_request"); return false; }
+
+            if (action == "pick")
+            {
+                string id = Web.Str(b, "id", 40) ?? "";
+                MetaConnectHandler.Choice pick = null;
+                using (var c = Db.Open())
+                {
+                    if (!PlanGate.Allows(c, s, MetaApp.Feature(ch))) { PlanGate.Deny(res, c, s, MetaApp.Feature(ch)); return false; }
+                    using (var cmd = Db.Cmd(c, "SELECT Choices FROM dbo.MetaConnects WHERE StoreId=@s AND Channel=@ch AND ExpiresAt > SYSUTCDATETIME()", "@s", s.Id, "@ch", ch))
+                    {
+                        var box = cmd.ExecuteScalar() as string;
+                        var json = box == null ? null : Secrets.Unprotect(box);
+                        if (json != null)
+                            pick = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(json)
+                                .Where(x => x.ContainsKey("id") && x["id"] == id)
+                                .Select(x => new MetaConnectHandler.Choice { Id = x["id"], Name = x.ContainsKey("name") ? x["name"] : null, Token = x.ContainsKey("token") ? x["token"] : null, Business = x.ContainsKey("business") ? x["business"] : null })
+                                .FirstOrDefault();
+                    }
+                }
+                if (pick == null || string.IsNullOrEmpty(pick.Token)) { Web.Error(res, 400, "expired", "الاختيار ده انتهى. ابدأ الربط تاني."); return false; }
+                var err = await MetaApp.Save(s.Id, ch, pick.Id, pick.Name, pick.Token, pick.Business);
+                if (err != null) { Web.Error(res, 400, "taken", err); return false; }
+            }
+            else if (action == "enable")
+            {
+                object en; bool on = b.TryGetValue("enabled", out en) && en is bool && (bool)en;
+                using (var c = Db.Open())
+                {
+                    if (on && !PlanGate.Allows(c, s, MetaApp.Feature(ch))) { PlanGate.Deny(res, c, s, MetaApp.Feature(ch)); return false; }
+                    using (var cmd = Db.Cmd(c, "UPDATE dbo.MetaLinks SET Enabled=@e, Status=NULL WHERE StoreId=@s AND Channel=@ch", "@e", on, "@s", s.Id, "@ch", ch)) cmd.ExecuteNonQuery();
+                }
+            }
+            else if (action == "unlink")
+            {
+                MetaLink link; string secret;
+                using (var c = Db.Open()) { link = MetaApp.Link(c, s.Id, ch); secret = MetaApp.Secret(c); }
+                if (link != null && link.Token != null)
+                    try { await MetaApp.Call(HttpMethod.Delete, Uri.EscapeDataString(link.AccountId) + "/subscribed_apps", link.Token, secret); }
+                    catch (MetaException) { }   // the owner may have removed the app on Facebook already
+                using (var c = Db.Open())
+                // the token and every message we kept from this account go (privacy.html#meta-delete)
+                using (var cmd = Db.Cmd(c, @"DELETE FROM dbo.MetaLinks WHERE StoreId=@s AND Channel=@ch; DELETE FROM dbo.MetaConnects WHERE StoreId=@s AND Channel=@ch;
+                    DELETE FROM dbo.MetaMessages WHERE StoreId=@s AND Channel=@ch;", "@s", s.Id, "@ch", ch))
+                    cmd.ExecuteNonQuery();
+            }
+            else if (action == "resubscribe")
+            {
+                MetaLink link; string secret;
+                using (var c = Db.Open()) { link = MetaApp.Link(c, s.Id, ch); secret = MetaApp.Secret(c); }
+                if (link == null || link.Token == null) { Web.Error(res, 400, "not_linked", "مفيش ربط. اربط الأول."); return false; }
+                var why = await MetaApp.Subscribe(ch, link.AccountId, link.Token, secret);
+                using (var c = Db.Open())
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.MetaLinks SET Subscribed=@sub, Status=@st WHERE StoreId=@s AND Channel=@ch",
+                    "@sub", why == null, "@st", why == null ? (object)DBNull.Value : MetaApp.Cut("⚠️ " + why, 400), "@s", s.Id, "@ch", ch))
+                    cmd.ExecuteNonQuery();
+                if (why != null) { Web.Error(res, 400, "meta", why); return false; }
+            }
+            else { Web.Error(res, 400, "bad_request"); return false; }
+            return true;
+        }
+
+        internal static Dictionary<string, object> State(SqlConnection c, StoreInfo s)
         {
             var d = new Dictionary<string, object>();
             foreach (var ch in new[] { MetaApp.Fb, MetaApp.Ig })
@@ -874,10 +903,18 @@ ELSE
         }
     }
 
-    // api/meta-admin.ashx — the super admin's Meta app settings, and every linked Page / Instagram account
+    // api/meta-admin.ashx — the super admin's Meta app settings, every linked Page / Instagram account, and Sellybot's own
+    // Page / account (the store SiteBot.cs runs, which nobody signs in to): POST ?action=site with {do: pick|enable|unlink|resubscribe}
     public class MetaAdminHandler : HttpTaskAsyncHandler
     {
         public override bool IsReusable { get { return true; } }
+
+        internal static bool SignedIn(HttpContext ctx, SqlConnection c)
+        {
+            var adminId = AdminAuth.Current(ctx);
+            if (!adminId.HasValue) return false;
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.Admins WHERE Id=@id", "@id", adminId.Value)) return (int)cmd.ExecuteScalar() > 0;
+        }
 
         public override async Task ProcessRequestAsync(HttpContext ctx)
         {
@@ -888,10 +925,7 @@ ELSE
             {
                 using (var c = Db.Open())
                 {
-                    var adminId = AdminAuth.Current(ctx);
-                    bool ok = false;
-                    if (adminId.HasValue) using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.Admins WHERE Id=@id", "@id", adminId.Value)) ok = (int)cmd.ExecuteScalar() > 0;
-                    if (!ok) { Web.Error(res, 401, "not_logged_in"); return; }
+                    if (!SignedIn(ctx, c)) { Web.Error(res, 401, "not_logged_in"); return; }
                     if (req.HttpMethod == "GET") { Web.Json(res, 200, State(c, req)); return; }
                     if (req.HttpMethod != "POST" || !Web.CsrfOk(req)) { Web.Error(res, 400, "bad_request"); return; }
                     string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
@@ -925,6 +959,14 @@ ELSE
                         Web.Json(res, 200, State(c, req));
                         return;
                     }
+                    if (action == "site")
+                    {
+                        var site = Db.StoreBySlug(c, SiteBot.Slug);
+                        if (site == null) { Web.Error(res, 400, "no_site", "متجر Sellybot لسه مااتعملش."); return; }
+                        if (!await MetaHandler.Act(res, site, (Web.Str(b, "do", 20) ?? "").ToLowerInvariant(), b)) return;
+                        Web.Json(res, 200, State(c, req));
+                        return;
+                    }
                     Web.Error(res, 400, "bad_request");
                 }
             }
@@ -933,6 +975,7 @@ ELSE
 
         static Dictionary<string, object> State(SqlConnection c, HttpRequest req)
         {
+            var site = Db.StoreBySlug(c, SiteBot.Slug);   // Sellybot's own Page / account, linked from here
             var links = new List<Dictionary<string, object>>();
             using (var cmd = Db.Cmd(c, @"SELECT TOP 300 l.Channel, l.AccountId, l.Name, l.Enabled, l.Subscribed, l.Status, l.LastAt, l.CreatedAt, s.Slug, s.Name AS StoreName
                 FROM dbo.MetaLinks l JOIN dbo.Stores s ON s.Id = l.StoreId ORDER BY l.CreatedAt DESC"))
@@ -947,7 +990,7 @@ ELSE
                 { "fbConfig", MetaApp.Config(c, MetaApp.Fb) ?? "" }, { "igConfig", MetaApp.Config(c, MetaApp.Ig) ?? "" },
                 { "verifyToken", MetaApp.VerifyToken(c, true) }, { "hookUrl", MetaApp.HookUrl(req) }, { "redirectUri", MetaApp.RedirectUri(req) },
                 { "live", MetaApp.Live(c) }, { "testers", MetaApp.Testers(c) },
-                { "version", MetaApp.Version }, { "links", links } };
+                { "version", MetaApp.Version }, { "links", links }, { "site", site != null ? MetaHandler.State(c, site) : null } };
         }
     }
 }
