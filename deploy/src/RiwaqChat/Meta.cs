@@ -835,6 +835,10 @@ ELSE
             catch (MetaException ex) { why = ex.Message; }
             if (list.Count > 0) return list;
             // nothing: say what Facebook did give us, so the fix (the configuration's permissions, or picking the account) is clear
+            if (!scopes.Any(x => x.StartsWith("instagram_")) && scopes.Any(x => x.StartsWith("pages_")))
+                throw new MetaException("فيسبوك ادّانا صلاحيات المسنجر (" + string.Join("، ", scopes) + ") مش صلاحيات الإنستجرام."
+                    + " يعني الـ Configuration ID اللي في خانة الإنستجرام في «إعدادات تطبيق Meta» هو بتاع المسنجر، أو الـ Configuration نفسه مافيهوش instagram_basic و instagram_manage_messages."
+                    + " حط في خانة الإنستجرام رقم الـ Configuration اللي فيه صلاحيات الإنستجرام (Facebook Login for Business ← Configurations) وجرّب تاني.");
             throw new MetaException("فيسبوك مابعتش حساب إنستجرام. لازم تختار حساب الإنستجرام في شاشة فيسبوك، والحساب يكون Professional."
                 + " الصلاحيات اللي وصلت: " + (scopes.Count > 0 ? string.Join("، ", scopes) : "مش معروفة") + "."
                 + (scopes.Contains("instagram_basic") && scopes.Contains("instagram_manage_messages") ? "" : " ناقص instagram_basic و instagram_manage_messages في الـ Configuration بتاع الإنستجرام.")
@@ -1000,6 +1004,7 @@ ELSE
                         Func<string, bool> digits = v => v.Length == 0 || Regex.IsMatch(v, "^[0-9]{5,30}$");
                         if (appId.Length == 0 || !digits(appId)) { Web.Error(res, 400, "bad_app", "الـ App ID أرقام بس. هتلاقيه في App settings ← Basic."); return; }
                         if (!digits(fbConfig) || !digits(igConfig)) { Web.Error(res, 400, "bad_config", "الـ Configuration ID أرقام بس. هتلاقيه في Facebook Login for Business ← Configurations."); return; }
+                        if (fbConfig.Length > 0 && fbConfig == igConfig) { Web.Error(res, 400, "same_config", "نفس الـ Configuration ID في خانة المسنجر وخانة الإنستجرام. كل واحد ليه Configuration لوحده: بتاع الإنستجرام هو اللي فيه instagram_basic و instagram_manage_messages."); return; }
                         if (secret.Length > 0 && !Regex.IsMatch(secret, "^[0-9a-fA-F]{20,64}$")) { Web.Error(res, 400, "bad_secret", "الـ App Secret مش مظبوط. انسخه زي ما هو من App settings ← Basic (Show)."); return; }
                         string useSecret = secret.Length > 0 ? secret : MetaApp.Secret(c);
                         if (useSecret != null)
