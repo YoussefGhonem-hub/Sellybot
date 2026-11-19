@@ -673,7 +673,12 @@ ELSE
                 {
                     if (admin)
                     {
-                        if (!MetaAdminHandler.SignedIn(ctx, c)) { res.Redirect("../admin.html", false); return; }
+                        if (!MetaAdminHandler.SignedIn(ctx, c))
+                        {
+                            // the admin cookie is SameSite=Strict, so it stays behind when Facebook sends the browser back: go once more from our own page
+                            if (start.Length == 0 && req.QueryString["again"] != "1") { Again(req, res); return; }
+                            res.Redirect("../admin.html", false); return;
+                        }
                         s = Db.StoreBySlug(c, SiteBot.Slug);
                         if (s == null) { Back(res, true, "error", "متجر Sellybot لسه مااتعملش. افتح الموقع مرة وجرّب تاني."); return; }
                     }
@@ -734,6 +739,17 @@ ELSE
                 catch (MetaException ex) { Back(res, admin, "error", ex.Message); }
             }
             catch (Exception ex) { Log.Error(ex); Back(res, admin, "error", "حصلت مشكلة وإحنا بنربط. جرّب تاني."); }
+        }
+
+        // A page of ours that opens the same callback again: a navigation that starts on our own site carries the strict admin cookie
+        static void Again(HttpRequest req, HttpResponse res)
+        {
+            string a = HttpUtility.HtmlAttributeEncode(req.Url.AbsolutePath + req.Url.Query + (req.Url.Query.Length > 0 ? "&" : "?") + "again=1");
+            res.ContentType = "text/html"; res.Charset = "utf-8";
+            res.AddHeader("Referrer-Policy", "no-referrer");
+            res.Write("<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\">"
+                + "<meta http-equiv=\"refresh\" content=\"0;url=" + a + "\"><title>Sellybot</title></head>"
+                + "<body style=\"font-family:system-ui,sans-serif;text-align:center;margin-top:3em\"><a href=\"" + a + "\">لحظة… لو الصفحة ماتحركتش دوس هنا</a></body></html>");
         }
 
         public class Choice { public string Id, Name, Token, Business; }
