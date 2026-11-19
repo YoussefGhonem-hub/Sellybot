@@ -650,7 +650,7 @@ ELSE
         static void Back(HttpResponse res, bool admin, string key, string message = null)
         {
             res.Redirect((admin ? "../admin.html" : "../dashboard.html") + "?meta=" + Uri.EscapeDataString(key)
-                + (message != null ? "&metaMsg=" + Uri.EscapeDataString(MetaApp.Cut(message, 300)) : "") + (admin ? "#meta" : "#social"), false);
+                + (message != null ? "&metaMsg=" + Uri.EscapeDataString(MetaApp.Cut(message, 500)) : "") + (admin ? "#meta" : "#social"), false);
         }
 
         // ?start=fb|ig — from the owner's dashboard; ?start=fb|ig&site=1 — the super admin links Sellybot's own store (SiteBot.cs),
@@ -712,7 +712,7 @@ ELSE
                         + "&redirect_uri=" + Uri.EscapeDataString(MetaApp.RedirectUri(req)) + "&code=" + Uri.EscapeDataString(code), null, null);
                     string token = WaJson.S(tok, "access_token");
                     if (string.IsNullOrEmpty(token)) { Back(res, admin, "error", "فيسبوك مارجّعش صلاحية. جرّب تاني."); return; }
-                    var choices = ch == MetaApp.Fb ? await Pages(token, appId, secret) : await IgAccounts(token, secret);
+                    var choices = ch == MetaApp.Fb ? await Pages(token, appId, secret) : await IgAccounts(token, appId, secret);
                     if (choices.Count == 0)
                     {
                         Back(res, admin, "error", ch == MetaApp.Fb
@@ -777,22 +777,68 @@ ELSE
             return list;
         }
 
-        // Unified Login: the business's system-user token reaches the Instagram accounts the owner shared with us
-        static async Task<List<Choice>> IgAccounts(string token, string secret)
+        // Unified Login: the business's system-user token reaches the Instagram accounts the owner picked in Facebook's dialog.
+        // Those accounts are the target_ids of the token's instagram_* grants (debug_token), which needs no extra permission.
+        // me/assigned_instagram_accounts is only the fallback: on the real app it answered "(#100) Requires instagram_basic
+        // permission to manage the object" (it wants business_management on the configuration).
+        static async Task<List<Choice>> IgAccounts(string token, string appId, string secret)
         {
             string business = null;
             try { business = WaJson.S(await MetaApp.Call(HttpMethod.Get, "me?fields=client_business_id", token, secret), "client_business_id"); }
             catch (MetaException) { }
-            var list = new List<Choice>();
-            JsonElement data;
-            var r = await MetaApp.Call(HttpMethod.Get, "me/assigned_instagram_accounts?fields=id,username&limit=100", token, secret);
-            if (r.TryGetProperty("data", out data) && data.ValueKind == JsonValueKind.Array)
-                foreach (var a in data.EnumerateArray())
+            var ids = new List<string>(); var scopes = new List<string>();
+            try
+            {
+                JsonElement d, arr, t;
+                var dbg = await MetaApp.Call(HttpMethod.Get, "debug_token?input_token=" + Uri.EscapeDataString(token), appId + "|" + secret, null);
+                if (dbg.TryGetProperty("data", out d) && d.ValueKind == JsonValueKind.Object)
                 {
-                    string id = WaJson.S(a, "id"), user = WaJson.S(a, "username");
-                    if (!string.IsNullOrEmpty(id)) list.Add(new Choice { Id = id, Name = string.IsNullOrEmpty(user) ? id : "@" + user, Token = token, Business = business });
+                    if (d.TryGetProperty("scopes", out arr) && arr.ValueKind == JsonValueKind.Array)
+                        foreach (var x in arr.EnumerateArray()) if (x.ValueKind == JsonValueKind.String) scopes.Add(x.GetString());
+                    if (d.TryGetProperty("granular_scopes", out arr) && arr.ValueKind == JsonValueKind.Array)
+                        foreach (var g in arr.EnumerateArray())
+                        {
+                            string scope = WaJson.S(g, "scope");
+                            if ((scope == "instagram_basic" || scope == "instagram_manage_messages") && g.TryGetProperty("target_ids", out t) && t.ValueKind == JsonValueKind.Array)
+                                foreach (var x in t.EnumerateArray())
+                                {
+                                    string id = x.ValueKind == JsonValueKind.String ? x.GetString() : x.GetRawText();
+                                    if (!string.IsNullOrEmpty(id) && id.All(char.IsDigit) && !ids.Contains(id)) ids.Add(id);
+                                }
+                        }
                 }
-            return list;
+            }
+            catch (MetaException) { }
+
+            var list = new List<Choice>();
+            foreach (var id in ids.Take(50))
+            {
+                string user = null;
+                try { user = WaJson.S(await MetaApp.Call(HttpMethod.Get, id + "?fields=id,username", token, secret), "username"); }
+                catch (MetaException) { }
+                list.Add(new Choice { Id = id, Name = string.IsNullOrEmpty(user) ? id : "@" + user, Token = token, Business = business });
+            }
+            if (list.Count > 0) return list;
+
+            string why = null;
+            try
+            {
+                JsonElement data;
+                var r = await MetaApp.Call(HttpMethod.Get, "me/assigned_instagram_accounts?fields=id,username&limit=100", token, secret);
+                if (r.TryGetProperty("data", out data) && data.ValueKind == JsonValueKind.Array)
+                    foreach (var a in data.EnumerateArray())
+                    {
+                        string id = WaJson.S(a, "id"), user = WaJson.S(a, "username");
+                        if (!string.IsNullOrEmpty(id)) list.Add(new Choice { Id = id, Name = string.IsNullOrEmpty(user) ? id : "@" + user, Token = token, Business = business });
+                    }
+            }
+            catch (MetaException ex) { why = ex.Message; }
+            if (list.Count > 0) return list;
+            // nothing: say what Facebook did give us, so the fix (the configuration's permissions, or picking the account) is clear
+            throw new MetaException("فيسبوك مابعتش حساب إنستجرام. لازم تختار حساب الإنستجرام في شاشة فيسبوك، والحساب يكون Professional."
+                + " الصلاحيات اللي وصلت: " + (scopes.Count > 0 ? string.Join("، ", scopes) : "مش معروفة") + "."
+                + (scopes.Contains("instagram_basic") && scopes.Contains("instagram_manage_messages") ? "" : " ناقص instagram_basic و instagram_manage_messages في الـ Configuration بتاع الإنستجرام.")
+                + (why != null ? " (" + MetaApp.Cut(why, 160) + ")" : ""));
         }
     }
 
