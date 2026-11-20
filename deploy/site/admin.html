@@ -790,7 +790,7 @@
     $("mtRows").innerHTML = rows.length ? rows.map(function (l) {
       var st = !l.enabled ? '<span class="pill">متوقف</span>' : l.status ? '<span class="pill warn">' + esc(l.status) + '</span>' : '<span class="pill ok">شغال ✅</span>';
       return "<tr><td>" + (l.channel === "fb" ? "💬 مسنجر" : "📸 إنستجرام") + '</td><td><span dir="auto">' + esc(l.name || l.account) + '</span><div class="hint ltr">' + esc(l.account) + "</div></td><td>" + esc(l.store) +
-        ' <span class="hint ltr">' + esc(l.slug) + "</span></td><td>" + st + "</td><td>" + (l.lastAt ? esc(new Date(l.lastAt).toLocaleString("ar-EG")) : "—") + "</td></tr>";
+        ' <span class="hint ltr">' + esc(l.slug) + "</span>" + (l.ownApp ? ' <span class="pill" title="مربوط بتطبيق Meta بتاع المتجر نفسه">تطبيقه</span>' : "") + "</td><td>" + st + "</td><td>" + (l.lastAt ? esc(new Date(l.lastAt).toLocaleString("ar-EG")) : "—") + "</td></tr>";
     }).join("") : '<tr><td colspan="5" class="hint">لسه محدش ربط صفحة أو حساب.</td></tr>';
     renderSite(d);
   }

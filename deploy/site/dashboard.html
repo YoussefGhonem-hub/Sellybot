@@ -980,6 +980,10 @@
   .mt-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
   .mt-row .space{flex:1}
   .mt-top{max-width:880px;margin:0 0 12px}
+  .mt-logo.mt-key{background:linear-gradient(135deg,#0866ff,#00a3ff)}
+  .mt-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (max-width:860px){.mt-fields{grid-template-columns:minmax(0,1fr)}}
+  #mtApp .scope-box code{flex:1;min-width:0}
   .wa-warn{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#fff1d6;color:#8a5200;font-size:13.5px;line-height:1.6}
   [data-theme=dark] .wa-warn{background:#3d2c10;color:#f3c26b}
   .wa-pick{margin-top:10px}
@@ -2438,6 +2442,41 @@
           <li><span>🙋</span><div><b>لو رديت بنفسك بيسكت</b><small>لما ترد على زبون بنفسك، المساعد يسيبلك المحادثة دي ساعتين.</small></div></li>
           <li><span>📊</span><div><b>من نفس رصيدك</b><small>كل رد بيتحسب رسالة من رصيد باقتك، زي الموقع والواتساب بالظبط.</small></div></li>
         </ul>
+      </div>
+    </div>
+    <!-- the owner's own Meta app (Meta.cs, dbo.MetaApps): made once on developers.facebook.com, its numbers saved here -->
+    <div class="card" id="mtApp" style="max-width:880px;margin-bottom:16px" hidden>
+      <div class="shop-head" style="margin-bottom:0">
+        <div class="shop-logo mt-logo mt-key" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M16 7l3 3M14 9l2 2"/></svg></div>
+        <div style="flex:1;min-width:0"><h3 style="margin:0">تطبيق Meta بتاعك <span class="ok-pill" id="mtAppOk" hidden>✅ متظبط</span></h3>
+          <p class="sub" style="margin:2px 0 0" id="mtAppSub">بتعمله مرة واحدة: تطبيق على developers.facebook.com بحسابك، تحط فيه اللينكات اللي تحت، وتحط أرقامه هنا. بعدها زراير الربط تشتغل.</p></div>
+        <button class="btn ghost sm" id="mtAppToggle" type="button" hidden>تعديل</button>
+      </div>
+      <div id="mtAppBody">
+        <div class="mt-soon" id="mtAppShared" hidden>متجرك يقدر يربط بتطبيق Sellybot من غير تطبيق خاص بيك. ولو حطيت أرقام تطبيقك هنا، الربط الجاي هيبقى بيه.</div>
+        <h4 class="steps-title" style="margin-top:16px">1. انسخ دول في تطبيقك على developers.facebook.com</h4>
+        <label>Callback URL: في الـ Webhooks بتاعة المسنجر والإنستجرام</label>
+        <span class="scope-box"><code class="ltr" id="mtAppHook"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppHook">نسخ</button></span>
+        <label>Verify token: جنب الـ Callback URL</label>
+        <span class="scope-box"><code class="ltr" id="mtAppVerify"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppVerify">نسخ</button></span>
+        <label>Redirect URL: في Facebook Login for Business ← Settings ← Valid OAuth Redirect URIs</label>
+        <span class="scope-box"><code class="ltr" id="mtAppRedirect"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppRedirect">نسخ</button></span>
+        <p class="hint" style="margin:6px 0 0">في Webhook fields اعمل Subscribe على <span class="kbd">messages</span> و <span class="kbd">messaging_postbacks</span> و <span class="kbd">message_echoes</span> في المسنجر، و <span class="kbd">messages</span> في الإنستجرام.</p>
+        <h4 class="steps-title" style="margin-top:18px">2. حط أرقام تطبيقك</h4>
+        <div class="shop-fields mt-fields">
+          <div><label for="mtAppId">App ID</label>
+            <input type="text" id="mtAppId" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="App settings ← Basic"></div>
+          <div><label for="mtAppSecret">App Secret</label>
+            <div class="field pw" style="position:relative"><input type="password" id="mtAppSecret" class="ltr" maxlength="200" autocomplete="new-password" spellcheck="false" style="padding-right:12px!important">
+              <button type="button" class="eye" aria-label="اظهر الـ secret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+          <div><label for="mtAppFb">Configuration ID بتاع المسنجر</label>
+            <input type="text" id="mtAppFb" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="Sellybot Messenger"></div>
+          <div><label for="mtAppIg">Configuration ID بتاع الإنستجرام</label>
+            <input type="text" id="mtAppIg" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="Sellybot Instagram"></div>
+        </div>
+        <p class="hint" style="margin:6px 0 0">الـ Configuration IDs من Facebook Login for Business ← Configurations. الـ Secret بيتحفظ متشفّر، ومحدش بيشوفه تاني.</p>
+        <button class="btn" id="mtAppSave" type="button" style="margin-top:12px">🔐 احفظ والتأكد منه</button>
+        <div class="msg" id="mtAppMsg"></div>
       </div>
     </div>
     <div class="mt-grid">
@@ -4510,8 +4549,35 @@
   async function loadSocial() {
     loadLocks();
     try { mt = await api("api/meta.ashx"); } catch (e) { mt = null; mtTop(e.message, false); }
-    renderMt("fb"); renderMt("ig");
+    renderMtApp(true); renderMt("fb"); renderMt("ig");
   }
+  // «تطبيق Meta بتاعك»: the links to copy into the owner's app and its numbers. Folded to its header once it's set up.
+  var mtAppOpen = false;
+  function renderMtApp(fill) {
+    var a = mt && mt.app; $("mtApp").hidden = !a; if (!a) return;
+    $("mtAppHook").textContent = a.hookUrl || ""; $("mtAppVerify").textContent = a.verifyToken || ""; $("mtAppRedirect").textContent = a.redirectUri || "";
+    $("mtAppOk").hidden = !a.own; $("mtAppShared").hidden = !!a.own || !a.shared;
+    $("mtAppToggle").hidden = !a.own; $("mtAppToggle").textContent = mtAppOpen ? "إخفاء" : "تعديل";
+    $("mtAppBody").hidden = !!a.own && !mtAppOpen;
+    var sub = $("mtAppSub"); sub.textContent = "";
+    if (a.own) { sub.appendChild(document.createTextNode("المسنجر والإنستجرام بيتربطوا بتطبيقك، رقمه ")); sub.appendChild(mtEl("span", "ltr", a.appId)).style.display = "inline"; sub.appendChild(document.createTextNode(".")); }
+    else sub.textContent = "بتعمله مرة واحدة: تطبيق على developers.facebook.com بحسابك، تحط فيه اللينكات اللي تحت، وتحط أرقامه هنا. بعدها زراير الربط تشتغل.";
+    if (fill) { $("mtAppId").value = a.appId || ""; $("mtAppFb").value = a.fbConfig || ""; $("mtAppIg").value = a.igConfig || ""; $("mtAppSecret").value = ""; setMsg("mtAppMsg", ""); }
+    $("mtAppSecret").placeholder = a.hasSecret ? "محفوظ ✓ سيبه فاضي لو مش هتغيّره" : "";
+  }
+  $("mtAppToggle").onclick = function () { mtAppOpen = !mtAppOpen; renderMtApp(false); };
+  $("mtAppSave").onclick = async function () {
+    var b = this; b.disabled = true; setMsg("mtAppMsg", "");
+    try {
+      mt = await api("api/meta.ashx?action=app", { method: "POST", json: { appId: $("mtAppId").value.trim(), secret: $("mtAppSecret").value.trim(), fbConfig: $("mtAppFb").value.trim(), igConfig: $("mtAppIg").value.trim() } });
+      mtAppOpen = false; mtTop("", true); renderMtApp(true); renderMt("fb"); renderMt("ig");
+      toast("✅ اتحفظ، وفيسبوك قبل الـ App ID والـ Secret. دلوقتي اربط من تحت.");
+    } catch (e) { setMsg("mtAppMsg", e.message); }
+    b.disabled = false;
+  };
+  document.querySelectorAll("[data-mtcopy]").forEach(function (b) {
+    b.onclick = function () { copy($(b.getAttribute("data-mtcopy")).textContent); b.textContent = "✓ اتنسخ"; setTimeout(function () { b.textContent = "نسخ"; }, 1800); };
+  });
   function mtTop(text, ok) { var el = $("mtTop"); el.hidden = !text; el.textContent = text || ""; el.className = "msg mt-top " + (ok ? "ok" : "err"); }
   function mtEl(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function renderMt(ch) {
@@ -4532,7 +4598,12 @@
       return;
     }
     if (!L) {
-      if (!d.ready) { body.appendChild(mtEl("div", "mt-soon", "🚧 الربط بـ" + F.name + " هيتفتح قريب جدًا. أول ما يجهز هتلاقي زرار الربط هنا.")); return; }
+      if (!d.ready) {
+        body.appendChild(mtEl("div", "mt-soon", d.need === "app" ? "⚙️ حط أرقام «تطبيق Meta بتاعك» اللي فوق الأول، وبعدها زرار الربط هيظهر هنا."
+          : d.need === "config" ? "⚙️ حط Configuration ID بتاع الإنستجرام في «تطبيق Meta بتاعك» اللي فوق، وبعدها زرار الربط هيظهر هنا."
+          : "🚧 الربط بـ" + F.name + " هيتفتح قريب جدًا. أول ما يجهز هتلاقي زرار الربط هنا."));
+        return;
+      }
       var ol = mtEl("ol", "mt-steps"); F.steps.forEach(function (s) { ol.appendChild(mtEl("li", "", s)); }); body.appendChild(ol);
       var go = mtEl("button", "btn mt-go", (d.allowed ? "" : "🔒 ") + F.go); go.type = "button";
       go.onclick = function () { if (!d.allowed) { openLock(F.lock); return; } go.disabled = true; location.href = "api/meta-connect.ashx?start=" + ch; };
@@ -4565,7 +4636,7 @@
   async function mtPost(ch, action, body, okText) {
     try { mt = await api("api/meta.ashx?action=" + action, { method: "POST", json: Object.assign({ channel: ch }, body || {}) }); mtTop("", true); if (okText) toast(okText); }
     catch (e) { if (e.code === "plan_locked") openLock(MT[ch].lock); else toast(e.message); }
-    renderMt("fb"); renderMt("ig");
+    renderMtApp(false); renderMt("fb"); renderMt("ig");
   }
   // back from Meta's login: api/meta-connect.ashx sends the owner here with ?meta=<result>[&metaMsg=<why>]#social
   (function () {

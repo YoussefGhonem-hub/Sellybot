@@ -752,6 +752,23 @@ END
 -- an owner who manages several Pages / Instagram accounts picks one in the dashboard; the choices (with tokens) wait here, encrypted
 IF OBJECT_ID('dbo.MetaConnects') IS NULL
   CREATE TABLE dbo.MetaConnects(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Channel NVARCHAR(4) NOT NULL,
-    Choices NVARCHAR(MAX) NOT NULL, ExpiresAt DATETIME2 NOT NULL, PRIMARY KEY (StoreId, Channel));";
+    Choices NVARCHAR(MAX) NOT NULL, ExpiresAt DATETIME2 NOT NULL, PRIMARY KEY (StoreId, Channel));
+-- ---- each store's own Meta app (2026-11-20) ----
+-- The owner makes an app on developers.facebook.com with the same steps as Sellybot's and pastes its numbers in the
+-- dashboard. Being an admin of their own app, their Page answers everyone without App Review. Secret encrypted
+-- (Secrets.Protect). VerifyToken = the handshake for this store's webhook URL (api/meta-webhook.ashx?s=<StoreId>); the
+-- row is made with it the first time the owner opens the tab, AppId comes when they save.
+IF OBJECT_ID('dbo.MetaApps') IS NULL
+BEGIN
+  CREATE TABLE dbo.MetaApps(
+    StoreId INT NOT NULL PRIMARY KEY REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    AppId NVARCHAR(40) NULL, Secret NVARCHAR(1000) NULL,
+    FbConfig NVARCHAR(40) NULL, IgConfig NVARCHAR(40) NULL,
+    VerifyToken NVARCHAR(64) NOT NULL,
+    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE UNIQUE INDEX UX_MetaApps_App ON dbo.MetaApps(AppId) WHERE AppId IS NOT NULL;   -- one app answers for one store only
+END
+-- the app a link's token came from (NULL = Sellybot's, links made before 2026-11-20)
+IF COL_LENGTH('dbo.MetaLinks', 'AppId') IS NULL ALTER TABLE dbo.MetaLinks ADD AppId NVARCHAR(40) NULL;";
     }
 }
