@@ -565,7 +565,7 @@
         <div class="grid2b">
           <form class="card anim" id="mtForm" autocomplete="off">
             <h3>تطبيق Meta بتاع Sellybot</h3>
-            <p class="sub">تطبيق واحد لكل المتاجر. صاحب المتجر بيدوس «اربط» من لوحته ويدخل بفيسبوك أو إنستجرام، وصفحته أو حسابه بيترد عليه.</p>
+            <p class="sub">التطبيق ده لصفحة Sellybot نفسها ومتاجر الإدارة ومتاجر التجربة. باقي التجار كل واحد بيعمل تطبيقه بنفس الخطوات، وبيلاقي لينكاته وخاناته في لوحته ← «مسنجر وإنستجرام» ← «تطبيق Meta بتاعك».</p>
             <label for="mtApp">App ID (App settings ← Basic)</label>
             <input type="text" id="mtApp" class="ltr" inputmode="numeric" maxlength="30">
             <label for="mtSecret" style="margin-top:10px">App Secret (App settings ← Basic ← Show)</label>
@@ -576,22 +576,28 @@
             <label for="mtFb" style="margin-top:10px">Configuration ID بتاع المسنجر (Facebook Login for Business ← Configurations) — اختياري</label>
             <input type="text" id="mtFb" class="ltr" inputmode="numeric" maxlength="30">
             <div class="hint">من غيره المسنجر بيطلب الصلاحيات بالطريقة العادية (pages_show_list و pages_messaging و pages_manage_metadata).</div>
-            <label class="switch" style="margin-top:14px"><input type="checkbox" id="mtLive"><span class="tg"></span>الربط مفتوح لكل المتاجر (بعد ما Meta توافق على App Review)</label>
-            <label for="mtTesters" style="margin-top:10px">متاجر التجربة قبل الموافقة (روابط المتاجر، بينهم فاصلة)</label>
+            <label class="switch" style="margin-top:14px"><input type="checkbox" id="mtLive"><span class="tg"></span>«مسنجر وإنستجرام» ظاهر لكل التجار (كل تاجر بيربط بتطبيقه هو)</label>
+            <label for="mtTesters" style="margin-top:10px">متاجر التجربة (روابط المتاجر، بينهم فاصلة)</label>
             <input type="text" id="mtTesters" class="ltr" maxlength="1000" placeholder="my-store, test-shop">
-            <div class="hint">قبل الموافقة، Meta بتسمح بالدخول بس للحسابات اللي ليها دور في التطبيق (أدمن أو Tester). المتاجر دي (ومتاجر الإدارة) بتشوف زرار الربط، والباقي بيشوفوا «قريب».</div>
+            <div class="hint">المتاجر دي ومتاجر الإدارة بتشوف التاب قبل ما يظهر للكل، وتقدر تربط بتطبيق Sellybot ده من غير ما تعمل تطبيق. باقي التجار مش بيشوفوا التاب لحد ما تفتحه للكل.</div>
             <div class="msg" id="mtMsg"></div>
             <div class="row" style="margin-top:12px"><button class="btn" id="mtSave">حفظ والتأكد منه</button></div>
           </form>
           <div class="card anim" style="animation-delay:.1s">
             <h3>انسخ دول في تطبيق Meta</h3>
-            <p class="sub">Webhooks (في المسنجر وفي الإنستجرام): Callback URL والـ Verify token دول، والحقول <b class="ltr">messages</b> (وفي المسنجر كمان <b class="ltr">messaging_postbacks</b> و <b class="ltr">message_echoes</b>).</p>
-            <label>Callback URL</label>
+            <p class="sub">كل لينك بيطلبه developers.facebook.com، بترتيب الخطوات. التجار بيلاقوا نفس اللينكات في لوحتهم، بس الـ Callback URL والـ Verify token بتوعهم مختلفين.</p>
+            <a class="btn ghost sm" href="https://developers.facebook.com/apps/" target="_blank" rel="noopener" style="margin-top:4px">افتح developers.facebook.com ↗</a>
+            <label style="margin-top:12px">Privacy Policy URL (App settings ← Basic)</label>
+            <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtPrivacy" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtPrivacy">نسخ</button></div>
+            <label style="margin-top:10px">User data deletion ← Data deletion instructions URL (App settings ← Basic)</label>
+            <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtDelete" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtDelete">نسخ</button></div>
+            <label style="margin-top:10px">Redirect URL (Facebook Login for Business ← Settings ← Valid OAuth Redirect URIs، وفي الإنستجرام ← API setup with Unified login)</label>
+            <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtRedirect" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtRedirect">نسخ</button></div>
+            <label style="margin-top:10px">Callback URL (الـ Webhooks جوه كل use case)</label>
             <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtHook" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtHook">نسخ</button></div>
             <label style="margin-top:10px">Verify token</label>
             <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtVerify" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtVerify">نسخ</button></div>
-            <label style="margin-top:10px">Redirect URL (في الـ Configuration، وفي Facebook Login for Business ← Settings ← Valid OAuth Redirect URIs)</label>
-            <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="mtRedirect" class="ltr" readonly><button class="btn ghost sm" type="button" data-copy="mtRedirect">نسخ</button></div>
+            <div class="hint">وفي Webhook fields اعمل Subscribe على <b class="ltr">messages</b> و <b class="ltr">messaging_postbacks</b> و <b class="ltr">message_echoes</b> في المسنجر، و <b class="ltr">messages</b> في الإنستجرام.</div>
             <div class="calc" style="margin-top:14px">
               <div class="r"><span>نسخة الـ API</span><b class="ltr" id="mtVer"></b></div>
               <div class="r"><span>الحالة</span><b id="mtState"></b></div>
@@ -785,7 +791,8 @@
     $("mtLive").checked = !!d.live; $("mtTesters").value = (d.testers || "").split(",").filter(Boolean).join(", ");
     $("mtSecretState").textContent = d.hasSecret ? "✅ الـ Secret محفوظ (متشفّر)." : "لسه مفيش Secret.";
     $("mtHook").value = d.hookUrl || ""; $("mtVerify").value = d.verifyToken || ""; $("mtRedirect").value = d.redirectUri || ""; $("mtVer").textContent = d.version || "";
-    $("mtState").textContent = !d.appId || !d.hasSecret ? "ناقص App ID أو Secret" : !d.igConfig ? "المسنجر جاهز · الإنستجرام ناقصه Configuration ID" : d.live ? "مفتوح لكل المتاجر ✅" : "تجربة (متاجر التجربة بس)";
+    $("mtPrivacy").value = location.origin + "/privacy.html"; $("mtDelete").value = location.origin + "/privacy.html#meta-delete";
+    $("mtState").textContent = !d.appId || !d.hasSecret ? "ناقص App ID أو Secret" : !d.igConfig ? "المسنجر جاهز · الإنستجرام ناقصه Configuration ID" : d.live ? "ظاهر لكل التجار ✅" : "تجربة (متاجر التجربة والإدارة بس)";
     var rows = d.links || [];
     $("mtRows").innerHTML = rows.length ? rows.map(function (l) {
       var st = !l.enabled ? '<span class="pill">متوقف</span>' : l.status ? '<span class="pill warn">' + esc(l.status) + '</span>' : '<span class="pill ok">شغال ✅</span>';
