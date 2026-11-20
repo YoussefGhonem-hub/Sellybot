@@ -984,6 +984,20 @@
   .mt-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
   @media (max-width:860px){.mt-fields{grid-template-columns:minmax(0,1fr)}}
   #mtApp .scope-box code{flex:1;min-width:0}
+  .mt-plan{list-style:none;counter-reset:mtp;margin:14px 0 0;padding:0;display:grid;gap:10px}
+  .mt-plan>li{counter-increment:mtp;position:relative;padding:12px 14px;padding-inline-start:50px;border:1px solid var(--line);border-radius:14px;background:var(--soft);min-width:0}
+  .mt-plan>li::before{content:counter(mtp);position:absolute;inset-inline-start:13px;top:11px;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:13.5px;display:grid;place-items:center}
+  .mt-plan>li.done::before{content:"✓";background:var(--ok)}
+  .mt-plan h4{margin:2px 0 4px;font-size:15px}
+  .mt-plan p{margin:0 0 8px;font-size:13.5px;line-height:1.75;color:var(--muted)}
+  .mt-plan p.hint{font-size:12px;margin:6px 0 0;line-height:1.6}
+  .mt-plan p b{color:var(--ink);font-weight:600}
+  .mt-plan .kbd{margin:1px 0}
+  .mt-plan .msg:empty{display:none}
+  .mt-in{display:flex;gap:8px;align-items:center}
+  .mt-in>input,.mt-in>.field{flex:1;min-width:0;position:relative}
+  .mt-in>.btn{flex:none}
+  @media (max-width:520px){.mt-plan>li{padding-inline-start:44px}.mt-plan>li::before{inset-inline-start:10px}.mt-in{flex-wrap:wrap}.mt-in>.btn{width:100%;justify-content:center}}
   .wa-warn{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#fff1d6;color:#8a5200;font-size:13.5px;line-height:1.6}
   [data-theme=dark] .wa-warn{background:#3d2c10;color:#f3c26b}
   .wa-pick{margin-top:10px}
@@ -2454,29 +2468,66 @@
       </div>
       <div id="mtAppBody">
         <div class="mt-soon" id="mtAppShared" hidden>متجرك يقدر يربط بتطبيق Sellybot من غير تطبيق خاص بيك. ولو حطيت أرقام تطبيقك هنا، الربط الجاي هيبقى بيه.</div>
-        <h4 class="steps-title" style="margin-top:16px">1. انسخ دول في تطبيقك على developers.facebook.com</h4>
-        <label>Callback URL: في الـ Webhooks بتاعة المسنجر والإنستجرام</label>
-        <span class="scope-box"><code class="ltr" id="mtAppHook"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppHook">نسخ</button></span>
-        <label>Verify token: جنب الـ Callback URL</label>
-        <span class="scope-box"><code class="ltr" id="mtAppVerify"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppVerify">نسخ</button></span>
-        <label>Redirect URL: في Facebook Login for Business ← Settings ← Valid OAuth Redirect URIs</label>
-        <span class="scope-box"><code class="ltr" id="mtAppRedirect"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppRedirect">نسخ</button></span>
-        <p class="hint" style="margin:6px 0 0">في Webhook fields اعمل Subscribe على <span class="kbd">messages</span> و <span class="kbd">messaging_postbacks</span> و <span class="kbd">message_echoes</span> في المسنجر، و <span class="kbd">messages</span> في الإنستجرام.</p>
-        <h4 class="steps-title" style="margin-top:18px">2. حط أرقام تطبيقك</h4>
-        <div class="shop-fields mt-fields">
-          <div><label for="mtAppId">App ID</label>
-            <input type="text" id="mtAppId" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="App settings ← Basic"></div>
-          <div><label for="mtAppSecret">App Secret</label>
-            <div class="field pw" style="position:relative"><input type="password" id="mtAppSecret" class="ltr" maxlength="200" autocomplete="new-password" spellcheck="false" style="padding-right:12px!important">
-              <button type="button" class="eye" aria-label="اظهر الـ secret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-          <div><label for="mtAppFb">Configuration ID بتاع المسنجر</label>
-            <input type="text" id="mtAppFb" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="Sellybot Messenger"></div>
-          <div><label for="mtAppIg">Configuration ID بتاع الإنستجرام</label>
-            <input type="text" id="mtAppIg" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="Sellybot Instagram"></div>
-        </div>
-        <p class="hint" style="margin:6px 0 0">الـ Configuration IDs من Facebook Login for Business ← Configurations. الـ Secret بيتحفظ متشفّر، ومحدش بيشوفه تاني.</p>
-        <button class="btn" id="mtAppSave" type="button" style="margin-top:12px">🔐 احفظ والتأكد منه</button>
-        <div class="msg" id="mtAppMsg"></div>
+        <!-- the same order as the steps on developers.facebook.com: every link they ask for is here to copy, and each number is saved as soon as that step gives it -->
+        <ol class="mt-plan">
+          <li id="mtS1"><h4>اعمل التطبيق</h4>
+            <p>ادخل بحساب فيسبوك اللي عليه صفحة متجرك، ومن <b>My Apps</b> دوس <b>Create App</b> وسمّيه باسم متجرك. وفي <b>Use cases</b> علّم على اتنين بس: المسنجر والإنستجرام.</p>
+            <a class="btn ghost sm" href="https://developers.facebook.com/apps/" target="_blank" rel="noopener">افتح developers.facebook.com ↗</a>
+            <label for="mtAppId">App ID: هتلاقيه فوق في صفحة تطبيقك أول ما يتعمل</label>
+            <div class="mt-in"><input type="text" id="mtAppId" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false">
+              <button class="btn sm" type="button" data-mtsave="1">حفظ</button></div>
+            <div class="msg" id="mtAppMsg1"></div>
+          </li>
+          <li id="mtS2"><h4>إعدادات Basic</h4>
+            <p>ادخل <b>App settings ← Basic</b>. لو مش لاقيها في القايمة: <b>Publish ← Go to app settings</b>. حط اللينكين دول ودوس <b>Save changes</b> تحت خالص.</p>
+            <a class="btn ghost sm" id="mtBasic" target="_blank" rel="noopener" hidden>افتح صفحة Basic في تطبيقك ↗</a>
+            <label>Privacy Policy URL</label>
+            <span class="scope-box"><code class="ltr" id="mtAppPrivacy"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppPrivacy">نسخ</button></span>
+            <label>User data deletion: اختار Data deletion instructions URL وحط</label>
+            <span class="scope-box"><code class="ltr" id="mtAppDelete"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppDelete">نسخ</button></span>
+            <label for="mtAppSecret">App Secret: في نفس الصفحة، دوس Show جنبه وانسخه</label>
+            <div class="mt-in"><div class="field pw"><input type="password" id="mtAppSecret" class="ltr" maxlength="200" autocomplete="new-password" spellcheck="false" style="padding-right:12px!important">
+                <button type="button" class="eye" aria-label="اظهر الـ secret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+              <button class="btn sm" type="button" data-mtsave="2">🔐 احفظ والتأكد منه</button></div>
+            <p class="hint">بنتأكد من فيسبوك إن الـ App ID والـ Secret بتوع نفس التطبيق. الـ Secret بيتحفظ متشفّر، ومحدش بيشوفه تاني.</p>
+            <div class="msg" id="mtAppMsg2"></div>
+          </li>
+          <li><h4>الصلاحيات</h4>
+            <p><b>Use cases</b> ← المسنجر ← <b>Customize</b>: اتأكد إن دول متضافين، واللي مش متضاف دوس <b>Add</b> جنبه: <span class="kbd">pages_show_list</span> <span class="kbd">pages_messaging</span> <span class="kbd">pages_manage_metadata</span> <span class="kbd">business_management</span></p>
+            <p>وفي الإنستجرام ← <b>Customize</b> ← <b>Permissions and features</b>: ضيف <span class="kbd">instagram_basic</span> و <span class="kbd">instagram_manage_messages</span>. ضيفهم قبل الـ Configurations، عشان يظهروا فيها.</p>
+          </li>
+          <li id="mtS4"><h4>الـ Configurations</h4>
+            <p><b>Facebook Login for Business ← Configurations ← Create configuration</b>. اعمل اتنين، وأول ما كل واحدة تتعمل انسخ رقمها في خانتها هنا ودوس «حفظ».</p>
+            <div class="shop-fields mt-fields">
+              <div><label for="mtAppFb">Configuration ID بتاع Sellybot Messenger</label>
+                <input type="text" id="mtAppFb" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false">
+                <p class="hint">User access token، و Pages، وصلاحيات الصفحة والرسايل.</p></div>
+              <div><label for="mtAppIg">Configuration ID بتاع Sellybot Instagram</label>
+                <input type="text" id="mtAppIg" class="ltr" maxlength="40" inputmode="numeric" autocomplete="off" spellcheck="false">
+                <p class="hint">System-user access token، و Never، و Instagram accounts، وسيب business_management متعلّم عليها.</p></div>
+            </div>
+            <button class="btn sm" type="button" data-mtsave="4" style="margin-top:10px">حفظ</button>
+            <div class="msg" id="mtAppMsg4"></div>
+          </li>
+          <li><h4>الـ Redirect URL</h4>
+            <p>حطه في <b>Facebook Login for Business ← Settings ← Valid OAuth Redirect URIs</b>. وفي الإنستجرام ← <b>API setup with Unified login</b>: اختار Sellybot Instagram وسجّل نفس اللينك.</p>
+            <span class="scope-box"><code class="ltr" id="mtAppRedirect"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppRedirect">نسخ</button></span>
+          </li>
+          <li><h4>الـ Webhooks</h4>
+            <p>دول جوه كل use case: <b>Messenger API Settings</b> في المسنجر، و <b>API setup with Unified login</b> في الإنستجرام. حط الاتنين في الاتنين ودوس <b>Verify and save</b>.</p>
+            <label>Callback URL</label>
+            <span class="scope-box"><code class="ltr" id="mtAppHook"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppHook">نسخ</button></span>
+            <label>Verify token</label>
+            <span class="scope-box"><code class="ltr" id="mtAppVerify"></code><button type="button" class="btn ghost sm" data-mtcopy="mtAppVerify">نسخ</button></span>
+            <p class="hint">وفي <b>Webhook fields</b> اعمل Subscribe على <span class="kbd">messages</span> و <span class="kbd">messaging_postbacks</span> و <span class="kbd">message_echoes</span> في المسنجر، و <span class="kbd">messages</span> في الإنستجرام.</p>
+          </li>
+          <li><h4>Publish</h4>
+            <p>من الشمال <b>Publish</b>، وانزل لآخر الصفحة ودوس <b>Publish</b>. من غيره Meta مابيبعتش ولا رسالة حقيقية.</p>
+          </li>
+          <li><h4>اربط</h4>
+            <p>دوس «اربط» في كارت المسنجر وكارت الإنستجرام اللي تحت، واختار صفحتك وحسابك.</p>
+          </li>
+        </ol>
       </div>
     </div>
     <div class="mt-grid">
@@ -4551,30 +4602,42 @@
     try { mt = await api("api/meta.ashx"); } catch (e) { mt = null; mtTop(e.message, false); }
     renderMtApp(true); renderMt("fb"); renderMt("ig");
   }
-  // «تطبيق Meta بتاعك»: the links to copy into the owner's app and its numbers. Folded to its header once it's set up.
+  // «تطبيق Meta بتاعك»: the steps on developers.facebook.com in order, the links each one asks for, and the numbers it
+  // gives (each saved as soon as its step gets to it). Folded to its header once a channel is linked.
   var mtAppOpen = false;
   function renderMtApp(fill) {
     var a = mt && mt.app; $("mtApp").hidden = !a; if (!a) return;
+    var linked = !!((mt.fb && mt.fb.link) || (mt.ig && mt.ig.link));
     $("mtAppHook").textContent = a.hookUrl || ""; $("mtAppVerify").textContent = a.verifyToken || ""; $("mtAppRedirect").textContent = a.redirectUri || "";
+    $("mtAppPrivacy").textContent = a.privacyUrl || ""; $("mtAppDelete").textContent = a.deleteUrl || "";
+    var basic = $("mtBasic"); basic.hidden = !a.appId; if (a.appId) basic.href = "https://developers.facebook.com/apps/" + encodeURIComponent(a.appId) + "/settings/basic/";
+    $("mtS1").classList.toggle("done", !!a.appId); $("mtS2").classList.toggle("done", !!a.own); $("mtS4").classList.toggle("done", !!(a.fbConfig && a.igConfig));
     $("mtAppOk").hidden = !a.own; $("mtAppShared").hidden = !!a.own || !a.shared;
-    $("mtAppToggle").hidden = !a.own; $("mtAppToggle").textContent = mtAppOpen ? "إخفاء" : "تعديل";
-    $("mtAppBody").hidden = !!a.own && !mtAppOpen;
+    $("mtAppToggle").hidden = !linked; $("mtAppToggle").textContent = mtAppOpen ? "إخفاء" : "الخطوات واللينكات";
+    $("mtAppBody").hidden = linked && !mtAppOpen;
     var sub = $("mtAppSub"); sub.textContent = "";
     if (a.own) { sub.appendChild(document.createTextNode("المسنجر والإنستجرام بيتربطوا بتطبيقك، رقمه ")); sub.appendChild(mtEl("span", "ltr", a.appId)).style.display = "inline"; sub.appendChild(document.createTextNode(".")); }
-    else sub.textContent = "بتعمله مرة واحدة: تطبيق على developers.facebook.com بحسابك، تحط فيه اللينكات اللي تحت، وتحط أرقامه هنا. بعدها زراير الربط تشتغل.";
-    if (fill) { $("mtAppId").value = a.appId || ""; $("mtAppFb").value = a.fbConfig || ""; $("mtAppIg").value = a.igConfig || ""; $("mtAppSecret").value = ""; setMsg("mtAppMsg", ""); }
+    else sub.textContent = "بتعمله مرة واحدة: تطبيق على developers.facebook.com بحسابك. امشي على الخطوات دي بالترتيب: كل لينك هتحتاجه هنا بزرار «نسخ»، وكل رقم تاخده من تطبيقك حطه في خانته ودوس «حفظ».";
+    if (fill) { $("mtAppId").value = a.appId || ""; $("mtAppFb").value = a.fbConfig || ""; $("mtAppIg").value = a.igConfig || ""; $("mtAppSecret").value = ""; ["1", "2", "4"].forEach(function (n) { setMsg("mtAppMsg" + n, ""); }); }
     $("mtAppSecret").placeholder = a.hasSecret ? "محفوظ ✓ سيبه فاضي لو مش هتغيّره" : "";
   }
   $("mtAppToggle").onclick = function () { mtAppOpen = !mtAppOpen; renderMtApp(false); };
-  $("mtAppSave").onclick = async function () {
-    var b = this; b.disabled = true; setMsg("mtAppMsg", "");
-    try {
-      mt = await api("api/meta.ashx?action=app", { method: "POST", json: { appId: $("mtAppId").value.trim(), secret: $("mtAppSecret").value.trim(), fbConfig: $("mtAppFb").value.trim(), igConfig: $("mtAppIg").value.trim() } });
-      mtAppOpen = false; mtTop("", true); renderMtApp(true); renderMt("fb"); renderMt("ig");
-      toast("✅ اتحفظ، وفيسبوك قبل الـ App ID والـ Secret. دلوقتي اربط من تحت.");
-    } catch (e) { setMsg("mtAppMsg", e.message); }
-    b.disabled = false;
-  };
+  // every «حفظ» sends all four boxes, so nothing typed elsewhere is lost; the server checks a new secret with Meta
+  var MT_SAVED = { 1: "✅ اتحفظ الـ App ID. كمّل الخطوة 2.", 2: "✅ فيسبوك قبل الـ App ID والـ Secret مع بعض. كمّل الخطوة 3.", 4: "✅ اتحفظ. كمّل الخطوة 5." };
+  document.querySelectorAll("[data-mtsave]").forEach(function (b) {
+    b.onclick = async function () {
+      var n = b.getAttribute("data-mtsave"), secret = $("mtAppSecret").value.trim();
+      ["1", "2", "4"].forEach(function (k) { setMsg("mtAppMsg" + k, ""); });
+      if (n === "2" && !secret && !(mt && mt.app && mt.app.hasSecret)) { setMsg("mtAppMsg2", "حط الـ App Secret الأول: في Basic دوس Show جنبه وانسخه."); return; }
+      b.disabled = true;
+      try {
+        mt = await api("api/meta.ashx?action=app", { method: "POST", json: { appId: $("mtAppId").value.trim(), secret: secret, fbConfig: $("mtAppFb").value.trim(), igConfig: $("mtAppIg").value.trim() } });
+        mtTop("", true); renderMtApp(true); renderMt("fb"); renderMt("ig");
+        toast(MT_SAVED[n]);
+      } catch (e) { setMsg("mtAppMsg" + n, e.message); }
+      b.disabled = false;
+    };
+  });
   document.querySelectorAll("[data-mtcopy]").forEach(function (b) {
     b.onclick = function () { copy($(b.getAttribute("data-mtcopy")).textContent); b.textContent = "✓ اتنسخ"; setTimeout(function () { b.textContent = "نسخ"; }, 1800); };
   });
@@ -4599,8 +4662,8 @@
     }
     if (!L) {
       if (!d.ready) {
-        body.appendChild(mtEl("div", "mt-soon", d.need === "app" ? "⚙️ حط أرقام «تطبيق Meta بتاعك» اللي فوق الأول، وبعدها زرار الربط هيظهر هنا."
-          : d.need === "config" ? "⚙️ حط Configuration ID بتاع الإنستجرام في «تطبيق Meta بتاعك» اللي فوق، وبعدها زرار الربط هيظهر هنا."
+        body.appendChild(mtEl("div", "mt-soon", d.need === "app" ? "⚙️ امشي على خطوات «تطبيق Meta بتاعك» اللي فوق. بعد الخطوة 2 (الـ App ID والـ Secret) زرار الربط هيظهر هنا."
+          : d.need === "config" ? "⚙️ حط Configuration ID بتاع Sellybot Instagram في الخطوة 4 فوق، وبعدها زرار الربط هيظهر هنا."
           : "🚧 الربط بـ" + F.name + " هيتفتح قريب جدًا. أول ما يجهز هتلاقي زرار الربط هنا."));
         return;
       }

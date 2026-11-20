@@ -766,8 +766,13 @@ BEGIN
     FbConfig NVARCHAR(40) NULL, IgConfig NVARCHAR(40) NULL,
     VerifyToken NVARCHAR(64) NOT NULL,
     UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
-  CREATE UNIQUE INDEX UX_MetaApps_App ON dbo.MetaApps(AppId) WHERE AppId IS NOT NULL;   -- one app answers for one store only
 END
+-- one app answers for one store only. The App ID can be saved before its secret (right after Create App), but until Meta
+-- has checked the two together it's only a claim, so it doesn't keep the app's real owner out: the index covers checked
+-- apps only (2026-11-20; it was every saved App ID).
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name='UX_MetaApps_App' AND object_id=OBJECT_ID('dbo.MetaApps')) DROP INDEX UX_MetaApps_App ON dbo.MetaApps;
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='UX_MetaApps_Checked' AND object_id=OBJECT_ID('dbo.MetaApps'))
+  CREATE UNIQUE INDEX UX_MetaApps_Checked ON dbo.MetaApps(AppId) WHERE AppId IS NOT NULL AND Secret IS NOT NULL;
 -- the app a link's token came from (NULL = Sellybot's, links made before 2026-11-20)
 IF COL_LENGTH('dbo.MetaLinks', 'AppId') IS NULL ALTER TABLE dbo.MetaLinks ADD AppId NVARCHAR(40) NULL;";
     }

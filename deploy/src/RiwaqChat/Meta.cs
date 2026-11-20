@@ -974,18 +974,22 @@ ELSE
             catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error", "حصلت مشكلة. جرّب تاني."); }
         }
 
-        // The owner's own Meta app: App ID + secret (checked with Meta), the two Configuration IDs. false = an error was written.
+        // The owner's own Meta app: App ID, secret, the two Configuration IDs. Each one can come on its own, as the steps on
+        // developers.facebook.com get to it: the App ID right after Create App, the secret from Basic, each Configuration ID
+        // once it's made. A new secret is checked with Meta together with the App ID; until then the App ID is only a claim
+        // (it doesn't keep another store from the same app: UX_MetaApps_Checked). false = an error was written.
         static async Task<bool> SaveApp(HttpResponse res, StoreInfo s, Dictionary<string, object> b)
         {
             string appId = (Web.Str(b, "appId", 40) ?? "").Trim(), secret = (Web.Str(b, "secret", 200) ?? "").Trim();
             string fbConfig = (Web.Str(b, "fbConfig", 40) ?? "").Trim(), igConfig = (Web.Str(b, "igConfig", 40) ?? "").Trim();
+            if (appId.Length == 0) { Web.Error(res, 400, "no_app", "حط الـ App ID الأول (الخطوة 1). هتلاقيه فوق في صفحة تطبيقك على developers.facebook.com أول ما يتعمل."); return false; }
             var bad = MetaApp.CheckNumbers(appId, secret, fbConfig, igConfig);
             if (bad != null) { Web.Error(res, 400, bad[0], bad[1]); return false; }
             string useSecret;
             using (var c = Db.Open())
             {
                 if (appId == MetaApp.AppId(c)) { Web.Error(res, 400, "sellybot_app", "ده رقم تطبيق Sellybot نفسه. اعمل تطبيق لمتجرك على developers.facebook.com وحط رقمه هو."); return false; }
-                using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.MetaApps WHERE AppId=@a AND StoreId<>@s", "@a", appId, "@s", s.Id))
+                using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.MetaApps WHERE AppId=@a AND StoreId<>@s AND Secret IS NOT NULL", "@a", appId, "@s", s.Id))
                     if ((int)cmd.ExecuteScalar() > 0) { Web.Error(res, 400, "taken_app", "التطبيق ده متسجّل في متجر تاني على Sellybot. كل متجر ليه تطبيق لوحده."); return false; }
                 string oldApp = null, oldSecret = null;
                 using (var cmd = Db.Cmd(c, "SELECT AppId, Secret FROM dbo.MetaApps WHERE StoreId=@s", "@s", s.Id))
@@ -995,19 +999,20 @@ ELSE
                 if (!string.IsNullOrEmpty(oldApp) && oldApp != appId)
                     using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.MetaLinks WHERE StoreId=@s AND AppId=@a", "@s", s.Id, "@a", oldApp))
                         if ((int)cmd.ExecuteScalar() > 0) { Web.Error(res, 400, "linked", "المسنجر أو الإنستجرام مربوطين بالتطبيق القديم. دوس «إلغاء الربط» عليهم الأول، وبعدين غيّر التطبيق واربط تاني."); return false; }
+                // the saved secret stays as long as the App ID does (it was checked with that one); another App ID drops it
                 useSecret = secret.Length > 0 ? secret : oldApp == appId ? oldSecret : null;
-                if (useSecret == null) { Web.Error(res, 400, "no_secret", "حط الـ App Secret. هتلاقيه في App settings ← Basic، دوس Show وانسخه."); return false; }
             }
             // the App ID and secret go together: an app token (id|secret) can read the app itself
-            try { await MetaApp.Call(HttpMethod.Get, Uri.EscapeDataString(appId) + "?fields=id,name", appId + "|" + useSecret, null); }
-            catch (MetaException ex) { Web.Error(res, 400, "meta", "فيسبوك ماقبلش الـ App ID والـ Secret مع بعض: " + ex.Message); return false; }
+            if (secret.Length > 0)
+                try { await MetaApp.Call(HttpMethod.Get, Uri.EscapeDataString(appId) + "?fields=id,name", appId + "|" + secret, null); }
+                catch (MetaException ex) { Web.Error(res, 400, "meta", "فيسبوك ماقبلش الـ App ID والـ Secret مع بعض: " + ex.Message); return false; }
             using (var c = Db.Open())
             {
                 MetaApp.OwnVerifyToken(c, s.Id, true);
                 try
                 {
                     using (var cmd = Db.Cmd(c, "UPDATE dbo.MetaApps SET AppId=@a, Secret=@k, FbConfig=@f, IgConfig=@i, UpdatedAt=SYSUTCDATETIME() WHERE StoreId=@s",
-                        "@a", appId, "@k", Secrets.Protect(useSecret), "@f", fbConfig, "@i", igConfig, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        "@a", appId, "@k", useSecret == null ? (object)DBNull.Value : Secrets.Protect(useSecret), "@f", fbConfig, "@i", igConfig, "@s", s.Id)) cmd.ExecuteNonQuery();
                 }
                 catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { Web.Error(res, 400, "taken_app", "التطبيق ده متسجّل في متجر تاني على Sellybot. كل متجر ليه تطبيق لوحده."); return false; }
             }
@@ -1097,6 +1102,8 @@ ELSE
                 d["app"] = new Dictionary<string, object> {
                     { "own", MetaApp.Own(c, s.Id) != null }, { "appId", appId ?? "" }, { "hasSecret", hasSecret }, { "fbConfig", fbConfig ?? "" }, { "igConfig", igConfig ?? "" },
                     { "hookUrl", MetaApp.HookUrl(req, s.Id) }, { "verifyToken", MetaApp.OwnVerifyToken(c, s.Id, true) }, { "redirectUri", MetaApp.RedirectUri(req) },
+                    // App settings ← Basic asks for these two before the app can be published
+                    { "privacyUrl", WaAccount.Origin(req) + "/privacy.html" }, { "deleteUrl", WaAccount.Origin(req) + "/privacy.html#meta-delete" },
                     // a platform store / tester can link through Sellybot's app without one of its own
                     { "shared", MetaApp.SharedOk(c, s) && MetaApp.Ready(MetaApp.Shared(c), MetaApp.Fb) } };
             }
@@ -1159,7 +1166,7 @@ ELSE
                         string fbConfig = (Web.Str(b, "fbConfig", 40) ?? "").Trim(), igConfig = (Web.Str(b, "igConfig", 40) ?? "").Trim();
                         var bad = MetaApp.CheckNumbers(appId, secret, fbConfig, igConfig);
                         if (bad != null) { Web.Error(res, 400, bad[0], bad[1]); return; }
-                        using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.MetaApps WHERE AppId=@a", "@a", appId))
+                        using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.MetaApps WHERE AppId=@a AND Secret IS NOT NULL", "@a", appId))
                             if ((int)cmd.ExecuteScalar() > 0) { Web.Error(res, 400, "taken_app", "التطبيق ده متسجّل كتطبيق متجر من المتاجر. تطبيق Sellybot لازم يبقى تطبيق لوحده."); return; }
                         string useSecret = secret.Length > 0 ? secret : MetaApp.Secret(c);
                         if (useSecret != null)
