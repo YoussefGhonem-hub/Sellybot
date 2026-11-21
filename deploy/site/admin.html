@@ -576,10 +576,9 @@
             <label for="mtFb" style="margin-top:10px">Configuration ID بتاع المسنجر (Facebook Login for Business ← Configurations) — اختياري</label>
             <input type="text" id="mtFb" class="ltr" inputmode="numeric" maxlength="30">
             <div class="hint">من غيره المسنجر بيطلب الصلاحيات بالطريقة العادية (pages_show_list و pages_messaging و pages_manage_metadata).</div>
-            <label class="switch" style="margin-top:14px"><input type="checkbox" id="mtLive"><span class="tg"></span>«مسنجر وإنستجرام» ظاهر لكل التجار (كل تاجر بيربط بتطبيقه هو)</label>
-            <label for="mtTesters" style="margin-top:10px">متاجر التجربة (روابط المتاجر، بينهم فاصلة)</label>
+            <label for="mtTesters" style="margin-top:14px">متاجر التجربة (روابط المتاجر، بينهم فاصلة)</label>
             <input type="text" id="mtTesters" class="ltr" maxlength="1000" placeholder="my-store, test-shop">
-            <div class="hint">المتاجر دي ومتاجر الإدارة بتشوف التاب قبل ما يظهر للكل، وتقدر تربط بتطبيق Sellybot ده من غير ما تعمل تطبيق. باقي التجار مش بيشوفوا التاب لحد ما تفتحه للكل.</div>
+            <div class="hint">«مسنجر وإنستجرام» ظاهر لكل التجار، وكل تاجر بيربط بتطبيقه هو. المتاجر دي ومتاجر الإدارة بس تقدر تربط بتطبيق Sellybot ده من غير ما تعمل تطبيق.</div>
             <div class="msg" id="mtMsg"></div>
             <div class="row" style="margin-top:12px"><button class="btn" id="mtSave">حفظ والتأكد منه</button></div>
           </form>
@@ -788,11 +787,11 @@
   }
   function renderMeta(d) {
     $("mtApp").value = d.appId || ""; $("mtSecret").value = ""; $("mtIg").value = d.igConfig || ""; $("mtFb").value = d.fbConfig || "";
-    $("mtLive").checked = !!d.live; $("mtTesters").value = (d.testers || "").split(",").filter(Boolean).join(", ");
+    $("mtTesters").value = (d.testers || "").split(",").filter(Boolean).join(", ");
     $("mtSecretState").textContent = d.hasSecret ? "✅ الـ Secret محفوظ (متشفّر)." : "لسه مفيش Secret.";
     $("mtHook").value = d.hookUrl || ""; $("mtVerify").value = d.verifyToken || ""; $("mtRedirect").value = d.redirectUri || ""; $("mtVer").textContent = d.version || "";
     $("mtPrivacy").value = location.origin + "/privacy.html"; $("mtDelete").value = location.origin + "/privacy.html#meta-delete";
-    $("mtState").textContent = !d.appId || !d.hasSecret ? "ناقص App ID أو Secret" : !d.igConfig ? "المسنجر جاهز · الإنستجرام ناقصه Configuration ID" : d.live ? "ظاهر لكل التجار ✅" : "تجربة (متاجر التجربة والإدارة بس)";
+    $("mtState").textContent = !d.appId || !d.hasSecret ? "ناقص App ID أو Secret" : !d.igConfig ? "المسنجر جاهز · الإنستجرام ناقصه Configuration ID" : "جاهز ✅";
     var rows = d.links || [];
     $("mtRows").innerHTML = rows.length ? rows.map(function (l) {
       var st = !l.enabled ? '<span class="pill">متوقف</span>' : l.status ? '<span class="pill warn">' + esc(l.status) + '</span>' : '<span class="pill ok">شغال ✅</span>';
@@ -851,7 +850,7 @@
     e.preventDefault(); setMsg($("mtMsg"), ""); busy($("mtSave"), true);
     try {
       renderMeta(await metaApi("settings", { appId: $("mtApp").value.trim(), secret: $("mtSecret").value.trim(), igConfig: $("mtIg").value.trim(), fbConfig: $("mtFb").value.trim(),
-        live: $("mtLive").checked, testers: $("mtTesters").value }));
+        testers: $("mtTesters").value }));
       setMsg($("mtMsg"), "اتحفظ ✓ وفيسبوك قبل الـ App ID والـ Secret.", true);
     } catch (err) { setMsg($("mtMsg"), err.message); }
     busy($("mtSave"), false);

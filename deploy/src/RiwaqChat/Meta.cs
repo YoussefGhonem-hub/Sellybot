@@ -109,19 +109,16 @@ namespace RiwaqChat
         // Messenger works with plain scopes too; Instagram (Unified Login) needs its configuration
         public static bool Ready(MetaCreds k, string ch) { return k != null && !string.IsNullOrEmpty(k.AppId) && k.Secret != null && (ch == Fb || !string.IsNullOrEmpty(k.IgConfig)); }
 
-        // The tab (and linking) stays hidden from owners until the super admin ticks MetaLive, except for the platform's own
-        // stores and the testers' slugs.
-        public static bool Live(SqlConnection c) { return Billing.Get(c, "MetaLive") == "1"; }
+        // Testers (MetaTesters): stores that may link through Sellybot's app without one of their own (SharedOk).
+        // The tab used to stay hidden until the super admin ticked MetaLive; since 2026-11-21 it's open to every store (the
+        // user: "عايزها تكون ظاهره لكله"), and the MetaLive setting is no longer read.
         public static string Testers(SqlConnection c) { return Billing.Get(c, "MetaTesters") ?? ""; }
         static bool Tester(SqlConnection c, StoreInfo s)
         {
             return Testers(c).Split(new[] { ',', ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries).Any(t => string.Equals(t.Trim(), s.Slug, StringComparison.OrdinalIgnoreCase));
         }
-        public static bool OpenFor(SqlConnection c, StoreInfo s, string ch)
-        {
-            if (s == null || !Ready(For(c, s), ch)) return false;
-            return Live(c) || s.IsAdmin || Tester(c, s);
-        }
+        // A store can link once the app it would link through is set up (its own, or Sellybot's for SharedOk stores)
+        public static bool OpenFor(SqlConnection c, StoreInfo s, string ch) { return s != null && Ready(For(c, s), ch); }
         // What's missing before this store can link: "app" = its own Meta app, "config" = the Instagram Configuration ID, null = nothing
         public static string Missing(SqlConnection c, StoreInfo s, string ch)
         {
@@ -139,15 +136,8 @@ namespace RiwaqChat
             if (secret.Length > 0 && !Regex.IsMatch(secret, "^[0-9a-fA-F]{20,64}$")) return new[] { "bad_secret", "الـ App Secret مش مظبوط. انسخه زي ما هو من App settings ← Basic (Show)." };
             return null;
         }
-        // Whether the owner sees the «مسنجر وإنستجرام» tab at all. Until MetaLive it's hidden from every other owner, so a feature
-        // that isn't open to them doesn't confuse anyone: only the platform's own stores, the testers' slugs, and a store that
-        // already linked one (so it can still unlink after it's taken off the testers list) see it.
-        public static bool Visible(SqlConnection c, StoreInfo s)
-        {
-            if (s == null) return false;
-            if (Live(c) || s.IsAdmin || Tester(c, s)) return true;
-            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.MetaLinks WHERE StoreId=@s", "@s", s.Id)) return (int)cmd.ExecuteScalar() > 0;
-        }
+        // Whether the owner sees the «مسنجر وإنستجرام» tab: every store (it was hidden until MetaLive before 2026-11-21)
+        public static bool Visible(SqlConnection c, StoreInfo s) { return s != null; }
 
         public static string VerifyToken(SqlConnection c, bool create)
         {
@@ -1179,8 +1169,6 @@ ELSE
                         if (secret.Length > 0) Billing.Set(c, "MetaAppSecret", Secrets.Protect(secret));
                         Billing.Set(c, "MetaFbConfig", fbConfig);
                         Billing.Set(c, "MetaIgConfig", igConfig);
-                        object lv; bool live = b.TryGetValue("live", out lv) && lv is bool && (bool)lv;
-                        Billing.Set(c, "MetaLive", live ? "1" : "0");
                         string testers = string.Join(",", (Web.Str(b, "testers", 1000) ?? "").Split(new[] { ',', ' ', '\n', '،' }, StringSplitOptions.RemoveEmptyEntries)
                             .Select(t => t.Trim().ToLowerInvariant()).Where(t => Web.SlugRx.IsMatch(t)).Distinct().Take(50));
                         Billing.Set(c, "MetaTesters", testers);
@@ -1222,7 +1210,7 @@ ELSE
                 { "appId", MetaApp.AppId(c) ?? "" }, { "hasSecret", MetaApp.Secret(c) != null },
                 { "fbConfig", MetaApp.Config(c, MetaApp.Fb) ?? "" }, { "igConfig", MetaApp.Config(c, MetaApp.Ig) ?? "" },
                 { "verifyToken", MetaApp.VerifyToken(c, true) }, { "hookUrl", MetaApp.HookUrl(req) }, { "redirectUri", MetaApp.RedirectUri(req) },
-                { "live", MetaApp.Live(c) }, { "testers", MetaApp.Testers(c) },
+                { "testers", MetaApp.Testers(c) },
                 { "version", MetaApp.Version }, { "links", links }, { "site", site != null ? MetaHandler.State(c, site) : null } };
         }
     }
