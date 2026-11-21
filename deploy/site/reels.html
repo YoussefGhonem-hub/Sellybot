@@ -198,10 +198,10 @@ var REELS = [
   },
   // Sellybot in 30 seconds: short ads (no "خطوة بخطوة" header), right after the intro for new visitors
   {
-    id: "all-channels", src: "reels/15-all-channels.mp4", poster: "reels/15-all-channels.jpg", v: 1,
-    series: "Sellybot في 30 ثانية", ep: "واتساب ومسنجر وإنستجرام",
-    title: "واتساب ومسنجر وإنستجرام: Sellybot بيرد عليها كلها",
-    text: "رسايل زباينك على الواتساب والمسنجر والإنستجرام مستنية رد؟ Sellybot بيرد عليها كلها في ثواني، 24 ساعة، ويفهم كمان صور المنتجات. بيرد من منتجاتك وأسعارك والمخزون أول بأول من متجرك على Shopify أو EasyOrders، والزبون يعرف حالة أوردره أو يطلب من جوه الشات. ولو رديت إنت بنفسك، بيسكت ويسيبلك المحادثة. جرّبه شهر ببلاش: 500 رسالة ومن غير كارت. المسنجر والإنستجرام من نفس رصيد باقتك، والواتساب باشتراك شهري لوحده.",
+    id: "one-place", src: "reels/16-one-place.mp4", poster: "reels/16-one-place.jpg", v: 1,
+    series: "Sellybot في 30 ثانية", ep: "كل رسايلك في مكان واحد",
+    title: "رسايل زباينك جاية من كل حتة؟ Sellybot بيرد عليها كلها",
+    text: "أسئلة زباينك بتتجمع على الواتساب والمسنجر والإنستجرام، ومئات الرسايل مستنية ردك. Sellybot بيرد عليها كلها من مكان واحد، في ثواني و24 ساعة، ويفهم حتى صور المنتجات. اربط متجرك على Shopify أو EasyOrders، ويرد من منتجاتك وأسعارك والمخزون أول بأول. والزبون يسأل «طلبي فين؟» ويعرف حالة أوردره، أو يطلب من جوه الشات. ولو رديت إنت بنفسك، بيسكت ويسيبلك المحادثة. جرّبه شهر ببلاش: 500 رسالة ومن غير كارت. المسنجر والإنستجرام من نفس رصيد باقتك، والواتساب باشتراك شهري لوحده.",
     cta: { label: "جرّبه شهر ببلاش", href: "dashboard.html?signup=1" }
   },
   {
@@ -238,13 +238,6 @@ var REELS = [
     title: "على الواتساب: بيفهم الصور، ويبلّغ الزبون، ويناديك",
     text: "زبون بعتلك صورة كوتشي على الواتساب؟ Sellybot بيفهمها ويلاقيله الأقرب من منتجاتك بسعره. ولو المقاس خلصان، بيبلّغه أول ما يرجع. ولو زبون عنده شكوى، بيبلّغك على رقمك. وكل أسبوع بيوصلك تقرير. مع اشتراك الواتساب بـ 300 جنيه في الشهر.",
     cta: { label: "ابدأ مجانًا", href: "dashboard.html?signup=1" }
-  },
-  {
-    id: "one-place", src: "reels/16-one-place.mp4", poster: "reels/16-one-place.jpg", v: 1,
-    series: "Sellybot في 30 ثانية", ep: "كل رسايلك في مكان واحد",
-    title: "رسايل زباينك جاية من كل حتة؟ Sellybot بيرد عليها كلها",
-    text: "أسئلة زباينك بتتجمع على الواتساب والمسنجر والإنستجرام، ومئات الرسايل مستنية ردك. Sellybot بيرد عليها كلها من مكان واحد، في ثواني و24 ساعة، ويفهم حتى صور المنتجات. اربط متجرك على Shopify أو EasyOrders، ويرد من منتجاتك وأسعارك والمخزون أول بأول. والزبون يسأل «طلبي فين؟» ويعرف حالة أوردره، أو يطلب من جوه الشات. ولو رديت إنت بنفسك، بيسكت ويسيبلك المحادثة. جرّبه شهر ببلاش: 500 رسالة ومن غير كارت. المسنجر والإنستجرام من نفس رصيد باقتك، والواتساب باشتراك شهري لوحده.",
-    cta: { label: "جرّبه شهر ببلاش", href: "dashboard.html?signup=1" }
   },
   {
     id: "files", src: "reels/01-files.mp4", poster: "reels/01-files.jpg", v: 1,
@@ -513,8 +506,10 @@ var REELS = [
     if (document.hidden) vids[cur].pause(); else vids[cur].play().catch(function () {});
   });
 
-  // a shared link (reels.html#shopify) opens on its reel, also when it's opened while the page is already showing
-  function indexOf(hash) { var h = (hash || "").slice(1), at = -1; REELS.forEach(function (r, i) { if (r.id === h) at = i; }); return h === "end" ? REELS.length : at; }
+  // a shared link (reels.html#shopify) opens on its reel, also when it's opened while the page is already showing.
+  // A removed reel's old link opens the reel that replaced it.
+  var MOVED = { "all-channels": "one-place" };
+  function indexOf(hash) { var h = (hash || "").slice(1), at = -1; h = MOVED[h] || h; REELS.forEach(function (r, i) { if (r.id === h) at = i; }); return h === "end" ? REELS.length : at; }
   var start = indexOf(location.hash);
   if (start > 0) feed.scrollTop = secs[start].offsetTop;
   window.addEventListener("hashchange", function () { var i = indexOf(location.hash); if (i >= 0 && i !== cur) go(i); });
