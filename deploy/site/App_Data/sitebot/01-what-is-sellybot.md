@@ -44,13 +44,14 @@ Sellybot منتج مصري: مساعد ذكي (ذكاء اصطناعي) بيرد
 ## ريلز: فيديوهات بتشرح الموقع (sellybot.online/reels.html)
 صفحة زي ريلز إنستجرام، مفتوحة لأي حد من غير تسجيل دخول، فيها فيديوهات قصيرة (دقيقة أو دقيقة ونص) بتشرح Sellybot خطوة بخطوة. سلسلة «خطوة بخطوة»:
 - فيديو تعريفي (أول ريل): Sellybot موظف المبيعات اللي مابينامش، هو إيه وبيعمل إيه ولمين: https://sellybot.online/reels.html#intro
-- «Sellybot في 30 ثانية»: 6 فيديوهات قصيرة بعد الفيديو التعريفي، تنفع تتبعت لأي حد عايز يعرف Sellybot بسرعة:
+- «Sellybot في 30 ثانية»: 7 فيديوهات قصيرة بعد الفيديو التعريفي، تنفع تتبعت لأي حد عايز يعرف Sellybot بسرعة:
   - واتساب ومسنجر وإنستجرام (بيرد على رسايل القنوات التلاتة في ثواني، ويفهم الصور، ومتجرك على Shopify أو EasyOrders، وتجربة شهر ببلاش): https://sellybot.online/reels.html#all-channels
   - مش لازم يكون عندك متجر (عيادات وعقارات وأكاديميات وأي نشاط، ولينك الشات لو معندكش موقع): https://sellybot.online/reels.html#any-business
   - زبون سألك الساعة 3 الفجر (بيرد وانت نايم): https://sellybot.online/reels.html#3am
   - متجرك على Shopify أو EasyOrders (المنتجات بتتحدّث لوحدها، «طلبي فين؟»، تأكيد الطلبات ويوم التوصيل): https://sellybot.online/reels.html#stores
   - أوفر من موظف (تجربة شهر مجانًا وإزاي تشترك): https://sellybot.online/reels.html#vs-staff
   - واتساب أذكى (بيفهم الصور، و«بلّغني لما يرجع»، وتنبيهك لما زبون يحتاجك، والتقرير الأسبوعي): https://sellybot.online/reels.html#wa-smart
+  - كل رسايلك في مكان واحد (رسايل الواتساب والمسنجر والإنستجرام كلها بيرد عليها في ثواني، من منتجاتك وأسعارك، و«طلبي فين؟»، وتجربة شهر ببلاش): https://sellybot.online/reels.html#one-place
 - الحلقة 1: ملفاتك ونصوصك (رفع الكتالوج وليستة الأسعار، تسمية الملفات، وتفاصيل كل منتج): https://sellybot.online/reels.html#files
 - الحلقة 2: اربط متجرك على Shopify في 5 دقايق: https://sellybot.online/reels.html#shopify
 - الحلقة 3: اربط متجرك على EasyOrders (ربط بضغطة أو بـ API Key، والـ Webhooks، ومعلومات الشحن): https://sellybot.online/reels.html#easyorders
