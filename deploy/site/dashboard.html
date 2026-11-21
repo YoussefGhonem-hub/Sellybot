@@ -989,6 +989,7 @@
   #mtApp .scope-box code{flex:1;min-width:0}
   .mt-reel{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(232,119,74,.12),rgba(245,162,93,.06));color:var(--ink);text-decoration:none;transition:border-color .15s}
   .mt-reel:hover,.mt-reel:focus-visible{border-color:var(--brand);outline:none}
+  .mt-reel + .mt-reel{margin-top:8px}
   .mt-reel b{display:block;font-size:14.5px}.mt-reel small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
   .mt-reel-ic{flex:none;width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:14px;padding-left:3px}
   .mt-plan{list-style:none;counter-reset:mtp;margin:14px 0 0;padding:0;display:grid;gap:10px}
@@ -2482,6 +2483,8 @@
       <div id="mtAppBody">
         <div class="mt-soon" id="mtAppShared" hidden>متجرك يقدر يربط بتطبيق Sellybot من غير تطبيق خاص بيك. ولو حطيت أرقام تطبيقك هنا، الربط الجاي هيبقى بيه.</div>
         <a class="mt-reel" href="reels.html#meta" target="_blank" rel="noopener"><span class="mt-reel-ic" aria-hidden="true">▶</span><span><b>اتفرج على الشرح خطوة بخطوة</b><small>فيديو الحلقة 8 في الريلز: نفس الخطوات دي من أولها لحد ما المساعد يرد</small></span></a>
+        <!-- only here, not on the reels page: the user's sped-up tour of developers.facebook.com, opened on its own in a new tab -->
+        <a class="mt-reel" href="reels/meta-tour.mp4?v=1" target="_blank" rel="noopener"><span class="mt-reel-ic" aria-hidden="true">▶</span><span><b>جولة سريعة في developers.facebook.com</b><small>فيديو أقل من دقيقة: كل صفحة هتدخلها في تطبيقك، وهتعمل فيها إيه</small></span></a>
         <!-- the same order as the steps on developers.facebook.com: every link they ask for is here to copy, and each number is saved as soon as that step gives it -->
         <ol class="mt-plan">
           <li id="mtS1"><h4>اعمل التطبيق</h4>
