@@ -79,4 +79,25 @@ $msArgs = @(
 $code = $LASTEXITCODE
 Remove-Item -Recurse -Force $out
 if ($code -ne 0) { Fail "Upload failed (msdeploy exit $code)." }
+
+# ---- 5) files taken out of the site ----
+# The upload never deletes anything on the server (DoNotDeleteRule keeps App_Data and uploaded files safe), so a file
+# removed from deploy/site stays online. List it in removed-from-server.txt (a path under site/ per line) and every
+# deploy deletes it if it's still there.
+$removed = Join-Path $here "removed-from-server.txt"
+if (Test-Path $removed) {
+  foreach ($line in Get-Content $removed) {
+    $p = ($line -replace '#.*$', '').Trim().Replace('\', '/')
+    if (-not $p) { continue }
+    if ($p -match '(^/|\.\.|:|^(App_Data|bin)(/|$)|^web\.config$)') { Say "!!  not removing $p from the server: that path isn't allowed" Yellow; continue }
+    if (Test-Path (Join-Path (Join-Path $here "site") $p)) { Say "!!  not removing $p from the server: it's still in deploy/site" Yellow; continue }
+    $ErrorActionPreference = "Continue"   # Windows PowerShell turns msdeploy's error text into a terminating error under "Stop"
+    $res = & $msdeploy -verb:delete "-dest:contentPath=$($cfg.WEBDEPLOY_SITE)/$p,computerName=$serviceUrl,userName=$($cfg.WEBDEPLOY_USER),password=$($cfg.WEBDEPLOY_PASSWORD),authType=Basic" -allowUntrusted -retryAttempts:3 2>&1 | Out-String
+    $ErrorActionPreference = "Stop"
+    if ($LASTEXITCODE -eq 0) { Say "OK  removed $p from the server" Green }
+    elseif ($res -match 'FileOrFolderNotFound') { Say "OK  $p is already gone from the server" Green }
+    elseif ($inCI) { Write-Host "::warning::Could not remove $p from the server (msdeploy exit $LASTEXITCODE)." }
+    else { Say "!!  could not remove $p from the server (msdeploy exit $LASTEXITCODE)" Yellow }
+  }
+}
 Say "DONE. The site is live on $($cfg.WEBDEPLOY_SITE)." Green
