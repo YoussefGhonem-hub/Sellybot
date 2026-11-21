@@ -114,6 +114,9 @@
     .links button.on:after{inset:10px 0 10px auto;width:3px;height:auto;border-radius:3px 0 0 3px}
     /* in the sidebar a dropdown is just a titled group, always open */
     .dd{display:block;height:auto;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+    /* a plain item right after a group starts below a line too, so it doesn't read as part of that group */
+    .links .dd + button{margin-top:6px;position:relative}
+    .links .dd + button:before{content:"";position:absolute;top:-4px;left:0;right:0;border-top:1px solid var(--line)}
     .links .dd-btn{width:100%;padding:6px 14px 4px;font-size:12px;font-weight:600;color:var(--muted);cursor:default;pointer-events:none}
     .links .dd-btn.on{background:none}
     .links .dd-btn:after,.dd-car{display:none}
@@ -1490,10 +1493,16 @@
           <button data-tab="look" role="menuitem"><span class="dd-ic">🎨</span><span><b>شكل الشات</b><small>الفقاعة والألوان واللوجو</small></span></button>
           <button data-tab="settings" role="menuitem"><span class="dd-ic">⚙️</span><span><b>المساعد</b><small>اسمه وأسلوبه في الرد</small></span></button>
           <button data-tab="install" role="menuitem"><span class="dd-ic">🛍️</span><span><b>ضيفه لمتجرك</b><small>سطر الكود ولينك الشات</small></span></button>
+        </div>
+      </div>
+      <!-- the store's own accounts the assistant answers on: WhatsApp, and Messenger + Instagram (hidden until MetaApp.Visible) -->
+      <div class="dd">
+        <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddLink">🔗 ربط بحساباتك <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd-menu" id="ddLink" role="menu" aria-label="ربط بحساباتك">
+          <button data-tab="wa" role="menuitem"><span class="dd-ic">💬</span><span><b>واتساب</b><small>المساعد يرد على رقم واتساب متجرك</small></span></button>
           <button data-tab="social" id="socialTabBtn" role="menuitem" hidden><span class="dd-ic">📨</span><span><b>مسنجر وإنستجرام</b><small>المساعد يرد على صفحتك والدايركت</small></span></button>
         </div>
       </div>
-      <button data-tab="wa">💬 واتساب</button>
       <button data-tab="plan">💎 باقتي <span class="nb" id="planNb" hidden title="رد جديد من الإدارة على طلبك">1</span></button>
       <div class="dd">
         <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddMore">✨ المزيد <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
