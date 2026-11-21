@@ -794,6 +794,8 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                     {
                         case "me": Web.Json(res, 200, new Dictionary<string, object> { { "username", adminName }, { "defaultPassword", defaultPassword } }); return;
                         case "overview": Web.Json(res, 200, Overview(c)); return;
+                        case "money": Web.Json(res, 200, Finance.Report(c)); return;   // «💰 المكسب والتكلفة» (Finance.cs)
+                        case "money-settings": if (!post) break; Finance.Save(c, b, res); return;
                         case "plans": Web.Json(res, 200, new Dictionary<string, object> { { "plans", Billing.Plans(c, true).Select(p => Billing.PlanJson(c, p, true)).ToList() }, { "usdRate", Billing.UsdRate(c) } }); return;
                         case "plan-save": if (!post) break; PlanSave(c, b, res); return;
                         case "plan-delete": if (!post) break; PlanDelete(c, b, res); return;

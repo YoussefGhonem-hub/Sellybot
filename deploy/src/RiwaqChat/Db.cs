@@ -303,12 +303,12 @@ WHEN MATCHED THEN UPDATE SET Messages = Messages + @n, InputTokens = InputTokens
      CacheWriteTokens = CacheWriteTokens + @cw, OutputTokens = OutputTokens + @o
 WHEN NOT MATCHED THEN INSERT (StoreId, Month, Messages, InputTokens, CacheReadTokens, CacheWriteTokens, OutputTokens)
      VALUES (@s, @m, @n, @i, @cr, @cw, @o);
--- answers per day (UTC), for the weekly report
-IF @n > 0
-  MERGE dbo.UsageDaily AS d USING (SELECT @s AS StoreId, CAST(SYSUTCDATETIME() AS DATE) AS Day) AS x ON d.StoreId = x.StoreId AND d.Day = x.Day
-  WHEN MATCHED THEN UPDATE SET Messages = Messages + @n
-  WHEN NOT MATCHED THEN INSERT (StoreId, Day, Messages) VALUES (@s, x.Day, @n);";
-            using (var cmd = Cmd(c, sql, "@s", storeId, "@m", Month, "@n", messages, "@i", input, "@cr", cacheRead, "@cw", cacheWrite, "@o", output))
+-- answers and cost-weighted units per day (UTC): the weekly report counts the answers, «المكسب والتكلفة» the daily spend
+MERGE dbo.UsageDaily AS d USING (SELECT @s AS StoreId, CAST(SYSUTCDATETIME() AS DATE) AS Day) AS x ON d.StoreId = x.StoreId AND d.Day = x.Day
+WHEN MATCHED THEN UPDATE SET Messages = Messages + @n, Units = Units + @w
+WHEN NOT MATCHED THEN INSERT (StoreId, Day, Messages, Units) VALUES (@s, x.Day, @n, @w);";
+            long weighted = new UsageInfo { InputTokens = input, CacheReadTokens = cacheRead, CacheWriteTokens = cacheWrite, OutputTokens = output }.Weighted;
+            using (var cmd = Cmd(c, sql, "@s", storeId, "@m", Month, "@n", messages, "@i", input, "@cr", cacheRead, "@cw", cacheWrite, "@o", output, "@w", weighted))
                 cmd.ExecuteNonQuery();
         }
 
@@ -703,6 +703,8 @@ IF COL_LENGTH('dbo.RestockWaits', 'CheckedAt') IS NULL ALTER TABLE dbo.RestockWa
 IF OBJECT_ID('dbo.UsageDaily') IS NULL
   CREATE TABLE dbo.UsageDaily(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Day DATE NOT NULL, Messages INT NOT NULL DEFAULT 0,
     PRIMARY KEY (StoreId, Day));
+-- the day's cost-weighted units too (2026-11-21, «المكسب والتكلفة»: the Claude spend per day). Days before it show 0 and are estimated.
+IF COL_LENGTH('dbo.UsageDaily', 'Units') IS NULL ALTER TABLE dbo.UsageDaily ADD Units BIGINT NOT NULL CONSTRAINT DF_UsageDaily_Units DEFAULT 0;
 -- a picture the customer sent on WhatsApp (its URL at Wapilot), for the assistant to look at (WaImages)
 IF COL_LENGTH('dbo.WaMessages', 'Media') IS NULL ALTER TABLE dbo.WaMessages ADD Media NVARCHAR(800) NULL;
 -- customers who sent «وقف» after one of Sellybot's own messages (abandoned cart, back in stock): no more of those from this store

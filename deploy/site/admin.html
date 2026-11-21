@@ -171,6 +171,26 @@
   .up{color:var(--ok)} .down{color:var(--err)}
   .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:16px}
   .grid2b{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+  /* «المكسب والتكلفة» */
+  .fn-box{margin-bottom:16px}
+  [data-page=money] .grid2b > *,[data-page=money] .card,.fn-calc > *{min-width:0}   /* a wide table scrolls inside its card instead of widening the page */
+  .fn-calc{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media (max-width:1000px){.fn-calc{grid-template-columns:1fr}}
+  .fn-in{display:grid;gap:8px}
+  .fn-in .fr{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+  .fn-in .fr label{margin:0;color:var(--ink);font-weight:600;font-size:14px}
+  .fn-in .fr small{display:block;color:var(--muted);font-size:12px;font-weight:400;margin-top:2px}
+  .fn-in .fr input{text-align:center}
+  .fn-in .util{padding:10px;border:1px solid var(--line);border-radius:12px}
+  .fn-in .util input{width:100%;accent-color:var(--brand)}
+  .fn-in .util b{color:var(--brand)}
+  .calc .r.good b{color:var(--ok)} .calc .r.bad b{color:var(--err)}
+  .calc .r small{color:var(--muted);font-weight:400}
+  .calc .r > span{min-width:0}
+  .fn-tag{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--muted);margin-inline-start:4px;white-space:nowrap}
+  .fn-bar{height:6px;border-radius:6px;background:var(--soft);overflow:hidden;min-width:70px}
+  .fn-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand2),var(--brand))}
+  .fn-bar.hot i{background:linear-gradient(90deg,#f0b04a,var(--err))}
   .mt-site{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
   .mt-site .ch{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
   .mt-site .ch .row{flex-wrap:wrap;gap:6px}
@@ -389,6 +409,7 @@
     <nav class="nav" id="nav">
       <div class="nav-ind" id="navInd"></div>
       <button data-go="home"><span class="ic">📊</span>الرئيسية</button>
+      <button data-go="money"><span class="ic">💰</span>المكسب والتكلفة</button>
       <button data-go="stores"><span class="ic">🏪</span>المتاجر والمستخدمين</button>
       <button data-go="plans"><span class="ic">💎</span>الباقات والخصومات</button>
       <button data-go="reqs"><span class="ic">📥</span>طلبات الاشتراك <span class="count" id="rqCount" hidden>0</span></button>
@@ -441,6 +462,65 @@
             <div class="row"><h3>تذاكر محتاجة رد</h3><span class="space"></span><button class="btn ghost sm" data-go="support">الدعم الفني</button></div>
             <div class="list" id="recentTickets"></div>
           </div>
+        </div>
+      </section>
+
+      <!-- money: what Sellybot earns and spends, the Claude credit, each plan and store, a calculator (Finance.cs) -->
+      <section data-page="money" hidden>
+        <div class="kpis" id="fnKpis"></div>
+        <div class="grid2b">
+          <div class="card anim">
+            <h3>🔋 رصيد Claude: تشحن بكام؟</h3>
+            <p class="sub" id="fnModel"></p>
+            <label for="fnBal" style="margin-top:0">رصيدك الحالي في Claude بالدولار</label>
+            <div class="row" style="gap:8px;flex-wrap:nowrap"><input type="text" id="fnBal" class="ltr" inputmode="decimal" placeholder="مثلًا 25"><button class="btn sm" type="button" id="fnBalSave">حفظ</button></div>
+            <div class="hint" id="fnBalHint"></div>
+            <div class="calc" id="fnClaude"></div>
+          </div>
+          <div class="card anim">
+            <h3>💡 حاجات تاخد بالك منها</h3>
+            <div class="list" id="fnTips"></div>
+          </div>
+        </div>
+        <div class="card anim fn-box">
+          <div class="row" style="flex-wrap:wrap;gap:8px"><h3>🧮 الحاسبة: لو عندك كذا متجر</h3><span class="space"></span>
+            <div class="seg" id="fnPresets"><button type="button" data-n="now" class="on">الوضع الحالي</button><button type="button" data-n="3">3 متاجر</button><button type="button" data-n="100">100 متجر</button><button type="button" data-n="1000">1000 متجر</button></div></div>
+          <p class="sub">اكتب عدد المتاجر في كل باقة، والحاسبة تقولك هتكسب كام وتصرف كام وتشحن Claude بكام في الشهر. «100» و«1000» بيوزّعوا المتاجر على الباقات بنفس نسبة متاجرك دلوقتي.</p>
+          <div class="fn-calc">
+            <div class="fn-in" id="fnInputs"></div>
+            <div class="calc" id="fnOut" style="margin-top:0"></div>
+          </div>
+        </div>
+        <div class="card anim fn-box">
+          <h3>💎 كل باقة بتكسّبك كام</h3>
+          <p class="sub">في الشهر لكل متجر. «أسوأ حالة» = المتجر خلّص رصيد Claude بتاع باقته كله.</p>
+          <div class="tbl-wrap"><table><thead><tr><th>الباقة</th><th>السعر في الشهر</th><th>رصيد Claude</th><th>≈ ردود</th><th>متاجر عليها</th><th>بيستهلكوا</th><th>تكلفة المتجر</th><th>مكسب المتجر</th><th>أسوأ حالة</th></tr></thead><tbody id="fnPlans"></tbody></table></div>
+        </div>
+        <div class="card anim fn-box">
+          <div class="row" style="flex-wrap:wrap;gap:8px"><h3>🏪 المتاجر: مين بيكسّبك ومين بيكلّفك</h3><span class="space"></span>
+            <div class="seg" id="fnSort"><button type="button" data-s="cost" class="on">الأكتر تكلفة</button><button type="button" data-s="margin">الأقل مكسب</button><button type="button" data-s="use">قرب يخلّص رصيده</button></div></div>
+          <p class="sub">الشهر ده. «آخر الشهر» = لو كمّل بنفس الاستهلاك. «بيدفع» = اشتراكه في الشهر + الواتساب.</p>
+          <div class="tbl-wrap"><table><thead><tr><th>المتجر</th><th>الباقة</th><th>ردود</th><th>تكلفة Claude</th><th>آخر الشهر</th><th>بيدفع في الشهر</th><th>المكسب منه</th><th>من رصيده</th></tr></thead><tbody id="fnStores"></tbody></table></div>
+          <div class="row" style="justify-content:center;margin-top:10px"><button class="btn ghost sm" type="button" id="fnMore" hidden>اعرض الكل</button></div>
+        </div>
+        <div class="grid2b">
+          <div class="card anim">
+            <h3>📅 آخر 6 شهور</h3>
+            <p class="sub">الفلوس اللي دخلت كل شهر، وتكلفة Claude فيه.</p>
+            <div class="tbl-wrap"><table style="min-width:520px"><thead><tr><th>الشهر</th><th>باقات</th><th>رسايل إضافية</th><th>واتساب</th><th>تكلفة Claude</th><th>الفرق</th></tr></thead><tbody id="fnHist"></tbody></table></div>
+          </div>
+          <form class="card anim" id="fnSet" autocomplete="off">
+            <h3>⚙️ مصاريفك التانية</h3>
+            <p class="sub">عشان صافي الربح يبقى حقيقي. كله بالجنيه في الشهر.</p>
+            <label for="fnWaCost">تكلفة كل رقم واتساب مربوط (عند مزوّد الواتساب)</label>
+            <input type="text" id="fnWaCost" class="ltr" inputmode="decimal">
+            <label for="fnFixed">مصاريف ثابتة: الاستضافة والدومين وأي حاجة تانية</label>
+            <input type="text" id="fnFixed" class="ltr" inputmode="decimal">
+            <label for="fnBuf">احتياطي فوق تكلفة Claude المتوقعة (%)</label>
+            <input type="text" id="fnBuf" class="ltr" inputmode="decimal">
+            <div class="msg" id="fnSetMsg"></div>
+            <div class="row" style="margin-top:12px"><button class="btn" id="fnSetSave">حفظ</button></div>
+          </form>
         </div>
       </section>
 
@@ -744,7 +824,7 @@
     $("pwWarn").hidden = !defaultPw;
     $("meName").textContent = name; $("meAv").textContent = initial(name);
     var want = (location.hash || "#home").slice(1);
-    go(["home", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "settings"].indexOf(want) >= 0 ? want : "home");
+    go(["home", "money", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "settings"].indexOf(want) >= 0 ? want : "home");
     api("requests", null, "&status=pending").then(function (d) { rqBadge(d.pending); }).catch(function () {});
   }
   $("pwEye").onclick = function () { var i = $("lPass"); i.type = i.type === "password" ? "text" : "password"; i.focus(); };
@@ -757,7 +837,7 @@
   $("logoutBtn").onclick = async function () { try { await api("logout", {}); } catch (e) {} showLogin(); };
 
   // ---------- navigation ----------
-  var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
+  var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], money: ["المكسب والتكلفة", "بتكسب كام، بتصرف كام، وتشحن Claude بكام"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
                  subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"],
                  meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
@@ -772,7 +852,7 @@
     moveInd(); closeSide();
     if (history.replaceState) history.replaceState(null, "", "#" + page);
     window.scrollTo(0, 0);
-    ({ home: loadHome, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, settings: loadSettings })[page]();
+    ({ home: loadHome, money: loadMoney, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, settings: loadSettings })[page]();
   }
 
   // ---------- Messenger + Instagram: one Meta app for every store ----------
@@ -1263,6 +1343,192 @@
     svg.innerHTML = out; svg.classList.remove("go");
     requestAnimationFrame(function () { setTimeout(function () { svg.classList.add("go"); }, 80); });
   }
+
+  // ---------- «💰 المكسب والتكلفة»: what Sellybot earns and spends, the Claude credit, plans, stores, a calculator (Finance.cs) ----------
+  var fn = { d: null, sort: "cost", all: false };
+  function usd(n, d) { return fmt(n, d == null ? 2 : d) + "$"; }
+  function egp2(n) { return fmt(n, 2) + " ج.م"; }
+  function signed(n) { return '<b class="' + (n >= 0 ? "up" : "down") + '">' + money(n) + '</b>'; }
+  function kpiCards(el, K) {
+    el.innerHTML = K.map(function (k, i) {
+      return '<div class="card kpi anim' + (k.hl ? " hl" : "") + '" style="animation-delay:' + (i * 0.05) + 's"><div class="k-top"><span class="k-label">' + k.label + '</span><span class="k-ic">' + k.ic + '</span></div>' +
+        '<div class="k-val ' + (k.cls || "") + '" data-v="' + k.val + '">0</div><div class="k-sub">' + esc(k.sub) + '</div></div>';
+    }).join("");
+    el.querySelectorAll(".k-val").forEach(function (v, i) { countUp(v, Number(v.dataset.v), K[i].f); });
+  }
+  function names(list) { var n = list.slice(0, 3).map(function (s) { return s.name; }).join("، "); return list.length > 3 ? n + " و" + fmt(list.length - 3) + " تاني" : n; }
+  function modelName(id) { var m = /^claude-(haiku|sonnet|opus|fable)-(\d+)-(\d+)$/.exec(id || ""); return m ? "Claude " + m[1].charAt(0).toUpperCase() + m[1].slice(1) + " " + m[2] + "." + m[3] : id; }
+  async function loadMoney() {
+    $("fnKpis").innerHTML = new Array(9).join('<div class="card kpi"><div class="skel" style="width:50%"></div><div class="skel" style="width:70%;height:26px;margin-top:14px"></div></div>');
+    try { fn.d = await api("money"); } catch (e) { toast(e.message, true); return; }
+    renderMoney(true);
+  }
+  function renderMoney(fresh) {
+    var d = fn.d, n = d.now, m = d.mrr, cl = d.claude, st = d.settings;
+    kpiCards($("fnKpis"), [
+      { ic: "💰", label: "الإيرادات الشهر ده", val: n.revenue, f: money, hl: true,
+        sub: "باقات " + money(n.byKind.plan + n.byKind.upgrade) + " · رسايل إضافية " + money(n.byKind.topup) + " · واتساب " + money(n.byKind.wa) },
+      { ic: "🤖", label: "تكلفة Claude الشهر ده", val: n.claudeEgp, f: egp2, sub: "≈ " + usd(n.claudeUsd) + " · آخر الشهر حوالي " + money(n.claudeProjEgp) },
+      { ic: "📈", label: "صافي الربح الشهر ده", val: n.profit, f: money, sub: "الإيرادات − Claude − الواتساب − المصاريف الثابتة", cls: n.profit >= 0 ? "up" : "down" },
+      { ic: "🔁", label: "الدخل الشهري الثابت", val: m.total, f: money, sub: fmt(m.stores) + " اشتراك شغال + " + fmt(m.waStores) + " واتساب، لو كله جدد" },
+      { ic: "🔋", label: "رصيد Claude اللي فاضل", val: cl.remaining == null ? 0 : cl.remaining, f: cl.remaining == null ? function () { return "—"; } : function (v) { return usd(v); },
+        sub: cl.remaining == null ? "اكتب رصيدك في كارت «رصيد Claude»" : cl.runway == null ? "لسه مفيش استهلاك" : "يكفي حوالي " + fmt(cl.runway) + " يوم", cls: cl.runway != null && cl.runway < 7 ? "down" : "" },
+      { ic: "⚡", label: "اشحن Claude بـ", val: cl.suggest, f: function (v) { return usd(v, 0); }, sub: cl.suggest > 0 ? "يكفيك 30 يوم + " + fmt(st.bufferPct) + "% احتياطي" : "رصيدك مكفّيك 30 يوم 👌" },
+      { ic: "💬", label: "تكلفة الرد الواحد", val: d.msgCost, f: function (v) { return fmt(v, 3) + " ج.م"; }, sub: "كل 1000 رد ≈ " + money(d.msgCost * 1000) },
+      { ic: "📊", label: "هامش الربح الشهري", val: m.total > 0 ? Math.round(m.profit * 100 / m.total) : 0, f: function (v) { return fmt(v) + "%"; },
+        sub: "صافي " + money(m.profit) + " في الشهر على الاشتراكات الحالية", cls: m.profit >= 0 ? "up" : "down" },
+    ]);
+
+    // the Claude credit
+    var mn = modelName(d.model), haiku = d.model === "claude-haiku-5-5";
+    $("fnModel").textContent = "المساعد شغال بـ " + mn + (haiku ? ": 0.10$ لكل مليون توكن داخل، و0.50$ للخارج، والكاش بـ 0.01$." : ". التكلفة هنا محسوبة بأسعار Claude Haiku 5.5، فراجعها مع سعر الموديل ده.") + " الدولار بـ " + fmt(d.usdRate, 2) + " ج.م.";
+    if (fresh) $("fnBal").value = "";
+    $("fnBalHint").textContent = st.balanceUsd != null && st.balanceAt ? "آخر مرة كتبته: " + usd(st.balanceUsd) + " · " + date(st.balanceAt) + ". من ساعتها بنطرح منه اللي بيتصرف أول بأول، فاكتبه تاني بعد ما تشحن."
+      : "هتلاقيه في console.anthropic.com ← Billing. بعد ما تحفظه، بنطرح منه اللي بيتصرف أول بأول.";
+    var runDate = cl.runway != null ? new Date(Date.now() + cl.runway * 86400000).toISOString() : null;
+    $("fnClaude").innerHTML =
+      '<div class="r"><span>بتصرف في اليوم</span><b>' + usd(cl.perDay, 3) + ' <small>≈ ' + egp2(cl.perDay * d.usdRate) + '</small></b></div>' +
+      '<div class="r"><span>رصيدك اللي فاضل</span><b>' + (cl.remaining == null ? "—" : usd(cl.remaining)) + '</b></div>' +
+      (cl.runway != null ? '<div class="r ' + (cl.runway < 7 ? "bad" : "good") + '"><span>هيخلص بعد</span><b>' + fmt(cl.runway) + ' يوم <small>(' + date(runDate) + ')</small></b></div>' : '') +
+      '<div class="r"><span>محتاج لـ 30 يوم</span><b>' + usd(cl.next30) + ' <small>+ ' + fmt(st.bufferPct) + '% = ' + usd(cl.next30Buf) + '</small></b></div>' +
+      '<div class="r"><span>أقصى حاجة ممكن الشهر يكلّفها <small>(لو كل متجر خلّص رصيد باقته)</small></span><b>' + usd(cl.worst) + '</b></div>' +
+      '<div class="r big ' + (cl.suggest > 0 ? "" : "good") + '"><span>' + (cl.suggest > 0 ? "اشحن دلوقتي بـ" : "مش محتاج تشحن دلوقتي") + '</span><b>' + (cl.suggest > 0 ? usd(cl.suggest, 0) : "👌") + '</b></div>';
+
+    // things to look at
+    var tips = [];
+    if (cl.remaining == null) tips.push(["🔋", "اكتب رصيد Claude الحالي", "عشان نقولك هيكفيك كام يوم بالظبط وتشحن بكام."]);
+    else if (cl.runway != null && cl.runway < 7) tips.unshift(["🚨", "رصيد Claude هيخلص خلال " + fmt(cl.runway) + " يوم", "اشحن بـ " + usd(cl.suggest, 0) + " دلوقتي عشان المساعد مايقفش عند التجار."]);
+    var hot = d.stores.filter(function (s) { return s.plan && s.usePct >= 80; });
+    if (hot.length) tips.push(["🔥", fmt(hot.length) + " متجر قربوا يخلّصوا رصيدهم", "اعرض عليهم رسايل إضافية: " + names(hot) + "."]);
+    var lose = d.stores.filter(function (s) { return s.margin != null && s.margin < 0 && (s.plan || s.wa); });
+    if (lose.length) tips.push(["⚠️", fmt(lose.length) + " متجر بيكلّفوك أكتر من اللي بيدفعوه", names(lose) + ". شوف باقتهم أو اعرض عليهم ترقية."]);
+    var t = d.trial;
+    if (t.live || t.cost > 0) tips.push(["🧪", fmt(t.live) + " متجر بيجرّبوا دلوقتي", "التجربة كلّفت " + money(t.cost) + " الشهر ده" + (t.avgMsgs ? " (حوالي " + fmt(t.avgMsgs) + " رد للمتجر)" : "") + "." +
+      (t.signups90 ? " من اللي سجّلوا آخر 90 يوم، " + fmt(Math.round(t.converted90 * 100 / t.signups90)) + "% اشتركوا (" + fmt(t.converted90) + " من " + fmt(t.signups90) + ")." : "")]);
+    var rn = d.renewals;
+    if (rn.in7) tips.push(["⏳", fmt(rn.in7) + " اشتراك هيخلص خلال 7 أيام", "بحوالي " + money(rn.in7Egp) + " في الشهر. كلّمهم يجددوا." + (rn.in30 > rn.in7 ? " وخلال 30 يوم: " + fmt(rn.in30) + " اشتراك بـ " + money(rn.in30Egp) + "." : "")]);
+    else if (rn.in30) tips.push(["⏳", fmt(rn.in30) + " اشتراك هيخلص خلال 30 يوم", "بحوالي " + money(rn.in30Egp) + " في الشهر."]);
+    if (rn.churned) tips.push(["📉", fmt(rn.churned) + " اشتراك خلص آخر 30 يوم ومتجددش", "كانوا بيدفعوا حوالي " + money(rn.churnedEgp) + " في الشهر. كلّمهم واعرف السبب."]);
+    if (d.pending.count) tips.push(["📥", fmt(d.pending.count) + " طلب مستني موافقتك", "بـ " + money(d.pending.egp) + ". من «طلبات الاشتراك».", "reqs"]);
+    if (n.cacheShare > 0) tips.push(["🧊", "الكاش وفّرلك " + usd(n.cacheSavedUsd) + " الشهر ده", fmt(n.cacheShare, 1) + "% من الكلام اللي Claude قراه جه من الكاش بعُشر السعر."]);
+    var ch = n.channels;
+    if (n.messages) tips.push(["📨", "الردود الشهر ده بتيجي منين", "الموقع " + fmt(ch.site) + " · واتساب " + fmt(ch.wa) + " · مسنجر " + fmt(ch.fb) + " · إنستجرام " + fmt(ch.ig) + " (تقريبًا)."]);
+    if (n.claudeEgp > 0) tips.push(["🧾", "تكلفة Claude الشهر ده راحت فين", "المشتركين " + money(n.costPaid) + " · التجربة " + money(n.costTrial) + " · Sellybot نفسه (سيلّي ومتاجر الإدارة) " + money(n.costOwn) + "."]);
+    $("fnTips").innerHTML = tips.length ? tips.map(function (x) {
+      return '<div class="li' + (x[3] ? ' click" style="cursor:pointer" data-go="' + x[3] : '') + '"><div class="mini-av" style="background:var(--soft);font-size:18px">' + x[0] + '</div><div class="grow"><div class="ttl" style="white-space:normal">' + esc(x[1]) + '</div><div class="meta">' + esc(x[2]) + '</div></div></div>';
+    }).join("") : '<div class="empty"><span class="e-ic">🌱</span>لسه مفيش داتا كفاية</div>';
+    $("fnTips").querySelectorAll("[data-go]").forEach(function (el) { el.onclick = function () { go(el.dataset.go); }; });
+
+    // each plan
+    $("fnPlans").innerHTML = d.plans.length ? d.plans.map(function (p) {
+      return '<tr><td><b>' + esc(p.name) + '</b></td><td>' + money(p.price) + '</td><td>' + usd(p.usdBudget) + ' <span class="meta">≈ ' + money(p.maxCost) + '</span></td><td>' + fmt(p.msgs) + '</td><td>' + fmt(p.stores) + '</td>' +
+        '<td>' + (p.usePct == null ? "—" : fmt(p.usePct) + "%" + (p.lastPct != null ? ' <span class="meta">(الشهر اللي فات ' + fmt(p.lastPct) + '%)</span>' : "")) + '</td>' +
+        '<td>' + (p.stores ? money(p.avgCost) : "—") + '</td><td>' + (p.marginExp == null ? "—" : signed(p.marginExp)) + '</td><td>' + signed(p.marginMin) + '</td></tr>';
+    }).join("") : '<tr><td colspan="9"><div class="empty">مفيش باقات</div></td></tr>';
+
+    renderFnStores();
+
+    // the last 6 months
+    $("fnHist").innerHTML = d.history.map(function (h) {
+      var mo = new Date(h.month + "-01T00:00:00Z").toLocaleDateString("ar-EG", { month: "long", year: "numeric" }), diff = h.plan + h.topup + h.wa - h.claude;
+      return '<tr><td>' + mo + '</td><td>' + money(h.plan) + '</td><td>' + money(h.topup) + '</td><td>' + money(h.wa) + '</td><td>' + egp2(h.claude) + ' <span class="meta">' + fmt(h.msgs) + ' رد</span></td><td>' + signed(diff) + '</td></tr>';
+    }).reverse().join("");
+
+    // other costs
+    $("fnWaCost").value = st.waCostEgp; $("fnFixed").value = st.fixedEgp; $("fnBuf").value = st.bufferPct;
+    if (fresh) fnPreset("now"); else fnCalc();
+  }
+  function renderFnStores() {
+    var d = fn.d, list = d.stores.slice(), big = 1e15;
+    list.sort(fn.sort === "margin" ? function (a, b) { return (a.margin == null ? big : a.margin) - (b.margin == null ? big : b.margin); }
+      : fn.sort === "use" ? function (a, b) { return (b.usePct == null ? -1 : b.usePct) - (a.usePct == null ? -1 : a.usePct); }
+      : function (a, b) { return b.cost - a.cost; });
+    $("fnMore").hidden = fn.all || list.length <= 25;
+    if (!fn.all) list = list.slice(0, 25);
+    $("fnStores").innerHTML = list.length ? list.map(function (s) {
+      var tag = s.own ? '<span class="fn-tag">Sellybot</span>' : s.trial ? '<span class="fn-tag">تجربة</span>' : "";
+      if (s.wa) tag += '<span class="fn-tag">واتساب</span>';
+      var p = s.usePct == null ? null : Math.min(100, s.usePct);
+      return '<tr><td><b>' + esc(s.name) + '</b>' + tag + '<div class="meta ltr" style="text-align:right">' + esc(s.slug) + '</div></td><td>' + (s.plan ? esc(s.plan) : '<span class="meta">—</span>') + '</td><td>' + fmt(s.msgs) + '</td>' +
+        '<td>' + egp2(s.cost) + '</td><td>' + money(s.proj) + '</td><td>' + (s.pays ? money(s.pays) : '<span class="meta">—</span>') + '</td><td>' + (s.margin == null ? '<span class="meta">—</span>' : signed(s.margin)) + '</td>' +
+        '<td>' + (p == null ? '<span class="meta">—</span>' : '<div class="fn-bar' + (p >= 80 ? " hot" : "") + '"><i style="width:' + p + '%"></i></div><span class="meta">' + fmt(s.usePct) + '%</span>') + '</td></tr>';
+    }).join("") : '<tr><td colspan="8"><div class="empty"><span class="e-ic">🌱</span>لسه مفيش متاجر بتستهلك أو بتدفع الشهر ده</div></td></tr>';
+  }
+  $("fnSort").querySelectorAll("button").forEach(function (b) {
+    b.onclick = function () { fn.sort = b.dataset.s; $("fnSort").querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); }); renderFnStores(); };
+  });
+  $("fnMore").onclick = function () { fn.all = true; renderFnStores(); };
+
+  // the calculator: stores per plan → revenue, Claude, WhatsApp, fixed costs, profit, and what to charge Claude with a month
+  function fnPreset(which) {
+    var d = fn.d, plans = d.plans, cur = plans.reduce(function (a, p) { return a + p.stores; }, 0);
+    $("fnPresets").querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x.dataset.n === which); });
+    var counts;
+    if (which === "now") counts = plans.map(function (p) { return p.stores; });
+    else {
+      var N = +which, w = plans.map(function (p) { return cur > 0 ? p.stores / cur : 1 / plans.length; });
+      counts = w.map(function (x) { return Math.floor(N * x); });
+      var rest = N - counts.reduce(function (a, b) { return a + b; }, 0), order = w.map(function (x, i) { return [N * x - Math.floor(N * x), i]; }).sort(function (a, b) { return b[0] - a[0]; });
+      for (var i = 0; i < rest && order.length; i++) counts[order[i % order.length][1]]++;
+    }
+    // the usage everyone has now (the plans' average, projected to the month's end), else half
+    var used = plans.filter(function (p) { return p.stores && p.usePct != null; }), util = used.length ? used.reduce(function (a, p) { return a + p.usePct * p.stores; }, 0) / used.reduce(function (a, p) { return a + p.stores; }, 0) : 50;
+    util = Math.max(5, Math.min(100, Math.round(util / 5) * 5));
+    var wa = which === "now" ? d.mrr.waStores : cur > 0 ? Math.round(+which * d.mrr.waStores / cur) : 0, trial = which === "now" ? d.trial.live : 0;
+    $("fnInputs").innerHTML = plans.map(function (p, i) {
+      return '<div class="fr"><label for="fnN' + p.id + '">' + esc(p.name) + '<small>' + money(p.price) + ' في الشهر · رصيد ' + usd(p.usdBudget) + ' ≈ ' + fmt(p.msgs) + ' رد</small></label><input type="number" min="0" step="1" id="fnN' + p.id + '" data-plan="' + p.id + '" value="' + counts[i] + '"></div>';
+    }).join("") +
+      '<div class="fr"><label for="fnTrialN">متاجر بتجرّب<small>تجربة مجانية: لحد ' + fmt(d.freeMessages) + ' رد، بتكلّفك من غير ما تدفع</small></label><input type="number" min="0" step="1" id="fnTrialN" value="' + trial + '"></div>' +
+      '<div class="fr"><label for="fnWaN">مشتركين في الواتساب<small>' + money(d.waPrice) + ' في الشهر للرقم</small></label><input type="number" min="0" step="1" id="fnWaN" value="' + wa + '"></div>' +
+      '<div class="util"><label for="fnUtil" style="margin-top:0">كل متجر بيستهلك <b id="fnUtilV">' + fmt(util) + '%</b> من رصيد Claude بتاع باقته</label><input type="range" id="fnUtil" min="5" max="100" step="5" value="' + util + '">' +
+      '<div class="hint">' + (used.length ? "متاجرك دلوقتي بيستهلكوا حوالي " + fmt(util) + "% لو كمّلوا كده لآخر الشهر." : "مفيش استهلاك كفاية لسه، فبدأنا من 50%.") + ' 100% = أسوأ حالة.</div></div>';
+    $("fnInputs").querySelectorAll("input").forEach(function (el) { el.oninput = fnCalc; });
+    fnCalc();
+  }
+  function fnCalc() {
+    var d = fn.d, rate = d.usdRate, st = d.settings, util = +$("fnUtil").value / 100, perMsgUsd = d.msgCost / rate;
+    $("fnUtilV").textContent = fmt(util * 100) + "%";
+    var stores = 0, planRev = 0, expUsd = 0, maxUsd = 0;
+    d.plans.forEach(function (p) {
+      var n = Math.max(0, Math.floor(+$("fnN" + p.id).value || 0));
+      stores += n; planRev += n * p.price; expUsd += n * p.usdBudget * util; maxUsd += n * p.usdBudget;
+    });
+    var trial = Math.max(0, Math.floor(+$("fnTrialN").value || 0)), wa = Math.max(0, Math.floor(+$("fnWaN").value || 0));
+    var trialMsgs = Math.min(d.freeMessages, d.trial.avgMsgs || 150), trialUsd = trial * trialMsgs * perMsgUsd, trialMax = trial * d.freeMessages * perMsgUsd;
+    var waRev = wa * d.waPrice, waCost = wa * st.waCostEgp, fixed = st.fixedEgp, rev = planRev + waRev;
+    expUsd += trialUsd; maxUsd += trialMax;
+    var profit = rev - expUsd * rate - waCost - fixed, worst = rev - maxUsd * rate - waCost - fixed, charge = expUsd * (1 + st.bufferPct / 100);
+    var perStore = stores > 0 ? (planRev - (expUsd - trialUsd) * rate) / stores : 0;
+    var even = fixed > 0 && perStore > 0 ? Math.ceil((fixed + trialUsd * rate) / perStore) : null;
+    $("fnOut").innerHTML =
+      '<div class="r"><span>متاجر مشتركة</span><b>' + fmt(stores) + (trial ? ' <small>+ ' + fmt(trial) + ' بتجرّب</small>' : '') + '</b></div>' +
+      '<div class="r"><span>الإيرادات في الشهر</span><b>' + money(rev) + (waRev ? ' <small>(واتساب ' + money(waRev) + ')</small>' : '') + '</b></div>' +
+      '<div class="r"><span>تكلفة Claude المتوقعة</span><b>' + usd(expUsd) + ' <small>≈ ' + money(expUsd * rate) + '</small></b></div>' +
+      (waCost ? '<div class="r"><span>أرقام الواتساب</span><b>' + money(waCost) + '</b></div>' : '') +
+      (fixed ? '<div class="r"><span>مصاريف ثابتة</span><b>' + money(fixed) + '</b></div>' : '') +
+      '<div class="r big ' + (profit >= 0 ? "good" : "bad") + '"><span>صافي الربح المتوقع</span><b>' + money(profit) + (rev > 0 ? ' <small>(' + fmt(Math.round(profit * 100 / rev)) + '%)</small>' : '') + '</b></div>' +
+      '<div class="r ' + (worst >= 0 ? "" : "bad") + '"><span>أسوأ حالة <small>(كل متجر خلّص رصيده)</small></span><b>' + money(worst) + ' <small>Claude ' + usd(maxUsd, 0) + '</small></b></div>' +
+      '<div class="r big"><span>اشحن Claude كل شهر بحوالي</span><b>' + usd(Math.ceil(charge / 5) * 5, 0) + '</b></div>' +
+      '<div class="r"><span><small>ده المتوقع + ' + fmt(st.bufferPct) + '% احتياطي. وعشان تبقى في أمان حتى في أسوأ حالة: ' + usd(Math.ceil(maxUsd / 5) * 5, 0) + '.</small></span></div>' +
+      (even != null ? '<div class="r"><span>محتاج حوالي <b>' + fmt(even) + '</b> متجر مشترك عشان تغطي مصاريفك الثابتة' + (trial ? ' والتجربة' : '') + '</span></div>' : '');
+  }
+  $("fnPresets").querySelectorAll("button").forEach(function (b) { b.onclick = function () { fnPreset(b.dataset.n); }; });
+
+  $("fnBalSave").onclick = async function () {
+    var b = this, v = $("fnBal").value.trim().replace(/[٠-٩]/g, function (x) { return "٠١٢٣٤٥٦٧٨٩".indexOf(x); }).replace("٫", ".").replace(",", ".");
+    if (v && !(+v >= 0)) { toast("اكتب الرصيد بالدولار، أرقام بس.", true); return; }
+    busy(b, true);
+    try { fn.d = await api("money-settings", { balanceUsd: v }); renderMoney(true); toast(v ? "✅ اتحفظ الرصيد" : "اتمسح الرصيد"); } catch (e) { toast(e.message, true); }
+    busy(b, false);
+  };
+  $("fnSet").onsubmit = async function (e) {
+    e.preventDefault(); setMsg($("fnSetMsg"), ""); busy($("fnSetSave"), true);
+    try {
+      fn.d = await api("money-settings", { waCostEgp: $("fnWaCost").value.trim(), fixedEgp: $("fnFixed").value.trim(), bufferPct: $("fnBuf").value.trim() });
+      renderMoney(false); setMsg($("fnSetMsg"), "اتحفظ ✓", true);
+    } catch (err) { setMsg($("fnSetMsg"), err.message); }
+    busy($("fnSetSave"), false);
+  };
 
   // ---------- stores ----------
   async function loadStores() {
