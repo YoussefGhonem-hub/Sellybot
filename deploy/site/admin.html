@@ -1930,7 +1930,7 @@
     try {
       var s = await api("settings");
       $("sRate").value = s.usdRate; $("sWa").value = s.whatsapp; $("sUs").value = s.unitsSmall; $("sUm").value = s.unitsMedium; $("sUl").value = s.unitsLarge;
-      $("sPay").value = s.paymentInfo || ""; var pd = s.periodDiscounts || {}; $("sD4").value = pd["4"] || 0; $("sD6").value = pd["6"] || 0; $("sD12").value = pd["12"] || 0; $("sOldDay").value = s.oldPriceUntil || ""; $("sOldMonths").value = s.oldPriceMonths != null ? s.oldPriceMonths : 3;
+      $("sPay").value = s.paymentInfo || ""; var pd = s.periodDiscounts || {}; $("sD4").value = pd["4"] || 0; $("sD6").value = pd["6"] || 0; $("sD12").value = pd["12"] || 0; $("sOldDay").value = s.oldPriceUntil || ""; $("sOldMonths").value = s.oldPriceMonths != null ? s.oldPriceMonths : 6;
       $("sFree").textContent = fmt(s.freeMessages) + " رسالة لأول " + fmt(s.freeDays) + " يوم من التسجيل (مرة واحدة)";
       $("sPayNum").value = s.payNumber || ""; showPayQr(s.payQr);
     } catch (e) { toast(e.message, true); }

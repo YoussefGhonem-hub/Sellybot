@@ -45,7 +45,7 @@ namespace RiwaqChat
             // discount % for paying several months at once ("months:percent")
             { "PeriodDiscounts", "4:5,6:10,12:20" },
             // «السعر القديم»: who pays for a plan by the end of this day keeps that price for its first OldPriceMonths months on it ("" = off)
-            { "OldPriceUntil", "2026-11-30" }, { "OldPriceMonths", "3" },
+            { "OldPriceUntil", "2026-12-10" }, { "OldPriceMonths", "6" },
             // the number owners send the money to (shown with InstaPay's QR in the plan request form)
             { "PayNumber", "01229391155" },
             // shown to store owners in the plan request form
@@ -234,7 +234,7 @@ namespace RiwaqChat
         }
 
         // ---------- «السعر القديم»: a store's first months at the price it paid before a cut-off date ----------
-        // Settings: OldPriceUntil (yyyy-MM-dd, the last day; "off" = off) and OldPriceMonths (default 3).
+        // Settings: OldPriceUntil (yyyy-MM-dd, the last day; "off" = off) and OldPriceMonths (default 6; was 3 until the offer moved to 10 Dec).
         // A store that pays for a plan before the end of that day keeps paying that monthly price for its first OldPriceMonths
         // months on the plan (months before the cut-off count too). It still holds if the plan ran out and the store comes back
         // to the same plan before ExpiresAt (its first start + those months). Another plan after the cut-off = that plan's price.
@@ -255,7 +255,21 @@ namespace RiwaqChat
             if (v.Length == 0 || !DateTime.TryParseExact(v, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out d)) return null;
             return DateTime.SpecifyKind(d.Date.AddDays(1), DateTimeKind.Utc);
         }
-        public static int OldPriceMonths(SqlConnection c) { int m; return int.TryParse(Get(c, "OldPriceMonths"), out m) && m >= 0 && m <= 24 ? m : 3; }
+        public static int OldPriceMonths(SqlConnection c) { int m; return int.TryParse(Get(c, "OldPriceMonths"), out m) && m >= 0 && m <= 24 ? m : 6; }
+        // A new number of months also reaches the stores that already have an old price: each one's window becomes its first
+        // old-price month + the new count (like AfterPlanPayment), and a request still waiting keeps the right months left after it
+        // (OldLeft), so approving it counts its months right (AfterPlanPayment: used = months - left after).
+        public static void SetOldPriceMonths(SqlConnection c, int months)
+        {
+            int was = OldPriceMonths(c);
+            Set(c, "OldPriceMonths", months.ToString(CultureInfo.InvariantCulture));
+            if (months == was) return;
+            using (var cmd = Db.Cmd(c, @"
+UPDATE l SET ExpiresAt = DATEADD(DAY, @m * CASE WHEN p.DurationDays > 1 THEN p.DurationDays ELSE 1 END, l.StartsAt), UpdatedAt = SYSUTCDATETIME()
+  FROM dbo.PriceLocks l JOIN dbo.Plans p ON p.Id = l.PlanId;
+UPDATE dbo.PlanRequests SET OldLeft = CASE WHEN ISNULL(OldLeft, 0) + @d > 0 THEN ISNULL(OldLeft, 0) + @d ELSE 0 END
+  WHERE Status = 'pending' AND OldPrice IS NOT NULL;", "@m", months, "@d", months - was)) cmd.ExecuteNonQuery();
+        }
         public static bool BeforeCutoff(SqlConnection c, DateTime whenUtc) { var cut = OldPriceCutoff(c); return cut.HasValue && whenUtc < cut.Value; }
 
         public static PriceLock LockOf(SqlConnection c, int storeId)
@@ -1495,7 +1509,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             if (oldMonths != null)
             {
                 if (oldMonths < 0 || oldMonths > 24) { Web.Error(res, 400, "bad_months", "عدد الشهور بالسعر القديم من 0 لـ 24."); return; }
-                Billing.Set(c, "OldPriceMonths", oldMonths.Value.ToString(CultureInfo.InvariantCulture));
+                Billing.SetOldPriceMonths(c, oldMonths.Value);
             }
             if (b.ContainsKey("paymentInfo"))
             {
