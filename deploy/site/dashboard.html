@@ -984,6 +984,10 @@
   .mt-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
   @media (max-width:860px){.mt-fields{grid-template-columns:minmax(0,1fr)}}
   #mtApp .scope-box code{flex:1;min-width:0}
+  .mt-reel{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(232,119,74,.12),rgba(245,162,93,.06));color:var(--ink);text-decoration:none;transition:border-color .15s}
+  .mt-reel:hover,.mt-reel:focus-visible{border-color:var(--brand);outline:none}
+  .mt-reel b{display:block;font-size:14.5px}.mt-reel small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+  .mt-reel-ic{flex:none;width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:14px;padding-left:3px}
   .mt-plan{list-style:none;counter-reset:mtp;margin:14px 0 0;padding:0;display:grid;gap:10px}
   .mt-plan>li{counter-increment:mtp;position:relative;padding:12px 14px;padding-inline-start:50px;border:1px solid var(--line);border-radius:14px;background:var(--soft);min-width:0}
   .mt-plan>li::before{content:counter(mtp);position:absolute;inset-inline-start:13px;top:11px;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:13.5px;display:grid;place-items:center}
@@ -2451,7 +2455,7 @@
       <div class="why" style="margin:0">
         <b>إزاي بيشتغل؟</b>
         <ul>
-          <li><span>🔐</span><div><b>بتسجيل الدخول بس</b><small>تدوس «اربط» وتدخل بحساب فيسبوك أو إنستجرام وتوافق. مفيش أكواد ولا باسوردات بتتبعتلنا.</small></div></li>
+          <li><span>🔐</span><div><b>بتطبيقك انت، وبالطريقة الرسمية</b><small>بتعمل تطبيق Meta بحسابك مرة واحدة بالخطوات اللي تحت، وبعدها تدوس «اربط» وتوافق. مفيش باسوردات بتتبعتلنا.</small></div></li>
           <li><span>⚡</span><div><b>رد في ثواني</b><small>أي رسالة توصل لصفحتك أو للدايركت، المساعد يرد عليها من داتا متجرك، ويفهم كمان صور المنتجات.</small></div></li>
           <li><span>🙋</span><div><b>لو رديت بنفسك بيسكت</b><small>لما ترد على زبون بنفسك، المساعد يسيبلك المحادثة دي ساعتين.</small></div></li>
           <li><span>📊</span><div><b>من نفس رصيدك</b><small>كل رد بيتحسب رسالة من رصيد باقتك، زي الموقع والواتساب بالظبط.</small></div></li>
@@ -2468,6 +2472,7 @@
       </div>
       <div id="mtAppBody">
         <div class="mt-soon" id="mtAppShared" hidden>متجرك يقدر يربط بتطبيق Sellybot من غير تطبيق خاص بيك. ولو حطيت أرقام تطبيقك هنا، الربط الجاي هيبقى بيه.</div>
+        <a class="mt-reel" href="reels.html#meta" target="_blank" rel="noopener"><span class="mt-reel-ic" aria-hidden="true">▶</span><span><b>اتفرج على الشرح خطوة بخطوة</b><small>فيديو الحلقة 8 في الريلز: نفس الخطوات دي من أولها لحد ما المساعد يرد</small></span></a>
         <!-- the same order as the steps on developers.facebook.com: every link they ask for is here to copy, and each number is saved as soon as that step gives it -->
         <ol class="mt-plan">
           <li id="mtS1"><h4>اعمل التطبيق</h4>
