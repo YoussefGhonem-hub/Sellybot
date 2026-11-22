@@ -2653,7 +2653,7 @@
       </div>
       <p class="hint" id="waRunNote" hidden style="margin:4px 0 14px"></p>
       <div class="pay-box">
-        <div class="pay-amt"><span>المبلغ المطلوب</span><b id="rqAmount">—</b><small id="rqSave"></small><small class="rq-ref" id="rqRef" hidden></small></div>
+        <div class="pay-amt"><span>المبلغ المطلوب</span><b id="rqAmount">—</b><small id="rqSave"></small><small class="rq-ref" id="rqRefOff" hidden></small></div>
         <div class="pay-how"><b>💳 طريقة الدفع</b>
           <!-- where to send the money: the number (copy button) and InstaPay's QR, both set by the super admin -->
           <div class="pay-to" id="rqPayTo" hidden><span>حوّل على الرقم</span><b class="ltr" id="rqPayNum"></b><button type="button" class="btn ghost sm" id="rqPayCopy">📋 نسخ</button></div>
@@ -3814,8 +3814,8 @@
     $("rqPeriods").querySelectorAll(".per").forEach(function (b) { var on = +b.dataset.m === m; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
     var tot = storeTotal(q, rq.plan.id), o = oldPriceOf(rq.plan.id), offer = plansData.oldOffer, lk = mine.priceLock;
     var off = refOff(tot, m), rr = mine.referral;   // «دعوة تاجر»: the earned invite months, one per month
-    $("rqRef").hidden = !off;
-    if (off) $("rqRef").textContent = "🎁 خصم دعوة تاجر " + fmt(rr.pct) + "%: −" + fmt(off) + " ج.م من " + fmt(tot) + " · " +
+    $("rqRefOff").hidden = !off;
+    if (off) $("rqRefOff").textContent = "🎁 خصم دعوة تاجر " + fmt(rr.pct) + "%: −" + fmt(off) + " ج.م من " + fmt(tot) + " · " +
       (Math.min(m, rr.available) === 1 ? "شهر" : monthsAr(Math.min(m, rr.available))) + " من اللي عندك (" + fmt(rr.available) + ")";
     tot -= off;
     $("rqAmount").textContent = fmt(tot) + " ج.م";
