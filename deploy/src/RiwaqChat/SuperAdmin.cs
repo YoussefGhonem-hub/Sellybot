@@ -46,6 +46,8 @@ namespace RiwaqChat
             { "PeriodDiscounts", "4:5,6:10,12:20" },
             // «السعر القديم»: who pays for a plan by the end of this day keeps that price for its first OldPriceMonths months on it ("" = off)
             { "OldPriceUntil", "2026-12-10" }, { "OldPriceMonths", "6" },
+            // «ادعي تاجر» (Referral.cs): each invited store that pays for a plan = one month at this % off for the store that invited it (0 = off)
+            { "ReferralPct", "50" },
             // the number owners send the money to (shown with InstaPay's QR in the plan request form)
             { "PayNumber", "01229391155" },
             // shown to store owners in the plan request form
@@ -274,11 +276,14 @@ UPDATE dbo.PlanRequests SET OldLeft = CASE WHEN ISNULL(OldLeft, 0) + @d > 0 THEN
 
         public static PriceLock LockOf(SqlConnection c, int storeId)
         {
+            // read the setting before the reader opens: when the settings cache is old, Get queries this same connection,
+            // and a second command while a reader is open fails ("already an open DataReader") -> «باقتي» answered 500
+            int months = OldPriceMonths(c);
             using (var cmd = Db.Cmd(c, "SELECT * FROM dbo.PriceLocks WHERE StoreId=@s", "@s", storeId))
             using (var r = cmd.ExecuteReader())
                 if (r.Read())
                     return new PriceLock {
-                        PlanId = (int)r["PlanId"], PlanName = r["PlanName"] as string ?? "", Price = (decimal)r["PriceEgp"], MonthsUsed = (int)r["MonthsUsed"], Months = OldPriceMonths(c),
+                        PlanId = (int)r["PlanId"], PlanName = r["PlanName"] as string ?? "", Price = (decimal)r["PriceEgp"], MonthsUsed = (int)r["MonthsUsed"], Months = months,
                         StartsAt = DateTime.SpecifyKind((DateTime)r["StartsAt"], DateTimeKind.Utc), ExpiresAt = DateTime.SpecifyKind((DateTime)r["ExpiresAt"], DateTimeKind.Utc) };
             return null;
         }
@@ -672,6 +677,8 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                 { "wa", r["WaAddon"] is bool && (bool)r["WaAddon"] }, { "waAmount", r["WaEgp"] == DBNull.Value ? 0m : (decimal)r["WaEgp"] }, { "waPhone", r["WaPhone"] as string ?? "" },
                 // its type when it was sent (new / renew / upgrade / downgrade / wa-new / wa-renew / topup); extra messages: how many, and how we worked them out
                 { "what", r["What"] as string ?? "" }, { "msgs", r["Msgs"] == DBNull.Value ? 0 : (int)r["Msgs"] }, { "calc", r["Calc"] as string ?? "" },
+                // «ادعي تاجر»: how many of its months are at the invite discount, and how much it took off (Referral.cs)
+                { "refMonths", r["RefMonths"] == DBNull.Value ? 0 : (int)r["RefMonths"] }, { "refAmount", r["RefEgp"] == DBNull.Value ? 0m : (decimal)r["RefEgp"] },
                 // «السعر القديم»: the monthly old price this request got (0 = none), and how many months are left at it after this one
                 { "oldPrice", r["OldPrice"] == DBNull.Value ? 0m : (decimal)r["OldPrice"] }, { "oldLeft", r["OldLeft"] == DBNull.Value ? 0 : (int)r["OldLeft"] },
             };
@@ -1057,10 +1064,12 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             // what picking each plan would do for this store (upgrade now / lower plan after the current one / renew / new), and a lower plan already waiting
             var si = Db.StoreById(c, id);
             var changes = si == null ? new List<Dictionary<string, object>>() : Billing.Plans(c, false).Select(p => Billing.ChangeJson(Billing.ChangeFor(c, si, p), p)).ToList();
-            store["next"] = si == null ? null : Billing.StorePlan(si)["next"];
+            // a store with no plan (on trial) has no "next" in StorePlan: indexing it threw and the admin's store page answered 500
+            object nextPlan = null; if (si != null) Billing.StorePlan(si).TryGetValue("next", out nextPlan);
+            store["next"] = nextPlan;
             var lk = si == null ? null : Billing.LockOf(c, si.Id);
             Web.Json(res, 200, new Dictionary<string, object> { { "store", store }, { "subscriptions", subs }, { "usage", months }, { "tickets", tickets }, { "changes", changes },
-                { "priceLock", lk == null ? null : Billing.LockJson(c, lk, Billing.Plan(c, lk.PlanId)) } });
+                { "priceLock", lk == null ? null : Billing.LockJson(c, lk, Billing.Plan(c, lk.PlanId)) }, { "referral", Referral.AdminJson(c, id) } });
         }
 
         static void StoreCreate(SqlConnection c, Dictionary<string, object> b, HttpResponse res)
@@ -1132,7 +1141,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             if (s == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
             if (confirm != s.Slug) { Web.Error(res, 400, "confirm", "اكتب معرّف المتجر بالظبط عشان تأكد الحذف."); return; }
             // data, usage, subscriptions and tickets go with it (ON DELETE CASCADE)
-            using (var cmd = Db.Cmd(c, "DELETE FROM dbo.Stores WHERE Id=@id", "@id", s.Id)) cmd.ExecuteNonQuery();
+            using (var cmd = Db.Cmd(c, "DELETE FROM dbo.Referrals WHERE ReferrerId=@id; DELETE FROM dbo.Stores WHERE Id=@id", "@id", s.Id)) cmd.ExecuteNonQuery();
             Web.Json(res, 200, new { ok = true });
         }
 
@@ -1174,6 +1183,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 var oldUp = Billing.OldFor(c, s, p, 0);
                 var endUp = Billing.Upgrade(c, s, p, ch.Amount, paidUp, Web.Str(b, "method", 40), Web.Str(b, "notes", 500), out subId);
                 Billing.AfterPlanPayment(c, s, p, oldUp, DateTime.UtcNow);
+                Referral.Paid(c, s.Id, paidUp);
                 Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", "upgrade" }, { "startsAt", DateTime.UtcNow.ToString("o") }, { "endsAt", endUp.ToString("o") } });
                 return;
             }
@@ -1185,6 +1195,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             DateTime start;
             var end = Billing.Activate(c, s, p, months, price, paid, Web.Str(b, "method", 40), Web.Str(b, "notes", 500), out subId, out start);
             Billing.AfterPlanPayment(c, s, p, oldM, start);
+            Referral.Paid(c, s.Id, paid);
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", ch.Kind }, { "startsAt", start.ToString("o") }, { "endsAt", end.ToString("o") } });
         }
 
@@ -1223,6 +1234,8 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 var st = Db.StoreById(c, Convert.ToInt32(d["storeId"])); var pl = Billing.Plan(c, Convert.ToInt32(d["planId"]));
                 if (st != null && pl != null) { var ch = Billing.ChangeFor(c, st, pl); d["change"] = ch.Kind; d["changeStarts"] = ch.StartsAt.ToString("o"); d["blocked"] = ch.Blocked; }
             }
+            // «ادعي تاجر»: the stores that subscribed from this store's link and gave this request its discount
+            foreach (var d in list.Where(x => Convert.ToInt32(x["refMonths"]) > 0)) d["refStores"] = Referral.Behind(c, Convert.ToInt32(d["id"]));
             int pending;
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE Status = 'pending'")) pending = (int)cmd.ExecuteScalar();
             // every request: its type (kept from when it was sent; older ones worked out from kind/change), and for a pending one
@@ -1306,6 +1319,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             {
                 if (string.IsNullOrWhiteSpace(adminNote)) { Web.Error(res, 400, "need_reason", "اكتب سبب الرفض عشان يظهر لصاحب المتجر."); return; }
                 using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='rejected', AdminNote=@n, DecidedAt=SYSUTCDATETIME() WHERE Id=@id AND Status='pending'", "@n", adminNote, "@id", id.Value)) cmd.ExecuteNonQuery();
+                Referral.Release(c, id.Value);   // its invite months go back to the store
                 Web.Json(res, 200, new { ok = true });
                 return;
             }
@@ -1352,6 +1366,8 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             var end = kind == "upgrade" ? Billing.Upgrade(c, s, p, price, paid, method, notes, out subId)
                                         : Billing.Activate(c, s, p, months, price, paid, method, notes, out subId, out start);
             Billing.AfterPlanPayment(c, s, p, old, start);   // keep, start or drop the store's old price
+            Referral.Use(c, id.Value);                       // the invite months this request took are used
+            Referral.Paid(c, s.Id, paid);                    // the store that invited this one earns its month (its first paid plan)
             // after the plan (a plan that can't start leaves the service alone): a month from today, or after the running service
             if (waAddon && waEgp > 0) { int waSub; WaAccount.AddService(c, s, p.Id, 1, waEgp, waPaid, method, notes, out waSub); }   // always one month: it renews on its own
             using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
@@ -1457,7 +1473,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 { "payNumber", Billing.Get(c, "PayNumber") ?? "" }, { "payQr", Billing.PayQrVersion(c) },
                 { "periodDiscounts", Billing.PeriodDiscounts(c).Where(kv => kv.Key > 1).ToDictionary(kv => kv.Key.ToString(CultureInfo.InvariantCulture), kv => (object)kv.Value) },
                 // «السعر القديم»: the last day to pay at today's price ("" = off), and for how many first months
-                { "oldPriceUntil", Billing.OldPriceCutoff(c).HasValue ? Billing.Get(c, "OldPriceUntil") : "" }, { "oldPriceMonths", Billing.OldPriceMonths(c) },
+                { "oldPriceUntil", Billing.OldPriceCutoff(c).HasValue ? Billing.Get(c, "OldPriceUntil") : "" }, { "oldPriceMonths", Billing.OldPriceMonths(c) }, { "referralPct", Referral.Pct(c) },
             };
         }
 
@@ -1510,6 +1526,12 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             {
                 if (oldMonths < 0 || oldMonths > 24) { Web.Error(res, 400, "bad_months", "عدد الشهور بالسعر القديم من 0 لـ 24."); return; }
                 Billing.SetOldPriceMonths(c, oldMonths.Value);
+            }
+            var refPct = Web.Int(b, "referralPct");   // «ادعي تاجر»: % off a month for each invited store that pays (0 = off)
+            if (refPct != null)
+            {
+                if (refPct < 0 || refPct > 100) { Web.Error(res, 400, "bad_ref_pct", "خصم الدعوة من 0 لـ 100%."); return; }
+                Billing.Set(c, "ReferralPct", refPct.Value.ToString(CultureInfo.InvariantCulture));
             }
             if (b.ContainsKey("paymentInfo"))
             {
@@ -1636,7 +1658,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 var lk = Billing.LockOf(c, s.Id);
                 var priceLock = lk == null ? null : Billing.LockJson(c, lk, Billing.Plan(c, lk.PlanId));
                 Web.Json(res, 200, new Dictionary<string, object> { { "requests", requests }, { "subscriptions", subs }, { "methods", Methods }, { "topups", topups }, { "changes", changes }, { "topupNeed", topupNeed },
-                    { "priceLock", priceLock }, { "oldOffer", Billing.OldOfferJson(c) } });
+                    { "priceLock", priceLock }, { "oldOffer", Billing.OldOfferJson(c) }, { "referral", Referral.OwnerJson(c, req, s) } });
                 return;
             }
             if (!Web.CsrfOk(req)) { Web.Error(res, 400, "bad_request"); return; }
@@ -1649,6 +1671,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 int n;
                 using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='cancelled', DecidedAt=SYSUTCDATETIME() WHERE Id=@id AND StoreId=@s AND Status='pending'", "@id", id ?? 0, "@s", s.Id)) n = cmd.ExecuteNonQuery();
                 if (n == 0) { Web.Error(res, 404, "not_found", "مالقيناش طلب مستني مراجعة نلغيه."); return; }
+                Referral.Release(c, id.Value);   // its invite months go back
                 Web.Json(res, 200, new { ok = true });
                 return;
             }
@@ -1714,6 +1737,15 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                     q = Billing.QuoteFor(c, p, months, old);
                 }
             }
+            // «ادعي تاجر»: months of a plan (new / renew / lower plan later) use the store's earned invite months, one per month,
+            // at ReferralPct% off those months (not the WhatsApp service added below, not an upgrade's difference)
+            int refK = 0; decimal refEgp = 0;
+            if (kind == "plan")
+            {
+                refK = Math.Min(months, Referral.Available(c, s.Id));
+                refEgp = Referral.Off(q.Total, months, refK, Referral.Pct(c));
+                if (refEgp <= 0) refK = 0; else { q.Discount += refEgp; q.Total -= refEgp; }
+            }
             // the WhatsApp service: asked for with a plan (wa: true) or alone (kind "wa"). Its own monthly price, no period discount,
             // and the number the owner will link, so the admin can get a number ready on Wapilot
             object waAsk; bool wantWa = waOnly || (!topup && b.TryGetValue("wa", out waAsk) && waAsk is bool && (bool)waAsk);
@@ -1748,8 +1780,9 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             int newId;
             try
             {
-                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note, Kind, Units, WaAddon, WaEgp, WaPhone, RefNo, What, Msgs, Calc, OldPrice, OldLeft)
-                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note, @kind, @units, @wa, @waEgp, @waPhone, @refNo, @what, @msgs, @calc, @oldP, @oldL)",
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note, Kind, Units, WaAddon, WaEgp, WaPhone, RefNo, What, Msgs, Calc, OldPrice, OldLeft, RefMonths, RefEgp)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note, @kind, @units, @wa, @waEgp, @waPhone, @refNo, @what, @msgs, @calc, @oldP, @oldL, @refM, @refE)",
+                    "@refM", refK > 0 ? (object)refK : DBNull.Value, "@refE", refK > 0 ? (object)refEgp : DBNull.Value,
                     "@oldP", old != null ? (object)old.Price : DBNull.Value, "@oldL", old != null ? (object)old.LeftAfter : DBNull.Value,
                     "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", q.Price, "@disc", q.Discount, "@amt", q.Total,
                     "@wa", wantWa, "@waEgp", wantWa ? (object)waEgp : DBNull.Value, "@waPhone", (object)waPhone ?? DBNull.Value,
@@ -1759,7 +1792,8 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             }
             // two requests with the same reference at the same moment: the unique index lets only one in
             catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { Web.Error(res, 409, "ref_used", Billing.RefUsedMessage); return; }
-            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "id", newId }, { "amount", q.Total } });
+            if (refK > 0) Referral.Hold(c, s.Id, newId, refK);
+            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "id", newId }, { "amount", q.Total }, { "refMonths", refK }, { "refAmount", refEgp } });
         }
     }
 

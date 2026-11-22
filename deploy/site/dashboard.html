@@ -353,6 +353,19 @@
   .pa[data-act=renew]{--c:#3b82f6}.pa[data-act=upgrade]{--c:#7c5cff}.pa[data-act=topup]{--c:#0ea5a4}.pa[data-act=wa]{--c:#1fae55}.pa[data-act=plans]{--c:var(--brand)}
   /* higher plans, side by side with the current one */
   .up-panel{margin-top:14px;border:2px solid #7c5cff;animation:fadeUp .35s both}
+  /* «ادعي تاجر»: the invite link and how many months at the discount are waiting */
+  .ref-card{margin-top:14px;border:1px solid rgba(232,119,74,.35);background:linear-gradient(135deg,rgba(232,119,74,.10),rgba(245,162,93,.04)),var(--card)}
+  .ref-head{display:flex;gap:12px;align-items:flex-start}.ref-head h3{margin:0}.ref-head .sub{margin:4px 0 0}
+  .ref-ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:var(--brand);color:#fff}
+  .ref-link{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.ref-link input{flex:1 1 220px;min-width:0;margin:0}
+  .ref-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+  .ref-stats div{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--soft);text-align:center}
+  .ref-stats b{display:block;font-size:22px;line-height:1.2}.ref-stats small{display:block;font-size:12px;color:var(--muted)}
+  .ref-stats .hot{border-color:var(--brand)}.ref-stats .hot b{color:var(--brand)}
+  .ref-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+  .ref-list li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:14px}.ref-list small{color:var(--muted)}
+  .pay-amt small.rq-ref{display:block;color:var(--brand);margin-top:2px}
+  @media (max-width:560px){.ref-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .up-head{display:flex;gap:12px;align-items:flex-start}
   .up-head .grow{flex:1;min-width:0}
   .up-head h3{margin:0 0 2px}
@@ -1466,6 +1479,8 @@
 </style>
 <!-- Meta Pixel: quiet here (no page views of the dashboard), only a new account is reported (see pixel.js) -->
 <script src="pixel.js" data-quiet></script>
+<!-- «ادعي تاجر»: dashboard.html?signup=1&ref=<store> counts for that store too (ref.js) -->
+<script src="ref.js"></script>
 </head>
 <body>
 
@@ -2606,6 +2621,8 @@
     <div class="pa-grid" id="mpActs"></div>
     <!-- higher plans with what each one adds and the price difference -->
     <div class="card up-panel" id="upPanel" hidden></div>
+    <!-- «ادعي تاجر»: each store that subscribes from this link = one month at the discount (Referral.cs) -->
+    <div class="card ref-card" id="refCard" hidden></div>
 
     <!-- request a plan -->
     <form class="card req-form" id="reqForm" hidden>
@@ -2636,7 +2653,7 @@
       </div>
       <p class="hint" id="waRunNote" hidden style="margin:4px 0 14px"></p>
       <div class="pay-box">
-        <div class="pay-amt"><span>المبلغ المطلوب</span><b id="rqAmount">—</b><small id="rqSave"></small></div>
+        <div class="pay-amt"><span>المبلغ المطلوب</span><b id="rqAmount">—</b><small id="rqSave"></small><small class="rq-ref" id="rqRef" hidden></small></div>
         <div class="pay-how"><b>💳 طريقة الدفع</b>
           <!-- where to send the money: the number (copy button) and InstaPay's QR, both set by the super admin -->
           <div class="pay-to" id="rqPayTo" hidden><span>حوّل على الرقم</span><b class="ltr" id="rqPayNum"></b><button type="button" class="btn ghost sm" id="rqPayCopy">📋 نسخ</button></div>
@@ -3388,6 +3405,36 @@
     return Math.max(0, Math.round((o.price * k + o.regular * (q.months - k)) * (1 - (q.pct || 0) / 100)));
   }
 
+  // «ادعي تاجر»: what the store's earned invite months take off N months of a plan (the same sum as Referral.Off on the server)
+  function refOff(total, months) {
+    var r = mine.referral; if (!r || !r.pct || !r.available || !months) return 0;
+    var k = Math.min(months, r.available);
+    return Math.round(total * k / months * r.pct / 100);
+  }
+  function renderRef() {
+    var r = mine.referral, el = $("refCard");
+    if (!el) return;
+    if (!r || !r.pct) { el.hidden = true; return; }
+    var pct = fmt(r.pct) + "%";
+    var wa = "https://wa.me/?text=" + encodeURIComponent("جرّب Sellybot: مساعد ذكي بيرد على زباين متجرك 24 ساعة على موقعك والواتساب والمسنجر والإنستجرام. شهر تجربة ببلاش ومن غير كارت:\n" + r.link);
+    var ST = { joined: ["⏳", "سجّل، ولسه ماشتركش"], ready: ["🎁", "اشترك · شهر بخصم " + pct + " مستنيك"], held: ["📨", "اشترك · خصمه في طلبك اللي بيتراجع"], used: ["✅", "اشترك · خصمه اتخصم من تجديدك"] };
+    el.innerHTML = '<div class="ref-head"><span class="ref-ic" aria-hidden="true">🎁</span><div class="grow"><h3>ادعي تاجر واكسب خصم ' + pct + '</h3>' +
+        '<p class="sub">كل تاجر يسجّل من لينكك ويشترك في أي باقة، ليك شهر بخصم ' + pct + '. يعني 10 اشتركوا = 10 شهور بخصم ' + pct + '، شهر ورا شهر.</p></div></div>' +
+      '<div class="ref-link"><input type="text" class="ltr" id="refLink" readonly aria-label="لينك الدعوة بتاعك"><button type="button" class="btn sm" id="refCopy">نسخ اللينك</button>' +
+        '<a class="btn sm wa-btn" target="_blank" rel="noopener" id="refWa">ابعته على واتساب</a></div>' +
+      '<div class="ref-stats"><div><b>' + fmt(r.joined) + '</b><small>سجّلوا من لينكك</small></div><div><b>' + fmt(r.paid) + '</b><small>اشتركوا</small></div>' +
+        '<div class="hot"><b>' + fmt(r.available) + '</b><small>' + (r.available === 1 ? "شهر" : "شهور") + ' بخصم ' + pct + ' مستنياك</small></div><div><b>' + fmt(r.used) + '</b><small>اتخصموا من تجديداتك</small></div></div>' +
+      (r.list && r.list.length ? '<ul class="ref-list">' + r.list.slice(0, 30).map(function (x) {
+        var t = ST[x.state] || ST.joined;
+        return '<li><span aria-hidden="true">' + t[0] + '</span><b>' + esc(x.name) + '</b><small>' + t[1] + ' · ' + dateAr(x.paidAt || x.joinedAt) + '</small></li>';
+      }).join("") + '</ul>' : '') +
+      '<p class="hint" style="margin:12px 0 0">الخصم بيتخصم لوحده لما تبعت طلب اشتراك أو تجديد: شهر بخصم في كل شهر بتدفعه، لحد ما شهورك تخلص. ' +
+        'بيتحسب لما التاجر يدفع أول باقة (مش بالتسجيل بس)، وعلى الباقة بس: مش على الواتساب ولا الرسايل الإضافية.</p>';
+    $("refLink").value = r.link; $("refWa").href = wa;
+    $("refCopy").onclick = function () { copy(r.link); toast("✅ اتنسخ لينك الدعوة"); };
+    el.hidden = false;
+  }
+
   // ---------------- plan requests: owner asks -> super admin approves or rejects ----------------
   var mine = { requests: [], subscriptions: [], methods: [] }, rq = { plan: null, months: 1 };
   var REQ_ST = { pending: ['open', "⏳ بيتراجع"], approved: ['answered', "✅ اتفعّلت"], rejected: ['bad', "✕ اترفض"], cancelled: ['', "اتلغى"] };
@@ -3399,7 +3446,7 @@
   async function loadMine() {
     try { mine = await api("api/plans.ashx?mine=1"); } catch (e) { return; }
     mineReady = true;
-    renderLive(); renderReqList(); renderSubs();
+    renderLive(); renderReqList(); renderSubs(); renderRef();
     if (plansData) renderActs();   // the tiles say "wait for your request" while one is pending
   }
   // a request's type when it was sent: icon, colour, name (the same types the admin sees)
@@ -3442,7 +3489,7 @@
     el.innerHTML = '<div class="rl' + (ok ? " ok" : bad ? " bad" : "") + '">' +
       '<div class="rl-head"><span class="rl-ic" style="--c:' + t[1] + '" aria-hidden="true">' + t[0] + '</span><div class="grow">' +
         '<small class="k">' + (pend ? "طلبك بيتراجع" : "رد الإدارة على طلبك") + ' · ' + t[2] + '</small><b class="t">' + reqTitle(r) + '</b>' +
-        '<div class="hint">بعته ' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م' + (r.method ? ' · ' + esc(r.method) : '') +
+        '<div class="hint">بعته ' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م' + (r.refAmount > 0 ? ' · 🎁 خصم دعوات ' + fmt(r.refAmount) + ' ج.م' : '') + (r.method ? ' · ' + esc(r.method) : '') +
           (r.refNo ? ' · الرقم المرجعي: <b class="ltr">' + esc(r.refNo) + '</b>' : r.ref ? ' · رقم العملية: <span class="ltr">' + esc(r.ref) + '</span>' : '') + '</div></div>' +
         '<span class="st-pill ' + (ok ? "answered" : bad ? "bad" : "open") + '">' + (ok ? (top ? "✅ اتضاف" : "✅ اتفعّل") : bad ? "✕ اترفض" : "⏳ بيتراجع") + '</span></div>' +
       '<ol class="rl-steps">' +
@@ -3496,7 +3543,7 @@
       return sep + '<div class="ti' + (r.status === "cancelled" ? " dim" : "") + '" style="--c:' + t[1] + ';animation-delay:' + (Math.min(i, 8) * 0.04) + 's">' +
         '<div class="ti-h"><span class="ti-ic" aria-hidden="true">' + t[0] + '</span><div class="grow"><small>' + t[2] + '</small><b>' + reqTitle(r) + '</b></div>' +
           '<span class="st-pill ' + st[0] + '">' + (r.kind === "topup" && r.status === "approved" ? "✅ اتضاف" : st[1]) + '</span></div>' +
-        '<div class="meta">' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م' + (r.method ? ' · ' + esc(r.method) : '') +
+        '<div class="meta">' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م' + (r.refAmount > 0 ? ' · 🎁 خصم دعوات ' + fmt(r.refAmount) + ' ج.م' : '') + (r.method ? ' · ' + esc(r.method) : '') +
           (r.refNo ? ' · الرقم المرجعي: <span class="ltr">' + esc(r.refNo) + '</span>' : '') + (r.waPhone ? ' · 📱 <span class="ltr">' + esc(r.waPhone) + '</span>' : '') + '</div>' +
         (r.note ? '<div class="meta">📝 ملاحظتك: ' + esc(r.note) + '</div>' : '') +
         (r.status === "pending" ? '<div class="meta">⏳ الإدارة بتراجع التحويل، والرد هيظهرلك هنا.</div>' : '') +
@@ -3753,7 +3800,7 @@
       if (q.soon) return '<button type="button" class="per locked" disabled aria-disabled="true" title="هيكون متاح قريب"><span class="soon">قريبًا</span>' +
         '<b>' + monthsAr(q.months) + '</b><div class="pp">🔒</div><small>' + (q.pct ? "بخصم " + fmt(q.pct) + "%" : "") + '</small></button>';
       return '<button type="button" class="per" role="radio" data-m="' + q.months + '">' + (q.pct ? '<span class="off">وفّر ' + fmt(q.pct) + '%</span>' : '') +
-        '<b>' + monthsAr(q.months) + '</b><div class="pp">' + fmt(storeTotal(q, rq.plan.id)) + ' <small style="display:inline">ج.م</small></div>' +
+        '<b>' + monthsAr(q.months) + '</b><div class="pp">' + fmt(storeTotal(q, rq.plan.id) - refOff(storeTotal(q, rq.plan.id), q.months)) + ' <small style="display:inline">ج.م</small></div>' +
         '<small>' + (q.months > 1 ? "≈ " + fmt(q.perMonth) + " ج.م في الشهر" : "بتتجدد كل شهر") + '</small></button>';
     }).join("");
     $("rqPeriods").querySelectorAll(".per:not(.locked)").forEach(function (b) { b.onclick = function () { pickPeriod(+b.dataset.m); }; });
@@ -3766,9 +3813,14 @@
     var q = rq.plan.periods.filter(function (x) { return x.months === m; })[0];
     $("rqPeriods").querySelectorAll(".per").forEach(function (b) { var on = +b.dataset.m === m; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
     var tot = storeTotal(q, rq.plan.id), o = oldPriceOf(rq.plan.id), offer = plansData.oldOffer, lk = mine.priceLock;
+    var off = refOff(tot, m), rr = mine.referral;   // «ادعي تاجر»: the earned invite months, one per month
+    $("rqRef").hidden = !off;
+    if (off) $("rqRef").textContent = "🎁 خصم الدعوات " + fmt(rr.pct) + "%: −" + fmt(off) + " ج.م من " + fmt(tot) + " · " +
+      (Math.min(m, rr.available) === 1 ? "شهر" : monthsAr(Math.min(m, rr.available))) + " من اللي عندك (" + fmt(rr.available) + ")";
+    tot -= off;
     $("rqAmount").textContent = fmt(tot) + " ج.م";
     $("rqSave").textContent = o ? "🔒 بسعرك القديم: " + fmt(o.price) + " ج.م بدل " + fmt(o.regular) + ". فاضلك بعد الطلب ده " + monthsAr(Math.max(0, o.left - Math.min(m, o.left))) + " بالسعر ده."
-      : offer && !(lk && lk.planId === rq.plan.id && lk.left <= 0) ? "🔒 هتجدد بنفس السعر ده أول " + monthsAr(offer.months) + " في الباقة، حتى بعد ما العرض يخلص."
+      : offer && !(lk && lk.planId === rq.plan.id && lk.left <= 0) ? "🔒 هتجدد " + (off ? "بسعر الباقة ده (" + fmt((tot + off) / m) + " ج.م في الشهر)" : "بنفس السعر ده") + " أول " + monthsAr(offer.months) + " في الباقة، حتى بعد ما العرض يخلص."
       : q.save > 0 ? "وفّرت " + fmt(q.save) + " ج.م" : "";
     q = { total: tot };
     if (rq.change && rq.change.kind === "downgrade") explainDowngrade(rq.change, m, q.total); else $("rqExplain").hidden = true;

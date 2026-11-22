@@ -720,6 +720,22 @@ IF OBJECT_ID('dbo.PriceLocks') IS NULL
     StartsAt DATETIME2 NOT NULL, ExpiresAt DATETIME2 NOT NULL,   -- the first old-price month, and the last moment to come back to it
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
 IF COL_LENGTH('dbo.PlanRequests', 'OldPrice') IS NULL ALTER TABLE dbo.PlanRequests ADD OldPrice DECIMAL(12,2) NULL, OldLeft INT NULL;
+-- «ادعي تاجر» (Referral.cs, 2026-11-22): one row per store that signed up from another store's invite link. PaidAt = its first paid
+-- plan, which earns the inviter one month at ReferralPct% off; RequestId = the inviter's plan request holding (pending) or using
+-- (approved, UsedAt) that month. No foreign key on ReferrerId (a second cascade path to Stores); deleting a store clears its rows.
+IF OBJECT_ID('dbo.Referrals') IS NULL
+BEGIN
+  CREATE TABLE dbo.Referrals(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ReferrerId INT NOT NULL,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    PaidAt DATETIME2 NULL, RequestId INT NULL, UsedAt DATETIME2 NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE UNIQUE INDEX UX_Referrals_Store ON dbo.Referrals(StoreId);
+  CREATE INDEX IX_Referrals_Referrer ON dbo.Referrals(ReferrerId, PaidAt);
+END
+-- a plan request's invite discount: how many of its months are at ReferralPct% off, and how much that took off
+IF COL_LENGTH('dbo.PlanRequests', 'RefMonths') IS NULL ALTER TABLE dbo.PlanRequests ADD RefMonths INT NULL, RefEgp DECIMAL(12,2) NULL;
 -- ---- Messenger and Instagram (Meta.cs, 2026-11-19) ----
 -- MetaLinks: one Facebook Page (fb) and one Instagram professional account (ig) per store. AccountId = the Page ID /
 -- the Instagram account ID (entry.id in the webhooks); Token = the Page access token / the business's system-user token,
