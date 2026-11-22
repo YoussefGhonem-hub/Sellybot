@@ -3422,6 +3422,7 @@
         '<p class="sub">كل تاجر يسجّل من لينكك ويشترك في أي باقة، ليك شهر بخصم ' + pct + '. يعني 10 اشتركوا = 10 شهور بخصم ' + pct + '، شهر ورا شهر.</p></div></div>' +
       '<div class="ref-link"><input type="text" class="ltr" id="refLink" readonly aria-label="لينك الدعوة بتاعك"><button type="button" class="btn sm" id="refCopy">نسخ اللينك</button>' +
         '<a class="btn sm wa-btn" target="_blank" rel="noopener" id="refWa">ابعته على واتساب</a></div>' +
+      '<a class="mt-reel" href="reels.html#invite" target="_blank" rel="noopener"><span class="mt-reel-ic" aria-hidden="true">▶</span><span><b>اتفرج على الشرح خطوة بخطوة</b><small>فيديو الحلقة 9 في الريلز: إزاي تبعت لينكك والخصم بيتخصم إزاي</small></span></a>' +
       '<div class="ref-stats"><div><b>' + fmt(r.joined) + '</b><small>سجّلوا من لينكك</small></div><div><b>' + fmt(r.paid) + '</b><small>اشتركوا</small></div>' +
         '<div class="hot"><b>' + fmt(r.available) + '</b><small>' + (r.available === 1 ? "شهر" : "شهور") + ' بخصم ' + pct + ' مستنياك</small></div><div><b>' + fmt(r.used) + '</b><small>اتخصموا من تجديداتك</small></div></div>' +
       (r.list && r.list.length ? '<ul class="ref-list">' + r.list.slice(0, 30).map(function (x) {
