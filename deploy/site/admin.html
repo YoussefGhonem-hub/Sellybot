@@ -741,7 +741,7 @@
               <div class="hint" style="align-self:end;margin:0 0 10px">اللي يدفع لباقة لحد آخر اليوم ده بيجدد بنفس السعر لحد ما يكمّل أول الشهور دي فيها. فاضي أو 0 = مقفول.</div>
             </div>
             <div class="cols3">
-              <div><label for="sRefPct">🎁 خصم الدعوة %</label><input type="number" id="sRefPct" class="ltr" min="0" max="100" step="1"></div>
+              <div><label for="sRefPct">🎁 دعوة تاجر: الخصم %</label><input type="number" id="sRefPct" class="ltr" min="0" max="100" step="1"></div>
               <div class="hint" style="align-self:end;margin:0 0 10px;grid-column:span 2">كل تاجر يسجّل من لينك تاجر تاني ويدفع أول باقة = شهر بالخصم ده للي دعاه، شهر في كل تجديد. 0 = مقفول.</div>
             </div>
             <div class="calc"><div class="r"><span>1 دولار في Claude</span><b>10,000,000 وحدة</b></div><div class="r"><span>باقة التجربة المجانية (للمتاجر الجديدة)</span><b id="sFree">—</b></div></div>
@@ -1096,9 +1096,9 @@
     else if (r.kind === "topup") h += ln("➕ " + (r.msgs ? fmt(r.msgs) + " رسالة" : fmt(r.units / 1e6, 1) + " مليون وحدة"), money(r.amount));
     else {
       h += ln("💎 " + esc(r.plan) + (r.kind === "upgrade" ? " · فرق السعر" : " · " + monthsAr(r.months)), money(r.price - r.waAmount));
-      var other = r.discount - (r.refAmount || 0);   // «ادعي تاجر»: the invite discount is shown on its own line
+      var other = r.discount - (r.refAmount || 0);   // «دعوة تاجر»: the invite discount is shown on its own line
       if (other > 0) h += ln("🏷️ خصم", "− " + money(other), "off");
-      if (r.refAmount > 0) h += ln("🎁 خصم الدعوات · " + monthsAr(r.refMonths), "− " + money(r.refAmount), "off");
+      if (r.refAmount > 0) h += ln("🎁 خصم دعوة تاجر · " + monthsAr(r.refMonths), "− " + money(r.refAmount), "off");
       if (r.wa) h += ln("📱 باقة الواتساب · شهر", money(r.waAmount));
     }
     return '<div class="rq-box rq-bill"><h5>🧾 الفاتورة</h5>' + h + ln("الإجمالي", money(r.amount), "tot") + '</div>';
@@ -1152,7 +1152,7 @@
         (r.calc ? '<div class="rq-calc">📊 <b>حسبناها له إزاي:</b> ' + esc(r.calc) + '</div>' : '') +
         (r.oldPrice > 0 ? '<div class="rq-calc rq-old">🔒 <b>مشترك بالسعر القديم:</b> ' + money(r.oldPrice) + ' في الشهر · ' +
           (r.oldLeft > 0 ? 'فاضله بعد الطلب ده <b>' + (r.oldLeft === 1 ? 'شهر واحد' : r.oldLeft === 2 ? 'شهرين' : fmt(r.oldLeft) + ' شهور') + '</b> بالسعر ده' : '<b>ده آخر شهر بالسعر القديم</b>، وبعده سعر الباقة العادي') + '</div>' : '') +
-        (r.refMonths > 0 ? '<div class="rq-calc rq-refd">🎁 <b>عليه خصم دعوات:</b> −' + money(r.refAmount) + ' على ' + (r.refMonths === 1 ? 'شهر' : monthsAr(r.refMonths)) +
+        (r.refMonths > 0 ? '<div class="rq-calc rq-refd">🎁 <b>عليه خصم «دعوة تاجر»:</b> −' + money(r.refAmount) + ' على ' + (r.refMonths === 1 ? 'شهر' : monthsAr(r.refMonths)) +
           '، والإجمالي اللي فوق بعد الخصم. ' + (r.refStores && r.refStores.length ? 'بسبب ' + (r.refStores.length === 1 ? 'تاجر اشترك' : 'تجار اشتركوا') + ' فعلًا من لينك الدعوة بتاعه: ' +
           r.refStores.map(function (x) { return '<b>' + esc(x.name) + '</b> <span class="slug ltr">' + esc(x.slug) + '</span> (دفع ' + date(x.paidAt) + ')'; }).join('، ') : '') + '</div>' : '') +
         (pend ? rqNow(r) : '') +

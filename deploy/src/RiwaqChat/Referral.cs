@@ -6,7 +6,7 @@ using System.Web;
 
 namespace RiwaqChat
 {
-    // «ادعي تاجر» (2026-11-22, the user's rule): every store has an invite link (start.html?ref=<its slug>). Each store that signs up
+    // «دعوة تاجر» (2026-11-22, the user's rule): every store has an invite link (start.html?ref=<its slug>). Each store that signs up
     // from it and pays for a plan gives the inviter ONE month at ReferralPct% off (default 50). The months are used one by one:
     // 10 paying stores = 10 months at half price, never two in the same month (a plan request of N months uses up to N of them).
     // The discount is on the plan's months only: not the WhatsApp service, not extra messages, not an upgrade's price difference.

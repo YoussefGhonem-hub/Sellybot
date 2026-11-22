@@ -720,7 +720,7 @@ IF OBJECT_ID('dbo.PriceLocks') IS NULL
     StartsAt DATETIME2 NOT NULL, ExpiresAt DATETIME2 NOT NULL,   -- the first old-price month, and the last moment to come back to it
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
 IF COL_LENGTH('dbo.PlanRequests', 'OldPrice') IS NULL ALTER TABLE dbo.PlanRequests ADD OldPrice DECIMAL(12,2) NULL, OldLeft INT NULL;
--- «ادعي تاجر» (Referral.cs, 2026-11-22): one row per store that signed up from another store's invite link. PaidAt = its first paid
+-- «دعوة تاجر» (Referral.cs, 2026-11-22): one row per store that signed up from another store's invite link. PaidAt = its first paid
 -- plan, which earns the inviter one month at ReferralPct% off; RequestId = the inviter's plan request holding (pending) or using
 -- (approved, UsedAt) that month. No foreign key on ReferrerId (a second cascade path to Stores); deleting a store clears its rows.
 IF OBJECT_ID('dbo.Referrals') IS NULL

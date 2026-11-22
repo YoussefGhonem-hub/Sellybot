@@ -46,7 +46,7 @@ namespace RiwaqChat
             { "PeriodDiscounts", "4:5,6:10,12:20" },
             // «السعر القديم»: who pays for a plan by the end of this day keeps that price for its first OldPriceMonths months on it ("" = off)
             { "OldPriceUntil", "2026-12-10" }, { "OldPriceMonths", "6" },
-            // «ادعي تاجر» (Referral.cs): each invited store that pays for a plan = one month at this % off for the store that invited it (0 = off)
+            // «دعوة تاجر» (Referral.cs): each invited store that pays for a plan = one month at this % off for the store that invited it (0 = off)
             { "ReferralPct", "50" },
             // the number owners send the money to (shown with InstaPay's QR in the plan request form)
             { "PayNumber", "01229391155" },
@@ -677,7 +677,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                 { "wa", r["WaAddon"] is bool && (bool)r["WaAddon"] }, { "waAmount", r["WaEgp"] == DBNull.Value ? 0m : (decimal)r["WaEgp"] }, { "waPhone", r["WaPhone"] as string ?? "" },
                 // its type when it was sent (new / renew / upgrade / downgrade / wa-new / wa-renew / topup); extra messages: how many, and how we worked them out
                 { "what", r["What"] as string ?? "" }, { "msgs", r["Msgs"] == DBNull.Value ? 0 : (int)r["Msgs"] }, { "calc", r["Calc"] as string ?? "" },
-                // «ادعي تاجر»: how many of its months are at the invite discount, and how much it took off (Referral.cs)
+                // «دعوة تاجر»: how many of its months are at the invite discount, and how much it took off (Referral.cs)
                 { "refMonths", r["RefMonths"] == DBNull.Value ? 0 : (int)r["RefMonths"] }, { "refAmount", r["RefEgp"] == DBNull.Value ? 0m : (decimal)r["RefEgp"] },
                 // «السعر القديم»: the monthly old price this request got (0 = none), and how many months are left at it after this one
                 { "oldPrice", r["OldPrice"] == DBNull.Value ? 0m : (decimal)r["OldPrice"] }, { "oldLeft", r["OldLeft"] == DBNull.Value ? 0 : (int)r["OldLeft"] },
@@ -1234,7 +1234,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 var st = Db.StoreById(c, Convert.ToInt32(d["storeId"])); var pl = Billing.Plan(c, Convert.ToInt32(d["planId"]));
                 if (st != null && pl != null) { var ch = Billing.ChangeFor(c, st, pl); d["change"] = ch.Kind; d["changeStarts"] = ch.StartsAt.ToString("o"); d["blocked"] = ch.Blocked; }
             }
-            // «ادعي تاجر»: the stores that subscribed from this store's link and gave this request its discount
+            // «دعوة تاجر»: the stores that subscribed from this store's link and gave this request its discount
             foreach (var d in list.Where(x => Convert.ToInt32(x["refMonths"]) > 0)) d["refStores"] = Referral.Behind(c, Convert.ToInt32(d["id"]));
             int pending;
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE Status = 'pending'")) pending = (int)cmd.ExecuteScalar();
@@ -1527,7 +1527,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 if (oldMonths < 0 || oldMonths > 24) { Web.Error(res, 400, "bad_months", "عدد الشهور بالسعر القديم من 0 لـ 24."); return; }
                 Billing.SetOldPriceMonths(c, oldMonths.Value);
             }
-            var refPct = Web.Int(b, "referralPct");   // «ادعي تاجر»: % off a month for each invited store that pays (0 = off)
+            var refPct = Web.Int(b, "referralPct");   // «دعوة تاجر»: % off a month for each invited store that pays (0 = off)
             if (refPct != null)
             {
                 if (refPct < 0 || refPct > 100) { Web.Error(res, 400, "bad_ref_pct", "خصم الدعوة من 0 لـ 100%."); return; }
@@ -1737,7 +1737,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                     q = Billing.QuoteFor(c, p, months, old);
                 }
             }
-            // «ادعي تاجر»: months of a plan (new / renew / lower plan later) use the store's earned invite months, one per month,
+            // «دعوة تاجر»: months of a plan (new / renew / lower plan later) use the store's earned invite months, one per month,
             // at ReferralPct% off those months (not the WhatsApp service added below, not an upgrade's difference)
             int refK = 0; decimal refEgp = 0;
             if (kind == "plan")

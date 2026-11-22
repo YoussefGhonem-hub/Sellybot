@@ -163,7 +163,7 @@ namespace RiwaqChat
                             "@welcome", "أهلاً بيك في **" + name + "**! 👋\nعندك أي سؤال؟ اسألني وأنا أساعدك على طول."))
                             id = (int)cmd.ExecuteScalar();
                         if (slug == Web.Setting("LegacyStore", "riwaq")) ImportLegacy(c, id);
-                        Referral.Join(c, ctx, id, email, phone);   // «ادعي تاجر»: the store whose invite link brought this one
+                        Referral.Join(c, ctx, id, email, phone);   // «دعوة تاجر»: the store whose invite link brought this one
                         Web.SignIn(ctx, id);
                         Web.Json(res, 200, Me.Describe(c, Db.StoreById(c, id)));
                         return;
