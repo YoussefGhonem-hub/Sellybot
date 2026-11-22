@@ -328,6 +328,7 @@
   .rq-now{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
   .rq-old{--rc:#16a34a}
   .rq-refd{--rc:#e8774a}
+  .rq-inv{--rc:#7c5cff}
   .rq-calc{margin-top:10px;padding:10px 12px;border-radius:14px;font-size:13px;line-height:1.7;border:1px dashed color-mix(in srgb,var(--rc) 45%,var(--line));background:color-mix(in srgb,var(--rc) 6%,var(--card))}
   .rq-calc .big{font-size:20px;font-weight:800;color:var(--rc)}
   .rq-act{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:120px}
@@ -1139,6 +1140,7 @@
     c.push(n.trial ? '<span class="pill">🎁 تجربة مجانية</span>' : n.plan ? '<span class="pill ' + (n.planExpired ? "err" : "") + '">💎 ' + esc(n.plan) + (n.planExpired ? " · خلصت " : " · لحد ") + date(n.planEnds) + '</span>' : '<span class="pill">من غير باقة</span>');
     c.push(n.waOn ? '<span class="pill ok">📱 واتساب لحد ' + date(n.waUntil) + '</span>' : n.waUntil ? '<span class="pill err">📱 الواتساب خلص ' + date(n.waUntil) + '</span>' : '<span class="pill">📱 مش مشترك في الواتساب</span>');
     c.push('<span class="pill ' + (n.usagePct >= 100 ? "err" : n.usagePct >= 80 ? "warn" : "") + '">📊 استهلاك الشهر ' + fmt(n.usagePct) + '% · ' + fmt(n.messages) + ' رسالة</span>');
+    c.push(r.invitedBy ? '<span class="pill brand">🤝 سجّل من دعوة ' + esc(r.invitedBy.name) + '</span>' : '<span class="pill">🤝 مش من «دعوة تاجر»</span>');
     return '<div class="rq-now"><span class="hint" style="margin:0;align-self:center">دلوقتي:</span>' + c.join("") + '</div>';
   }
   function rqCard(r, i) {
@@ -1155,6 +1157,11 @@
         (r.refMonths > 0 ? '<div class="rq-calc rq-refd">🎁 <b>عليه خصم «دعوة تاجر»:</b> −' + money(r.refAmount) + ' على ' + (r.refMonths === 1 ? 'شهر' : monthsAr(r.refMonths)) +
           '، والإجمالي اللي فوق بعد الخصم. ' + (r.refStores && r.refStores.length ? 'بسبب ' + (r.refStores.length === 1 ? 'تاجر اشترك' : 'تجار اشتركوا') + ' فعلًا من لينك الدعوة بتاعه: ' +
           r.refStores.map(function (x) { return '<b>' + esc(x.name) + '</b> <span class="slug ltr">' + esc(x.slug) + '</span> (دفع ' + date(x.paidAt) + ')'; }).join('، ') : '') + '</div>' : '') +
+        // «دعوة تاجر»: this store signed up from another store's link; approving its first paid plan gives that store its month
+        (r.invitedBy ? '<div class="rq-calc rq-inv">🤝 <b>المتجر ده سجّل من «دعوة تاجر»:</b> دعاه <b>' + esc(r.invitedBy.name) + '</b> <span class="slug ltr">' + esc(r.invitedBy.slug) + '</span>' +
+          (r.invitedBy.paidAt ? '. ودفع أول باقة يوم ' + date(r.invitedBy.paidAt) + '، فاللي دعاه خد شهر الخصم بتاعه خلاص.'
+            : pend && (r.kind === "plan" || r.kind === "upgrade") ? '. <b>لو وافقت</b> على الطلب ده بمبلغ مدفوع، دي أول باقة ليه، فـ ' + esc(r.invitedBy.name) + ' هياخد شهر بخصم ' + fmt(r.invitedBy.pct) + '% يتخصم في تجديده الجاي.'
+            : '. لسه مدفعش أول باقة، فاللي دعاه لسه ماخدش خصم.') + '</div>' : '') +
         (pend ? rqNow(r) : '') +
         (r.blocked && pend ? '<p class="msg err" style="display:block">' + esc(r.blocked) + '</p>' : '') +
         (r.adminNote ? '<div class="rq-note">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظتك: ") + esc(r.adminNote) + (r.decidedAt ? " · " + date(r.decidedAt) : "") + '</div>' : '') +

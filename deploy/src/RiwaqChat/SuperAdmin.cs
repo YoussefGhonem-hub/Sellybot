@@ -1236,6 +1236,9 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             }
             // «دعوة تاجر»: the stores that subscribed from this store's link and gave this request its discount
             foreach (var d in list.Where(x => Convert.ToInt32(x["refMonths"]) > 0)) d["refStores"] = Referral.Behind(c, Convert.ToInt32(d["id"]));
+            // ...and whether the requesting store itself signed up from another store's invite link (null = it didn't)
+            var invitedBy = Referral.InvitedBy(c, list.Select(x => Convert.ToInt32(x["storeId"])));
+            foreach (var d in list) { Dictionary<string, object> v; d["invitedBy"] = invitedBy.TryGetValue(Convert.ToInt32(d["storeId"]), out v) ? v : null; }
             int pending;
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE Status = 'pending'")) pending = (int)cmd.ExecuteScalar();
             // every request: its type (kept from when it was sent; older ones worked out from kind/change), and for a pending one

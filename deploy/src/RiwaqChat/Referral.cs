@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Linq;
 using System.Web;
 
 namespace RiwaqChat
@@ -85,6 +86,21 @@ namespace RiwaqChat
             using (var r = cmd.ExecuteReader())
                 while (r.Read()) list.Add(new Dictionary<string, object> { { "name", r["Name"] }, { "slug", r["Slug"] }, { "paidAt", Billing.Iso(r["PaidAt"]) } });
             return list;
+        }
+
+        // For the admin's request cards: who invited each of these stores (by the invited store's id), and when that store's first
+        // paid plan earned the inviter its month (empty = not yet: approving its first paid plan will)
+        public static Dictionary<int, Dictionary<string, object>> InvitedBy(SqlConnection c, IEnumerable<int> storeIds)
+        {
+            var map = new Dictionary<int, Dictionary<string, object>>();
+            var ids = string.Join(",", storeIds.Distinct().Select(i => i.ToString(CultureInfo.InvariantCulture)));
+            if (ids.Length == 0) return map;
+            int pct = Pct(c);
+            using (var cmd = Db.Cmd(c, "SELECT f.StoreId, s.Name, s.Slug, f.PaidAt FROM dbo.Referrals f JOIN dbo.Stores s ON s.Id = f.ReferrerId WHERE f.StoreId IN (" + ids + ")"))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read())
+                    map[(int)r["StoreId"]] = new Dictionary<string, object> { { "name", r["Name"] }, { "slug", r["Slug"] }, { "paidAt", Billing.Iso(r["PaidAt"]) }, { "pct", pct } };
+            return map;
         }
 
         // Every store this one invited, newest first: signed up / paid / its month held or used
