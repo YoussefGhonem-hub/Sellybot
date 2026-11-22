@@ -99,5 +99,8 @@ if (Test-Path $removed) {
     elseif ($inCI) { Write-Host "::warning::Could not remove $p from the server (msdeploy exit $LASTEXITCODE)." }
     else { Say "!!  could not remove $p from the server (msdeploy exit $LASTEXITCODE)" Yellow }
   }
+  # msdeploy's exit code for a file that was already gone stayed in $LASTEXITCODE, and the script ended with it:
+  # the deploy was live but the run showed as failed. A file we couldn't remove is a warning above, not a failed deploy.
+  $global:LASTEXITCODE = 0
 }
 Say "DONE. The site is live on $($cfg.WEBDEPLOY_SITE)." Green
