@@ -23,7 +23,8 @@ namespace RiwaqChat
             int p; return int.TryParse(Billing.Get(c, "ReferralPct"), out p) && p >= 0 && p <= 100 ? p : 50;
         }
 
-        public static string Link(HttpRequest req, StoreInfo s) { return WaAccount.Origin(req) + "/start.html?ref=" + s.Slug; }
+        public static string Link(HttpRequest req, StoreInfo s) { return Link(WaAccount.Origin(req), s); }
+        public static string Link(string origin, StoreInfo s) { return origin + "/start.html?ref=" + s.Slug; }
 
         // At sign-up: the store whose link brought this one (cookie sb_ref). Not itself, not Sellybot's own store, and not a store with
         // the same email or WhatsApp number. The cookie is cleared, so a second account from the same browser doesn't count again.
@@ -134,11 +135,13 @@ namespace RiwaqChat
         }
 
         // For «باقتي»: the link, the rule, and how it's going
-        public static Dictionary<string, object> OwnerJson(SqlConnection c, HttpRequest req, StoreInfo s)
+        public static Dictionary<string, object> OwnerJson(SqlConnection c, HttpRequest req, StoreInfo s) { return OwnerJson(c, WaAccount.Origin(req), s); }
+        // (also for Sellybot's own chat: my_account, where there's no request to take the address from)
+        public static Dictionary<string, object> OwnerJson(SqlConnection c, string origin, StoreInfo s)
         {
             var list = Invited(c, s.Id, false);
             var d = Counts(list);
-            d["link"] = Link(req, s); d["pct"] = Pct(c); d["list"] = list;
+            d["link"] = Link(origin, s); d["pct"] = Pct(c); d["list"] = list;
             return d;
         }
 

@@ -62,7 +62,7 @@ namespace RiwaqChat
                          "أو يشترك في الواتساب، أو عنده مشكلة في حسابه ومحتاج الدعم، افتحله الفورم المناسب على طول بدل ما تبعتله لينك (اللينك لو هو طلبه بس). " +
                          "الفورم هو اللي بيسأله الأسئلة واحدة واحدة: انت ماتسألش أسئلته بنفسك، وماتطلبش باسورد أو رقم تحويل في الشات أبدًا. " +
                          "لما تفتح فورم، ردك سطر واحد قصير يمهّد له (مثلًا «تمام، هسألك كام سؤال سريع 👇»)." +
-                         (myName != null ? "\n- الزائر ده مسجّل دخول على Sellybot بحساب متجر «" + myName + "». لو سأل عن حسابه (باقته، رسايله، طلباته، الواتساب) استخدم أداة " + AccountToolName + "."
+                         (myName != null ? "\n- الزائر ده مسجّل دخول على Sellybot بحساب متجر «" + myName + "». لو سأل عن حسابه (باقته، رسايله، طلباته، الواتساب، لينك «دعوة تاجر» بتاعه وشهور الخصم، سعره القديم) استخدم أداة " + AccountToolName + "."
                                          : "\n- الزائر ده مش مسجّل دخول على Sellybot في المتصفح ده. لو سأل عن حسابه، اعرض عليه يسجّل دخول من الشات."),
             });
             if (myId.HasValue)
@@ -71,7 +71,7 @@ namespace RiwaqChat
                     Def = new Tool
                     {
                         Name = AccountToolName,
-                        Description = "بيجيب بيانات حساب الزائر نفسه على Sellybot: باقته وميعاد انتهائها أو التجربة، الرسايل اللي فاضلة الشهر ده، خدمة الواتساب، وآخر طلباته وردود الإدارة.",
+                        Description = "بيجيب بيانات حساب الزائر نفسه على Sellybot: باقته وميعاد انتهائها أو التجربة، الرسايل اللي فاضلة الشهر ده، خدمة الواتساب، وآخر طلباته وردود الإدارة، ولينك «دعوة تاجر» بتاعه (مين سجّل واشترك منه، وكام شهر بخصم مستنيه)، وسعره القديم وفاضله كام شهر بيه.",
                         InputSchema = new InputSchema { Properties = new Dictionary<string, JsonElement>(), Required = new List<string>() },
                     },
                     Run = tu => Task.FromResult(Account(myId.Value)),
@@ -103,6 +103,8 @@ namespace RiwaqChat
                     var s = Db.StoreById(c, storeId);
                     if (s == null) return "الحساب ده مش موجود. اعرض على الزائر يسجّل دخول تاني.";
                     var d = Me.Describe(c, s);
+                    var lk = Billing.LockOf(c, s.Id);
+                    var oldPrice = lk == null ? null : Billing.LockJson(c, lk, Billing.Plan(c, lk.PlanId));
                     var requests = new List<Dictionary<string, object>>();
                     using (var cmd = Db.Cmd(c, "SELECT TOP 3 * FROM dbo.PlanRequests WHERE StoreId=@s ORDER BY Id DESC", "@s", s.Id))
                     using (var r = cmd.ExecuteReader()) while (r.Read()) requests.Add(Billing.RequestJson(r));
@@ -112,6 +114,11 @@ namespace RiwaqChat
                         { "plan", d["plan"] }, { "usageThisMonth", d["usage"] }, { "whatsappService", d.ContainsKey("waService") ? d["waService"] : null },
                         { "shopifyLinked", PlanGate.ShopifyLinked(s) }, { "easyordersLinked", EasyOrders.Connected(s) },
                         { "pendingRequest", d.ContainsKey("pendingRequest") ? d["pendingRequest"] : "" }, { "latestRequests", requests },
+                        // «دعوة تاجر»: his link, who signed up / subscribed from it, and the months at the discount waiting for his renewals
+                        // (state: joined = signed up only, ready = subscribed and its month is waiting, held = in his pending request, used = taken off a renewal)
+                        { "inviteMerchant", Referral.OwnerJson(c, "https://sellybot.online", s) },
+                        // «السعر القديم»: the price he keeps and how many months are left at it (null = none)
+                        { "oldPrice", oldPrice },
                     };
                     return "بيانات حساب الزائر نفسه (قولها له ببساطة ومن غير أرقام داخلية زي id؛ التواريخ UTC):\n" + JsonSerializer.Serialize(info, Json);
                 }
