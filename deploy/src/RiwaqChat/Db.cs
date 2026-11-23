@@ -795,6 +795,15 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='UX_MetaApps_Checked' AND ob
   CREATE UNIQUE INDEX UX_MetaApps_Checked ON dbo.MetaApps(AppId) WHERE AppId IS NOT NULL AND Secret IS NOT NULL;
 -- the app a link's token came from (NULL = Sellybot's, links made before 2026-11-20)
 IF COL_LENGTH('dbo.MetaLinks', 'AppId') IS NULL ALTER TABLE dbo.MetaLinks ADD AppId NVARCHAR(40) NULL;
+-- «ضيفنا على صفحتك» (2026-11-23): the owner adds Sellybot's Facebook account to their Page (messages only) and asks here;
+-- the super admin links that Page through Sellybot's app. One row per store, its latest ask.
+-- Status: pending (waiting for the admin) | problem (Note says what the owner should fix, then they send again) | done.
+IF OBJECT_ID('dbo.MetaRequests') IS NULL
+  CREATE TABLE dbo.MetaRequests(
+    StoreId INT NOT NULL PRIMARY KEY REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    PageUrl NVARCHAR(300) NOT NULL, IgUser NVARCHAR(60) NULL,
+    Status NVARCHAR(12) NOT NULL DEFAULT 'pending', Note NVARCHAR(400) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
 -- ---------- «الاقتصادية» (2026-11-23, the user): the first plan. WhatsApp in its price (no separate monthly service while it runs),
 -- Messenger, Instagram, the chat link and the store's own site; 3000 messages a month for a small store (11,100,000 units = $1.11);
 -- 850 EGP a month with no discount of any kind (its own offer, longer periods, «السعر القديم», «دعوة تاجر»).

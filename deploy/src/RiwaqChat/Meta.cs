@@ -8,6 +8,8 @@
 // - Each store's own app (2026-11-20, dbo.MetaApps): the owner makes an app on developers.facebook.com with the same
 //   steps and pastes its numbers in the dashboard tab. They're an admin of that app, so their Page answers everyone.
 //   Its webhook URL carries the store (api/meta-webhook.ashx?s=<StoreId>) so we know whose secret signs the body.
+// - «ضيفنا على صفحتك» (2026-11-23, MetaEasy below): no app of the owner's own. They add Sellybot's Facebook account to their
+//   Page (messages only) and ask; the super admin links the Page for them through Sellybot's app.
 // A link remembers the app its token came from (MetaLinks.AppId): webhooks and replies go through that app.
 // - Messenger: the owner presses «اربط صفحتك» → Facebook login (configuration MetaFbConfig, or plain scopes when there's
 //   none) → the Pages they manage (me/accounts) → we keep the chosen Page's access token and subscribe the Page to the
@@ -323,8 +325,8 @@ namespace RiwaqChat
             {
                 using (var cmd = Db.Cmd(c, @"DELETE FROM dbo.MetaLinks WHERE StoreId=@s AND Channel=@ch;
                     INSERT INTO dbo.MetaLinks(StoreId, Channel, AccountId, Name, Token, BusinessId, Enabled, Subscribed, Status, AppId) VALUES(@s, @ch, @a, @n, @t, @b, 1, @sub, @st, @app);
-                    DELETE FROM dbo.MetaConnects WHERE StoreId=@s AND Channel=@ch;",
-                    "@s", storeId, "@ch", ch, "@a", accountId, "@n", (object)Cut(name, 200) ?? DBNull.Value, "@t", Secrets.Protect(token),
+                    DELETE FROM dbo.MetaConnects WHERE StoreId=@s AND Channel IN (@ch, @ach);",
+                    "@s", storeId, "@ch", ch, "@ach", MetaEasy.AdminKey(ch), "@a", accountId, "@n", (object)Cut(name, 200) ?? DBNull.Value, "@t", Secrets.Protect(token),
                     "@b", (object)businessId ?? DBNull.Value, "@sub", why == null, "@app", k.AppId,
                     "@st", why == null ? (object)DBNull.Value : Cut("⚠️ الربط تم، بس فيسبوك ماوافقش يبعتلنا الرسايل: " + why, 400)))
                     cmd.ExecuteNonQuery();
@@ -340,6 +342,140 @@ namespace RiwaqChat
             if (l == null) return null;
             if (l.Channel == Fb) return "https://m.me/" + l.AccountId;
             return string.IsNullOrEmpty(l.Name) ? null : "https://ig.me/m/" + l.Name.TrimStart('@');
+        }
+    }
+
+    // ---------- «ضيفنا على صفحتك» (2026-11-23): linking without a Meta app of the owner's own ----------
+    // Sellybot can't get Business Verification yet (no سجل تجاري), so its app can't pass App Review, and an owner can't link their
+    // Page through it by themselves. The way agencies do it instead: the owner adds Sellybot's Facebook account (MetaAgentName /
+    // MetaAgentUrl, an admin of Sellybot's app) to their Page with only the «الرسائل» + «نشاط المجتمع» tasks (Meta wants MESSAGING +
+    // MODERATE from whoever's token answers), and asks here. The super admin accepts that on Facebook, then links the Page for the
+    // store from admin.html (meta-connect.ashx?start=fb&for=<StoreId>): Facebook's login as that account, through Sellybot's app.
+    // The Page token is a role user's, like Sellybot's own Page, which answers everyone (2026-11-20). Whether a merchant's Page
+    // does too was not tried on real Meta when this was written.
+    // That login's pick list holds every Page the account manages, so it waits in MetaConnects under "a"+channel: the owner's
+    // tab reads only "fb" / "ig" and never sees the other stores' Pages.
+    public static class MetaEasy
+    {
+        public const string Pending = "pending", Problem = "problem", Done = "done";
+        public static string AgentName(SqlConnection c) { return (Billing.Get(c, "MetaAgentName") ?? "").Trim(); }
+        public static string AgentUrl(SqlConnection c) { return (Billing.Get(c, "MetaAgentUrl") ?? "").Trim(); }
+        // Owners see it once the admin named the account to add and Sellybot's app can link Pages
+        public static bool Open(SqlConnection c) { return AgentName(c).Length > 0 && MetaApp.Ready(MetaApp.Shared(c), MetaApp.Fb); }
+        public static string AdminKey(string ch) { return "a" + ch; }
+
+        public class Ask { public int StoreId; public string PageUrl, IgUser, Status, Note; public DateTime CreatedAt, UpdatedAt; }
+
+        public static Ask Get(SqlConnection c, int storeId)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT * FROM dbo.MetaRequests WHERE StoreId=@s", "@s", storeId))
+            using (var r = cmd.ExecuteReader())
+                return r.Read() ? Read(r) : null;
+        }
+
+        static Ask Read(SqlDataReader r)
+        {
+            return new Ask { StoreId = (int)r["StoreId"], PageUrl = (string)r["PageUrl"], IgUser = r["IgUser"] as string, Status = (string)r["Status"], Note = r["Note"] as string,
+                CreatedAt = DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc), UpdatedAt = DateTime.SpecifyKind((DateTime)r["UpdatedAt"], DateTimeKind.Utc) };
+        }
+
+        public static Dictionary<string, object> Json(Ask a)
+        {
+            if (a == null) return null;
+            return new Dictionary<string, object> { { "pageUrl", a.PageUrl }, { "igUser", a.IgUser ?? "" }, { "status", a.Status }, { "note", a.Note ?? "" },
+                { "createdAt", a.CreatedAt.ToString("o") }, { "updatedAt", a.UpdatedAt.ToString("o") } };
+        }
+
+        // A Facebook link as people paste it (www. / m. / web. / business.facebook.com, fb.com, fb.me, profile.php?id=…), or just
+        // the Page's name. Comes back as https://<host><path>, without tracking parameters. null = not a Facebook link.
+        public static string FacebookUrl(string raw)
+        {
+            string v = (raw ?? "").Trim();
+            if (v.Length == 0 || v.Length > 300) return null;
+            if (!v.Contains("://"))
+                v = Regex.IsMatch(v, @"^@?[A-Za-z0-9.\-]{3,80}$") && !v.ToLowerInvariant().Contains("facebook.") && !v.ToLowerInvariant().StartsWith("fb.")
+                    ? "https://www.facebook.com/" + v.TrimStart('@') : "https://" + v;
+            Uri u;
+            if (!Uri.TryCreate(v, UriKind.Absolute, out u) || (u.Scheme != "https" && u.Scheme != "http")) return null;
+            string host = u.Host.ToLowerInvariant();
+            if (!(host == "facebook.com" || host.EndsWith(".facebook.com") || host == "fb.com" || host == "www.fb.com" || host == "fb.me")) return null;
+            string path = u.AbsolutePath, id = HttpUtility.ParseQueryString(u.Query)["id"];
+            bool hasId = !string.IsNullOrEmpty(id) && Regex.IsMatch(id, "^[0-9]{5,30}$");
+            if (path.Trim('/').Length == 0 && !hasId) return null;
+            return MetaApp.Cut("https://" + host + path + (hasId ? "?id=" + id : ""), 300);
+        }
+
+        // An Instagram username, or its link: "" = none given, null = not a username
+        public static string IgUser(string raw)
+        {
+            string v = (raw ?? "").Trim();
+            if (v.Length == 0) return "";
+            var m = Regex.Match(v, @"instagram\.com/([^/?#\s]+)", RegexOptions.IgnoreCase);
+            if (m.Success) v = m.Groups[1].Value;
+            v = v.TrimStart('@').Trim();
+            return Regex.IsMatch(v, @"^[A-Za-z0-9._]{1,30}$") ? v.ToLowerInvariant() : null;
+        }
+
+        public static void Set(SqlConnection c, int storeId, string status, string note)
+        {
+            using (var cmd = Db.Cmd(c, "UPDATE dbo.MetaRequests SET Status=@st, Note=@n, UpdatedAt=SYSUTCDATETIME() WHERE StoreId=@s",
+                "@st", status, "@n", (object)MetaApp.Cut(note, 400) ?? DBNull.Value, "@s", storeId)) cmd.ExecuteNonQuery();
+        }
+
+        // After the admin links a channel for the store: done once the Page (and the Instagram account, when asked for) are linked
+        public static void Settle(SqlConnection c, int storeId)
+        {
+            var a = Get(c, storeId);
+            if (a == null || a.Status == Done) return;
+            bool fb = MetaApp.Link(c, storeId, MetaApp.Fb) != null, ig = string.IsNullOrEmpty(a.IgUser) || MetaApp.Link(c, storeId, MetaApp.Ig) != null;
+            if (fb && ig) Set(c, storeId, Done, null);
+        }
+
+        // The admin's pick list from linking a store's Page / account (MetaConnects "a"+ch): id, name, and the store that already has it
+        public static List<Dictionary<string, object>> AdminChoices(SqlConnection c, int storeId, string ch)
+        {
+            string box;
+            using (var cmd = Db.Cmd(c, "SELECT Choices FROM dbo.MetaConnects WHERE StoreId=@s AND Channel=@ch AND ExpiresAt > SYSUTCDATETIME()", "@s", storeId, "@ch", AdminKey(ch)))
+                box = cmd.ExecuteScalar() as string;
+            var json = box == null ? null : Secrets.Unprotect(box);
+            if (json == null) return null;
+            var list = new List<Dictionary<string, object>>();
+            foreach (var x in JsonSerializer.Deserialize<List<Dictionary<string, string>>>(json))
+            {
+                string id = x.ContainsKey("id") ? x["id"] : "", taken = null;
+                using (var cmd = Db.Cmd(c, "SELECT TOP 1 s.Slug FROM dbo.MetaLinks l JOIN dbo.Stores s ON s.Id = l.StoreId WHERE l.Channel=@ch AND l.AccountId=@a AND l.StoreId<>@s",
+                    "@ch", ch, "@a", id, "@s", storeId)) taken = cmd.ExecuteScalar() as string;
+                list.Add(new Dictionary<string, object> { { "id", id }, { "name", x.ContainsKey("name") ? x["name"] : "" }, { "taken", taken } });
+            }
+            return list;
+        }
+
+        // admin.html: the asks still open, and the ones settled in the last week
+        public static List<Dictionary<string, object>> ForAdmin(SqlConnection c)
+        {
+            var asks = new List<Tuple<Ask, string, string>>();
+            using (var cmd = Db.Cmd(c, @"SELECT TOP 200 r.*, s.Slug, s.Name AS StoreName FROM dbo.MetaRequests r JOIN dbo.Stores s ON s.Id = r.StoreId
+                WHERE r.Status <> 'done' OR r.UpdatedAt > DATEADD(DAY,-7,SYSUTCDATETIME())
+                ORDER BY CASE r.Status WHEN 'pending' THEN 0 WHEN 'problem' THEN 1 ELSE 2 END, r.CreatedAt"))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read()) asks.Add(Tuple.Create(Read(r), (string)r["Slug"], (string)r["StoreName"]));
+            var list = new List<Dictionary<string, object>>();
+            foreach (var t in asks)
+            {
+                var d = Json(t.Item1);
+                d["store"] = t.Item1.StoreId; d["slug"] = t.Item2; d["storeName"] = t.Item3;
+                foreach (var ch in new[] { MetaApp.Fb, MetaApp.Ig })
+                {
+                    var l = MetaApp.Link(c, t.Item1.StoreId, ch);
+                    var one = new Dictionary<string, object> { { "allowed", PlanGate.Allows(c, Db.StoreById(c, t.Item1.StoreId), MetaApp.Feature(ch)) } };
+                    if (l != null) one["link"] = new Dictionary<string, object> { { "id", l.AccountId }, { "name", l.Name ?? "" }, { "enabled", l.Enabled }, { "status", l.Status ?? "" } };
+                    var choices = AdminChoices(c, t.Item1.StoreId, ch);
+                    if (choices != null) one["choices"] = choices;
+                    d[ch] = one;
+                }
+                list.Add(d);
+            }
+            return list;
         }
     }
 
@@ -751,7 +887,8 @@ ELSE
         }
 
         // ?start=fb|ig — from the owner's dashboard; ?start=fb|ig&site=1 — the super admin links Sellybot's own store (SiteBot.cs),
-        // which nobody signs in to. Meta comes back here with ?code&state, and the state says which of the two started it.
+        // which nobody signs in to; ?start=fb|ig&for=<StoreId> — the super admin links a store's Page for «ضيفنا على صفحتك»
+        // (MetaEasy). Meta comes back here with ?code&state, and the signed state says which store and who started it.
         public override async Task ProcessRequestAsync(HttpContext ctx)
         {
             var req = ctx.Request; var res = ctx.Response;
@@ -761,8 +898,8 @@ ELSE
             try
             {
                 string start = (req.QueryString["start"] ?? "").ToLowerInvariant();
-                int stateStore = 0; string ch = null;
-                if (start.Length > 0) admin = req.QueryString["site"] == "1";
+                int stateStore = 0, forStore = 0; string ch = null;
+                if (start.Length > 0) admin = req.QueryString["site"] == "1" || (int.TryParse(req.QueryString["for"], out forStore) && forStore > 0);
                 else if (!MetaApp.ReadState(req.QueryString["state"], out stateStore, out ch, out admin)) { Back(res, false, "error", "الرابط ده قديم أو مش سليم. ابدأ الربط تاني من «مسنجر وإنستجرام»."); return; }
 
                 StoreInfo s; MetaCreds k;
@@ -776,20 +913,22 @@ ELSE
                             if (start.Length == 0 && req.QueryString["again"] != "1") { Again(req, res); return; }
                             res.Redirect("../admin.html", false); return;
                         }
-                        s = Db.StoreBySlug(c, SiteBot.Slug);
-                        if (s == null) { Back(res, true, "error", "متجر Sellybot لسه مااتعملش. افتح الموقع مرة وجرّب تاني."); return; }
+                        // the admin always links through Sellybot's app: Sellybot's own store, or a store that asked (MetaEasy)
+                        s = start.Length == 0 ? Db.StoreById(c, stateStore) : forStore > 0 ? Db.StoreById(c, forStore) : Db.StoreBySlug(c, SiteBot.Slug);
+                        if (s == null) { Back(res, true, "error", forStore > 0 || stateStore > 0 ? "المتجر ده مش موجود." : "متجر Sellybot لسه مااتعملش. افتح الموقع مرة وجرّب تاني."); return; }
+                        k = MetaApp.Shared(c);
                     }
                     else
                     {
                         s = Me.Require(ctx, c);
                         if (s == null) { res.Redirect("../dashboard.html", false); return; }
+                        k = MetaApp.For(c, s);
                     }
-                    k = MetaApp.For(c, s);
 
                     if (start.Length > 0)
                     {
                         if (!MetaApp.Valid(start)) { Back(res, admin, "error", "طلب مش مفهوم."); return; }
-                        if (!MetaApp.OpenFor(c, s, start))
+                        if (admin ? !MetaApp.Ready(k, start) : !MetaApp.OpenFor(c, s, start))
                         {
                             string missing = MetaApp.Missing(c, s, start);
                             Back(res, admin, "error", admin ? "كمّل إعدادات تطبيق Meta الأول (App ID و Secret و Configuration ID)."
@@ -806,6 +945,9 @@ ELSE
                 }
                 if (k == null) { Back(res, admin, "error", "حط أرقام «تطبيق Meta بتاعك» الأول، وبعدها اربط."); return; }
                 string appId = k.AppId, secret = k.Secret;
+                // the admin linking a store that asked (not Sellybot's own): its own result keys, and its pick list kept apart
+                bool forStoreFlow = admin && s.Slug != SiteBot.Slug;
+                string pre = forStoreFlow ? "s" : "", connectKey = forStoreFlow ? MetaEasy.AdminKey(ch) : ch;
 
                 if (stateStore != s.Id) { Back(res, admin, "error", "انت داخل بحساب متجر غير اللي بدأ الربط. ادخل بالمتجر الصح وابدأ تاني."); return; }
                 if (!string.IsNullOrEmpty(req.QueryString["error"])) { Back(res, admin, "cancel"); return; }
@@ -832,16 +974,17 @@ ELSE
                         var one = choices[0];
                         var err = await MetaApp.Save(s.Id, ch, one.Id, one.Name, one.Token, one.Business, k);
                         if (err != null) { Back(res, admin, "error", err); return; }
-                        Back(res, admin, "ok_" + ch);
+                        if (forStoreFlow) using (var c = Db.Open()) MetaEasy.Settle(c, s.Id);
+                        Back(res, admin, pre + "ok_" + ch);
                         return;
                     }
-                    // several Pages / accounts: the owner picks one in the dashboard (the tokens wait here, encrypted, for 30 minutes)
+                    // several Pages / accounts: the owner (or the admin) picks one (the tokens wait here, encrypted, for 30 minutes)
                     using (var c = Db.Open())
                     using (var cmd = Db.Cmd(c, @"DELETE FROM dbo.MetaConnects WHERE StoreId=@s AND Channel=@ch;
                         INSERT INTO dbo.MetaConnects(StoreId, Channel, Choices, ExpiresAt) VALUES(@s, @ch, @j, DATEADD(MINUTE,30,SYSUTCDATETIME()));",
-                        "@s", s.Id, "@ch", ch, "@j", Secrets.Protect(JsonSerializer.Serialize(choices.Take(50).Select(x => new { id = x.Id, name = x.Name, token = x.Token, business = x.Business })))))
+                        "@s", s.Id, "@ch", connectKey, "@j", Secrets.Protect(JsonSerializer.Serialize(choices.Take(100).Select(x => new { id = x.Id, name = x.Name, token = x.Token, business = x.Business })))))
                         cmd.ExecuteNonQuery();
-                    Back(res, admin, "pick_" + ch);
+                    Back(res, admin, pre + "pick_" + ch);
                 }
                 catch (MetaException ex) { Back(res, admin, "error", ex.Message); }
             }
@@ -978,7 +1121,8 @@ ELSE
                 if (!Web.Allow("meta:" + s.Id, 60, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "جرّبت كتير، استنى شوية وجرّب تاني."); return; }
                 string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
                 var body = Web.Body(req, 2000);
-                if (!(action == "app" ? await SaveApp(res, s, body) : await Act(res, s, action, body))) return;
+                if (!(action == "app" ? await SaveApp(res, s, body) : action == "easy" ? SaveEasy(res, s, body) : action == "easy-cancel" ? CancelEasy(s)
+                    : await Act(res, s, action, body))) return;
                 using (var c = Db.Open()) Web.Json(res, 200, State(c, Db.StoreById(c, s.Id), req));
             }
             catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error", "حصلت مشكلة. جرّب تاني."); }
@@ -1026,6 +1170,37 @@ ELSE
                 }
                 catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { Web.Error(res, 400, "taken_app", "التطبيق ده متسجّل في متجر تاني على Sellybot. كل متجر ليه تطبيق لوحده."); return false; }
             }
+            return true;
+        }
+
+        // «ضيفنا على صفحتك» (MetaEasy): the owner added Sellybot's account to their Page and asks us to link it. Their Page link, and
+        // their Instagram username when they want the direct too. Sending again (after a «problem» note) puts it back in the queue.
+        static bool SaveEasy(HttpResponse res, StoreInfo s, Dictionary<string, object> b)
+        {
+            string page = MetaEasy.FacebookUrl(Web.Str(b, "pageUrl", 400)), ig = MetaEasy.IgUser(Web.Str(b, "igUser", 120));
+            if (page == null) { Web.Error(res, 400, "bad_page", "حط لينك صفحتك على فيسبوك، زي https://www.facebook.com/اسم-صفحتك. افتح صفحتك وانسخ اللينك من فوق."); return false; }
+            if (ig == null) { Web.Error(res, 400, "bad_ig", "يوزر الإنستجرام حروف إنجليزي وأرقام و . و _ بس، زي my.store. ولو مش عايز الإنستجرام سيبه فاضي."); return false; }
+            using (var c = Db.Open())
+            {
+                if (!MetaEasy.Open(c)) { Web.Error(res, 400, "closed", "الطريقة دي مش متاحة دلوقتي. كلّمنا من «الدعم الفني» ونربطها لك."); return false; }
+                if (!PlanGate.Allows(c, s, MetaApp.FbFeature)) { PlanGate.Deny(res, c, s, MetaApp.FbFeature); return false; }
+                try
+                {
+                    using (var cmd = Db.Cmd(c, @"IF EXISTS (SELECT 1 FROM dbo.MetaRequests WHERE StoreId=@s)
+                          UPDATE dbo.MetaRequests SET PageUrl=@p, IgUser=@i, Note=NULL, UpdatedAt=SYSUTCDATETIME(),
+                            CreatedAt = CASE WHEN Status='done' THEN SYSUTCDATETIME() ELSE CreatedAt END, Status='pending' WHERE StoreId=@s
+                        ELSE INSERT INTO dbo.MetaRequests(StoreId, PageUrl, IgUser) VALUES(@s, @p, @i);",
+                        "@s", s.Id, "@p", page, "@i", ig.Length == 0 ? (object)DBNull.Value : ig)) cmd.ExecuteNonQuery();
+                }
+                catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { }   // the same ask twice at once: the other one made it
+            }
+            return true;
+        }
+
+        static bool CancelEasy(StoreInfo s)
+        {
+            using (var c = Db.Open())
+            using (var cmd = Db.Cmd(c, "DELETE FROM dbo.MetaRequests WHERE StoreId=@s", "@s", s.Id)) cmd.ExecuteNonQuery();
             return true;
         }
 
@@ -1116,6 +1291,10 @@ ELSE
                     { "privacyUrl", WaAccount.Origin(req) + "/privacy.html" }, { "deleteUrl", WaAccount.Origin(req) + "/privacy.html#meta-delete" },
                     // a platform store / tester can link through Sellybot's app without one of its own
                     { "shared", MetaApp.SharedOk(c, s) && MetaApp.Ready(MetaApp.Shared(c), MetaApp.Fb) } };
+                // «ضيفنا على صفحتك»: the account to add to their Page, and their ask so far
+                var ask = MetaEasy.Get(c, s.Id);
+                if (MetaEasy.Open(c) || ask != null)
+                    d["easy"] = new Dictionary<string, object> { { "open", MetaEasy.Open(c) }, { "agentName", MetaEasy.AgentName(c) }, { "agentUrl", MetaEasy.AgentUrl(c) }, { "request", MetaEasy.Json(ask) } };
             }
             foreach (var ch in new[] { MetaApp.Fb, MetaApp.Ig })
             {
@@ -1143,7 +1322,8 @@ ELSE
     }
 
     // api/meta-admin.ashx — the super admin's Meta app settings, every linked Page / Instagram account, and Sellybot's own
-    // Page / account (the store SiteBot.cs runs, which nobody signs in to): POST ?action=site with {do: pick|enable|unlink|resubscribe}
+    // Page / account (the store SiteBot.cs runs, which nobody signs in to): POST ?action=site with {do: pick|enable|unlink|resubscribe}.
+    // «ضيفنا على صفحتك» (MetaEasy): POST ?action=agent {name, url} = the account owners add; ?action=ask {store, do: pick|problem|done}
     public class MetaAdminHandler : HttpTaskAsyncHandler
     {
         public override bool IsReusable { get { return true; } }
@@ -1204,6 +1384,58 @@ ELSE
                         Web.Json(res, 200, State(c, req));
                         return;
                     }
+                    // «ضيفنا على صفحتك»: the Facebook account owners add to their Page (name to search for, and its link)
+                    if (action == "agent")
+                    {
+                        string name = (Web.Str(b, "name", 120) ?? "").Trim(), rawUrl = (Web.Str(b, "url", 400) ?? "").Trim();
+                        if (name.Length > 80) { Web.Error(res, 400, "bad_name", "الاسم طويل. اكتبه زي ما بيظهر على فيسبوك."); return; }
+                        string url = rawUrl.Length == 0 ? "" : MetaEasy.FacebookUrl(rawUrl);
+                        if (url == null) { Web.Error(res, 400, "bad_url", "ده مش لينك حساب على فيسبوك. افتح الحساب وانسخ اللينك من فوق."); return; }
+                        Billing.Set(c, "MetaAgentName", name);
+                        Billing.Set(c, "MetaAgentUrl", url);
+                        Web.Json(res, 200, State(c, req));
+                        return;
+                    }
+                    // a store's ask: {store, do: pick (channel, id) | problem (note, the owner sees it) | done}
+                    if (action == "ask")
+                    {
+                        int storeId; object sv;
+                        if (!b.TryGetValue("store", out sv) || sv == null || !int.TryParse(Convert.ToString(sv, System.Globalization.CultureInfo.InvariantCulture), out storeId)) { Web.Error(res, 400, "bad_request"); return; }
+                        var s = Db.StoreById(c, storeId);
+                        if (s == null || MetaEasy.Get(c, storeId) == null) { Web.Error(res, 404, "not_found", "الطلب ده مش موجود. يمكن التاجر لغاه."); return; }
+                        string what = (Web.Str(b, "do", 20) ?? "").ToLowerInvariant();
+                        if (what == "pick")
+                        {
+                            string ch = (Web.Str(b, "channel", 4) ?? "").ToLowerInvariant(), id = Web.Str(b, "id", 40) ?? "";
+                            if (!MetaApp.Valid(ch)) { Web.Error(res, 400, "bad_request"); return; }
+                            if (!PlanGate.Allows(c, s, MetaApp.Feature(ch))) { Web.Error(res, 400, "plan_locked", "باقة المتجر ده مافيهاش " + MetaApp.Label(ch) + "."); return; }
+                            MetaConnectHandler.Choice pick = null;
+                            using (var cmd = Db.Cmd(c, "SELECT Choices FROM dbo.MetaConnects WHERE StoreId=@s AND Channel=@ch AND ExpiresAt > SYSUTCDATETIME()", "@s", storeId, "@ch", MetaEasy.AdminKey(ch)))
+                            {
+                                var box = cmd.ExecuteScalar() as string;
+                                var json = box == null ? null : Secrets.Unprotect(box);
+                                if (json != null)
+                                    pick = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(json)
+                                        .Where(x => x.ContainsKey("id") && x["id"] == id)
+                                        .Select(x => new MetaConnectHandler.Choice { Id = x["id"], Name = x.ContainsKey("name") ? x["name"] : null, Token = x.ContainsKey("token") ? x["token"] : null, Business = x.ContainsKey("business") ? x["business"] : null })
+                                        .FirstOrDefault();
+                            }
+                            if (pick == null || string.IsNullOrEmpty(pick.Token)) { Web.Error(res, 400, "expired", "الاختيار ده انتهى (بيفضل نص ساعة). دوس «اربط» تاني."); return; }
+                            var err = await MetaApp.Save(storeId, ch, pick.Id, pick.Name, pick.Token, pick.Business, MetaApp.Shared(c));
+                            if (err != null) { Web.Error(res, 400, "taken", err); return; }
+                            MetaEasy.Settle(c, storeId);
+                        }
+                        else if (what == "problem")
+                        {
+                            string note = (Web.Str(b, "note", 600) ?? "").Trim();
+                            if (note.Length == 0) { Web.Error(res, 400, "no_note", "اكتب للتاجر إيه المشكلة وهو يعمل إيه."); return; }
+                            MetaEasy.Set(c, storeId, MetaEasy.Problem, note);
+                        }
+                        else if (what == "done") MetaEasy.Set(c, storeId, MetaEasy.Done, null);
+                        else { Web.Error(res, 400, "bad_request"); return; }
+                        Web.Json(res, 200, State(c, req));
+                        return;
+                    }
                     Web.Error(res, 400, "bad_request");
                 }
             }
@@ -1212,6 +1444,7 @@ ELSE
 
         static Dictionary<string, object> State(SqlConnection c, HttpRequest req)
         {
+            var asks = MetaEasy.ForAdmin(c);
             var site = Db.StoreBySlug(c, SiteBot.Slug);   // Sellybot's own Page / account, linked from here
             var links = new List<Dictionary<string, object>>();
             string sharedApp = MetaApp.AppId(c) ?? "";
@@ -1231,7 +1464,9 @@ ELSE
                 { "fbConfig", MetaApp.Config(c, MetaApp.Fb) ?? "" }, { "igConfig", MetaApp.Config(c, MetaApp.Ig) ?? "" },
                 { "verifyToken", MetaApp.VerifyToken(c, true) }, { "hookUrl", MetaApp.HookUrl(req) }, { "redirectUri", MetaApp.RedirectUri(req) },
                 { "testers", MetaApp.Testers(c) },
-                { "version", MetaApp.Version }, { "links", links }, { "site", site != null ? MetaHandler.State(c, site) : null } };
+                { "version", MetaApp.Version }, { "links", links }, { "site", site != null ? MetaHandler.State(c, site) : null },
+                { "agentName", MetaEasy.AgentName(c) }, { "agentUrl", MetaEasy.AgentUrl(c) }, { "easyOpen", MetaEasy.Open(c) }, { "asks", asks },
+                { "asksWaiting", asks.Count(a => (string)a["status"] == MetaEasy.Pending) } };
         }
     }
 }

@@ -196,6 +196,16 @@
   .mt-site .ch .row{flex-wrap:wrap;gap:6px}
   .mt-site a.btn{text-decoration:none}
   @media (max-width:1000px){.mt-site{grid-template-columns:1fr}}
+  .mt-agent-f{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:6px}
+  .mt-agent-f>div{flex:1;min-width:200px}.mt-agent-f>div.wide{flex:2;min-width:240px}
+  .mt-asks{display:grid;gap:10px;margin-top:12px}
+  .mt-asks .ask{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+  .mt-asks .ask-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .mt-asks .ask-links{overflow-wrap:anywhere;font-size:13.5px}
+  .mt-asks .ask-ch{display:grid;gap:8px}
+  .mt-asks .ch{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;background:var(--soft);min-width:0}
+  .mt-asks .ch .row{flex-wrap:wrap;gap:6px}
+  .mt-asks a.btn{text-decoration:none;align-self:flex-start}
   @media (max-width:1000px){.grid2,.grid2b{grid-template-columns:1fr}}
 
   /* chart */
@@ -418,7 +428,7 @@
       <button data-go="subs"><span class="ic">🧾</span>الاشتراكات والإيرادات</button>
       <button data-go="support"><span class="ic">🎧</span>الدعم الفني <span class="count" id="tkCount" hidden>0</span></button>
       <button data-go="wa"><span class="ic">💬</span>الواتساب <span class="count" id="waCount" hidden>0</span></button>
-      <button data-go="meta"><span class="ic">📨</span>مسنجر وإنستجرام</button>
+      <button data-go="meta"><span class="ic">📨</span>مسنجر وإنستجرام <span class="count" id="mtCount" hidden>0</span></button>
       <button data-go="tg"><span class="ic">✈️</span>تيليجرام</button>
       <button data-go="settings"><span class="ic">⚙️</span>الإعدادات</button>
     </nav>
@@ -645,6 +655,20 @@
 
       <!-- Messenger + Instagram: Sellybot's one Meta app (api/meta-admin.ashx, Meta.cs) -->
       <section data-page="meta" hidden>
+        <!-- «ضيفنا على صفحتك» (Meta.cs MetaEasy): owners add the account below to their Page and ask; each is linked from here
+             through Sellybot's app (meta-connect.ashx?start=fb&for=<StoreId>) -->
+        <div class="card anim" id="mtEasyCard" style="margin-bottom:16px">
+          <h3>🤝 «ضيفنا على صفحتك»: طلبات الربط</h3>
+          <p class="sub">التاجر بيضيف الحساب ده على صفحته بصلاحية «الرسائل» و«نشاط المجتمع»، ويبعت لينك صفحته. انت: اقبل الإضافة من إشعارات فيسبوك، وبعدين دوس «اربط المسنجر» عند طلبه، وادخل بنفس الحساب واختار صفحته.</p>
+          <form class="mt-agent-f" id="mtAgentForm" autocomplete="off">
+            <div><label for="mtAgentName">اسم الحساب زي ما بيظهر على فيسبوك</label><input type="text" id="mtAgentName" maxlength="80"></div>
+            <div class="wide"><label for="mtAgentUrl">لينك الحساب (التاجر بيفتحه عشان يتأكد إنه الصح)</label><input type="text" id="mtAgentUrl" class="ltr" maxlength="300" placeholder="https://www.facebook.com/..."></div>
+            <button class="btn" id="mtAgentSave">حفظ</button>
+          </form>
+          <div class="hint" id="mtAgentHint" style="margin-top:8px"></div>
+          <div class="hint">⚠️ الحساب ده لازم يكون أدمن على تطبيق Sellybot في developers.facebook.com. ولما فيسبوك يسألك على الصفحات، سيب كل الصفحات المتعلّمة زي ما هي وعلّم على صفحة التاجر الجديدة كمان: لو شلت العلامة من صفحة، المساعد يقف عليها.</div>
+          <div class="mt-asks" id="mtAsks"></div>
+        </div>
         <div class="grid2b">
           <form class="card anim" id="mtForm" autocomplete="off">
             <h3>تطبيق Meta بتاع Sellybot</h3>
@@ -866,6 +890,7 @@
     var want = (location.hash || "#home").slice(1);
     go(["home", "money", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "tg", "settings"].indexOf(want) >= 0 ? want : "home");
     api("requests", null, "&status=pending").then(function (d) { rqBadge(d.pending); }).catch(function () {});
+    metaApi().then(function (d) { mtBadge(d.asksWaiting); }).catch(function () {});
   }
   $("pwEye").onclick = function () { var i = $("lPass"); i.type = i.type === "password" ? "text" : "password"; i.focus(); };
   $("loginForm").onsubmit = async function (e) {
@@ -918,8 +943,60 @@
       return "<tr><td>" + (l.channel === "fb" ? "💬 مسنجر" : "📸 إنستجرام") + '</td><td><span dir="auto">' + esc(l.name || l.account) + '</span><div class="hint ltr">' + esc(l.account) + "</div></td><td>" + esc(l.store) +
         ' <span class="hint ltr">' + esc(l.slug) + "</span>" + (l.ownApp ? ' <span class="pill" title="مربوط بتطبيق Meta بتاع المتجر نفسه">تطبيقه</span>' : "") + "</td><td>" + st + "</td><td>" + (l.lastAt ? esc(new Date(l.lastAt).toLocaleString("ar-EG")) : "—") + "</td></tr>";
     }).join("") : '<tr><td colspan="5" class="hint">لسه محدش ربط صفحة أو حساب.</td></tr>';
-    renderSite(d);
+    renderSite(d); renderAsks(d);
   }
+  // «ضيفنا على صفحتك» (api/meta-admin.ashx?action=agent|ask): the account owners add, and their asks
+  function mtBadge(n) { $("mtCount").textContent = fmt(n || 0); $("mtCount").hidden = !n; }
+  function renderAsks(d) {
+    $("mtAgentName").value = d.agentName || ""; $("mtAgentUrl").value = d.agentUrl || "";
+    $("mtAgentHint").textContent = !d.agentName ? "لحد ما تكتب اسم الحساب، «ضيفنا على صفحتك» مش بيظهر للتجار."
+      : !d.easyOpen ? "كمّل إعدادات تطبيق Meta تحت (App ID و Secret) عشان الطريقة تظهر للتجار." : "✅ التجار شايفين «ضيفنا على صفحتك» في لوحتهم.";
+    mtBadge(d.asksWaiting);
+    var asks = d.asks || [];
+    $("mtAsks").innerHTML = asks.length ? asks.map(askHtml).join("") : '<div class="hint">مفيش طلبات دلوقتي.</div>';
+  }
+  function askHtml(a) {
+    var ST = { pending: '<span class="pill warn">مستني الربط</span>', problem: '<span class="pill">مستني التاجر يصلّح</span>', done: '<span class="pill ok">اتربط ✅</span>' };
+    var h = '<div class="ask" data-store="' + a.store + '"><div class="ask-head"><b>' + esc(a.storeName) + '</b><span class="hint ltr">' + esc(a.slug) + "</span>" + (ST[a.status] || "")
+      + '<span class="space"></span><span class="hint">' + esc(new Date(a.updatedAt).toLocaleString("ar-EG")) + "</span></div>";
+    h += '<div class="ask-links"><a class="ltr" target="_blank" rel="noopener noreferrer" href="' + esc(a.pageUrl) + '">' + esc(a.pageUrl) + "</a>"
+      + (a.igUser ? ' · <a class="ltr" target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/' + esc(a.igUser) + '/">@' + esc(a.igUser) + "</a>" : "") + "</div>";
+    if (a.note) h += '<div class="hint" dir="auto">📝 ' + esc(a.note) + "</div>";
+    h += '<div class="ask-ch">' + (a.igUser ? ["fb", "ig"] : ["fb"]).map(function (ch) { return askCh(a, ch); }).join("") + "</div>";
+    if (a.status !== "done") h += '<div class="row" style="gap:6px"><button class="btn ghost sm" type="button" data-ask="problem">فيه مشكلة…</button><button class="btn ghost sm" type="button" data-ask="done">تم</button></div>';
+    return h + "</div>";
+  }
+  function askCh(a, ch) {
+    var x = a[ch] || {}, l = x.link, go = "api/meta-connect.ashx?start=" + ch + "&for=" + a.store;
+    var h = '<div class="ch" data-ch="' + ch + '"><b>' + (ch === "fb" ? "💬 المسنجر" : "📸 الإنستجرام") + "</b>";
+    if (l) return h + '<div><span dir="auto">' + esc(l.name || l.id) + '</span> <span class="pill ok">مربوط ✅</span>' + (l.status ? ' <span class="pill warn">' + esc(l.status) + "</span>" : "") + "</div></div>";
+    if (!x.allowed) return h + '<div class="hint">باقة المتجر ده مافيهاش ' + (ch === "fb" ? "المسنجر" : "الإنستجرام") + ".</div></div>";
+    if (x.choices && x.choices.length) {
+      var pageId = (a.pageUrl.match(/[?&]id=(\d+)/) || [])[1];   // a profile.php?id= link names the Page: mark it
+      h += '<div class="hint">اختار صفحة التاجر:</div><div class="row">' + x.choices.map(function (o) {
+        return '<button class="btn ' + (pageId && o.id === pageId ? "" : "ghost ") + 'sm" type="button" data-ask="pick" data-id="' + esc(o.id) + '"' + (o.taken ? " disabled" : "") + '><span dir="auto">'
+          + esc(o.name) + "</span>" + (o.taken ? ' <span class="hint ltr">(' + esc(o.taken) + ")</span>" : "") + "</button>";
+      }).join("") + "</div>";
+      return h + '<div class="hint">مش لاقيها؟ <a href="' + go + '">ادخل تاني</a> وعلّم عليها في شاشة فيسبوك.</div></div>';
+    }
+    return h + '<a class="btn sm" href="' + go + '">' + (ch === "fb" ? "اربط المسنجر" : "اربط الإنستجرام") + "</a></div>";
+  }
+  $("mtAsks").onclick = async function (e) {
+    var b = e.target.closest("[data-ask]"); if (!b) return;
+    var what = b.dataset.ask, body = { do: what, store: +b.closest("[data-store]").dataset.store };
+    if (what === "pick") { body.channel = b.closest("[data-ch]").dataset.ch; body.id = b.dataset.id; }
+    if (what === "problem") {
+      var n = prompt("اكتب للتاجر إيه المشكلة وهو يعمل إيه (هيشوفها في لوحته):", "مالقيناش حسابنا على صفحتك. اتأكد إنك ضفته من «الوصول إلى الصفحة» بصلاحية «الرسائل» و«نشاط المجتمع».");
+      if (!n || !n.trim()) return; body.note = n.trim();
+    }
+    busy(b, true);
+    try { renderMeta(await metaApi("ask", body)); toast(what === "pick" ? "اتربط ✓" : "تم ✓"); } catch (err) { toast(err.message, true); busy(b, false); }
+  };
+  $("mtAgentForm").onsubmit = async function (e) {
+    e.preventDefault(); busy($("mtAgentSave"), true);
+    try { renderMeta(await metaApi("agent", { name: $("mtAgentName").value.trim(), url: $("mtAgentUrl").value.trim() })); toast("اتحفظ ✓"); } catch (err) { toast(err.message, true); }
+    busy($("mtAgentSave"), false);
+  };
   // Sellybot's own Page / account (api/meta-admin.ashx?action=site)
   function renderSite(d) {
     var box = $("mtSiteRows"), site = d.site;
@@ -960,8 +1037,10 @@
     var q = new URLSearchParams(location.search), k = q.get("meta"); if (!k) return;
     var text = { ok_fb: "✅ صفحة Sellybot اتربطت. سيلّي هيرد على المسنجر.", ok_ig: "✅ إنستجرام Sellybot اتربط. سيلّي هيرد على الدايركت.",
       pick_fb: "لقينا أكتر من صفحة: اختار صفحة Sellybot من «صفحة Sellybot نفسها».", pick_ig: "لقينا أكتر من حساب: اختار حساب Sellybot من «صفحة Sellybot نفسها».",
-      cancel: "الربط اتلغى." }[k] || q.get("metaMsg") || "حصلت مشكلة وإحنا بنربط. جرّب تاني.";
-    setTimeout(function () { toast(text, !/^(ok|pick)_/.test(k) && k !== "cancel"); }, 600);
+      sok_fb: "✅ صفحة التاجر اتربطت. المساعد هيرد على رسايلها.", sok_ig: "✅ إنستجرام التاجر اتربط. المساعد هيرد على الدايركت.",
+      spick_fb: "اختار صفحة التاجر من طلبه في «ضيفنا على صفحتك».", spick_ig: "اختار حساب التاجر من طلبه في «ضيفنا على صفحتك».",
+      locked: "باقة المتجر ده مافيهاش الميزة دي.", cancel: "الربط اتلغى." }[k] || q.get("metaMsg") || "حصلت مشكلة وإحنا بنربط. جرّب تاني.";
+    setTimeout(function () { toast(text, !/^s?(ok|pick)_/.test(k) && k !== "cancel"); }, 600);
     if (history.replaceState) history.replaceState(null, "", location.pathname + "#meta");
   })();
   async function loadMeta() { try { renderMeta(await metaApi()); } catch (e) { toast(e.message, true); } }

@@ -1029,6 +1029,14 @@
   .mt-plan p b{color:var(--ink);font-weight:600}
   .mt-plan .kbd{margin:1px 0}
   .mt-plan .msg:empty{display:none}
+  .mt-logo.mt-easy{background:linear-gradient(135deg,#e8774a,#f5a25d);font-size:22px}
+  .mt-agent{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:12px;border:1px dashed var(--brand);background:var(--card)}
+  .mt-agent b{font-size:15.5px}
+  .mt-ask{margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft);font-size:13.5px;line-height:1.75}
+  .mt-ask.warn{border-color:#f0c36d;background:rgba(240,195,109,.12)}
+  .mt-ask.ok{border-color:rgba(46,160,67,.45);background:rgba(46,160,67,.08)}
+  .mt-ask b{font-weight:700}
+  .mt-ask .mt-row{margin-top:10px}
   .mt-in{display:flex;gap:8px;align-items:center}
   .mt-in>input,.mt-in>.field{flex:1;min-width:0;position:relative}
   .mt-in>.btn{flex:none}
@@ -2648,18 +2656,51 @@
       <div class="why" style="margin:0">
         <b>إزاي بيشتغل؟</b>
         <ul>
-          <li><span>🔐</span><div><b>بتطبيقك انت، وبالطريقة الرسمية</b><small>بتعمل تطبيق Meta بحسابك مرة واحدة بالخطوات اللي تحت، وبعدها تدوس «اربط» وتوافق. مفيش باسوردات بتتبعتلنا.</small></div></li>
+          <li><span>🔐</span><div><b>بالطريقة الرسمية، ومن غير باسوردات</b><small>بتضيف حساب Sellybot على صفحتك بصلاحية الرسايل بس وإحنا نربطها، أو تربط بتطبيق Meta بتاعك. مفيش باسوردات بتتبعتلنا.</small></div></li>
           <li><span>⚡</span><div><b>رد في ثواني</b><small>أي رسالة توصل لصفحتك أو للدايركت، المساعد يرد عليها من داتا متجرك، ويفهم كمان صور المنتجات.</small></div></li>
           <li><span>🙋</span><div><b>لو رديت بنفسك بيسكت</b><small>لما ترد على زبون بنفسك، المساعد يسيبلك المحادثة دي ساعتين.</small></div></li>
           <li><span>📊</span><div><b>من نفس رصيدك</b><small>كل رد بيتحسب رسالة من رصيد باقتك، زي الموقع والواتساب بالظبط.</small></div></li>
         </ul>
       </div>
     </div>
+    <!-- «ضيفنا على صفحتك» (Meta.cs MetaEasy, dbo.MetaRequests): the owner adds Sellybot's Facebook account to their Page with
+         messages-only access and asks here; the super admin links the Page from admin.html. No Meta app of their own. -->
+    <div class="card" id="mtEasy" style="max-width:880px;margin-bottom:16px" hidden>
+      <div class="shop-head" style="margin-bottom:0">
+        <div class="shop-logo mt-logo mt-easy" aria-hidden="true">🤝</div>
+        <div style="flex:1;min-width:0"><h3 style="margin:0">الطريقة السهلة: ضيفنا على صفحتك <span class="new-tag">الأسهل</span></h3>
+          <p class="sub" style="margin:2px 0 0" id="mtEasySub">من غير developers.facebook ولا أرقام: بتضيف حساب Sellybot على صفحتك بصلاحية الرسايل بس، وإحنا نربطها لك.</p></div>
+        <button class="btn ghost sm" id="mtEasyToggle" type="button" hidden>الخطوات</button>
+      </div>
+      <div id="mtEasyState"></div>
+      <div id="mtEasyBody">
+        <ol class="mt-plan">
+          <li><h4>افتح «الوصول إلى الصفحة»</h4>
+            <p>ادخل على فيسبوك بحسابك اللي أدمن على صفحة المتجر، وحوّل لصفحتك. بعدين: <b>الإعدادات</b> ← <b>إعداد الصفحة</b> ← <b>الوصول إلى الصفحة</b> <span class="ltr">(Page access)</span>.</p></li>
+          <li><h4>ضيف حساب Sellybot</h4>
+            <p>تحت <b>الأشخاص اللي ليهم وصول على فيسبوك</b> دوس <b>إضافة جديد</b> <span class="ltr">(Add New)</span> ← <b>التالي</b>، ودوّر على الحساب ده:</p>
+            <div class="mt-agent"><b dir="auto" id="mtAgentName"></b><a class="btn ghost sm" id="mtAgentUrl" target="_blank" rel="noopener" hidden>افتح الحساب ↗</a></div>
+            <p style="margin-top:8px">سيب <b>التحكم الكامل</b> مقفول، وفعّل <b>الرسائل</b> <span class="ltr">(Messages)</span> و<b>نشاط المجتمع</b> <span class="ltr">(Community activity)</span> بس، ودوس <b>منح حق الوصول</b>. فيسبوك هيطلب باسوردك عشان يتأكد إنه انت: ده بيروح لفيسبوك، مش لينا.</p></li>
+          <li><h4>الإنستجرام (لو عايزه كمان)</h4>
+            <p>حساب متجرك على الإنستجرام لازم يكون <b>Professional</b> ومربوط بصفحتك. ومن تطبيق إنستجرام: <b>الإعدادات</b> ← <b>الرسائل والردود على القصص</b> ← <b>الأدوات المتصلة</b> ← فعّل <b>السماح بالوصول إلى الرسائل</b>.</p></li>
+          <li><h4>ابعتلنا لينك صفحتك</h4>
+            <div class="shop-fields mt-fields">
+              <div><label for="mtEasyPage">لينك صفحتك على فيسبوك</label>
+                <input type="text" id="mtEasyPage" class="ltr" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://www.facebook.com/my.store"></div>
+              <div><label for="mtEasyIg">يوزر الإنستجرام (اختياري)</label>
+                <input type="text" id="mtEasyIg" class="ltr" maxlength="100" autocomplete="off" spellcheck="false" placeholder="@my.store"></div>
+            </div>
+            <button class="btn sm" type="button" id="mtEasySend" style="margin-top:10px">✅ ضفتكم، اربطوا صفحتي</button>
+            <div class="msg" id="mtEasyMsg"></div></li>
+        </ol>
+        <div class="mt-soon">🔒 <b>آمن:</b> مش بتدينا باسورد ولا أي أكواد. صلاحيتنا على رسايل صفحتك بس: مانقدرش ننشر ولا نمسح ولا نشوف إعلاناتك. وتقدر تشيلنا من «الوصول إلى الصفحة» في أي وقت بضغطة.</div>
+      </div>
+    </div>
     <!-- the owner's own Meta app (Meta.cs, dbo.MetaApps): made once on developers.facebook.com, its numbers saved here -->
     <div class="card" id="mtApp" style="max-width:880px;margin-bottom:16px" hidden>
       <div class="shop-head" style="margin-bottom:0">
         <div class="shop-logo mt-logo mt-key" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M16 7l3 3M14 9l2 2"/></svg></div>
-        <div style="flex:1;min-width:0"><h3 style="margin:0">تطبيق Meta بتاعك <span class="ok-pill" id="mtAppOk" hidden>✅ متظبط</span></h3>
+        <div style="flex:1;min-width:0"><h3 style="margin:0"><span id="mtAppAlt" hidden>الطريقة التانية: </span>تطبيق Meta بتاعك <span class="ok-pill" id="mtAppOk" hidden>✅ متظبط</span></h3>
           <p class="sub" style="margin:2px 0 0" id="mtAppSub">بتعمله مرة واحدة: تطبيق على developers.facebook.com بحسابك، تحط فيه اللينكات اللي تحت، وتحط أرقامه هنا. بعدها زراير الربط تشتغل.</p></div>
         <button class="btn ghost sm" id="mtAppToggle" type="button" hidden>تعديل</button>
       </div>
@@ -4927,8 +4968,65 @@
   async function loadSocial() {
     loadLocks();
     try { mt = await api("api/meta.ashx"); } catch (e) { mt = null; mtTop(e.message, false); }
-    renderMtApp(true); renderMt("fb"); renderMt("ig");
+    renderMtEasy(true); renderMtApp(true); renderMt("fb"); renderMt("ig");
   }
+  // «ضيفنا على صفحتك» (api/meta.ashx?action=easy): the steps to add Sellybot's account to their Page, then where their ask is.
+  // Folded once it's waiting for us or the Page is linked.
+  var mtEasyOpen = false;
+  function renderMtEasy(fill) {
+    var e = mt && mt.easy, card = $("mtEasy");
+    card.hidden = !e; if (!e) return;
+    var fbLinked = !!(mt.fb && mt.fb.link), r = e.request;
+    if (r && r.status === "done" && !fbLinked) r = null;   // linked once and unlinked since: a new ask from scratch
+    $("mtAgentName").textContent = e.agentName || "";
+    var au = $("mtAgentUrl"); au.hidden = !e.agentUrl; if (e.agentUrl) au.href = e.agentUrl;
+    var st = $("mtEasyState"); st.textContent = "";
+    var waiting = !!(r && r.status === "pending"), fold = fbLinked || waiting;
+    if (waiting) {
+      var w = mtEl("div", "mt-ask");
+      w.appendChild(mtEl("b", "", "⏳ طلبك وصلنا " + ago(r.updatedAt) + "."));
+      w.appendChild(document.createTextNode(" هنقبل الإضافة من فيسبوك ونربط صفحتك في أقرب وقت، وأول ما تتربط هتلاقيها في كارت المسنجر تحت."));
+      var pg = mtEl("div", "hint ltr", r.pageUrl + (r.igUser ? "  ·  @" + r.igUser : "")); pg.style.marginTop = "4px"; w.appendChild(pg);
+      var row = mtEl("div", "mt-row"), ed = mtEl("button", "btn ghost sm", "تعديل الطلب"), cx = mtEl("button", "btn ghost sm", "إلغاء الطلب");
+      ed.type = cx.type = "button";
+      ed.onclick = function () { mtEasyOpen = true; renderMtEasy(false); $("mtEasyPage").focus(); };
+      cx.onclick = async function () {
+        if (!confirm("تلغي طلب الربط؟ لو ضفت حساب Sellybot على صفحتك، شيله من «الوصول إلى الصفحة».")) return;
+        cx.disabled = true;
+        try { mt = await api("api/meta.ashx?action=easy-cancel", { method: "POST", json: {} }); toast("الطلب اتلغى"); } catch (err) { toast(err.message); }
+        mtEasyOpen = false; renderMtEasy(true); renderMtApp(false); renderMt("fb"); renderMt("ig");
+      };
+      row.appendChild(ed); row.appendChild(cx); w.appendChild(row);
+      st.appendChild(w);
+    } else if (r && r.status === "problem") {
+      var p = mtEl("div", "mt-ask warn");
+      p.appendChild(mtEl("b", "", "⚠️ لسه مقدرناش نربط صفحتك: "));
+      p.appendChild(mtEl("span", "", r.note || "")).dir = "auto";
+      p.appendChild(mtEl("div", "hint", "اعمل اللي في الرسالة، وبعدين دوس «ابعت الطلب تاني» تحت."));
+      st.appendChild(p);
+    } else if (r && r.status === "done" && fbLinked) {
+      st.appendChild(mtEl("div", "mt-ask ok", "✅ صفحتك اتربطت عن طريقنا. لو حبيت توقف المساعد: «إلغاء الربط» في كارت المسنجر تحت، وشيل حساب Sellybot من «الوصول إلى الصفحة»."));
+    }
+    $("mtEasySub").textContent = fbLinked ? "صفحتك مربوطة. الخطوات هنا لو حبيت تربط صفحة تانية." : waiting ? "من غير developers.facebook ولا أرقام. طلبك عندنا دلوقتي."
+      : "من غير developers.facebook ولا أرقام: بتضيف حساب Sellybot على صفحتك بصلاحية الرسايل بس، وإحنا نربطها لك.";
+    $("mtEasyToggle").hidden = !fold || !e.open; $("mtEasyToggle").textContent = mtEasyOpen ? "إخفاء" : "الخطوات";
+    $("mtEasyBody").hidden = !e.open || (fold && !mtEasyOpen);
+    $("mtEasySend").textContent = r && r.status !== "done" ? "✅ ابعت الطلب تاني" : "✅ ضفتكم، اربطوا صفحتي";
+    if (fill) { $("mtEasyPage").value = r ? r.pageUrl : ""; $("mtEasyIg").value = r && r.igUser ? "@" + r.igUser : ""; setMsg("mtEasyMsg", ""); }
+  }
+  $("mtEasyToggle").onclick = function () { mtEasyOpen = !mtEasyOpen; renderMtEasy(false); };
+  $("mtEasySend").onclick = async function () {
+    var b = this, page = $("mtEasyPage").value.trim();
+    setMsg("mtEasyMsg", "");
+    if (!page) { setMsg("mtEasyMsg", "حط لينك صفحتك الأول: افتح صفحتك على فيسبوك وانسخ اللينك من فوق."); $("mtEasyPage").focus(); return; }
+    b.disabled = true;
+    try {
+      mt = await api("api/meta.ashx?action=easy", { method: "POST", json: { pageUrl: page, igUser: $("mtEasyIg").value.trim() } });
+      mtEasyOpen = false; mtTop("", true); renderMtEasy(true); renderMtApp(false); renderMt("fb"); renderMt("ig");
+      toast("✅ طلبك وصلنا. هنربط صفحتك في أقرب وقت.");
+    } catch (err) { if (err.code === "plan_locked") openLock("messenger"); else setMsg("mtEasyMsg", err.message); }
+    b.disabled = false;
+  };
   // «تطبيق Meta بتاعك»: the steps on developers.facebook.com in order, the links each one asks for, and the numbers it
   // gives (each saved as soon as its step gets to it). Folded to its header once a channel is linked.
   var mtAppOpen = false;
@@ -4940,10 +5038,14 @@
     var basic = $("mtBasic"); basic.hidden = !a.appId; if (a.appId) basic.href = "https://developers.facebook.com/apps/" + encodeURIComponent(a.appId) + "/settings/basic/";
     $("mtS1").classList.toggle("done", !!a.appId); $("mtS2").classList.toggle("done", !!a.own); $("mtS4").classList.toggle("done", !!(a.fbConfig && a.igConfig));
     $("mtAppOk").hidden = !a.own; $("mtAppShared").hidden = !!a.own || !a.shared;
-    $("mtAppToggle").hidden = !linked; $("mtAppToggle").textContent = mtAppOpen ? "إخفاء" : "الخطوات واللينكات";
-    $("mtAppBody").hidden = linked && !mtAppOpen;
+    // with «ضيفنا على صفحتك» on offer, this is the other way: folded until they start it
+    var easy = !!(mt.easy && mt.easy.open), fold = linked || (easy && !a.appId);
+    $("mtAppAlt").hidden = !easy;
+    $("mtAppToggle").hidden = !fold; $("mtAppToggle").textContent = mtAppOpen ? "إخفاء" : "الخطوات واللينكات";
+    $("mtAppBody").hidden = fold && !mtAppOpen;
     var sub = $("mtAppSub"); sub.textContent = "";
     if (a.own) { sub.appendChild(document.createTextNode("المسنجر والإنستجرام بيتربطوا بتطبيقك، رقمه ")); sub.appendChild(mtEl("span", "ltr", a.appId)).style.display = "inline"; sub.appendChild(document.createTextNode(".")); }
+    else if (easy && !a.appId && !mtAppOpen) sub.textContent = "لو عايز تربط بتطبيق Meta خاص بيك بدل ما تضيفنا على صفحتك. محتاج حساب على developers.facebook.com وحوالي ربع ساعة.";
     else sub.textContent = "بتعمله مرة واحدة: تطبيق على developers.facebook.com بحسابك. امشي على الخطوات دي بالترتيب: كل لينك هتحتاجه هنا بزرار «نسخ»، وكل رقم تاخده من تطبيقك حطه في خانته ودوس «حفظ».";
     if (fill) { $("mtAppId").value = a.appId || ""; $("mtAppFb").value = a.fbConfig || ""; $("mtAppIg").value = a.igConfig || ""; $("mtAppSecret").value = ""; ["1", "2", "4"].forEach(function (n) { setMsg("mtAppMsg" + n, ""); }); }
     $("mtAppSecret").placeholder = a.hasSecret ? "محفوظ ✓ سيبه فاضي لو مش هتغيّره" : "";
@@ -4959,7 +5061,7 @@
       b.disabled = true;
       try {
         mt = await api("api/meta.ashx?action=app", { method: "POST", json: { appId: $("mtAppId").value.trim(), secret: secret, fbConfig: $("mtAppFb").value.trim(), igConfig: $("mtAppIg").value.trim() } });
-        mtTop("", true); renderMtApp(true); renderMt("fb"); renderMt("ig");
+        mtTop("", true); renderMtEasy(false); renderMtApp(true); renderMt("fb"); renderMt("ig");
         toast(MT_SAVED[n]);
       } catch (e) { setMsg("mtAppMsg" + n, e.message); }
       b.disabled = false;
@@ -4989,7 +5091,10 @@
     }
     if (!L) {
       if (!d.ready) {
-        body.appendChild(mtEl("div", "mt-soon", d.need === "app" ? "⚙️ امشي على خطوات «تطبيق Meta بتاعك» اللي فوق. بعد الخطوة 2 (الـ App ID والـ Secret) زرار الربط هيظهر هنا."
+        var E = mt.easy, ask = E && E.request, asked = !!(ask && ask.status === "pending" && (ch === "fb" || ask.igUser));
+        body.appendChild(mtEl("div", "mt-soon", asked ? "⏳ طلب الربط وصلنا، وهنربط " + (ch === "fb" ? "صفحتك" : "حسابك") + " من عندنا. أول ما يتربط هيظهر هنا."
+          : d.need === "app" && E && E.open ? "👆 أسهل طريقة: «ضيفنا على صفحتك» فوق. أو اعمل «تطبيق Meta بتاعك»، وزرار الربط هيظهر هنا."
+          : d.need === "app" ? "⚙️ امشي على خطوات «تطبيق Meta بتاعك» اللي فوق. بعد الخطوة 2 (الـ App ID والـ Secret) زرار الربط هيظهر هنا."
           : d.need === "config" ? "⚙️ حط Configuration ID بتاع Sellybot Instagram في الخطوة 4 فوق، وبعدها زرار الربط هيظهر هنا."
           : "🚧 الربط بـ" + F.name + " هيتفتح قريب جدًا. أول ما يجهز هتلاقي زرار الربط هنا."));
         return;
@@ -5026,7 +5131,7 @@
   async function mtPost(ch, action, body, okText) {
     try { mt = await api("api/meta.ashx?action=" + action, { method: "POST", json: Object.assign({ channel: ch }, body || {}) }); mtTop("", true); if (okText) toast(okText); }
     catch (e) { if (e.code === "plan_locked") openLock(MT[ch].lock); else toast(e.message); }
-    renderMtApp(false); renderMt("fb"); renderMt("ig");
+    renderMtEasy(false); renderMtApp(false); renderMt("fb"); renderMt("ig");
   }
   // back from Meta's login: api/meta-connect.ashx sends the owner here with ?meta=<result>[&metaMsg=<why>]#social
   (function () {
