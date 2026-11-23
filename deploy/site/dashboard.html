@@ -1037,9 +1037,41 @@
   .mt-lang button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 16px;font:inherit;font-size:13px;cursor:pointer;transition:border-color .15s}
   .mt-lang button:hover,.mt-lang button:focus-visible{border-color:var(--brand);outline:none}
   .mt-lang button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
-  .mt-plan>li[hidden],.mt-plan [data-fblang][hidden]{display:none}
+  #mtEasy [data-fblang][hidden]{display:none}
+  /* «ضيفنا على صفحتك»: the steps fold, one open at a time; each header = number, where it happens, title, arrow */
+  .mt-stps{display:grid;gap:10px;margin-top:14px}
+  .mt-stp{border:1px solid var(--line);border-radius:14px;background:var(--soft);min-width:0;transition:border-color .15s,box-shadow .15s}
+  .mt-stp[open]{border-color:rgba(232,119,74,.45);box-shadow:0 6px 18px rgba(43,29,20,.06)}
+  .mt-stp>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;border-radius:14px}
+  .mt-stp>summary::-webkit-details-marker{display:none}
+  .mt-stp>summary:hover .mt-t{color:var(--brand)}
+  .mt-stp>summary:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+  .mt-n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:13.5px;display:grid;place-items:center}
+  .mt-ic{flex:none;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;overflow:hidden}
+  .mt-ic svg{width:28px;height:28px;display:block}
+  .mt-ic.ig{background:linear-gradient(135deg,#f9a03f,#e1306c 45%,#833ab4);color:#fff}
+  .mt-ic.ig svg{width:18px;height:18px}
+  .mt-ic.go{background:var(--brand);color:#fff}
+  .mt-ic.go svg{width:16px;height:16px}
+  .mt-t{flex:1;min-width:0;font-weight:700;font-size:15px;color:var(--ink);transition:color .15s}
+  .mt-t small{font-weight:500;font-size:12.5px;color:var(--muted)}
+  .mt-chev{flex:none;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;margin:0 4px 4px}
+  .mt-stp[open]>summary .mt-chev{transform:rotate(-135deg);margin-bottom:-4px}
+  .mt-stp-body{padding:0 14px 14px;padding-inline-start:50px}
+  .mt-stp-body p{margin:0 0 8px;font-size:13.5px;line-height:1.75;color:var(--muted)}
+  .mt-stp-body p b{color:var(--ink);font-weight:600}
+  .mt-stp-body p.hint{font-size:12px;margin:6px 0 0;line-height:1.6}
+  .mt-dev{border:1px solid var(--line);border-radius:12px;background:var(--card);margin-top:8px}
+  .mt-dev>summary{list-style:none;cursor:pointer;padding:9px 12px;font-weight:600;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px;border-radius:12px}
+  .mt-dev>summary::-webkit-details-marker{display:none}
+  .mt-dev>summary::after{content:"";margin-inline-start:auto;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s}
+  .mt-dev[open]>summary::after{transform:rotate(-135deg)}
+  .mt-dev>summary:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+  .mt-dev>.mt-path{padding:0 12px 6px}
+  .mt-next{margin-top:12px}
+  @media (max-width:520px){.mt-stp-body{padding-inline-start:14px}.mt-stp>summary{padding:12px}}
   /* one tap per line, joined by a thin line: the order to press things in */
-  .mt-plan p.mt-how{margin:10px 0 2px;color:var(--ink);font-weight:600}
+  .mt-stp-body p.mt-how{margin:10px 0 2px;color:var(--ink);font-weight:600}
   .mt-path{list-style:none;margin:0 0 8px;padding:0}
   .mt-path>li{position:relative;padding:4px 0;padding-inline-start:24px;font-size:13.5px;line-height:1.7;color:var(--muted)}
   .mt-path>li b{color:var(--ink);font-weight:600}
@@ -2695,122 +2727,158 @@
           <button type="button" data-fblang-pick="ar" aria-pressed="true">عربي</button>
           <button type="button" data-fblang-pick="en" aria-pressed="false" lang="en">English</button>
         </div>
-        <ol class="mt-plan">
-          <!-- each step's taps one under another (.mt-path): what the owner presses, in order -->
-          <li data-fblang="ar"><h4>افتح «الوصول إلى الصفحة»</h4>
-            <p>ادخل فيسبوك بحسابك الشخصي اللي أدمن على صفحة المتجر.</p>
-            <p class="mt-how">📱 من الموبايل:</p>
-            <ul class="mt-path">
-              <li>من تطبيق فيسبوك حوّل لصفحتك</li>
-              <li><b>☰</b> (القائمة)</li>
-              <li><b>الإعدادات والخصوصية</b></li>
-              <li><b>الإعدادات</b></li>
-              <li><b>الوصول إلى الصفحة</b></li>
-            </ul>
-            <p class="mt-how">💻 من الكمبيوتر:</p>
-            <ul class="mt-path">
-              <li>دوس صورتك فوق</li>
-              <li><b>عرض كل الملفات الشخصية</b>، واختار صفحة متجرك</li>
-              <li>دوس صورة الصفحة فوق</li>
-              <li><b>الإعدادات والخصوصية</b></li>
-              <li><b>الإعدادات</b></li>
-              <li><b>إعداد الصفحة</b></li>
-              <li><b>الوصول إلى الصفحة</b></li>
-            </ul>
-            <p class="hint">مش لاقيها؟ اكتب «الوصول إلى الصفحة» في خانة البحث اللي فوق في الإعدادات. الأسامي ممكن تختلف كلمة حسب نسخة فيسبوك.</p></li>
-          <li data-fblang="en" dir="ltr" lang="en"><h4>Open "Page access"</h4>
-            <p>Log in to Facebook with your personal account that manages the store's Page.</p>
-            <p class="mt-how">📱 On your phone:</p>
-            <ul class="mt-path">
-              <li>Switch to your Page in the Facebook app</li>
-              <li><b>☰ Menu</b></li>
-              <li><b>Settings &amp; privacy</b></li>
-              <li><b>Settings</b></li>
-              <li><b>Page access</b></li>
-            </ul>
-            <p class="mt-how">💻 On a computer:</p>
-            <ul class="mt-path">
-              <li>Click your profile picture (top right)</li>
-              <li><b>See all profiles</b>, and choose your store's Page</li>
-              <li>Click the Page's picture (top right)</li>
-              <li><b>Settings &amp; privacy</b></li>
-              <li><b>Settings</b></li>
-              <li><b>Page setup</b></li>
-              <li><b>Page access</b></li>
-            </ul>
-            <p class="hint">Can't find it? Type "Page access" in the search box at the top of Settings.</p></li>
-          <li data-fblang="ar"><h4>ضيف حسابنا بصلاحية الرسايل بس</h4>
-            <ul class="mt-path">
-              <li><b>الوصول إلى الصفحة</b></li>
-              <li><b>الأشخاص الذين لديهم حق الوصول إلى المهام</b> (مش «الوصول إلى فيسبوك» اللي فوقه)</li>
-              <li><b>إضافة جديد</b></li>
-              <li>اكتب الاسم ده في البحث واختاره:
-                <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>افتح الحساب واتأكد من الصورة ↗</a></div></li>
-              <li>فعّل <b>الرسائل ونشاط المجتمع</b> بس، وسيب المحتوى والإعلانات والإحصائيات مقفولين</li>
-              <li><b>منح حق الوصول</b>، واكتب باسورد فيسبوك بتاعك للتأكيد</li>
-            </ul>
-            <p class="hint">الباسورد بيتكتب عند فيسبوك عشان يتأكد إنه انت، ومش بيوصلنا.</p></li>
-          <li data-fblang="en" dir="ltr" lang="en"><h4>Add our account, messages only</h4>
-            <ul class="mt-path">
-              <li><b>Page access</b></li>
-              <li><b>People with task access</b> (not "People with Facebook access" above it)</li>
-              <li><b>Add new</b></li>
-              <li>Search for this name and select it:
-                <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>Open the account to check the photo ↗</a></div></li>
-              <li>Turn on <b>Messages and community activity</b> only (leave Content, Ads and Insights off)</li>
-              <li><b>Give access</b>, then enter your Facebook password to confirm</li>
-            </ul>
-            <p class="hint">Your password is typed on Facebook to confirm it's you. It never reaches us.</p></li>
-          <li data-fblang="ar"><h4>الإنستجرام (لو عايزه كمان)</h4>
-            <p>حساب متجرك على الإنستجرام لازم يكون <b>احترافي</b> (نشاط تجاري أو صانع محتوى) ومربوط بصفحتك.</p>
-            <p class="mt-how">لو مش مربوط بالصفحة:</p>
-            <ul class="mt-path">
-              <li>إعدادات الصفحة</li>
-              <li><b>الحسابات المرتبطة</b></li>
-              <li><b>Instagram</b></li>
-              <li><b>ربط</b></li>
-            </ul>
-            <p class="mt-how">ومن تطبيق إنستجرام:</p>
-            <ul class="mt-path">
-              <li>صفحتك الشخصية ← <b>☰</b></li>
-              <li><b>الرسائل والردود على القصص</b></li>
-              <li><b>عناصر التحكم في الرسائل</b></li>
-              <li>تحت <b>الأدوات المتصلة</b>: فعّل <b>السماح بالوصول إلى الرسائل</b></li>
-            </ul></li>
-          <li data-fblang="en" dir="ltr" lang="en"><h4>Instagram (if you want it too)</h4>
-            <p>Your Instagram must be a <b>Professional</b> account (Business or Creator) linked to your Page.</p>
-            <p class="mt-how">If it isn't linked to the Page:</p>
-            <ul class="mt-path">
-              <li>Page settings</li>
-              <li><b>Linked accounts</b></li>
-              <li><b>Instagram</b></li>
-              <li><b>Connect</b></li>
-            </ul>
-            <p class="mt-how">Then in the Instagram app:</p>
-            <ul class="mt-path">
-              <li>Your profile → <b>☰</b></li>
-              <li><b>Messages and story replies</b></li>
-              <li><b>Message controls</b></li>
-              <li>Under <b>Connected tools</b>: turn on <b>Allow access to messages</b></li>
-            </ul></li>
-          <li id="mtEasyStep4"><h4><span data-fblang="ar">ابعتلنا لينك صفحتك</span><span data-fblang="en" lang="en">Send us your Page link</span></h4>
-            <ul class="mt-path" data-fblang="ar">
-              <li>افتح صفحتك وانسخ اللينك من فوق (أو <b>مشاركة</b> ← <b>نسخ الرابط</b>)</li>
-              <li>حطه هنا تحت، ودوس الزرار. أول ما نربطها هتلاقيها في كارت المسنجر تحت</li>
-            </ul>
-            <ul class="mt-path" data-fblang="en" lang="en">
-              <li>Open your Page and copy its link (or <b>Share</b> → <b>Copy link</b>)</li>
-              <li>Paste it below and press the button. Once we link it, it shows in the Messenger card below</li>
-            </ul>
-            <div class="shop-fields mt-fields">
-              <div><label for="mtEasyPage"><span data-fblang="ar">لينك صفحتك على فيسبوك</span><span data-fblang="en" lang="en">Your Facebook Page link</span></label>
-                <input type="text" id="mtEasyPage" class="ltr" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://www.facebook.com/my.store"></div>
-              <div><label for="mtEasyIg"><span data-fblang="ar">يوزر الإنستجرام (اختياري)</span><span data-fblang="en" lang="en">Instagram username (optional)</span></label>
-                <input type="text" id="mtEasyIg" class="ltr" maxlength="100" autocomplete="off" spellcheck="false" placeholder="@my.store"></div>
+        <!-- the steps fold (one open at a time: name="mtstep"); each header has its number and where it happens (Facebook /
+             Instagram / here). Inside, each step's taps are one under another (.mt-path). Step 1 folds again into phone /
+             computer, and the one matching the device opens by itself. -->
+        <div class="mt-stps">
+          <details class="mt-stp" name="mtstep" data-fblang="ar" open>
+            <summary><span class="mt-n">1</span><span class="mt-ic fbk" title="فيسبوك"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.6 23.9v-8.4h2.8l.5-3.3h-3.3v-2.1c0-.9.3-1.6 1.6-1.6h1.8V5.6c-.3 0-1.4-.1-2.6-.1-2.6 0-4.3 1.6-4.3 4.4v2.4H7.2v3.3h2.9v8.3c.6.1 1.2.1 1.9.1.5 0 1.1 0 1.6-.1z"/></svg></span><span class="mt-t">افتح «الوصول إلى الصفحة»</span><span class="mt-chev" aria-hidden="true"></span></summary>
+            <div class="mt-stp-body">
+              <p>ادخل فيسبوك بحسابك الشخصي اللي أدمن على صفحة المتجر.</p>
+              <details class="mt-dev" data-dev="phone"><summary>📱 من الموبايل</summary>
+                <ul class="mt-path">
+                  <li>من تطبيق فيسبوك حوّل لصفحتك</li>
+                  <li><b>☰</b> (القائمة)</li>
+                  <li><b>الإعدادات والخصوصية</b></li>
+                  <li><b>الإعدادات</b></li>
+                  <li><b>الوصول إلى الصفحة</b></li>
+                </ul></details>
+              <details class="mt-dev" data-dev="pc"><summary>💻 من الكمبيوتر</summary>
+                <ul class="mt-path">
+                  <li>دوس صورتك فوق</li>
+                  <li><b>عرض كل الملفات الشخصية</b>، واختار صفحة متجرك</li>
+                  <li>دوس صورة الصفحة فوق</li>
+                  <li><b>الإعدادات والخصوصية</b></li>
+                  <li><b>الإعدادات</b></li>
+                  <li><b>إعداد الصفحة</b></li>
+                  <li><b>الوصول إلى الصفحة</b></li>
+                </ul></details>
+              <p class="hint">مش لاقيها؟ اكتب «الوصول إلى الصفحة» في خانة البحث اللي فوق في الإعدادات. الأسامي ممكن تختلف كلمة حسب نسخة فيسبوك.</p>
+              <button type="button" class="btn ghost sm mt-next" data-mtnext>خلصت؟ الخطوة اللي بعدها ↓</button>
             </div>
-            <button class="btn sm" type="button" id="mtEasySend" style="margin-top:10px">✅ ضفتكم، اربطوا صفحتي</button>
-            <div class="msg" id="mtEasyMsg"></div></li>
-        </ol>
+          </details>
+          <details class="mt-stp" name="mtstep" data-fblang="en" dir="ltr" lang="en" open>
+            <summary><span class="mt-n">1</span><span class="mt-ic fbk" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.6 23.9v-8.4h2.8l.5-3.3h-3.3v-2.1c0-.9.3-1.6 1.6-1.6h1.8V5.6c-.3 0-1.4-.1-2.6-.1-2.6 0-4.3 1.6-4.3 4.4v2.4H7.2v3.3h2.9v8.3c.6.1 1.2.1 1.9.1.5 0 1.1 0 1.6-.1z"/></svg></span><span class="mt-t">Open "Page access"</span><span class="mt-chev" aria-hidden="true"></span></summary>
+            <div class="mt-stp-body">
+              <p>Log in to Facebook with your personal account that manages the store's Page.</p>
+              <details class="mt-dev" data-dev="phone"><summary>📱 On your phone</summary>
+                <ul class="mt-path">
+                  <li>Switch to your Page in the Facebook app</li>
+                  <li><b>☰ Menu</b></li>
+                  <li><b>Settings &amp; privacy</b></li>
+                  <li><b>Settings</b></li>
+                  <li><b>Page access</b></li>
+                </ul></details>
+              <details class="mt-dev" data-dev="pc"><summary>💻 On a computer</summary>
+                <ul class="mt-path">
+                  <li>Click your profile picture (top right)</li>
+                  <li><b>See all profiles</b>, and choose your store's Page</li>
+                  <li>Click the Page's picture (top right)</li>
+                  <li><b>Settings &amp; privacy</b></li>
+                  <li><b>Settings</b></li>
+                  <li><b>Page setup</b></li>
+                  <li><b>Page access</b></li>
+                </ul></details>
+              <p class="hint">Can't find it? Type "Page access" in the search box at the top of Settings.</p>
+              <button type="button" class="btn ghost sm mt-next" data-mtnext>Done? Next step ↓</button>
+            </div>
+          </details>
+          <details class="mt-stp" name="mtstep" data-fblang="ar">
+            <summary><span class="mt-n">2</span><span class="mt-ic fbk" title="فيسبوك"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.6 23.9v-8.4h2.8l.5-3.3h-3.3v-2.1c0-.9.3-1.6 1.6-1.6h1.8V5.6c-.3 0-1.4-.1-2.6-.1-2.6 0-4.3 1.6-4.3 4.4v2.4H7.2v3.3h2.9v8.3c.6.1 1.2.1 1.9.1.5 0 1.1 0 1.6-.1z"/></svg></span><span class="mt-t">ضيف حسابنا بصلاحية الرسايل بس</span><span class="mt-chev" aria-hidden="true"></span></summary>
+            <div class="mt-stp-body">
+              <ul class="mt-path">
+                <li><b>الوصول إلى الصفحة</b></li>
+                <li><b>الأشخاص الذين لديهم حق الوصول إلى المهام</b> (مش «الوصول إلى فيسبوك» اللي فوقه)</li>
+                <li><b>إضافة جديد</b></li>
+                <li>اكتب الاسم ده في البحث واختاره:
+                  <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>افتح الحساب واتأكد من الصورة ↗</a></div></li>
+                <li>فعّل <b>الرسائل ونشاط المجتمع</b> بس، وسيب المحتوى والإعلانات والإحصائيات مقفولين</li>
+                <li><b>منح حق الوصول</b>، واكتب باسورد فيسبوك بتاعك للتأكيد</li>
+              </ul>
+              <p class="hint">الباسورد بيتكتب عند فيسبوك عشان يتأكد إنه انت، ومش بيوصلنا.</p>
+              <button type="button" class="btn ghost sm mt-next" data-mtnext>خلصت؟ الخطوة اللي بعدها ↓</button>
+            </div>
+          </details>
+          <details class="mt-stp" name="mtstep" data-fblang="en" dir="ltr" lang="en">
+            <summary><span class="mt-n">2</span><span class="mt-ic fbk" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.6 23.9v-8.4h2.8l.5-3.3h-3.3v-2.1c0-.9.3-1.6 1.6-1.6h1.8V5.6c-.3 0-1.4-.1-2.6-.1-2.6 0-4.3 1.6-4.3 4.4v2.4H7.2v3.3h2.9v8.3c.6.1 1.2.1 1.9.1.5 0 1.1 0 1.6-.1z"/></svg></span><span class="mt-t">Add our account, messages only</span><span class="mt-chev" aria-hidden="true"></span></summary>
+            <div class="mt-stp-body">
+              <ul class="mt-path">
+                <li><b>Page access</b></li>
+                <li><b>People with task access</b> (not "People with Facebook access" above it)</li>
+                <li><b>Add new</b></li>
+                <li>Search for this name and select it:
+                  <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>Open the account to check the photo ↗</a></div></li>
+                <li>Turn on <b>Messages and community activity</b> only (leave Content, Ads and Insights off)</li>
+                <li><b>Give access</b>, then enter your Facebook password to confirm</li>
+              </ul>
+              <p class="hint">Your password is typed on Facebook to confirm it's you. It never reaches us.</p>
+              <button type="button" class="btn ghost sm mt-next" data-mtnext>Done? Next step ↓</button>
+            </div>
+          </details>
+          <details class="mt-stp" name="mtstep" data-fblang="ar">
+            <summary><span class="mt-n">3</span><span class="mt-ic ig" title="إنستجرام"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></span><span class="mt-t">الإنستجرام <small>(لو عايزه كمان)</small></span><span class="mt-chev" aria-hidden="true"></span></summary>
+            <div class="mt-stp-body">
+              <p>حساب متجرك على الإنستجرام لازم يكون <b>احترافي</b> (نشاط تجاري أو صانع محتوى) ومربوط بصفحتك.</p>
+              <p class="mt-how">لو مش مربوط بالصفحة:</p>
+              <ul class="mt-path">
+                <li>إعدادات الصفحة</li>
+                <li><b>الحسابات المرتبطة</b></li>
+                <li><b>Instagram</b></li>
+                <li><b>ربط</b></li>
+              </ul>
+              <p class="mt-how">ومن تطبيق إنستجرام:</p>
+              <ul class="mt-path">
+                <li>صفحتك الشخصية ← <b>☰</b></li>
+                <li><b>الرسائل والردود على القصص</b></li>
+                <li><b>عناصر التحكم في الرسائل</b></li>
+                <li>تحت <b>الأدوات المتصلة</b>: فعّل <b>السماح بالوصول إلى الرسائل</b></li>
+              </ul>
+              <button type="button" class="btn ghost sm mt-next" data-mtnext>خلصت؟ الخطوة اللي بعدها ↓</button>
+            </div>
+          </details>
+          <details class="mt-stp" name="mtstep" data-fblang="en" dir="ltr" lang="en">
+            <summary><span class="mt-n">3</span><span class="mt-ic ig" title="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></span><span class="mt-t">Instagram <small>(if you want it too)</small></span><span class="mt-chev" aria-hidden="true"></span></summary>
+            <div class="mt-stp-body">
+              <p>Your Instagram must be a <b>Professional</b> account (Business or Creator) linked to your Page.</p>
+              <p class="mt-how">If it isn't linked to the Page:</p>
+              <ul class="mt-path">
+                <li>Page settings</li>
+                <li><b>Linked accounts</b></li>
+                <li><b>Instagram</b></li>
+                <li><b>Connect</b></li>
+              </ul>
+              <p class="mt-how">Then in the Instagram app:</p>
+              <ul class="mt-path">
+                <li>Your profile → <b>☰</b></li>
+                <li><b>Messages and story replies</b></li>
+                <li><b>Message controls</b></li>
+                <li>Under <b>Connected tools</b>: turn on <b>Allow access to messages</b></li>
+              </ul>
+              <button type="button" class="btn ghost sm mt-next" data-mtnext>Done? Next step ↓</button>
+            </div>
+          </details>
+          <details class="mt-stp" name="mtstep" id="mtEasyStep4">
+            <summary><span class="mt-n">4</span><span class="mt-ic go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span><span class="mt-t"><span data-fblang="ar">ابعتلنا لينك صفحتك</span><span data-fblang="en" lang="en">Send us your Page link</span></span><span class="mt-chev" aria-hidden="true"></span></summary>
+            <div class="mt-stp-body">
+              <ul class="mt-path" data-fblang="ar">
+                <li>افتح صفحتك وانسخ اللينك من فوق (أو <b>مشاركة</b> ← <b>نسخ الرابط</b>)</li>
+                <li>حطه هنا تحت، ودوس الزرار. أول ما نربطها هتلاقيها في كارت المسنجر تحت</li>
+              </ul>
+              <ul class="mt-path" data-fblang="en" lang="en">
+                <li>Open your Page and copy its link (or <b>Share</b> → <b>Copy link</b>)</li>
+                <li>Paste it below and press the button. Once we link it, it shows in the Messenger card below</li>
+              </ul>
+              <div class="shop-fields mt-fields">
+                <div><label for="mtEasyPage"><span data-fblang="ar">لينك صفحتك على فيسبوك</span><span data-fblang="en" lang="en">Your Facebook Page link</span></label>
+                  <input type="text" id="mtEasyPage" class="ltr" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://www.facebook.com/my.store"></div>
+                <div><label for="mtEasyIg"><span data-fblang="ar">يوزر الإنستجرام (اختياري)</span><span data-fblang="en" lang="en">Instagram username (optional)</span></label>
+                  <input type="text" id="mtEasyIg" class="ltr" maxlength="100" autocomplete="off" spellcheck="false" placeholder="@my.store"></div>
+              </div>
+              <button class="btn sm" type="button" id="mtEasySend" style="margin-top:10px">✅ ضفتكم، اربطوا صفحتي</button>
+              <div class="msg" id="mtEasyMsg"></div>
+            </div>
+          </details>
+        </div>
         <div class="mt-soon">🔒 <b>آمن:</b> مش بتدينا باسورد ولا أي أكواد. صلاحيتنا على رسايل صفحتك بس: مانقدرش ننشر ولا نمسح ولا نشوف إعلاناتك. وتقدر تشيلنا من «الوصول إلى الصفحة» في أي وقت بضغطة.</div>
       </div>
     </div>
@@ -5107,7 +5175,7 @@
       var pg = mtEl("div", "hint ltr", r.pageUrl + (r.igUser ? "  ·  @" + r.igUser : "")); pg.style.marginTop = "4px"; w.appendChild(pg);
       var row = mtEl("div", "mt-row"), ed = mtEl("button", "btn ghost sm", "تعديل الطلب"), cx = mtEl("button", "btn ghost sm", "إلغاء الطلب");
       ed.type = cx.type = "button";
-      ed.onclick = function () { mtEasyOpen = true; renderMtEasy(false); $("mtEasyPage").focus(); };
+      ed.onclick = function () { mtEasyOpen = true; renderMtEasy(false); $("mtEasyStep4").open = true; $("mtEasyPage").focus(); };
       cx.onclick = async function () {
         if (!confirm("تلغي طلب الربط؟ لو ضفت حساب Sellybot على صفحتك، شيله من «الوصول إلى الصفحة».")) return;
         cx.disabled = true;
@@ -5140,9 +5208,14 @@
     $("mtEasySend").textContent = mtFbLang === "en" ? (mtEasyResend ? "✅ Send the request again" : "✅ Done, link my Page")
       : (mtEasyResend ? "✅ ابعت الطلب تاني" : "✅ ضفتكم، اربطوا صفحتي");
   }
+  // the steps of one language (the last one, the Page-link form, is in both)
+  function mtAccs(l) { return [].slice.call(document.querySelectorAll("#mtEasy .mt-stp")).filter(function (d) { var x = d.getAttribute("data-fblang"); return !x || x === l; }); }
   function setFbLang(l) {
+    var was = -1; mtAccs(mtFbLang).forEach(function (d, i) { if (d.open && was < 0) was = i; });
     mtFbLang = l;
     document.querySelectorAll("#mtEasy [data-fblang]").forEach(function (el) { el.hidden = el.getAttribute("data-fblang") !== l; });
+    // the same step stays open in the other language (one open at a time: the two step 1s can't both start open)
+    var now = mtAccs(l); if (now.length && !now.some(function (d) { return d.open; })) now[Math.max(0, was)].open = true;
     document.querySelectorAll("#mtEasy [data-fblang-pick]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-fblang-pick") === l)); });
     $("mtEasyStep4").dir = l === "en" ? "ltr" : "rtl";   // the shared step (the form) reads in the same direction as the rest
     mtEasyBtn();
@@ -5151,6 +5224,20 @@
     b.onclick = function () { setFbLang(b.getAttribute("data-fblang-pick")); try { localStorage.setItem("sbFbLang", mtFbLang); } catch (err) { } };
   });
   setFbLang(mtFbLang);
+  // step 1 opens on the owner's own device: the phone steps on a touch screen, the computer ones otherwise
+  (function () {
+    var touch = !!(window.matchMedia && matchMedia("(pointer: coarse)").matches);
+    document.querySelectorAll("#mtEasy .mt-dev").forEach(function (d) { d.open = (d.getAttribute("data-dev") === "phone") === touch; });
+  })();
+  // «خلصت؟ الخطوة اللي بعدها»: close this step, open the next, and bring it into view under the sticky top bar
+  document.querySelectorAll("#mtEasy [data-mtnext]").forEach(function (b) {
+    b.onclick = function () {
+      var all = mtAccs(mtFbLang), nx = all[all.indexOf(b.closest(".mt-stp")) + 1];
+      if (!nx) return;
+      nx.open = true;
+      window.scrollTo({ top: nx.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
+    };
+  });
   $("mtEasySend").onclick = async function () {
     var b = this, page = $("mtEasyPage").value.trim();
     setMsg("mtEasyMsg", "");
