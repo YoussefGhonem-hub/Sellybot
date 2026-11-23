@@ -659,13 +659,14 @@
              through Sellybot's app (meta-connect.ashx?start=fb&for=<StoreId>) -->
         <div class="card anim" id="mtEasyCard" style="margin-bottom:16px">
           <h3>🤝 «ضيفنا على صفحتك»: طلبات الربط</h3>
-          <p class="sub">التاجر بيضيف الحساب ده على صفحته بصلاحية «الرسائل» و«نشاط المجتمع»، ويبعت لينك صفحته. انت: اقبل الإضافة من إشعارات فيسبوك، وبعدين دوس «اربط المسنجر» عند طلبه، وادخل بنفس الحساب واختار صفحته.</p>
+          <p class="sub">التاجر بيضيف الحساب ده على صفحته من «الوصول إلى الصفحة» ← «الأشخاص اللي ليهم وصول للمهام» بصلاحية «الرسائل ونشاط المجتمع» بس، ويبعت لينك صفحته. انت: اقبل الإضافة من إشعارات فيسبوك، وبعدين دوس «اربط المسنجر» عند طلبه، وادخل بنفس الحساب واختار صفحته.</p>
           <form class="mt-agent-f" id="mtAgentForm" autocomplete="off">
             <div><label for="mtAgentName">اسم الحساب زي ما بيظهر على فيسبوك</label><input type="text" id="mtAgentName" maxlength="80"></div>
             <div class="wide"><label for="mtAgentUrl">لينك الحساب (التاجر بيفتحه عشان يتأكد إنه الصح)</label><input type="text" id="mtAgentUrl" class="ltr" maxlength="300" placeholder="https://www.facebook.com/..."></div>
             <button class="btn" id="mtAgentSave">حفظ</button>
           </form>
           <div class="hint" id="mtAgentHint" style="margin-top:8px"></div>
+          <div class="hint">⚠️ لازم يكون حساب شخصي (بروفايل) مش صفحة: فيسبوك مابيسمحش تتضاف صفحة على صفحة. واسمه يكون سهل التاجر يلاقيه في البحث.</div>
           <div class="hint">⚠️ الحساب ده لازم يكون أدمن على تطبيق Sellybot في developers.facebook.com. ولما فيسبوك يسألك على الصفحات، سيب كل الصفحات المتعلّمة زي ما هي وعلّم على صفحة التاجر الجديدة كمان: لو شلت العلامة من صفحة، المساعد يقف عليها.</div>
           <div class="mt-asks" id="mtAsks"></div>
         </div>
@@ -986,7 +987,7 @@
     var what = b.dataset.ask, body = { do: what, store: +b.closest("[data-store]").dataset.store };
     if (what === "pick") { body.channel = b.closest("[data-ch]").dataset.ch; body.id = b.dataset.id; }
     if (what === "problem") {
-      var n = prompt("اكتب للتاجر إيه المشكلة وهو يعمل إيه (هيشوفها في لوحته):", "مالقيناش حسابنا على صفحتك. اتأكد إنك ضفته من «الوصول إلى الصفحة» بصلاحية «الرسائل» و«نشاط المجتمع».");
+      var n = prompt("اكتب للتاجر إيه المشكلة وهو يعمل إيه (هيشوفها في لوحته):", "مالقيناش حسابنا على صفحتك. اتأكد إنك ضفته من «الوصول إلى الصفحة» ← «الأشخاص اللي ليهم وصول للمهام» بصلاحية «الرسائل ونشاط المجتمع».");
       if (!n || !n.trim()) return; body.note = n.trim();
     }
     busy(b, true);
