@@ -203,32 +203,46 @@
   .ask-bar h4{margin:0;font-size:15px}
   .ask-bar .seg b{font-weight:700;margin-inline-start:4px;color:var(--brand)}
   .ask-wrap{box-shadow:none}
-  .ask-tbl td{vertical-align:top}
+  /* fixed column widths (colgroup), everything in the middle of the row, everything starting on the right like its header;
+     each channel's cell = what the owner sent for it (their Page / their Instagram) on top, what we do with it under it */
+  .ask-tbl{min-width:860px;table-layout:fixed}
+  .ask-tbl col.c-store{width:18%}.ask-tbl col.c-ch{width:24%}.ask-tbl col.c-st{width:18%}.ask-tbl col.c-act{width:16%}
+  .ask-tbl th,.ask-tbl td{padding:14px;text-align:right}
+  .ask-tbl td{vertical-align:middle}
   .ask-tbl tr:last-child td{border-bottom:0}
   .ask-tbl tbody tr{transition:background .15s}
   .ask-tbl tbody tr:hover{background:color-mix(in srgb,var(--soft) 60%,transparent)}
   .ask-tbl td:first-child{box-shadow:inset -3px 0 0 var(--ask-c,transparent)}
   .ask-tbl tr.ask-pending{--ask-c:#f0b04a}.ask-tbl tr.ask-problem{--ask-c:#9a8b7d}.ask-tbl tr.ask-done{--ask-c:#2e9d5b}
-  .ask-store b{display:block;font-size:14.5px;white-space:nowrap}
-  .ask-store .hint{margin-top:2px}
-  .ask-page{display:inline-block;max-width:170px;padding:4px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--line);
-    color:var(--ink);text-decoration:none;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
-  .ask-page:hover{border-color:var(--brand);color:var(--brand)}
-  .ask-ig{display:block;font-size:12.5px;margin-bottom:6px}
-  .ask-ch{min-width:130px}
-  .ask-ch a.btn{text-decoration:none}
-  .ask-linked{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+  .ask-h{display:inline-flex;align-items:center;gap:7px}
+  .ask-ic{flex:none;width:18px;height:18px;border-radius:5px;display:inline-grid;place-items:center;overflow:hidden}
+  .ask-ic svg{width:18px;height:18px;display:block}
+  .ask-ic.ig{background:linear-gradient(135deg,#f9a03f,#e1306c 45%,#833ab4);color:#fff}
+  .ask-ic.ig svg{width:12px;height:12px}
+  .ask-who{display:flex;align-items:center;gap:10px;min-width:0}
+  .ask-av{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:15px;
+    background:color-mix(in srgb,var(--brand) 14%,var(--card));color:var(--brand)}
+  .ask-who>div{min-width:0}
+  .ask-who b{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ask-who .hint{margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ask-src{margin-bottom:9px}
+  .ask-src a{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:4px 10px 4px 5px;border-radius:999px;background:var(--soft);
+    border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:12.5px}
+  .ask-src a .u{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ask-src a .go{flex:none;color:var(--muted)}
+  .ask-src a:hover{border-color:var(--brand);color:var(--brand)}
+  .ask-ch a.btn{text-decoration:none;min-width:132px;justify-content:center}
+  .ask-linked{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
   .ask-linked span[dir]{font-weight:600;font-size:13.5px}
-  .ask-picks{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin-top:4px}
-  .ask-picks .btn{justify-content:flex-start}
+  .ask-picks{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin-top:6px}
+  .ask-picks .btn{justify-content:flex-start;white-space:normal;text-align:right}
+  .ask-ch .hint:first-child{margin-top:0}
   .ask-none{color:var(--muted);font-size:13px}
-  .ask-note{margin-top:6px;font-size:12.5px;color:var(--muted);max-width:260px;line-height:1.6}
-  .ask-at{white-space:nowrap;color:var(--muted);font-size:13px}
-  .ask-act{white-space:nowrap;width:1%}
-  .ask-act .btn{display:flex;width:100%;justify-content:center}
-  .ask-act .btn + .btn{margin-top:6px}
-  .ask-tbl{min-width:900px}
-  .ask-empty{text-align:center;padding:26px 14px !important;color:var(--muted)}
+  .ask-at{display:block;margin-top:6px;color:var(--muted);font-size:12.5px;white-space:nowrap}
+  .ask-note{margin-top:6px;font-size:12.5px;color:var(--muted);line-height:1.6}
+  .ask-btns{display:flex;flex-wrap:wrap;gap:6px}
+  .ask-btns .btn{flex:1 1 auto;justify-content:center}
+  .ask-empty{text-align:center !important;padding:26px 14px !important;color:var(--muted)}
   @media (max-width:1000px){.grid2,.grid2b{grid-template-columns:1fr}}
 
   /* chart */
@@ -695,7 +709,8 @@
             <div class="seg" id="mtAskFilter"><button type="button" data-f="pending">مستنية الربط<b></b></button><button type="button" data-f="problem">مستنية التاجر<b></b></button><button type="button" data-f="done">اتربطت<b></b></button><button type="button" data-f="all">الكل<b></b></button></div>
           </div>
           <div class="tbl-wrap ask-wrap"><table class="ask-tbl">
-            <thead><tr><th>المتجر</th><th>صفحته</th><th>💬 المسنجر</th><th>📸 الإنستجرام</th><th>الحالة</th><th>وصل</th><th></th></tr></thead>
+            <colgroup><col class="c-store"><col class="c-ch"><col class="c-ch"><col class="c-st"><col class="c-act"></colgroup>
+            <thead><tr><th>المتجر</th><th><span class="ask-h" id="mtAskThFb">المسنجر</span></th><th><span class="ask-h" id="mtAskThIg">الإنستجرام</span></th><th>الحالة</th><th></th></tr></thead>
             <tbody id="mtAsks"></tbody>
           </table></div>
         </div>
@@ -1007,31 +1022,40 @@
       return x.status === "done" ? ty - tx : tx - ty;
     });
     var EMPTY = { pending: "مفيش طلبات مستنية الربط 🎉", problem: "مفيش طلبات مستنية التاجر.", done: "مفيش صفحات اتربطت آخر 7 أيام.", all: "لسه محدش طلب الربط." };
-    $("mtAsks").innerHTML = rows.length ? rows.map(askHtml).join("") : '<tr><td colspan="7" class="ask-empty">' + EMPTY[mtAskF] + "</td></tr>";
+    $("mtAsks").innerHTML = rows.length ? rows.map(askHtml).join("") : '<tr><td colspan="5" class="ask-empty">' + EMPTY[mtAskF] + "</td></tr>";
   }
+  // the Facebook / Instagram marks (same as the owner's steps in the dashboard): in the headers and on the links the owner sent
+  var ASK_IC = {
+    fb: '<span class="ask-ic fb" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.6 23.9v-8.4h2.8l.5-3.3h-3.3v-2.1c0-.9.3-1.6 1.6-1.6h1.8V5.6c-.3 0-1.4-.1-2.6-.1-2.6 0-4.3 1.6-4.3 4.4v2.4H7.2v3.3h2.9v8.3c.6.1 1.2.1 1.9.1.5 0 1.1 0 1.6-.1z"/></svg></span>',
+    ig: '<span class="ask-ic ig" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor" stroke="none"/></svg></span>'
+  };
+  $("mtAskThFb").insertAdjacentHTML("afterbegin", ASK_IC.fb); $("mtAskThIg").insertAdjacentHTML("afterbegin", ASK_IC.ig);
   $("mtAskFilter").onclick = function (e) { var b = e.target.closest("button[data-f]"); if (!b) return; mtAskF = b.dataset.f; drawAsks(); };
   // facebook.com/my.store or facebook.com/profile.php?id=…: short enough for the cell (the full link is on hover and on click)
   function askShort(u) { return String(u || "").replace(/^https?:\/\/(www\.|m\.)?/i, "").replace(/\/$/, ""); }
   function askHtml(a) {
-    var ST = { pending: '<span class="pill warn">⏳ مستني الربط</span>', problem: '<span class="pill">✍️ مستني التاجر يصلّح</span>', done: '<span class="pill ok">✅ اتربط</span>' };
-    var at = new Date(a.updatedAt);
+    var ST = { pending: '<span class="pill warn">⏳ مستني الربط</span>', problem: '<span class="pill">✍️ مستني التاجر</span>', done: '<span class="pill ok">✅ اتربط</span>' };
+    var at = new Date(a.updatedAt), first = Array.from(String(a.storeName || a.slug || "?").trim())[0] || "?";
     return '<tr data-store="' + a.store + '" class="ask-' + esc(a.status) + '">'
-      + '<td class="ask-store"><b dir="auto">' + esc(a.storeName) + '</b><div class="hint ltr">' + esc(a.slug) + "</div></td>"
-      + '<td><a class="ask-page ltr" target="_blank" rel="noopener noreferrer" href="' + esc(a.pageUrl) + '" title="' + esc(a.pageUrl) + '">' + esc(askShort(a.pageUrl)) + " ↗</a></td>"
+      + '<td><div class="ask-who"><span class="ask-av" aria-hidden="true">' + esc(first.toUpperCase()) + '</span><div><b dir="auto" title="' + esc(a.storeName) + '">' + esc(a.storeName) + '</b>'
+      + '<div class="hint"><span dir="ltr">' + esc(a.slug) + "</span></div></div></div></td>"
       + askCh(a, "fb") + askCh(a, "ig")
-      + "<td>" + (ST[a.status] || esc(a.status)) + (a.note ? '<div class="ask-note" dir="auto">📝 ' + esc(a.note) + "</div>" : "") + "</td>"
-      + '<td class="ask-at" title="' + esc(at.toLocaleString("ar-EG")) + '">' + esc(ago(a.updatedAt)) + "</td>"
-      + '<td class="ask-act">' + (a.status !== "done" ? '<button class="btn ghost sm" type="button" data-ask="problem" title="ابعت للتاجر يصلّح حاجة">⚠️ فيه مشكلة</button><button class="btn ghost sm" type="button" data-ask="done" title="اقفل الطلب">✓ تم</button>' : "") + "</td>"
+      + "<td>" + (ST[a.status] || esc(a.status))
+      + '<span class="ask-at" title="' + esc(at.toLocaleString("ar-EG")) + '">' + esc(ago(a.updatedAt)) + "</span>"
+      + (a.note ? '<div class="ask-note" dir="auto">📝 ' + esc(a.note) + "</div>" : "") + "</td>"
+      + "<td>" + (a.status !== "done" ? '<div class="ask-btns"><button class="btn ghost sm" type="button" data-ask="done" title="اقفل الطلب">✓ تم</button><button class="btn ghost sm" type="button" data-ask="problem" title="ابعت للتاجر يصلّح حاجة">⚠️ فيه مشكلة</button></div>' : "") + "</td>"
       + "</tr>";
+  }
+  // what the owner sent for a channel (their Page / their Instagram): a pill with its mark, the address shortened (whole on hover)
+  function askSrc(ic, url, text) {
+    return '<div class="ask-src"><a dir="ltr" target="_blank" rel="noopener noreferrer" href="' + esc(url) + '" title="' + esc(url) + '">' + ic + '<span class="u">' + esc(text) + '</span><span class="go">↗</span></a></div>';
   }
   // one channel's cell: linked / not in the plan / the Pages to pick from / «اربط» (a plain link: Facebook's login as our account)
   function askCh(a, ch) {
     var x = a[ch] || {}, l = x.link, go = "api/meta-connect.ashx?start=" + ch + "&for=" + a.store;
     var h = '<td class="ask-ch" data-ch="' + ch + '">';
-    if (ch === "ig") {
-      if (!a.igUser) return h + '<span class="ask-none" title="التاجر ماطلبش الإنستجرام">—</span></td>';
-      h += '<a class="ask-ig ltr" target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/' + esc(a.igUser) + '/">@' + esc(a.igUser) + "</a>";
-    }
+    if (ch === "ig" && !a.igUser) return h + '<span class="ask-none">مش مطلوب</span></td>';
+    h += ch === "fb" ? askSrc(ASK_IC.fb, a.pageUrl, askShort(a.pageUrl)) : askSrc(ASK_IC.ig, "https://www.instagram.com/" + a.igUser + "/", "@" + a.igUser);
     if (l) return h + '<div class="ask-linked"><span dir="auto">' + esc(l.name || l.id) + '</span><span class="pill ok">مربوط ✅</span>' + (l.status ? '<span class="pill warn">' + esc(l.status) + "</span>" : "") + "</div></td>";
     if (!x.allowed) return h + '<span class="ask-none">باقته مافيهاش ' + (ch === "fb" ? "المسنجر" : "الإنستجرام") + "</span></td>";
     if (x.choices && x.choices.length) {
