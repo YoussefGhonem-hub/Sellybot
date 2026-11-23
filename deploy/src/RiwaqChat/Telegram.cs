@@ -42,7 +42,7 @@ namespace RiwaqChat
 {
     public class TgException : Exception
     {
-        public int Code;
+        public int Code, RetryAfter;   // RetryAfter: seconds Telegram asked to wait (429)
         public TgException(string message, int code = 0) : base(message) { Code = code; }
         public bool TokenDead { get { return Code == 401 || Code == 404; } }   // the token was revoked in @BotFather, or the bot deleted
         public bool Blocked { get { return Code == 403; } }                   // the customer blocked the bot
@@ -68,10 +68,28 @@ namespace RiwaqChat
 
         // POST {base}bot<token>/<method> with a JSON body; the result, or a TgException with an owner-friendly message.
         // The token is part of the URL, so nothing here ever logs the URL or a raw network exception.
-        public static async Task<JsonElement> Call(string token, string method, object body = null)
+        public static Task<JsonElement> Call(string token, string method, object body = null)
+        {
+            return Post(token, method, new StringContent(body == null ? "{}" : JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"));
+        }
+
+        // sendPhoto with the picture's own bytes (multipart; «ابعت عرض»). The sent message's photo[] has Telegram's file_id, which
+        // the next sends of the same picture use instead of uploading it again.
+        public static Task<JsonElement> SendPhoto(string token, string chat, byte[] image, string type, string caption)
+        {
+            var form = new MultipartFormDataContent();
+            form.Add(new StringContent(chat), "chat_id");
+            if (!string.IsNullOrEmpty(caption)) form.Add(new StringContent(caption, Encoding.UTF8), "caption");
+            var file = new ByteArrayContent(image);
+            file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrEmpty(type) ? "image/jpeg" : type);
+            form.Add(file, "photo", type == "image/png" ? "offer.png" : type == "image/webp" ? "offer.webp" : "offer.jpg");
+            return Post(token, "sendPhoto", form);
+        }
+
+        static async Task<JsonElement> Post(string token, string method, HttpContent content)
         {
             var req = new HttpRequestMessage(HttpMethod.Post, ApiBase + "bot" + token + "/" + method);
-            req.Content = new StringContent(body == null ? "{}" : JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+            req.Content = content;
             HttpResponseMessage resp;
             try { resp = await Http.SendAsync(req); }
             catch (Exception ex)
@@ -91,7 +109,10 @@ namespace RiwaqChat
                 if (parsed && int.TryParse(WaJson.S(root, "error_code") ?? "", out c2) && c2 > 0) code = c2;
                 string desc = parsed ? (WaJson.S(root, "description") ?? "") : "";
                 Log.Error(new Exception("Telegram " + method + " -> " + code + " " + desc));
-                throw Friendly(code, desc);
+                var fail = Friendly(code, desc);
+                var pars = parsed ? WaJson.O(root, "parameters") : null;   // 429: how many seconds to wait
+                int ra; if (pars.HasValue && int.TryParse(WaJson.S(pars.Value, "retry_after") ?? "", out ra)) fail.RetryAfter = ra;
+                throw fail;
             }
         }
 
@@ -280,6 +301,10 @@ namespace RiwaqChat
             string text = (WaJson.S(m, "text") ?? WaJson.S(m, "caption") ?? "").Trim();
             if (text.Length > 2000) text = text.Substring(0, 2000);
             int storeId = s.Id; var l = link;
+
+            // «ابعت عرض»: everyone who wrote or pressed Start can get the store's offers here; «وقف» / /stop after one ends them
+            Offers.TgSeen(c, s.Id, chat, from.HasValue ? WaJson.S(from.Value, "first_name") : null);
+            if (Offers.TgStop(c, s, link, chat, text)) return;
 
             // Start: the store's welcome, no assistant call (nothing from the quota)
             if (text == "/start" || text.StartsWith("/start "))

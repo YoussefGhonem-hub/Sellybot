@@ -933,6 +933,26 @@ BEGIN
   UPDATE dbo.Plans SET Features = ISNULL(Features + NCHAR(10), N'') + N'المساعد على تيليجرام'
     WHERE IsDeleted = 0 AND (Features IS NULL OR Features NOT LIKE N'%تيليجرام%');
   INSERT INTO dbo.Migrations(Name) VALUES ('telegram');
+END
+-- ---------- «ابعت عرض» on Telegram (2026-11-23, the user): the offer goes to the store's bot's chats too ----------
+-- TgContacts: everyone who wrote to the store's bot or pressed Start (kept, like BcContacts.WaLastAt; MetaMessages go after
+-- 60 days). StoppedAt + StopWhy: 'stop' = sent «وقف» / /stop after an offer; 'blocked' = blocked the bot (cleared when they write again).
+IF OBJECT_ID('dbo.TgContacts') IS NULL
+  CREATE TABLE dbo.TgContacts(
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    ChatId NVARCHAR(20) NOT NULL, Name NVARCHAR(100) NULL,
+    LastAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), StoppedAt DATETIME2 NULL, StopWhy NVARCHAR(8) NULL,
+    PRIMARY KEY (StoreId, ChatId));
+-- an offer's row says where it goes: 'wa' (Phone = the number) or 'tg' (Phone = the Telegram chat id)
+IF COL_LENGTH('dbo.BcSends', 'Channel') IS NULL ALTER TABLE dbo.BcSends ADD Channel NVARCHAR(4) NOT NULL CONSTRAINT DF_BcSends_Channel DEFAULT 'wa';
+-- the offer's picture as Telegram keeps it after the first send (file_id), so it's uploaded once per offer
+IF COL_LENGTH('dbo.Broadcasts', 'TgPhoto') IS NULL ALTER TABLE dbo.Broadcasts ADD TgPhoto NVARCHAR(300) NULL;
+-- once: the chats the bots had before this (customers' messages still kept)
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'tg-offers')
+BEGIN
+  INSERT INTO dbo.TgContacts(StoreId, ChatId, LastAt)
+    SELECT StoreId, ChatId, MAX(CreatedAt) FROM dbo.MetaMessages WHERE Channel = 'tg' AND FromCustomer = 1 AND LEN(ChatId) <= 20 GROUP BY StoreId, ChatId;
+  INSERT INTO dbo.Migrations(Name) VALUES ('tg-offers');
 END";
     }
 }

@@ -10,6 +10,9 @@
 //   list     the owner's own list (BcContacts.Added): numbers typed or uploaded from Excel / CSV (the owner confirms these people
 //            agreed to hear from the store), and Messenger / Instagram customers who gave their number when the assistant asked
 //            (Stores.BcAsk: once per customer, «تحب يوصلك جديدنا وعروضنا على الواتساب؟» with Meta's phone-number button)
+//   tg       (2026-11-23) everyone who wrote to the store's Telegram bot or pressed Start (TgContacts), sent from the bot itself:
+//            first in the offer, about one a second (no WhatsApp number to protect there), no daily cap; «وقف» or /stop ends
+//            them, and a customer who blocked the bot is skipped until they write to it again
 // Never to a number that sent «وقف» (WaOptOuts) or to the store's own number.
 //
 // WhatsApp bans numbers that blast messages, and the store's number is its business. So: one offer at a time per store, a random
@@ -44,7 +47,7 @@ namespace RiwaqChat
         public const int MaxText = 900;            // + the «وقف» line stays under WhatsApp's 1024-character picture caption
         public const int MaxImage = 1500 * 1024;   // the dashboard shrinks the picture to 1600px first
         public const int MaxPerOffer = 20000, MaxList = 50000, MaxImportRows = 20000;
-        public static readonly string[] Audiences = { "wa", "wa30", "restock", "orders", "list" };
+        public static readonly string[] Audiences = { "wa", "wa30", "restock", "orders", "list", "tg" };
         public const string Footer = "لو مش عايز توصلك رسايلنا، ابعت «وقف».";
 
         public static int DailyCap(SqlConnection c) { int v; return int.TryParse(Billing.Get(c, "BcDailyCap"), out v) && v > 0 ? v : 250; }
@@ -74,7 +77,8 @@ namespace RiwaqChat
             return f != null && f.Length >= 2 && f.Length <= 20 && f.Any(char.IsLetter) && !f.Any(char.IsDigit) ? f : null;
         }
 
-        public class Who { public string Phone, Name; }
+        // Phone = the WhatsApp number, or (Ch "tg") the Telegram chat id
+        public class Who { public string Phone, Name, Ch = "wa"; }
 
         // Everyone a store's WhatsApp customer wrote: kept for the «wa» audiences (WaMessages themselves are cleared after 60 days)
         public static void Seen(SqlConnection c, int storeId, string chatKey)
@@ -132,6 +136,13 @@ UNION ALL SELECT Phone, Customer FROM dbo.CartReminders WHERE StoreId=@s AND Sta
             var stop = OptOuts(c, s.Id);
             var map = new Dictionary<string, Who>();
             foreach (var a in audiences.Distinct())
+            {
+                if (a == "tg")
+                {
+                    // the store's bot's chats ("tg:<id>" keys never meet a phone number)
+                    foreach (var w in TgAudience(c, s.Id)) if (!map.ContainsKey("tg:" + w.Phone)) map["tg:" + w.Phone] = w;
+                    continue;
+                }
                 foreach (var w in Audience(c, s.Id, a))
                 {
                     var p = Norm(w.Phone);
@@ -140,7 +151,68 @@ UNION ALL SELECT Phone, Customer FROM dbo.CartReminders WHERE StoreId=@s AND Sta
                     if (!map.TryGetValue(p, out have)) map[p] = new Who { Phone = p, Name = Cut(w.Name, 100) };
                     else if (have.Name == null) have.Name = Cut(w.Name, 100);
                 }
-            return map.Values.ToList();
+            }
+            // Telegram first: it goes out in a minute or two, while WhatsApp takes its slow, safe pace after it
+            return map.Values.OrderBy(w => w.Ch == Tg.Ch ? 0 : 1).ToList();
+        }
+
+        // Everyone who wrote to the store's bot or pressed Start, minus «وقف» and blocks; nobody while no bot is linked
+        static List<Who> TgAudience(SqlConnection c, int storeId)
+        {
+            var list = Read(c, @"SELECT ChatId, Name FROM dbo.TgContacts WHERE StoreId=@s AND StoppedAt IS NULL
+                AND EXISTS (SELECT 1 FROM dbo.TgLinks WHERE StoreId=@s)", storeId);
+            foreach (var w in list) { w.Ch = Tg.Ch; w.Name = Cut(w.Name, 100); }
+            return list;
+        }
+
+        // ---------- Telegram: who the store's bot may send offers to, and «وقف» there ----------
+        // Every message to the bot (or Start): kept for the «tg» audience. Writing again after blocking the bot undoes the block.
+        public static void TgSeen(SqlConnection c, int storeId, string chat, string name)
+        {
+            if (string.IsNullOrEmpty(chat) || chat.Length > 20) return;
+            try
+            {
+                using (var cmd = Db.Cmd(c, @"UPDATE dbo.TgContacts SET LastAt=SYSUTCDATETIME(), Name=ISNULL(@n, Name),
+                        StoppedAt = CASE WHEN StopWhy='blocked' THEN NULL ELSE StoppedAt END, StopWhy = CASE WHEN StopWhy='blocked' THEN NULL ELSE StopWhy END
+                    WHERE StoreId=@s AND ChatId=@c;
+                    IF @@ROWCOUNT = 0 INSERT INTO dbo.TgContacts(StoreId, ChatId, Name) VALUES(@s, @c, @n);", "@s", storeId, "@c", chat, "@n", (object)Cut(name, 100) ?? DBNull.Value))
+                    cmd.ExecuteNonQuery();
+            }
+            catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { }   // two messages at once: the other one saved it
+            catch (Exception ex) { Log.Error(ex); }   // never lose a customer's message over this
+        }
+
+        static readonly string[] StopWords = { "وقف", "stop", "الغاء", "إلغاء", "ستوب", "unsubscribe" };
+        const string TgStopped = "تمام 🙏 مش هنبعتلك عروض تاني. ولو احتجت أي حاجة، ابعتلنا هنا في أي وقت.";
+
+        // «وقف» (like WhatsApp: only within 14 days of an offer, otherwise it's a message for the assistant), or Telegram's /stop
+        // any time: no more offers from this store on Telegram. True = handled (the assistant doesn't answer it).
+        public static bool TgStop(SqlConnection c, StoreInfo s, TgLink link, string chat, string text)
+        {
+            var t = (text ?? "").Trim().Trim('.', '!', '«', '»', '"').ToLowerInvariant();
+            bool slash = t == "/stop" || t.StartsWith("/stop@");
+            if (!slash && !StopWords.Contains(t)) return false;
+            if (!slash)
+                using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.BcSends WHERE StoreId=@s AND Channel='tg' AND Phone=@c AND SentAt > DATEADD(DAY,-14,SYSUTCDATETIME())", "@s", s.Id, "@c", chat))
+                    if ((int)cmd.ExecuteScalar() == 0) return false;
+            using (var cmd = Db.Cmd(c, @"UPDATE dbo.TgContacts SET StoppedAt=SYSUTCDATETIME(), StopWhy='stop' WHERE StoreId=@s AND ChatId=@c;
+                IF @@ROWCOUNT = 0 INSERT INTO dbo.TgContacts(StoreId, ChatId, StoppedAt, StopWhy) VALUES(@s, @c, SYSUTCDATETIME(), 'stop');
+                UPDATE dbo.BcSends SET StoppedAt=SYSUTCDATETIME() WHERE Id = (SELECT TOP 1 Id FROM dbo.BcSends WHERE StoreId=@s AND Channel='tg' AND Phone=@c AND SentAt IS NOT NULL ORDER BY SentAt DESC);
+                UPDATE dbo.BcSends SET Status='skipped', Note=N'بعت «وقف»' WHERE StoreId=@s AND Channel='tg' AND Phone=@c AND Status='waiting';", "@s", s.Id, "@c", chat))
+                cmd.ExecuteNonQuery();
+            MetaBot.Save(c, s.Id, Tg.Ch, chat, true, text, null);
+            if (link != null && link.Token != null)
+            {
+                MetaBot.Save(c, s.Id, Tg.Ch, chat, false, TgStopped, null);
+                string token = link.Token;
+                HostingEnvironment.QueueBackgroundWorkItem(async ct =>
+                {
+                    try { await TgBot.Send(token, chat, TgStopped); }
+                    catch (TgException) { }
+                    catch (Exception ex) { Log.Error(ex); }
+                });
+            }
+            return true;
         }
 
         static Dictionary<string, object> Counts(SqlConnection c, StoreInfo s)
@@ -308,8 +380,8 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
                 "@a", string.Join(",", audiences), "@n", to.Count))
                 id = (int)cmd.ExecuteScalar();
             var t = new DataTable();
-            foreach (var col in new[] { "BroadcastId", "StoreId", "Phone", "Name", "Status" }) t.Columns.Add(col, col.EndsWith("Id") ? typeof(int) : typeof(string));
-            foreach (var w in to) t.Rows.Add(id, s.Id, w.Phone, (object)w.Name ?? DBNull.Value, "waiting");
+            foreach (var col in new[] { "BroadcastId", "StoreId", "Phone", "Name", "Status", "Channel" }) t.Columns.Add(col, col.EndsWith("Id") ? typeof(int) : typeof(string));
+            foreach (var w in to) t.Rows.Add(id, s.Id, w.Phone, (object)w.Name ?? DBNull.Value, "waiting", w.Ch ?? "wa");
             using (var bulk = new SqlBulkCopy(c) { DestinationTableName = "dbo.BcSends", BulkCopyTimeout = 120 })
             {
                 foreach (DataColumn col in t.Columns) bulk.ColumnMappings.Add(col.ColumnName, col.ColumnName);
@@ -324,6 +396,7 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
             public TimeSpan Wait; public bool Go;
             public int StoreId, Bid; public long RowId; public long? Mine;
             public string Token, Instance, Phone, Body, Type; public byte[] Image;
+            public string Ch = "wa", TgPhoto;   // Telegram: Token = the bot's, Phone = the chat id, TgPhoto = the picture's file_id once known
         }
 
         static readonly Dictionary<int, Tuple<byte[], string>> Pictures = new Dictionary<int, Tuple<byte[], string>>();
@@ -346,6 +419,12 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
                     if (st.Wait <= TimeSpan.Zero) continue;
                     if (DateTime.UtcNow + st.Wait >= until) return;
                     await Task.Delay(st.Wait, ct);
+                    continue;
+                }
+                if (st.Ch == Tg.Ch)
+                {
+                    var tr = await TgSendOne(st);
+                    using (var c = Db.Open()) DoneTg(c, st, tr, rnd);
                     continue;
                 }
                 string msgId = null; WaException fail = null;
@@ -378,39 +457,11 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
             using (var cmd = Db.Cmd(c, "UPDATE dbo.Broadcasts SET NextAt=DATEADD(MINUTE,3,SYSUTCDATETIME()) WHERE Id=@b AND Status='sending' AND NextAt <= SYSUTCDATETIME()", "@b", bid))
                 if (cmd.ExecuteNonQuery() == 0) return new Step();
 
-            var s = Db.StoreById(c, storeId);
-            string why = s == null ? "المتجر مش موجود" : WaNotify.CantSend(c, s);
-            if (why == null && !PlanGate.Allows(c, s, Feature)) why = "باقتك مش فيها «ابعت عرض»";
-            if (why != null)
-            {
-                // waits (shown on the offer) and goes on by itself once WhatsApp is linked / renewed
-                Set(c, bid, "NextAt=DATEADD(MINUTE,15,SYSUTCDATETIME()), Note=@n", "@n", "⏸️ الإرسال مستني: " + why);
-                return new Step();
-            }
-            var quiet = WaNotify.QuietUntil();
-            if (quiet.HasValue)
-            {
-                Set(c, bid, "NextAt=@t, Note=@n", "@t", quiet.Value.AddMinutes(new Random().Next(0, 15)), "@n", "🌙 مش بنبعت بالليل، هنكمّل الصبح.");
-                return new Step();
-            }
-            int cap = DailyCap(c), sent; DateTime? oldest;
-            using (var cmd = Db.Cmd(c, "SELECT COUNT(*), MIN(SentAt) FROM dbo.BcSends WHERE StoreId=@s AND SentAt > DATEADD(HOUR,-24,SYSUTCDATETIME())", "@s", storeId))
-            using (var r = cmd.ExecuteReader()) { r.Read(); sent = r.GetInt32(0); oldest = r.IsDBNull(1) ? (DateTime?)null : DateTime.SpecifyKind(r.GetDateTime(1), DateTimeKind.Utc); }
-            if (sent >= cap)
-            {
-                Set(c, bid, "NextAt=@t, Note=@n", "@t", (oldest ?? DateTime.UtcNow).AddHours(24).AddMinutes(1),
-                    "@n", "📅 بعتنا " + cap + " رسالة في آخر 24 ساعة (الحد اليومي عشان رقمك يفضل في أمان)، هنكمّل بعدها لوحدنا.");
-                return new Step();
-            }
-            long rowId; string phone, name;
-            using (var cmd = Db.Cmd(c, @";WITH n AS (SELECT TOP 1 * FROM dbo.BcSends WITH (ROWLOCK, UPDLOCK, READPAST) WHERE BroadcastId=@b AND Status='waiting' ORDER BY Id)
-                UPDATE n SET Status='sending', ClaimedAt=SYSUTCDATETIME() OUTPUT INSERTED.Id, INSERTED.Phone, INSERTED.Name;", "@b", bid))
-            using (var r = cmd.ExecuteReader())
-            {
-                if (!r.Read()) { rowId = 0; phone = name = null; }
-                else { rowId = r.GetInt64(0); phone = r.GetString(1); name = r.IsDBNull(2) ? null : r.GetString(2); }
-            }
-            if (rowId == 0)
+            // the next row says where it goes (Telegram rows come first): each channel has its own checks
+            string ch;
+            using (var cmd = Db.Cmd(c, "SELECT TOP 1 Channel FROM dbo.BcSends WHERE BroadcastId=@b AND Status='waiting' ORDER BY Id", "@b", bid))
+                ch = cmd.ExecuteScalar() as string;
+            if (ch == null)
             {
                 // nobody left: done once nothing is in flight
                 using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.BcSends WHERE BroadcastId=@b AND Status='sending'", "@b", bid))
@@ -418,14 +469,65 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
                     else Set(c, bid, "NextAt=DATEADD(MINUTE,1,SYSUTCDATETIME())");
                 return new Step();
             }
-            if (WaOptOut.Has(c, storeId, phone))
+            bool tg = ch == Tg.Ch;
+            var s = Db.StoreById(c, storeId);
+            TgLink bot = null;
+            string why = s == null ? "المتجر مش موجود" : null;
+            if (why == null && tg)
+            {
+                bot = Tg.Link(c, storeId);
+                if (bot == null || bot.Token == null) why = "بوت التيليجرام مش مربوط. اربطه من صفحة «تيليجرام»";
+            }
+            if (why == null && !tg) why = WaNotify.CantSend(c, s);
+            if (why == null && !PlanGate.Allows(c, s, Feature)) why = "باقتك مش فيها «ابعت عرض»";
+            if (why != null)
+            {
+                // waits (shown on the offer) and goes on by itself once WhatsApp / the bot is linked or renewed
+                Set(c, bid, "NextAt=DATEADD(MINUTE,15,SYSUTCDATETIME()), Note=@n", "@n", "⏸️ الإرسال مستني: " + why);
+                return new Step();
+            }
+            var quiet = WaNotify.QuietUntil();   // nobody gets an offer at night, on either channel
+            if (quiet.HasValue)
+            {
+                Set(c, bid, "NextAt=@t, Note=@n", "@t", quiet.Value.AddMinutes(new Random().Next(0, 15)), "@n", "🌙 مش بنبعت بالليل، هنكمّل الصبح.");
+                return new Step();
+            }
+            if (!tg)
+            {
+                // the daily cap keeps the store's WhatsApp number safe; Telegram goes from the bot and doesn't count
+                int cap = DailyCap(c), sent; DateTime? oldest;
+                using (var cmd = Db.Cmd(c, "SELECT COUNT(*), MIN(SentAt) FROM dbo.BcSends WHERE StoreId=@s AND Channel='wa' AND SentAt > DATEADD(HOUR,-24,SYSUTCDATETIME())", "@s", storeId))
+                using (var r = cmd.ExecuteReader()) { r.Read(); sent = r.GetInt32(0); oldest = r.IsDBNull(1) ? (DateTime?)null : DateTime.SpecifyKind(r.GetDateTime(1), DateTimeKind.Utc); }
+                if (sent >= cap)
+                {
+                    Set(c, bid, "NextAt=@t, Note=@n", "@t", (oldest ?? DateTime.UtcNow).AddHours(24).AddMinutes(1),
+                        "@n", "📅 بعتنا " + cap + " رسالة في آخر 24 ساعة (الحد اليومي عشان رقمك يفضل في أمان)، هنكمّل بعدها لوحدنا.");
+                    return new Step();
+                }
+            }
+            long rowId; string phone, name;
+            using (var cmd = Db.Cmd(c, @";WITH n AS (SELECT TOP 1 * FROM dbo.BcSends WITH (ROWLOCK, UPDLOCK, READPAST) WHERE BroadcastId=@b AND Status='waiting' AND Channel=@ch ORDER BY Id)
+                UPDATE n SET Status='sending', ClaimedAt=SYSUTCDATETIME() OUTPUT INSERTED.Id, INSERTED.Phone, INSERTED.Name;", "@b", bid, "@ch", ch))
+            using (var r = cmd.ExecuteReader())
+            {
+                if (!r.Read()) { rowId = 0; phone = name = null; }
+                else { rowId = r.GetInt64(0); phone = r.GetString(1); name = r.IsDBNull(2) ? null : r.GetString(2); }
+            }
+            if (rowId == 0) { Set(c, bid, "NextAt=SYSUTCDATETIME()"); return new Step(); }   // another run took it: look again
+            bool stopped;
+            if (tg)
+                using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.TgContacts WHERE StoreId=@s AND ChatId=@c AND StoppedAt IS NOT NULL", "@s", storeId, "@c", phone))
+                    stopped = (int)cmd.ExecuteScalar() > 0;
+            else stopped = WaOptOut.Has(c, storeId, phone);
+            if (stopped)
             {
                 using (var cmd = Db.Cmd(c, "UPDATE dbo.BcSends SET Status='skipped', Note=N'بعت «وقف»' WHERE Id=@id", "@id", rowId)) cmd.ExecuteNonQuery();
                 Set(c, bid, "NextAt=SYSUTCDATETIME()");
                 return new Step();
             }
-            string text;
-            using (var cmd = Db.Cmd(c, "SELECT Text FROM dbo.Broadcasts WHERE Id=@b", "@b", bid)) text = (string)cmd.ExecuteScalar();
+            string text, tgPhoto;
+            using (var cmd = Db.Cmd(c, "SELECT Text, TgPhoto FROM dbo.Broadcasts WHERE Id=@b", "@b", bid))
+            using (var r = cmd.ExecuteReader()) { r.Read(); text = r.GetString(0); tgPhoto = r.IsDBNull(1) ? null : r.GetString(1); }
             byte[] image = null;
             if (type != null)
             {
@@ -439,9 +541,80 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
                 image = pic.Item1;
             }
             var body = Compose(text, name);
+            if (tg)
+            {
+                // kept in the customer's Telegram chat too, so the assistant knows the offer when they answer it
+                long? kept = MetaBot.Save(c, storeId, Tg.Ch, phone, false, Kept(body, image != null), null);
+                return new Step { Go = true, Ch = Tg.Ch, StoreId = storeId, Bid = bid, RowId = rowId, Mine = kept, Token = bot.Token, Phone = phone,
+                    Body = body, Image = image, Type = type, TgPhoto = image != null ? tgPhoto : null };
+            }
             long? mine = WhatsAppBot.Save(c, storeId, phone, false, Kept(body, image != null), null);
             return new Step { Go = true, StoreId = storeId, Bid = bid, RowId = rowId, Mine = mine, Token = WaAccount.Token(c, s), Instance = s.WaInstance,
                 Phone = phone, Body = body, Image = image, Type = type };
+        }
+
+        // ---------- sending on Telegram ----------
+        class TgResult { public bool Ok; public string FileId; public TgException Fail; }
+
+        // From the store's bot: the text, or the picture with the text as its caption (uploaded once, then Telegram's file_id)
+        static async Task<TgResult> TgSendOne(Step st)
+        {
+            try
+            {
+                if (st.Image == null) { await TgBot.Send(st.Token, st.Phone, st.Body); return new TgResult { Ok = true }; }
+                var m = st.TgPhoto != null
+                    ? await Tg.Call(st.Token, "sendPhoto", new { chat_id = st.Phone, photo = st.TgPhoto, caption = st.Body })
+                    : await Tg.SendPhoto(st.Token, st.Phone, st.Image, st.Type, st.Body);
+                return new TgResult { Ok = true, FileId = PhotoId(m) };
+            }
+            catch (TgException ex) { return new TgResult { Fail = ex }; }
+            catch (Exception ex) { Log.Error(ex); return new TgResult { Fail = new TgException("حصلت مشكلة في الإرسال.") }; }
+        }
+
+        // the largest size of the photo Telegram keeps (the last one in photo[])
+        static string PhotoId(System.Text.Json.JsonElement m)
+        {
+            System.Text.Json.JsonElement ph; string id = null;
+            if (m.ValueKind == System.Text.Json.JsonValueKind.Object && m.TryGetProperty("photo", out ph) && ph.ValueKind == System.Text.Json.JsonValueKind.Array)
+                foreach (var p in ph.EnumerateArray()) id = WaJson.S(p, "file_id") ?? id;
+            return id;
+        }
+
+        static void DoneTg(SqlConnection c, Step st, TgResult r, Random rnd)
+        {
+            int gap = rnd.Next(1000, 2001);   // ms: a bot may send ~30 a second; about one a second is calm and still quick
+            if (r.Ok)
+            {
+                // Telegram took it into the customer's chat: that's delivered (there's no later status to ask for)
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.BcSends SET Status='delivered', SentAt=SYSUTCDATETIME() WHERE Id=@id", "@id", st.RowId)) cmd.ExecuteNonQuery();
+                if (r.FileId != null && st.TgPhoto == null) Set(c, st.Bid, "TgPhoto=@f", "@f", Cut(r.FileId, 300));
+                Set(c, st.Bid, "NextAt=DATEADD(MILLISECOND,@g,SYSUTCDATETIME()), Note=NULL", "@g", gap);
+                return;
+            }
+            var fail = r.Fail;
+            if (st.Mine.HasValue) using (var cmd = Db.Cmd(c, "DELETE FROM dbo.MetaMessages WHERE Id=@id", "@id", st.Mine.Value)) cmd.ExecuteNonQuery();
+            if (fail.Code == 400 && st.TgPhoto != null)
+            {
+                // the kept file_id may be what Telegram didn't take: upload the picture again for this one
+                Set(c, st.Bid, "TgPhoto=NULL, NextAt=SYSUTCDATETIME()");
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.BcSends SET Status='waiting', ClaimedAt=NULL WHERE Id=@id", "@id", st.RowId)) cmd.ExecuteNonQuery();
+                return;
+            }
+            if (fail.Blocked || fail.Code == 400)
+            {
+                // this customer's fault, not the store's: blocked the bot, or the chat is gone
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.BcSends SET Status='failed', Note=@n WHERE Id=@id", "@id", st.RowId,
+                    "@n", fail.Blocked ? "قفل البوت" : "المحادثة دي مش موجودة على تيليجرام")) cmd.ExecuteNonQuery();
+                if (fail.Blocked)
+                    using (var cmd = Db.Cmd(c, "UPDATE dbo.TgContacts SET StoppedAt=SYSUTCDATETIME(), StopWhy='blocked' WHERE StoreId=@s AND ChatId=@c AND StoppedAt IS NULL",
+                        "@s", st.StoreId, "@c", st.Phone)) cmd.ExecuteNonQuery();
+                Set(c, st.Bid, "NextAt=DATEADD(MILLISECOND,@g,SYSUTCDATETIME())", "@g", gap);
+                return;
+            }
+            // the bot's token, Telegram busy, the connection: not this customer's fault. Back in line; the offer waits a while.
+            int wait = fail.Code == 429 ? Math.Max(5, fail.RetryAfter) : fail.TokenDead ? 15 * 60 : 5 * 60;
+            using (var cmd = Db.Cmd(c, "UPDATE dbo.BcSends SET Status='waiting', ClaimedAt=NULL WHERE Id=@id", "@id", st.RowId)) cmd.ExecuteNonQuery();
+            Set(c, st.Bid, "NextAt=DATEADD(SECOND,@w,SYSUTCDATETIME()), Note=@n", "@w", wait, "@n", "⏸️ الإرسال مستني: " + Cut(fail.Message, 250));
         }
 
         static void Done(SqlConnection c, Step st, string msgId, WaException fail, Random rnd)
@@ -535,9 +708,14 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
             if (details)
             {
                 var bad = new List<Dictionary<string, object>>();
-                using (var cmd = Db.Cmd(c, "SELECT TOP 30 Phone, Name, Note FROM dbo.BcSends WHERE BroadcastId=@b AND Status='failed' ORDER BY Id DESC", "@b", id))
+                using (var cmd = Db.Cmd(c, "SELECT TOP 30 Phone, Name, Note, Channel FROM dbo.BcSends WHERE BroadcastId=@b AND Status='failed' ORDER BY Id DESC", "@b", id))
                 using (var r = cmd.ExecuteReader())
-                    while (r.Read()) bad.Add(new Dictionary<string, object> { { "phone", r["Phone"] }, { "name", r["Name"] as string ?? "" }, { "note", r["Note"] as string ?? "" } });
+                    while (r.Read()) bad.Add(new Dictionary<string, object> { { "phone", r["Phone"] }, { "name", r["Name"] as string ?? "" }, { "note", r["Note"] as string ?? "" }, { "channel", r["Channel"] } });
+                // how many went where (an offer can go to WhatsApp and Telegram together)
+                var byCh = new Dictionary<string, object> { { "wa", 0 }, { "tg", 0 } };
+                using (var cmd = Db.Cmd(c, "SELECT Channel, COUNT(*) FROM dbo.BcSends WHERE BroadcastId=@b GROUP BY Channel", "@b", id))
+                using (var r = cmd.ExecuteReader()) while (r.Read()) byCh[r.GetString(0)] = r.GetInt32(1);
+                d["channels"] = byCh;
                 d["failures"] = bad;
             }
             return d;
@@ -568,9 +746,12 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
 
             int optouts, sentDay;
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.WaOptOuts WHERE StoreId=@s", "@s", s.Id)) optouts = (int)cmd.ExecuteScalar();
-            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.BcSends WHERE StoreId=@s AND SentAt > DATEADD(HOUR,-24,SYSUTCDATETIME())", "@s", s.Id)) sentDay = (int)cmd.ExecuteScalar();
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.BcSends WHERE StoreId=@s AND Channel='wa' AND SentAt > DATEADD(HOUR,-24,SYSUTCDATETIME())", "@s", s.Id)) sentDay = (int)cmd.ExecuteScalar();
+            var bot = Tg.Link(c, s.Id);
             return new Dictionary<string, object> {
                 { "plan", PlanGate.Allows(c, s, Feature) }, { "service", WaAccount.HasService(s) },
+                // the store's Telegram bot: offers go out from it too («tg» audience)
+                { "telegram", bot != null && bot.Token != null }, { "telegramBot", bot != null ? bot.Username ?? "" : "" },
                 { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) }, { "cant", WaNotify.CantSend(c, s) ?? "" },
                 { "storeNumber", s.WaNumber ?? "" }, { "ownerPhone", s.OwnerPhone ?? "" },
                 { "limits", new Dictionary<string, object> { { "daily", DailyCap(c) }, { "gapMin", GapMin(c) }, { "gapMax", GapMax(c) }, { "maxText", MaxText }, { "maxList", MaxList }, { "maxOffer", MaxPerOffer } } },
@@ -714,7 +895,9 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
                     if (action == "count")
                     {
                         var aud = Audiences(b);
-                        Web.Json(res, 200, new Dictionary<string, object> { { "count", aud.Count == 0 ? 0 : Offers.Pick(c, s, aud).Count } });
+                        var to = aud.Count == 0 ? new List<Offers.Who>() : Offers.Pick(c, s, aud);
+                        int tgN = to.Count(w => w.Ch == Tg.Ch);
+                        Web.Json(res, 200, new Dictionary<string, object> { { "count", to.Count }, { "wa", to.Count - tgN }, { "tg", tgN } });
                         return;
                     }
                     if (action == "test")
@@ -733,15 +916,15 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
                     }
                     if (action == "create")
                     {
-                        var stop = Needs(c, s);
+                        var aud = Audiences(b);
+                        if (aud.Count == 0) { Web.Error(res, 400, "no_audience", "اختار العرض يروح لمين."); return; }
+                        var stop = Needs(c, s, aud);
                         if (stop != null) { Deny(res, c, s, stop); return; }
                         if (Offers.Active(c, s.Id).HasValue) { Web.Error(res, 409, "busy", "فيه عرض لسه بيتبعت. استنى لما يخلص، أو ألغي الباقي منه الأول."); return; }
                         string text; byte[] image; string type;
                         if (!Message(res, b, out text, out image, out type)) return;
-                        var aud = Audiences(b);
-                        if (aud.Count == 0) { Web.Error(res, 400, "no_audience", "اختار العرض يروح لمين."); return; }
                         var to = Offers.Pick(c, s, aud);
-                        if (to.Count == 0) { Web.Error(res, 400, "nobody", "مفيش أرقام في اللي اخترته. اختار مجموعة تانية، أو ضيف أرقام لقايمتك."); return; }
+                        if (to.Count == 0) { Web.Error(res, 400, "nobody", "مفيش حد في اللي اخترته. اختار مجموعة تانية، أو ضيف أرقام لقايمتك."); return; }
                         if (to.Count > Offers.MaxPerOffer) { Web.Error(res, 400, "too_many", "العرض الواحد يروح لـ " + Offers.MaxPerOffer.ToString("N0") + " رقم بالكتير. اختار مجموعة أصغر."); return; }
                         if (!Web.Allow("offers-create:" + s.Id, 10, TimeSpan.FromDays(1))) { Web.Error(res, 429, "rate_limited", "بعت عروض كتير النهارده، كمّل بكرة."); return; }
                         Offers.Create(c, s, text, image, type, aud, to);
@@ -754,7 +937,9 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
                         int id = Web.Int(b, "id") ?? 0;
                         if (action == "resume")
                         {
-                            var stop = Needs(c, s);
+                            string had;
+                            using (var cmd = Db.Cmd(c, "SELECT Audience FROM dbo.Broadcasts WHERE Id=@b AND StoreId=@s", "@b", id, "@s", s.Id)) had = cmd.ExecuteScalar() as string;
+                            var stop = Needs(c, s, (had ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList());
                             if (stop != null) { Deny(res, c, s, stop); return; }
                         }
                         string sql = action == "pause" ? "UPDATE dbo.Broadcasts SET Status='paused', Note=NULL WHERE Id=@b AND StoreId=@s AND Status='sending'"
@@ -894,18 +1079,23 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
             }
         }
 
-        // What stands in the way of sending: "plan", "service", "whatsapp", or null (like GrowthHandler.Needs)
-        static string Needs(SqlConnection c, StoreInfo s)
+        // What stands in the way of sending: "plan", "telegram", "service", "whatsapp", or null (like GrowthHandler.Needs).
+        // aud = who the offer goes to: WhatsApp's needs only when it goes to WhatsApp numbers, the bot only for «tg»; none = the
+        // WhatsApp test message.
+        static string Needs(SqlConnection c, StoreInfo s, List<string> aud = null)
         {
             if (!PlanGate.Allows(c, s, Offers.Feature)) return "plan";
-            if (!WaAccount.HasService(s)) return "service";
-            if (string.IsNullOrEmpty(s.WaInstance) || string.IsNullOrEmpty(s.WaNumber)) return "whatsapp";
+            bool tg = aud != null && aud.Contains(Tg.Ch), wa = aud == null || aud.Any(a => a != Tg.Ch);
+            if (tg) { var bot = Tg.Link(c, s.Id); if (bot == null || bot.Token == null) return "telegram"; }
+            if (wa && !WaAccount.HasService(s)) return "service";
+            if (wa && (string.IsNullOrEmpty(s.WaInstance) || string.IsNullOrEmpty(s.WaNumber))) return "whatsapp";
             return null;
         }
 
         static void Deny(HttpResponse res, SqlConnection c, StoreInfo s, string stop)
         {
             if (stop == "plan") { PlanGate.Deny(res, c, s, Offers.Feature); return; }
+            if (stop == "telegram") { Web.Error(res, 400, "no_telegram", "اربط بوت التيليجرام بتاع متجرك الأول من صفحة «تيليجرام»، أو شيل «تيليجرام» من اللي العرض رايح لهم."); return; }
             if (stop == "service") { Web.Error(res, 400, "no_service", "العروض بتتبعت من رقم واتساب متجرك. فعّل خدمة الواتساب أو جدّدها من «باقتي» الأول."); return; }
             Web.Error(res, 400, "no_whatsapp", "اربط واتساب المتجر الأول من صفحة «واتساب»، عشان العروض تتبعت من رقمك.");
         }

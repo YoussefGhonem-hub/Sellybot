@@ -2593,7 +2593,7 @@
 
   <!-- «📣 ابعت عرض» (Offers.cs, api/offers.ashx): an offer from the store's WhatsApp number to its customers, one number at a time -->
   <section data-panel="offers" data-feat="broadcast" hidden>
-    <div class="page-title"><div><h2>📣 ابعت عرض</h2><p>ابعت عرض أو خبر جديد لزباينك على الواتساب من رقم متجرك، ومعاه صورة لو تحب.</p></div></div>
+    <div class="page-title"><div><h2>📣 ابعت عرض</h2><p>ابعت عرض أو خبر جديد لزباينك على الواتساب من رقم متجرك، وعلى التيليجرام من بوت متجرك، ومعاه صورة لو تحب.</p></div></div>
     <div class="wa-warn bc-need" id="bcNeed" hidden><span id="bcNeedT"></span> <button class="btn sm" type="button" id="bcNeedGo"></button></div>
 
     <!-- the offer being sent now -->
@@ -2634,13 +2634,16 @@
         <label><input type="checkbox" value="orders"><span><b>اللي عملوا أوردرات</b><small id="bcN-orders"></small></span></label>
         <label><input type="checkbox" value="restock"><span><b>اللي طلبوا «بلّغني لما يرجع»</b><small id="bcN-restock"></small></span></label>
         <label><input type="checkbox" value="list"><span><b>قايمتك</b><small id="bcN-list"></small></span></label>
+        <!-- Telegram (Offers.cs «tg»): from the store's bot to everyone who wrote to it or pressed Start -->
+        <label><input type="checkbox" value="tg"><span><b>✈️ اللي كلّموا بوت التيليجرام بتاعك</b><small id="bcN-tg"></small></span></label>
       </div>
+      <p class="hint" id="bcAudHint" hidden></p>
       <div class="bc-total" id="bcTotal" hidden></div>
 
       <h4 class="bc-h">👀 هتوصل للزبون كده</h4>
       <div class="bc-phone"><div class="bc-bubble"><img id="bcPrevImg" hidden alt=""><div id="bcPrev"></div><small>✓✓</small></div></div>
 
-      <div class="bc-test">
+      <div class="bc-test" id="bcTestBox">
         <div class="shop-form"><input type="tel" id="bcTestPhone" class="ltr" maxlength="25" placeholder="01001234567" aria-label="رقمك للتجربة"><button class="btn ghost" id="bcTest" type="button">📤 جرّب على رقمي</button></div>
         <div class="hint">الرسالة بتوصلك دلوقتي على الرقم ده من رقم متجرك، عشان تشوف شكلها قبل ما تبعتها للكل.</div>
       </div>
@@ -5505,7 +5508,8 @@
   // ---------------- «📣 ابعت عرض»: an offer from the store's WhatsApp number to its customers (api/offers.ashx) ----------------
   var bc = null, bcImage = null, bcPollT = null, bcCountT = null, bcLastCount = null;
   var BC_ST = { sending: "📤 بيتبعت", paused: "⏸️ متوقف", done: "✅ خلص", stopped: "⛔ اتلغى الباقي" };
-  var BC_AUD = { wa: "كل اللي كلّموك على الواتساب", wa30: "الواتساب آخر 30 يوم", orders: "اللي عملوا أوردرات", restock: "«بلّغني لما يرجع»", list: "قايمتك" };
+  var BC_AUD = { wa: "كل اللي كلّموك على الواتساب", wa30: "الواتساب آخر 30 يوم", orders: "اللي عملوا أوردرات", restock: "«بلّغني لما يرجع»", list: "قايمتك", tg: "التيليجرام" };
+  var bcLastSplit = null;   // {wa, tg}: where the ticked audiences go
   var BC_SRC = { manual: "✍️ كتبته", excel: "📄 من Excel", messenger: "💬 المسنجر", instagram: "📸 الإنستجرام" };
   async function loadOffers() {
     try { bc = await api("api/offers.ashx"); } catch (e) { setMsg("bcMsg", e.message); return; }
@@ -5523,6 +5527,8 @@
   // Arabic counts: 1 / 2 / 3-10 / 11+ ("رقم واحد", "رقمين", "3 أرقام", "15 رقم")
   function bcPlural(n, one, two, few, many) { n = +n || 0; return n === 1 ? one : n === 2 ? two : fmt(n) + " " + (n <= 10 ? few : (many || few)); }
   function bcNums(n) { return bcPlural(n, "رقم واحد", "رقمين", "أرقام", "رقم"); }
+  function bcPeople(n) { return bcPlural(n, "شخص واحد", "شخصين", "أشخاص", "شخص"); }   // Telegram: people, not numbers
+  function bcWaOk() { return !!(bc && bc.service && bc.whatsapp); }
   // how long n numbers take: a message every gapMin-gapMax seconds, at most `daily` a day, nothing at night
   function bcEta(n) {
     var L = (bc && bc.limits) || { daily: 250, gapMin: 20, gapMax: 40 };
@@ -5549,6 +5555,7 @@
   function bcNeed() {
     if (!bc) return null;
     if (!bc.plan) return ["🔒 «ابعت عرض» مش في باقتك.", "plan", "💎 شوف الباقات"];
+    if (bc.telegram && !bcWaOk()) return null;   // the bot alone can send: the WhatsApp choices are switched off instead
     if (!bc.service) return ["⚠️ العروض بتتبعت من رقم واتساب متجرك. فعّل خدمة الواتساب الأول.", "plan", "💎 فعّلها من «باقتي»"];
     if (!bc.whatsapp) return ["⚠️ اربط واتساب المتجر الأول، عشان العروض تتبعت من رقمك.", "wa", "💬 اربط الواتساب"];
     return null;
@@ -5560,16 +5567,28 @@
     if (need) { $("bcNeedT").textContent = need[0]; $("bcNeedGo").textContent = need[2]; $("bcNeedGo").onclick = function () { go(need[1]); }; }
     // counts per audience
     var au = bc.audiences || {};
-    Object.keys(BC_AUD).forEach(function (k) { var el = $("bcN-" + k); if (el) el.textContent = au[k] ? bcNums(au[k]) : "لسه مفيش أرقام"; });
-    var wa = document.querySelector('#bcAud input[value="wa"]'), wa30 = document.querySelector('#bcAud input[value="wa30"]');
-    wa30.disabled = wa.checked; if (wa.checked) wa30.checked = false; wa30.closest("label").classList.toggle("off", wa.checked);
+    Object.keys(BC_AUD).forEach(function (k) { var el = $("bcN-" + k); if (el) el.textContent = k === "tg" ? (au.tg ? bcPeople(au.tg) : "لسه محدش كلّم البوت") : au[k] ? bcNums(au[k]) : "لسه مفيش أرقام"; });
+    // what can't be sent to right now is switched off: WhatsApp without its number/service, Telegram without a bot
+    var waOk = bcWaOk(), wa = document.querySelector('#bcAud input[value="wa"]'), wa30 = document.querySelector('#bcAud input[value="wa30"]');
+    document.querySelectorAll("#bcAud input").forEach(function (x) {
+      var off = x.value === "tg" ? !bc.telegram : !waOk;
+      if (off) x.checked = false;
+      x.disabled = off; x.closest("label").classList.toggle("off", off);
+    });
+    if (waOk) { wa30.disabled = wa.checked; if (wa.checked) wa30.checked = false; wa30.closest("label").classList.toggle("off", wa.checked); }
+    if (!bc.telegram) $("bcN-tg").textContent = "اربط بوت التيليجرام الأول من صفحة «تيليجرام»";
+    var ah = $("bcAudHint");
+    ah.hidden = waOk || !bc.telegram;
+    ah.textContent = "ℹ️ واتساب المتجر مش مربوط" + (bc.service ? "" : " أو خدمته مش مفعّلة") + "، فالعرض هيروح على التيليجرام بس دلوقتي.";
+    $("bcTestBox").hidden = !waOk;   // the test goes to a WhatsApp number
     if (!$("bcTestPhone").value && bc.ownerPhone) $("bcTestPhone").value = localPhone(bc.ownerPhone);
     var L = bc.limits || {};
     $("bcSafe").innerHTML = "• الرسايل بتتبعت <b>واحدة واحدة</b>: رسالة كل " + fmt(L.gapMin) + " لـ " + fmt(L.gapMax) + " ثانية، مش كلها مرة واحدة.<br>" +
       "• <b>" + fmt(L.daily) + " رسالة في اليوم بالكتير</b>، والباقي بيكمّل لوحده تاني يوم. ومش بنبعت بالليل (من 11 بالليل لـ 9 الصبح).<br>" +
       "• كل رسالة في آخرها «ابعت <b>وقف</b>»، واللي يبعتها مايوصلهوش أي عرض تاني منك" + (bc.optouts ? " (لحد دلوقتي " + bcNums(bc.optouts) + ")" : "") + ".<br>" +
       "• ابعت لزباين عارفينك بس. الرسايل لناس ماتعرفكش هي أكتر حاجة بتخلي واتساب يقفل الرقم، لأنهم بيعملوا بلاغ (Report).<br>" +
-      "• لما الزبون يرد على العرض، المساعد بيرد عليه وهو عارف العرض، زي أي محادثة.";
+      "• لما الزبون يرد على العرض، المساعد بيرد عليه وهو عارف العرض، زي أي محادثة." +
+      (bc.telegram ? "<br>• على <b>التيليجرام</b> العرض بيتبعت من بوت متجرك مش من رقمك، فبيوصل أسرع (رسالة كل ثانية تقريبًا) ومن غير حد يومي، ولكل اللي كلّموا البوت أو داسوا Start. وبرضه فيه «وقف»." : "");
     // the offer going out now
     var cur = bc.current;
     $("bcNow").hidden = !cur;
@@ -5589,7 +5608,7 @@
       var fl = $("bcFails"); fl.textContent = "";
       fails.forEach(function (f) {
         var row = document.createElement("div"); row.className = "oc-row";
-        var b = document.createElement("b"); b.className = "ltr"; b.textContent = localPhone(f.phone);
+        var b = document.createElement("b"); b.className = "ltr"; b.textContent = f.channel === "tg" ? "✈️ تيليجرام" : localPhone(f.phone);
         var n = document.createElement("span"); n.textContent = f.name || "";
         var st = document.createElement("small"); st.textContent = f.note || "";
         row.appendChild(b); row.appendChild(n); row.appendChild(document.createElement("span")); row.appendChild(st); fl.appendChild(row);
@@ -5598,7 +5617,7 @@
     }
     $("bcSend").disabled = !!cur || !!need;
     $("bcSend").textContent = cur ? "⏳ فيه عرض لسه ماخلصش" : "📣 ابعت العرض";
-    $("bcTest").disabled = !!need;
+    $("bcTest").disabled = !!need || !waOk;
     // the owner's list
     var li = bc.list || { bySource: {} }, bs = li.bySource || {};
     grStats($("bcListStats"), [[li.total || 0, "رقم في قايمتك", true], [(bs.manual || 0) + (bs.excel || 0), "ضفتهم انت"], [(bs.messenger || 0) + (bs.instagram || 0), "من المسنجر والإنستجرام"]]);
@@ -5647,11 +5666,15 @@
     bcCountT = setTimeout(async function () {
       try {
         var r = await api("api/offers.ashx?action=count", { method: "POST", json: { audiences: aud } });
-        bcLastCount = r.count;
+        bcLastCount = r.count; bcLastSplit = { wa: r.wa || 0, tg: r.tg || 0 };
         $("bcTotal").hidden = false;
-        $("bcTotal").innerHTML = r.count ? "📊 العرض هيروح لـ <b>" + bcNums(r.count) + "</b>، " + esc(bcEta(r.count)) + "."
+        // WhatsApp at its slow, safe pace; Telegram in a minute or two
+        var parts = [];
+        if (r.wa) parts.push("<b>" + bcNums(r.wa) + "</b> على الواتساب، " + esc(bcEta(r.wa)));
+        if (r.tg) parts.push("<b>" + bcPeople(r.tg) + "</b> على التيليجرام، " + (r.tg > 120 ? "في دقايق" : "في دقيقة أو اتنين"));
+        $("bcTotal").innerHTML = r.count ? "📊 العرض هيروح لـ " + parts.join("، و") + "."
           + (r.count > ((bc && bc.limits && bc.limits.maxOffer) || 20000) ? "<br>⚠️ ده أكتر من الحد للعرض الواحد، اختار مجموعة أصغر." : "")
-          : "مفيش أرقام في اللي اخترته لسه.";
+          : "مفيش حد في اللي اخترته لسه.";
       } catch (e) { $("bcTotal").hidden = true; }
     }, 250);
   }
@@ -5701,8 +5724,10 @@
     var text = $("bcText").value.trim(), aud = bcAudiences(), b = this;
     if (!text) { setMsg("bcMsg", "اكتب رسالة العرض الأول."); $("bcText").focus(); return; }
     if (!aud.length) { setMsg("bcMsg", "اختار العرض يروح لمين."); return; }
-    var n = bcLastCount;
-    if (!confirm("العرض هيتبعت من رقم متجرك" + (n ? " لـ " + bcNums(n) + "، " + bcEta(n) : "") + ".\nرسالة رسالة، ومش بالليل، وتقدر توقّفه في أي وقت.\n\nتبعته؟")) return;
+    var sp = bcLastSplit || { wa: bcLastCount || 0, tg: 0 }, say = [];
+    if (sp.wa) say.push("على الواتساب من رقم متجرك لـ " + bcNums(sp.wa) + "، " + bcEta(sp.wa));
+    if (sp.tg) say.push("على التيليجرام من بوت متجرك لـ " + bcPeople(sp.tg));
+    if (!confirm("العرض هيتبعت " + (say.length ? say.join("\nو") : "") + ".\nرسالة رسالة، ومش بالليل، وتقدر توقّفه في أي وقت.\n\nتبعته؟")) return;
     b.disabled = true;
     if (await bcPost("create", { text: text, image: bcImage, audiences: aud }, "العرض بدأ يتبعت ✅", null, "bcMsg")) {
       $("bcText").value = ""; bcImage = null; $("bcThumb").hidden = true; bcPreview();
