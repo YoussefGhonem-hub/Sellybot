@@ -80,6 +80,9 @@ namespace RiwaqChat
             }
         }
 
+        // e.g. INSTANCE_NOT_API_SUBSCRIPTION (seen 2026-11-23: a number on the account with no "API" plan paid for)
+        public static bool NoSubscription(string code) { return (code ?? "").IndexOf("SUBSCRIPTION", StringComparison.OrdinalIgnoreCase) >= 0; }
+
         static WaException Friendly(int status, string code, string msg)
         {
             code = code ?? "";
@@ -93,6 +96,8 @@ namespace RiwaqChat
             }
             else if (code == "INSTANCE_FORBIDDEN") text = "رقم الربط ده مش تبع الحساب ده.";
             else if (code == "INSTANCE_NOT_READY") text = "رقم الواتساب مش متصل دلوقتي. اربطه تاني بالـ QR.";
+            // the number has no (or an ended) subscription on Sellybot's provider account: ours to fix, nothing for the owner to do
+            else if (NoSubscription(code)) text = "رقم ربط الواتساب محتاج تجديد من عندنا، ومش محتاج تعمل أي حاجة. بلّغنا فريق الدعم وهنظبطه في أقرب وقت.";
             else if (status == 404) text = "رقم الربط مش موجود. كلّم الدعم.";
             else if (status == 429) text = "الطلبات كتير دلوقتي، هنحاول تاني بعد شوية.";
             else text = "خدمة الواتساب مش متاحة دلوقتي (" + status + (code.Length > 0 ? " " + code : "") + "). جرّب تاني كمان شوية.";
@@ -446,6 +451,24 @@ BEGIN
   INSERT INTO dbo.TicketMessages(TicketId, FromAdmin, Body) VALUES (@t, 0, @b);
 END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عايز أربط واتساب المتجر، ومفيش رقم ربط فاضي دلوقتي."))
                 cmd.ExecuteNonQuery();
+        }
+
+        // the store's number needs a subscription on Sellybot's provider account (the QR can't be fetched): one support ticket per store
+        // while it's open, so the admin pays for that number. The QR polls every few seconds, hence "if not exists".
+        public const string SubSubject = "رقم ربط الواتساب محتاج اشتراك";
+        public static void TellAdmin(SqlConnection c, StoreInfo s, string subject, string body)
+        {
+            try
+            {
+                using (var cmd = Db.Cmd(c, @"IF NOT EXISTS (SELECT 1 FROM dbo.Tickets WHERE StoreId=@s AND Subject=@sub AND Status<>'closed')
+BEGIN
+  DECLARE @t INT;
+  INSERT INTO dbo.Tickets(StoreId, Subject, Category) VALUES (@s, @sub, 'technical'); SET @t = SCOPE_IDENTITY();
+  INSERT INTO dbo.TicketMessages(TicketId, FromAdmin, Body) VALUES (@t, 0, @b);
+END", "@s", s.Id, "@sub", subject, "@b", body))
+                    cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex) { Log.Error(ex); }   // never break the QR over this
         }
 
         public static StoreInfo StoreForInstance(SqlConnection c, string instance)
@@ -965,7 +988,11 @@ ELSE
                                 d["qr"] = await Wapilot.Qr(token, s.WaInstance) ?? "";
                             }
                         }
-                        catch (WaException ex) { d["error"] = ex.Message; }
+                        catch (WaException ex)
+                        {
+                            d["error"] = ex.Message;
+                            if (Wapilot.NoSubscription(ex.Code)) WaAccount.TellAdmin(c, s, WaAccount.SubSubject, "(رسالة تلقائية) رقم ربط الواتساب اللي اتخصص لمتجري محتاج اشتراك من عندكم، فكود الربط مش بيظهر.");
+                        }
                         Web.Json(res, 200, d);
                         return;
                     }
