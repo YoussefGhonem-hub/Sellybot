@@ -1032,6 +1032,12 @@
   .mt-logo.mt-easy{background:linear-gradient(135deg,#e8774a,#f5a25d);font-size:22px}
   .mt-agent{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:12px;border:1px dashed var(--brand);background:var(--card)}
   .mt-agent b{font-size:15.5px}
+  .mt-lang{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:14px;font-size:13.5px;color:var(--muted)}
+  .mt-lang span{margin-inline-end:4px}
+  .mt-lang button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 16px;font:inherit;font-size:13px;cursor:pointer;transition:border-color .15s}
+  .mt-lang button:hover,.mt-lang button:focus-visible{border-color:var(--brand);outline:none}
+  .mt-lang button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .mt-plan>li[hidden],.mt-plan [data-fblang][hidden]{display:none}
   .mt-ask{margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft);font-size:13.5px;line-height:1.75}
   .mt-ask.warn{border-color:#f0c36d;background:rgba(240,195,109,.12)}
   .mt-ask.ok{border-color:rgba(46,160,67,.45);background:rgba(46,160,67,.08)}
@@ -2674,27 +2680,49 @@
       </div>
       <div id="mtEasyState"></div>
       <div id="mtEasyBody">
+        <!-- Facebook names its menus in the language of the owner's Facebook: the steps come in both, picked here
+             (default = the device's language, the choice kept in localStorage sbFbLang). [data-fblang] = shown in that one. -->
+        <div class="mt-lang" role="group" aria-label="لغة فيسبوك عندك">
+          <span>فيسبوك عندك بأنهي لغة؟</span>
+          <button type="button" data-fblang-pick="ar" aria-pressed="true">عربي</button>
+          <button type="button" data-fblang-pick="en" aria-pressed="false" lang="en">English</button>
+        </div>
         <ol class="mt-plan">
-          <li><h4>افتح إعدادات «الوصول إلى الصفحة»</h4>
+          <li data-fblang="ar"><h4>افتح «الوصول إلى الصفحة»</h4>
             <p>ادخل فيسبوك بحسابك الشخصي اللي أدمن على صفحة المتجر، وحوّل لصفحتك:</p>
-            <p><b>من الكمبيوتر:</b> دوس صورتك فوق ← <b>عرض كل الملفات الشخصية</b> <span class="ltr">(See all profiles)</span> ← اختار صفحة متجرك. بعدين دوس صورة الصفحة فوق ← <b>الإعدادات والخصوصية</b> ← <b>الإعدادات</b> ← <b>إعداد الصفحة</b> <span class="ltr">(Page setup)</span> ← <b>الوصول إلى الصفحة</b> <span class="ltr">(Page access)</span>.</p>
+            <p><b>من الكمبيوتر:</b> دوس صورتك فوق ← <b>عرض كل الملفات الشخصية</b> ← اختار صفحة متجرك. بعدين دوس صورة الصفحة فوق ← <b>الإعدادات والخصوصية</b> ← <b>الإعدادات</b> ← <b>إعداد الصفحة</b> ← <b>الوصول إلى الصفحة</b>.</p>
             <p><b>من الموبايل:</b> من تطبيق فيسبوك حوّل لصفحتك ← <b>☰</b> ← <b>الإعدادات والخصوصية</b> ← <b>الإعدادات</b> ← <b>الوصول إلى الصفحة</b>.</p>
-            <p class="hint">مش لاقيها؟ اكتب «الوصول إلى الصفحة» أو <span class="ltr">Page access</span> في خانة البحث اللي فوق في صفحة الإعدادات.</p></li>
-          <li><h4>ضيف حساب Sellybot بصلاحية الرسايل بس</h4>
-            <p>انزل لجزء <b>الأشخاص اللي ليهم وصول للمهام</b> <span class="ltr">(People with task access)</span> ودوس <b>إضافة جديد</b> <span class="ltr">(Add New)</span>. مش الجزء اللي فوقه بتاع «الوصول على فيسبوك».</p>
+            <p class="hint">مش لاقيها؟ اكتب «الوصول إلى الصفحة» في خانة البحث اللي فوق في الإعدادات. الأسامي ممكن تختلف كلمة حسب نسخة فيسبوك.</p></li>
+          <li data-fblang="en" dir="ltr" lang="en"><h4>Open "Page access"</h4>
+            <p>Log in to Facebook with your personal account that manages the store's Page, then switch to your Page:</p>
+            <p><b>On a computer:</b> click your profile picture (top right) → <b>See all profiles</b> → choose your store's Page. Then click the Page's picture → <b>Settings &amp; privacy</b> → <b>Settings</b> → <b>Page setup</b> → <b>Page access</b>.</p>
+            <p><b>On your phone:</b> in the Facebook app, switch to your Page → <b>☰ Menu</b> → <b>Settings &amp; privacy</b> → <b>Settings</b> → <b>Page access</b>.</p>
+            <p class="hint">Can't find it? Type "Page access" in the search box at the top of Settings.</p></li>
+          <li data-fblang="ar"><h4>ضيف حساب Sellybot بصلاحية الرسايل بس</h4>
+            <p>انزل لجزء <b>الأشخاص الذين لديهم حق الوصول إلى المهام</b> ودوس <b>إضافة جديد</b>. مش الجزء اللي فوقه بتاع «الوصول إلى فيسبوك».</p>
             <p>اكتب الاسم ده في البحث واختاره:</p>
-            <div class="mt-agent"><b dir="auto" id="mtAgentName"></b><a class="btn ghost sm" id="mtAgentUrl" target="_blank" rel="noopener" hidden>افتح الحساب واتأكد من الصورة ↗</a></div>
-            <p style="margin-top:8px">من الصلاحيات فعّل <b>الرسائل ونشاط المجتمع</b> <span class="ltr">(Messages and community activity)</span> بس، وسيب الباقي مقفول (المحتوى، والإعلانات، والإحصائيات). بعدين دوس <b>منح حق الوصول</b> <span class="ltr">(Give access)</span>.</p>
+            <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>افتح الحساب واتأكد من الصورة ↗</a></div>
+            <p style="margin-top:8px">فعّل <b>الرسائل ونشاط المجتمع</b> بس، وسيب الباقي مقفول (المحتوى، والإعلانات، والإحصائيات). بعدين دوس <b>منح حق الوصول</b>.</p>
             <p class="hint">فيسبوك هيطلب باسورد حسابك عشان يتأكد إنه انت: ده بيتكتب عند فيسبوك ومش بيوصلنا.</p></li>
-          <li><h4>الإنستجرام (لو عايزه كمان)</h4>
-            <p>حساب متجرك على الإنستجرام لازم يكون <b>Professional</b> (Business أو Creator) ومربوط بصفحتك. لو مش مربوط: من إعدادات الصفحة ← <b>الحسابات المرتبطة</b> <span class="ltr">(Linked accounts)</span> ← <b>إنستجرام</b> ← <b>ربط</b>.</p>
-            <p>ومن تطبيق إنستجرام: البروفايل ← <b>☰</b> ← <b>الرسائل والردود على القصص</b> <span class="ltr">(Messages and story replies)</span> ← <b>التحكم في الرسائل</b> <span class="ltr">(Message controls)</span> ← تحت <b>الأدوات المتصلة</b> <span class="ltr">(Connected tools)</span> فعّل <b>السماح بالوصول إلى الرسائل</b> <span class="ltr">(Allow access to messages)</span>.</p></li>
-          <li><h4>ابعتلنا لينك صفحتك</h4>
-            <p>افتح صفحتك وانسخ اللينك من فوق (أو <b>مشاركة</b> ← <b>نسخ الرابط</b>)، وحطه هنا. وأول ما نربطها هتلاقيها في كارت المسنجر تحت.</p>
+          <li data-fblang="en" dir="ltr" lang="en"><h4>Add Sellybot's account, messages only</h4>
+            <p>Scroll to <b>People with task access</b> and click <b>Add New</b> (not the "People with Facebook access" part above it).</p>
+            <p>Search for this name and select it:</p>
+            <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>Open the account to check the photo ↗</a></div>
+            <p style="margin-top:8px">Turn on <b>Messages and community activity</b> only, and leave Content, Ads and Insights off. Then click <b>Give access</b>.</p>
+            <p class="hint">Facebook asks for your password to confirm it's you. You type it on Facebook, and it never reaches us.</p></li>
+          <li data-fblang="ar"><h4>الإنستجرام (لو عايزه كمان)</h4>
+            <p>حساب متجرك على الإنستجرام لازم يكون <b>احترافي</b> (نشاط تجاري أو صانع محتوى) ومربوط بصفحتك. لو مش مربوط: إعدادات الصفحة ← <b>الحسابات المرتبطة</b> ← <b>Instagram</b> ← <b>ربط</b>.</p>
+            <p>ومن تطبيق إنستجرام: صفحتك الشخصية ← <b>☰</b> ← <b>الرسائل والردود على القصص</b> ← <b>عناصر التحكم في الرسائل</b> ← تحت <b>الأدوات المتصلة</b> فعّل <b>السماح بالوصول إلى الرسائل</b>.</p></li>
+          <li data-fblang="en" dir="ltr" lang="en"><h4>Instagram (if you want it too)</h4>
+            <p>Your Instagram must be a <b>Professional</b> account (Business or Creator) linked to your Page. If it isn't: Page settings → <b>Linked accounts</b> → <b>Instagram</b> → <b>Connect</b>.</p>
+            <p>Then in the Instagram app: your profile → <b>☰</b> → <b>Messages and story replies</b> → <b>Message controls</b> → under <b>Connected tools</b>, turn on <b>Allow access to messages</b>.</p></li>
+          <li id="mtEasyStep4"><h4><span data-fblang="ar">ابعتلنا لينك صفحتك</span><span data-fblang="en" lang="en">Send us your Page link</span></h4>
+            <p data-fblang="ar">افتح صفحتك وانسخ اللينك من فوق (أو <b>مشاركة</b> ← <b>نسخ الرابط</b>)، وحطه هنا. وأول ما نربطها هتلاقيها في كارت المسنجر تحت.</p>
+            <p data-fblang="en" lang="en">Open your Page, copy its link from the address bar (or <b>Share</b> → <b>Copy link</b>) and paste it here. Once we link it, it shows in the Messenger card below.</p>
             <div class="shop-fields mt-fields">
-              <div><label for="mtEasyPage">لينك صفحتك على فيسبوك</label>
+              <div><label for="mtEasyPage"><span data-fblang="ar">لينك صفحتك على فيسبوك</span><span data-fblang="en" lang="en">Your Facebook Page link</span></label>
                 <input type="text" id="mtEasyPage" class="ltr" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://www.facebook.com/my.store"></div>
-              <div><label for="mtEasyIg">يوزر الإنستجرام (اختياري)</label>
+              <div><label for="mtEasyIg"><span data-fblang="ar">يوزر الإنستجرام (اختياري)</span><span data-fblang="en" lang="en">Instagram username (optional)</span></label>
                 <input type="text" id="mtEasyIg" class="ltr" maxlength="100" autocomplete="off" spellcheck="false" placeholder="@my.store"></div>
             </div>
             <button class="btn sm" type="button" id="mtEasySend" style="margin-top:10px">✅ ضفتكم، اربطوا صفحتي</button>
@@ -4985,8 +5013,8 @@
     card.hidden = !e; if (!e) return;
     var fbLinked = !!(mt.fb && mt.fb.link), r = e.request;
     if (r && r.status === "done" && !fbLinked) r = null;   // linked once and unlinked since: a new ask from scratch
-    $("mtAgentName").textContent = e.agentName || "";
-    var au = $("mtAgentUrl"); au.hidden = !e.agentUrl; if (e.agentUrl) au.href = e.agentUrl;
+    card.querySelectorAll(".mt-agent-name").forEach(function (el) { el.textContent = e.agentName || ""; });
+    card.querySelectorAll(".mt-agent-url").forEach(function (a) { a.hidden = !e.agentUrl; if (e.agentUrl) a.href = e.agentUrl; });
     var st = $("mtEasyState"); st.textContent = "";
     var waiting = !!(r && r.status === "pending"), fold = fbLinked || waiting;
     if (waiting) {
@@ -5018,14 +5046,32 @@
       : "من غير developers.facebook ولا أرقام: بتضيف حساب Sellybot على صفحتك بصلاحية الرسايل بس، وإحنا نربطها لك.";
     $("mtEasyToggle").hidden = !fold || !e.open; $("mtEasyToggle").textContent = mtEasyOpen ? "إخفاء" : "الخطوات";
     $("mtEasyBody").hidden = !e.open || (fold && !mtEasyOpen);
-    $("mtEasySend").textContent = r && r.status !== "done" ? "✅ ابعت الطلب تاني" : "✅ ضفتكم، اربطوا صفحتي";
+    mtEasyResend = !!(r && r.status !== "done"); mtEasyBtn();
     if (fill) { $("mtEasyPage").value = r ? r.pageUrl : ""; $("mtEasyIg").value = r && r.igUser ? "@" + r.igUser : ""; setMsg("mtEasyMsg", ""); }
   }
   $("mtEasyToggle").onclick = function () { mtEasyOpen = !mtEasyOpen; renderMtEasy(false); };
+  // the steps in the language of the owner's Facebook (its menus are named in that language): the device's, until they pick
+  var mtFbLang = (function () { try { var v = localStorage.getItem("sbFbLang"); if (v === "ar" || v === "en") return v; } catch (err) { } return /^ar\b/i.test(navigator.language || "") ? "ar" : "en"; })();
+  var mtEasyResend = false;
+  function mtEasyBtn() {
+    $("mtEasySend").textContent = mtFbLang === "en" ? (mtEasyResend ? "✅ Send the request again" : "✅ Done, link my Page")
+      : (mtEasyResend ? "✅ ابعت الطلب تاني" : "✅ ضفتكم، اربطوا صفحتي");
+  }
+  function setFbLang(l) {
+    mtFbLang = l;
+    document.querySelectorAll("#mtEasy [data-fblang]").forEach(function (el) { el.hidden = el.getAttribute("data-fblang") !== l; });
+    document.querySelectorAll("#mtEasy [data-fblang-pick]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-fblang-pick") === l)); });
+    $("mtEasyStep4").dir = l === "en" ? "ltr" : "rtl";   // the shared step (the form) reads in the same direction as the rest
+    mtEasyBtn();
+  }
+  document.querySelectorAll("#mtEasy [data-fblang-pick]").forEach(function (b) {
+    b.onclick = function () { setFbLang(b.getAttribute("data-fblang-pick")); try { localStorage.setItem("sbFbLang", mtFbLang); } catch (err) { } };
+  });
+  setFbLang(mtFbLang);
   $("mtEasySend").onclick = async function () {
     var b = this, page = $("mtEasyPage").value.trim();
     setMsg("mtEasyMsg", "");
-    if (!page) { setMsg("mtEasyMsg", "حط لينك صفحتك الأول: افتح صفحتك على فيسبوك وانسخ اللينك من فوق."); $("mtEasyPage").focus(); return; }
+    if (!page) { setMsg("mtEasyMsg", mtFbLang === "en" ? "Paste your Page link first: open your Page on Facebook and copy the link from the address bar." : "حط لينك صفحتك الأول: افتح صفحتك على فيسبوك وانسخ اللينك من فوق."); $("mtEasyPage").focus(); return; }
     b.disabled = true;
     try {
       mt = await api("api/meta.ashx?action=easy", { method: "POST", json: { pageUrl: page, igUser: $("mtEasyIg").value.trim() } });
