@@ -292,6 +292,10 @@
   .pl .chg-note{font-size:12px;color:var(--muted);text-align:center;margin:6px 0 0}
   .pl .old-note{font-size:12.5px;font-weight:600;color:#15803d;background:rgba(22,163,74,.09);border:1px solid rgba(22,163,74,.22);border-radius:10px;padding:7px 10px;margin:-2px 0 10px;line-height:1.6}
   [data-theme="dark"] .pl .old-note{color:#4ade80;background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.25)}
+  /* WhatsApp on each plan card: in the plan («الاقتصادية»), or its own monthly service on top */
+  .pl .wa-note{font-size:12.5px;font-weight:600;border-radius:10px;padding:7px 10px;margin:-2px 0 10px;line-height:1.6;color:#15803d;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3)}
+  .pl .wa-note.add{color:var(--muted);background:transparent;border:1px dashed var(--line);font-weight:500}
+  [data-theme="dark"] .pl .wa-note:not(.add){color:#4ade80}
   /* where to send the money: the number and InstaPay's QR */
   .pay-to{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 2px;padding:8px 10px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
   .pay-to span{font-size:13px;color:var(--muted)}
@@ -3277,7 +3281,8 @@
         tu.trialEnded ? "اختار باقة والمساعد يرجع يرد" : "فاضل " + fmt(tu.trialDaysLeft) + " يوم · مرة واحدة بس", tu.trialEnded ? 0 : (tu.trialDaysLeft || 0) * 100 / 30, tu.trialEnded || tu.trialDaysLeft <= 5));
     }
     if (sv.price && !sv.always && sv.until)
-      out.push(chip("📱", (sv.on ? "الواتساب بيتجدد يوم " : "الواتساب خلص يوم ") + dateAr(sv.until), sv.on ? "فاضل " + fmt(sv.daysLeft) + " يوم · تجديده لوحده" : "المساعد مش بيرد على واتساب متجرك",
+      out.push(chip("📱", sv.inPlan ? "الواتساب جوه باقتك لحد يوم " + dateAr(sv.until) : (sv.on ? "الواتساب بيتجدد يوم " : "الواتساب خلص يوم ") + dateAr(sv.until),
+        sv.inPlan ? "بيتجدد مع الباقة" : sv.on ? "فاضل " + fmt(sv.daysLeft) + " يوم · تجديده لوحده" : "المساعد مش بيرد على واتساب متجرك",
         sv.on ? sv.daysLeft * 100 / (sv.days || 30) : 0, !sv.on || sv.daysLeft <= (sv.warnDays || 2), "#1fae55"));
     return out.length ? '<div class="mp-dates"><div class="md-h">📅 مواعيدك</div>' + out.join("") + '</div>' : '';
   }
@@ -3299,7 +3304,7 @@
       }
       if (p.expired) act("plans", "🔀", "غيّر لباقة تانية", "شوف كل الباقات واختار اللي على أد استهلاكك.");
     }
-    if (sv.price && !sv.always) act("wa", "📱", sv.on ? "جدّد خدمة الواتساب" : sv.until ? "رجّع خدمة الواتساب" : "فعّل خدمة الواتساب",
+    if (sv.price && !sv.always && !sv.inPlan) act("wa", "📱", sv.on ? "جدّد خدمة الواتساب" : sv.until ? "رجّع خدمة الواتساب" : "فعّل خدمة الواتساب",
       (sv.on ? "شغالة لحد يوم " + dateAr(sv.until) + "، والشهر الجديد بيتضاف بعدها. " : sv.until ? "خلصت يوم " + dateAr(sv.until) + "، فالمساعد مش بيرد على الواتساب. " : "المساعد يرد على زباينك على رقم واتساب متجرك. ") +
       "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م." + (tu.trial && !tu.trialEnded && !sv.until ? " مش ضمن التجربة المجانية." : ""), !sv.on && !!sv.until);
     el.innerHTML = A.map(function (a, i) {
@@ -3363,7 +3368,7 @@
     var mineP = loadMine();   // in parallel with the plans; what each plan would mean for this store (upgrade / lower plan later / renew), for the cards below
     try { plansData = await api("api/plans.ashx"); } catch (e) { $("plGrid").innerHTML = '<div class="card hint">مقدرناش نحمّل الباقات دلوقتي.</div>'; return; }
     await mineP;
-    renderMyPlan();
+    renderMyPlan(); renderRef();   // the invite card knows which plan takes no discounts once the plans are in
     var per = unitsPerMsg(plansData.units), next = me.plan && me.plan.next;
     $("plansFor").textContent = "· الرسايل محسوبة على متجرك (≈ " + fmt(Math.round(per)) + " وحدة للرسالة)";
     $("plGrid").innerHTML = plansData.plans.length ? plansData.plans.map(function (p, i) {
@@ -3382,7 +3387,9 @@
         '<div class="pr"><b>' + fmt(mine1 ? mine1.price : p.finalPrice) + '</b><small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' +
           (mine1 ? '<s>' + fmt(mine1.regular) + '</s>' : d ? '<s>' + fmt(p.priceEgp) + '</s>' : '') + '</div>' +
         (mine1 ? '<div class="old-note">🔒 سعرك القديم: فاضلك ' + monthsAr(mine1.left) + ' بـ ' + fmt(mine1.price) + ' ج.م، وبعدها ' + fmt(mine1.regular) + ' ج.م</div>'
-          : offer ? '<div class="old-note">🔒 اشترك لحد ' + new Date(offer.day).toLocaleDateString("ar-EG", { day: "numeric", month: "long" }) + '، وجدّد بنفس السعر أول ' + monthsAr(offer.months) + ' في الباقة</div>' : '') +
+          : offer && !p.noDiscounts ? '<div class="old-note">🔒 اشترك لحد ' + new Date(offer.day).toLocaleDateString("ar-EG", { day: "numeric", month: "long" }) + '، وجدّد بنفس السعر أول ' + monthsAr(offer.months) + ' في الباقة</div>' : '') +
+        (p.includesWa ? '<div class="wa-note">📱 الواتساب جوه الباقة، من غير اشتراك زيادة</div>'
+          : plansData.waAddon && plansData.waAddon.price ? '<div class="wa-note add">📱 الواتساب باشتراك لوحده: +' + fmt(plansData.waAddon.price) + ' ج.م في الشهر</div>' : '') +
         '<div class="est"><span class="ei">💬</span><div><b>' + fmt(msgs) + '</b> رسالة في الشهر<small>تقريبًا، محسوبة على داتا متجرك</small></div></div>' +
         '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
         (maxPct > 0 ? '<div class="soon-row">🔒 اشتراك 4 و 6 شهور وسنة بخصم لحد ' + fmt(maxPct) + '% <span class="soon">قريبًا</span></div>' : '') +
@@ -3407,7 +3414,7 @@
 
   // «دعوة تاجر»: what the store's earned invite months take off N months of a plan (the same sum as Referral.Off on the server)
   function refOff(total, months) {
-    var r = mine.referral; if (!r || !r.pct || !r.available || !months) return 0;
+    var r = mine.referral; if (!r || !r.pct || !r.available || !months || (rq.plan && rq.plan.noDiscounts)) return 0;
     var k = Math.min(months, r.available);
     return Math.round(total * k / months * r.pct / 100);
   }
@@ -3416,6 +3423,8 @@
     if (!el) return;
     if (!r || !r.pct) { el.hidden = true; return; }
     var pct = fmt(r.pct) + "%";
+    // a plan with no discounts («الاقتصادية», a fixed price) doesn't take the invite months
+    var ndp = plansData && plansData.plans ? plansData.plans.filter(function (x) { return x.noDiscounts; })[0] : null, noDiscName = ndp ? ndp.name : "";
     var wa = "https://wa.me/?text=" + encodeURIComponent("جرّب Sellybot: مساعد ذكي بيرد على زباين متجرك 24 ساعة على موقعك والواتساب والمسنجر والإنستجرام. شهر تجربة ببلاش ومن غير كارت:\n" + r.link);
     var ST = { joined: ["⏳", "سجّل، ولسه ماشتركش"], ready: ["🎁", "اشترك · شهر بخصم " + pct + " مستنيك"], held: ["📨", "اشترك · خصمه في طلبك اللي بيتراجع"], used: ["✅", "اشترك · خصمه اتخصم من تجديدك"] };
     el.innerHTML = '<div class="ref-head"><span class="ref-ic" aria-hidden="true">🎁</span><div class="grow"><h3>دعوة تاجر <span class="new-tag">جديد</span></h3>' +
@@ -3430,7 +3439,8 @@
         return '<li><span aria-hidden="true">' + t[0] + '</span><b>' + esc(x.name) + '</b><small>' + t[1] + ' · ' + dateAr(x.paidAt || x.joinedAt) + '</small></li>';
       }).join("") + '</ul>' : '') +
       '<p class="hint" style="margin:12px 0 0">الخصم بيتخصم لوحده لما تبعت طلب اشتراك أو تجديد: شهر بخصم في كل شهر بتدفعه، لحد ما شهورك تخلص. ' +
-        'بيتحسب لما التاجر يدفع أول باقة (مش بالتسجيل بس)، وعلى الباقة بس: مش على الواتساب ولا الرسايل الإضافية.</p>';
+        'بيتحسب لما التاجر يدفع أول باقة (مش بالتسجيل بس)، وعلى الباقة بس: مش على الواتساب ولا الرسايل الإضافية' +
+        (noDiscName ? '، ومش على باقة «' + esc(noDiscName) + '» لأن سعرها ثابت: شهورك بتستناك لحد ما تشترك في باقة أعلى' : '') + '.</p>';
     $("refLink").value = r.link; $("refWa").href = wa;
     $("refCopy").onclick = function () { copy(r.link); toast("✅ اتنسخ لينك الدعوة"); };
     el.hidden = false;
@@ -3616,7 +3626,7 @@
   // a line above the plans: WhatsApp isn't part of a plan
   function renderWaStrip() {
     var sv = waSvc(), el = $("waStrip"); if (!el) return;
-    el.hidden = !sv.price || sv.always || sv.on; if (el.hidden) return;
+    el.hidden = !sv.price || sv.always || sv.on || sv.inPlan; if (el.hidden) return;
     el.innerHTML = '<span aria-hidden="true">📱</span><span class="grow"><b>خدمة الواتساب</b> اشتراك شهري لوحده بـ ' + fmt(sv.price) +
       ' ج.م: المساعد يرد على زباينك على رقم واتساب متجرك. تفعّلها في أي وقت، مع باقة أو من غيرها.</span>' +
       (sv.pending ? '' : '<button type="button" class="btn sm" id="waStripGo">📱 فعّلها</button>');
@@ -3625,7 +3635,7 @@
   // a warning on every page: WarnDays before the service ends (with the date), and after it ended while a number is still linked
   function renderWaBanner() {
     var sv = waSvc(), wb = $("waBanner");
-    var ending = sv.on && !sv.always && sv.until && sv.daysLeft <= (sv.warnDays || 2), ended = !sv.on && !sv.always && sv.until && sv.connected;
+    var ending = sv.on && !sv.always && !sv.inPlan && sv.until && sv.daysLeft <= (sv.warnDays || 2), ended = !sv.on && !sv.always && sv.until && sv.connected;
     if (!ending && !ended) { wb.hidden = true; return; }
     wb.className = "banner " + (ended ? "full" : "wa");
     wb.innerHTML = '<span class="bn-ic">📱</span><span class="bn-t"><b>' + (ended ? "خدمة الواتساب خلصت يوم " + dateAr(sv.until)
@@ -3647,10 +3657,10 @@
     var left = sv.always ? 100 : on ? Math.min(100, Math.round((sv.daysLeft || 0) * 100 / (sv.days || 30))) : 0;
     $("waStatBar").querySelector("i").style.width = left + "%"; $("waStatBar").classList.toggle("hot", ended);
     $("waStatHint").className = "hint" + (ended ? " warn" : "");
-    $("waStatHint").textContent = on ? "♾️ رسايل غير محدودة، وردود المساعد من رصيد باقتك" : ended ? "⚠️ المساعد مش بيرد على الواتساب لحد ما تجدّدها" : "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م، المساعد يرد على واتساب متجرك";
+    $("waStatHint").textContent = sv.inPlan ? "📱 جوه باقتك «" + sv.planName + "» وبيتجدد معاها، وردود المساعد من رصيد باقتك" : on ? "♾️ رسايل غير محدودة، وردود المساعد من رصيد باقتك" : ended ? "⚠️ المساعد مش بيرد على الواتساب لحد ما تجدّدها" : "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م، المساعد يرد على واتساب متجرك";
     var ends = $("waStatEnds");
     ends.textContent = sv.always ? "📅 شغالة دايمًا" : on ? "📅 لحد يوم " + dateAr(sv.until) + " (فاضل " + fmt(sv.daysLeft) + " يوم)" : ended ? "📅 خلصت يوم " + dateAr(sv.until) : "";
-    if (!sv.always && !sv.pending && (!on || sv.daysLeft <= (sv.warnDays || 2))) {
+    if (!sv.always && !sv.inPlan && !sv.pending && (!on || sv.daysLeft <= (sv.warnDays || 2))) {
       var b = document.createElement("button"); b.type = "button"; b.className = "btn sm st-act"; b.style.display = "block";
       b.textContent = on || ended ? "🔁 جدّد باقة الواتساب" : "📱 فعّل خدمة الواتساب"; b.onclick = addWaService; ends.appendChild(b);
     } else if (sv.pending) { var p = document.createElement("div"); p.textContent = "⏳ طلبك بيتراجع"; ends.appendChild(p); }
@@ -3671,9 +3681,32 @@
     $("reqForm").hidden = false; $("reqForm").scrollIntoView({ behavior: "smooth", block: "start" });
   }
   // the box in the request form (fillPayFields): hidden for extra quota and for the admin's own store
+  // the plan picked in the request form includes WhatsApp («الاقتصادية»): no separate service, only the number to link
+  function waInPlanReq() { return !!(rq.plan && rq.plan.includesWa && (rq.kind === "plan" || rq.kind === "upgrade")); }
   function waAddSetup() {
+    var sv = waSvc();
+    if (waInPlanReq()) {
+      $("waAdd").hidden = false; $("waRunNote").hidden = true;
+      $("waAddOn").checked = true; $("waAddOn").disabled = true;
+      $("waAddPrice").textContent = "جوه الباقة";
+      $("waAddWhen").textContent = "بيشتغل مع الباقة ويتجدد معاها، من غير اشتراك زيادة";
+      if (!$("waAddPhone").value) {
+        var lastP = (mine.requests || []).filter(function (r) { return r.waPhone; })[0];
+        $("waAddPhone").value = sv.number || (lastP ? lastP.waPhone : "");
+      }
+      waPhonePaint(); waAddPaint();
+      return;
+    }
+    $("waAddOn").disabled = false;
+    // WhatsApp on through the store's plan («الاقتصادية») and a plan without it picked: it keeps the time already paid for
+    if (sv.inPlan && rq.kind !== "topup" && rq.kind !== "wa") {
+      $("waAdd").hidden = true; $("waAddOn").checked = false;
+      $("waRunNote").hidden = false;
+      $("waRunNote").textContent = "📱 الواتساب جوه باقتك «" + sv.planName + "» لحد يوم " + dateAr(sv.until) + ". الباقة دي مش فيها الواتساب، فبعد التاريخ ده بيبقى باشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م، وهنفكّرك قبلها.";
+      return;
+    }
     // a plan request offers it only while it isn't running: renewing the plan never renews the service (its own monthly date)
-    var sv = waSvc(), only = rq.kind === "wa", running = !!sv.on && !sv.always && !only;
+    var only = rq.kind === "wa", running = !!sv.on && !sv.always && !only;
     var show = !!sv.price && !sv.always && rq.kind !== "topup" && !running;
     $("waAdd").hidden = !show;
     $("waRunNote").hidden = !(running && rq.kind !== "topup");
@@ -3704,12 +3737,12 @@
   function waAddMonths() { return 1; }   // always one month: the service renews monthly on its own
   // the amount = what was picked (rq.base) + the service when it's ticked
   function waAddPaint() {
-    var on = waAddOn(), box = $("waAdd");
+    var on = waAddOn(), box = $("waAdd"), inPlan = waInPlanReq();
     box.classList.toggle("on", on); $("waAddBody").hidden = !on;
     if (box.hidden) return;
-    var add = on ? waSvc().price * waAddMonths() : 0;
+    var add = on && !inPlan ? waSvc().price * waAddMonths() : 0;
     $("rqAmount").textContent = fmt((rq.base || 0) + add) + " ج.م";
-    $("waAddSum").textContent = on && rq.kind !== "wa" ? "المبلغ المطلوب فوق فيه " + fmt(add) + " ج.م لخدمة الواتساب" + (waAddMonths() > 1 ? " (" + monthsAr(waAddMonths()) + ")" : "") + "." : "";
+    $("waAddSum").textContent = inPlan ? "الواتساب جوه سعر الباقة، فمش بيتضاف عليه حاجة." : on && rq.kind !== "wa" ? "المبلغ المطلوب فوق فيه " + fmt(add) + " ج.م لخدمة الواتساب" + (waAddMonths() > 1 ? " (" + monthsAr(waAddMonths()) + ")" : "") + "." : "";
   }
   $("waAddOn").onchange = waAddPaint;
 
@@ -3821,8 +3854,8 @@
     tot -= off;
     $("rqAmount").textContent = fmt(tot) + " ج.م";
     $("rqSave").textContent = o ? "🔒 بسعرك القديم: " + fmt(o.price) + " ج.م بدل " + fmt(o.regular) + ". فاضلك بعد الطلب ده " + monthsAr(Math.max(0, o.left - Math.min(m, o.left))) + " بالسعر ده."
-      : offer && !(lk && lk.planId === rq.plan.id && lk.left <= 0) ? "🔒 هتجدد " + (off ? "بسعر الباقة ده (" + fmt((tot + off) / m) + " ج.م في الشهر)" : "بنفس السعر ده") + " أول " + monthsAr(offer.months) + " في الباقة، حتى بعد ما العرض يخلص."
-      : q.save > 0 ? "وفّرت " + fmt(q.save) + " ج.م" : "";
+      : offer && !rq.plan.noDiscounts && !(lk && lk.planId === rq.plan.id && lk.left <= 0) ? "🔒 هتجدد " + (off ? "بسعر الباقة ده (" + fmt((tot + off) / m) + " ج.م في الشهر)" : "بنفس السعر ده") + " أول " + monthsAr(offer.months) + " في الباقة، حتى بعد ما العرض يخلص."
+      : q.save > 0 ? "وفّرت " + fmt(q.save) + " ج.م" : rq.plan.noDiscounts ? "💰 سعر ثابت، من غير عروض ولا خصومات" : "";
     q = { total: tot };
     if (rq.change && rq.change.kind === "downgrade") explainDowngrade(rq.change, m, q.total); else $("rqExplain").hidden = true;
     rq.base = q.total; waAddPaint();   // + the WhatsApp service when it's ticked
@@ -3871,8 +3904,8 @@
   }
   $("reqForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("rqMsg", "");
-    if (waAddOn() && ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length < 8) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waPhoneBox").classList.add("bad"); $("waAddPhone").focus(); return; }
-    var nothingToPay = rq.kind === "upgrade" && rq.change && rq.change.amount <= 0 && !waAddOn();   // a plan at the same price, no WhatsApp service
+    if (waAddOn() && !(waInPlanReq() && waSvc().on) && ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length < 8) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waPhoneBox").classList.add("bad"); $("waAddPhone").focus(); return; }
+    var nothingToPay = rq.kind === "upgrade" && rq.change && rq.change.amount <= 0 && (!waAddOn() || waInPlanReq());   // a plan at the same price, no WhatsApp service
     if (!nothingToPay && !$("rqMethod").value) { setMsg("rqMsg", "اختار دفعت بإيه."); return; }
     var refNo = normRef($("rqRefNo").value);
     if (!nothingToPay && (refNo.length < 6 || refNo.length > 30)) { setMsg("rqMsg", "اكتب الرقم المرجعي اللي ظهرلك في InstaPay بعد التحويل (من 6 لـ 30 حرف أو رقم)."); $("rqRefNo").focus(); return; }
@@ -3883,7 +3916,8 @@
       var body = rq.kind === "wa" ? { kind: "wa", method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
         : rq.kind === "topup" ? { kind: "topup", msgs: rq.msgs, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
         : { planId: rq.plan.id, months: rq.months, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() };
-      if (waAddOn()) { body.wa = true; body.waPhone = $("waAddPhone").value.trim(); }
+      if (waInPlanReq()) { if ($("waAddPhone").value.trim()) body.waPhone = $("waAddPhone").value.trim(); }   // the WhatsApp is in the plan: only the number
+      else if (waAddOn()) { body.wa = true; body.waPhone = $("waAddPhone").value.trim(); }
       body.refNo = refNo;
       await api("api/plans.ashx?action=request", { method: "POST", json: body });
       var down = rq.change && rq.change.kind === "downgrade";

@@ -54,19 +54,21 @@ namespace RiwaqChat
         }
 
         // Once: each feature's minimum plan as the pricing-page cards say (plans by rank: الأساسية, المتقدمة, الاحترافية).
-        // The super admin can change any of them afterwards; this never runs again.
+        // The super admin can change any of them afterwards; this never runs again. A plan that includes WhatsApp («الاقتصادية», below
+        // الأساسية) is left out of the ranks: it has no gated feature but Messenger and Instagram (open to every plan). Since 2026-11-23
+        // الأساسية has the Shopify / EasyOrders link too (the plan-economy migration moved it there on databases seeded before).
         public static void Seed(SqlConnection c)
         {
             try
             {
                 if (Billing.Get(c, "PlanGateSeed") == "1") return;
-                var plans = Billing.Plans(c, false);
+                var plans = Billing.Plans(c, false).Where(p => !p.IncludesWa).ToList();
                 if (plans.Count == 0) return;
                 Func<int, string> rank = i => plans[Math.Min(i, plans.Count - 1)].Id.ToString();
                 var min = new Dictionary<string, string> {
                     { "files", rank(0) }, { "styles", rank(0) },
                     { "carts", rank(0) }, { "waimages", rank(0) }, { "restock", rank(0) }, { "report", rank(0) }, { "handoff", rank(0) },
-                    { "shopify", rank(1) }, { "easyorders", rank(1) }, { "chatorders", rank(1) }, { "delivery", rank(1) },
+                    { "shopify", rank(0) }, { "easyorders", rank(0) }, { "chatorders", rank(1) }, { "delivery", rank(1) },
                     { "tracking", rank(2) }, { "bothstores", rank(2) } };
                 foreach (var kv in min) Billing.Set(c, "MinPlan_" + kv.Key, kv.Value);
                 Billing.Set(c, "PlanGateSeed", "1");

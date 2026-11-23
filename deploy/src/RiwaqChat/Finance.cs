@@ -146,8 +146,9 @@ namespace RiwaqChat
             {
                 var on = rows.Where(x => x.Active && x.PlanId == p.Id).ToList();
                 long lim = on.Sum(x => x.Limit), proj = (long)(on.Sum(x => x.Units) * (daysIn / elapsed));
-                decimal price = Billing.FinalPrice(p) * 30m / Math.Max(1, p.DurationDays), maxCost = p.UsdBudget * rate;
-                decimal avgCost = on.Count > 0 ? Billing.UsdForUnits(proj) * rate / on.Count : 0;
+                // a plan that includes WhatsApp («الاقتصادية») also pays for the store's number at the provider
+                decimal price = Billing.FinalPrice(p) * 30m / Math.Max(1, p.DurationDays), maxCost = p.UsdBudget * rate + (p.IncludesWa ? waCost : 0);
+                decimal avgCost = on.Count > 0 ? Billing.UsdForUnits(proj) * rate / on.Count + (p.IncludesWa ? waCost : 0) : 0;
                 planRows.Add(new Dictionary<string, object> {
                     { "id", p.Id }, { "name", p.Name }, { "price", R(price) }, { "usdBudget", p.UsdBudget }, { "maxCost", R(maxCost) },
                     { "units", p.TokenLimit }, { "msgs", p.TokenLimit / perMsg }, { "stores", on.Count },
@@ -165,7 +166,7 @@ namespace RiwaqChat
                 return new Dictionary<string, object> {
                     { "id", x.Id }, { "name", x.Name }, { "slug", x.Slug }, { "plan", x.Active ? x.Plan : null }, { "trial", x.Trial }, { "own", x.Own }, { "wa", x.Wa },
                     { "msgs", x.Msgs }, { "cost", R(cost) }, { "proj", R(proj) }, { "pays", R(pays) },
-                    { "margin", x.Own ? (decimal?)null : R(pays - proj - (x.Wa && x.WaLinked ? waCost : 0)) },
+                    { "margin", x.Own ? (decimal?)null : R(pays - proj - (x.WaLinked && (x.Wa || x.Active && x.PlanId.HasValue && plans.ContainsKey(x.PlanId.Value) && plans[x.PlanId.Value].IncludesWa) ? waCost : 0)) },
                     { "usePct", lim > 0 ? Math.Round(x.Units * 100.0 / lim, 1) : (double?)null }, { "paidMonth", R(x.PaidMonth) } };
             }).OrderByDescending(d => (decimal)d["cost"]).ToList();
 

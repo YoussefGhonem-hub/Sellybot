@@ -792,6 +792,35 @@ IF EXISTS (SELECT 1 FROM sys.indexes WHERE name='UX_MetaApps_App' AND object_id=
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='UX_MetaApps_Checked' AND object_id=OBJECT_ID('dbo.MetaApps'))
   CREATE UNIQUE INDEX UX_MetaApps_Checked ON dbo.MetaApps(AppId) WHERE AppId IS NOT NULL AND Secret IS NOT NULL;
 -- the app a link's token came from (NULL = Sellybot's, links made before 2026-11-20)
-IF COL_LENGTH('dbo.MetaLinks', 'AppId') IS NULL ALTER TABLE dbo.MetaLinks ADD AppId NVARCHAR(40) NULL;";
+IF COL_LENGTH('dbo.MetaLinks', 'AppId') IS NULL ALTER TABLE dbo.MetaLinks ADD AppId NVARCHAR(40) NULL;
+-- ---------- «الاقتصادية» (2026-11-23, the user): the first plan. WhatsApp in its price (no separate monthly service while it runs),
+-- Messenger, Instagram, the chat link and the store's own site; 3000 messages a month for a small store (11,100,000 units = $1.11);
+-- 850 EGP a month with no discount of any kind (its own offer, longer periods, «السعر القديم», «دعوة تاجر»).
+-- «الأساسية» gets the Shopify / EasyOrders link (it was from «المتقدمة»); every other plan stays as it was, WhatsApp still its own service.
+IF COL_LENGTH('dbo.Plans', 'IncludesWa') IS NULL ALTER TABLE dbo.Plans ADD IncludesWa BIT NOT NULL CONSTRAINT DF_Plans_IncludesWa DEFAULT 0,
+  NoDiscounts BIT NOT NULL CONSTRAINT DF_Plans_NoDiscounts DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'plan-economy')
+BEGIN
+  -- through sp_executesql: the two columns are added in this same batch
+  EXEC sp_executesql N'
+    IF NOT EXISTS (SELECT 1 FROM dbo.Plans WHERE Name = N''الاقتصادية'' AND IsDeleted = 0)
+      INSERT INTO dbo.Plans(Name, Description, Features, PriceEgp, UsdBudget, TokenLimit, DurationDays, IsActive, IsFeatured, SortOrder, IncludesWa, NoDiscounts)
+      SELECT N''الاقتصادية'', N''كل قنواتك في مكان واحد بسعر ثابت'',
+             N''مساعد ذكي بيرد 24 ساعة'' + NCHAR(10) + N''الواتساب جوه الباقة من غير اشتراك زيادة'' + NCHAR(10) + N''المسنجر والإنستجرام'' + NCHAR(10) + N''لينك الشات وتركيبه على موقعك'',
+             850, 1.11, 11100000, 30, 1, 0, ISNULL(MIN(SortOrder), 1) - 1, 1, 1
+        FROM dbo.Plans WHERE IsDeleted = 0;';
+  DECLARE @basicPlan INT = (SELECT TOP 1 Id FROM dbo.Plans WHERE Name = N'الأساسية' AND IsDeleted = 0 ORDER BY Id);
+  IF @basicPlan IS NOT NULL
+  BEGIN
+    UPDATE dbo.Plans SET Features = REPLACE(Features, N'رفع ملفات PDF و Word و Excel', N'رفع ملفات PDF و Word و Excel' + NCHAR(10) + N'ربط متجر Shopify أو EasyOrders')
+      WHERE Id = @basicPlan AND Features LIKE N'%رفع ملفات PDF و Word و Excel%' AND Features NOT LIKE N'%Shopify%';
+    UPDATE dbo.Plans SET Features = ISNULL(Features + NCHAR(10), N'') + N'ربط متجر Shopify أو EasyOrders'
+      WHERE Id = @basicPlan AND (Features IS NULL OR Features NOT LIKE N'%Shopify%');
+    MERGE dbo.AppSettings AS t USING (VALUES (N'MinPlan_shopify'), (N'MinPlan_easyorders')) AS x([Key]) ON t.[Key] = x.[Key]
+      WHEN MATCHED THEN UPDATE SET [Value] = CAST(@basicPlan AS NVARCHAR(20))
+      WHEN NOT MATCHED THEN INSERT ([Key], [Value]) VALUES (x.[Key], CAST(@basicPlan AS NVARCHAR(20)));
+  END
+  INSERT INTO dbo.Migrations(Name) VALUES ('plan-economy');
+END";
     }
 }

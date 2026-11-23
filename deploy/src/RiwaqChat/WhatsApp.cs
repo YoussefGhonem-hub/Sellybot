@@ -276,10 +276,19 @@ namespace RiwaqChat
         // chat-order codes go out on its WhatsApp. Each paid month adds ServiceDays: from today, or after the current end while it still runs.
         // It renews on its own cycle, never with the plan: any store can ask for it at any time (with a plan request, or alone),
         // and renewing the plan leaves it alone. The bot's replies still count from the plan's quota, the same as the site chat.
-        // The admin's own store always has it.
+        // The admin's own store always has it. A plan that includes WhatsApp (Plans.IncludesWa, «الاقتصادية») turns it on while that
+        // plan runs, with nothing to buy on its own; leaving it for another plan keeps the time already paid for (Billing.Upgrade).
         public const int ServiceDays = 30;
         public static decimal ServicePrice(SqlConnection c) { var p = Billing.Dec(Billing.Get(c, "WaAddonPrice"), 300); return p > 0 ? p : 300; }
-        public static bool HasService(StoreInfo s) { return s != null && (s.IsAdmin || (s.WaUntil.HasValue && s.WaUntil.Value > DateTime.UtcNow)); }
+        public static bool HasService(StoreInfo s) { return s != null && (s.IsAdmin || (s.WaUntil.HasValue && s.WaUntil.Value > DateTime.UtcNow) || Billing.WaInPlan(s)); }
+        // Until when it runs: the service's own end, or the end of the plan that includes it when that's later (null = never had it)
+        public static DateTime? Until(StoreInfo s)
+        {
+            if (s == null) return null;
+            var u = s.WaUntil;
+            if (Billing.WaInPlan(s) && (!u.HasValue || s.PlanEndsAt.Value > u.Value)) u = s.PlanEndsAt;
+            return u;
+        }
 
         // A paid period of the service: its own payment row (Subscriptions.Kind 'wa') and the store's new WaUntil. Returns the new end.
         public static DateTime AddService(SqlConnection c, StoreInfo s, int planId, int months, decimal price, decimal paid, string method, string notes, out int subscriptionId)
@@ -316,9 +325,12 @@ namespace RiwaqChat
                 FROM dbo.WaMessages WHERE StoreId=@s AND CreatedAt >= @m", "@s", s.Id, "@m", new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc)))
             using (var r = cmd.ExecuteReader()) if (r.Read()) { replies = Convert.ToInt32(r[0]); chats = Convert.ToInt32(r[1]); }
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending' AND WaAddon=1", "@s", s.Id)) pending = (int)cmd.ExecuteScalar() > 0;
+            var until = Until(s);
             return new Dictionary<string, object> {
-                { "on", HasService(s) }, { "until", s.WaUntil.HasValue ? s.WaUntil.Value.ToString("o") : "" }, { "always", s.IsAdmin },
-                { "daysLeft", s.WaUntil.HasValue ? Math.Max(0, (int)Math.Ceiling((s.WaUntil.Value - now).TotalDays)) : 0 }, { "warnDays", WarnDays },
+                { "on", HasService(s) }, { "until", until.HasValue ? until.Value.ToString("o") : "" }, { "always", s.IsAdmin },
+                { "daysLeft", until.HasValue ? Math.Max(0, (int)Math.Ceiling((until.Value - now).TotalDays)) : 0 }, { "warnDays", WarnDays },
+                // on through a plan that includes it: it renews with the plan (no separate renewal, no reminder of its own)
+                { "inPlan", !s.IsAdmin && Billing.WaInPlan(s) }, { "planName", s.PlanName ?? "" },
                 { "price", ServicePrice(c) }, { "days", ServiceDays }, { "planRunning", s.PlanId.HasValue && !Billing.Expired(s) },
                 { "connected", !string.IsNullOrEmpty(s.WaInstance) }, { "pending", pending }, { "number", s.WaNumber ?? "" },   // the linked phone, filled in on a renewal
                 // this calendar month on WhatsApp: the assistant's replies, and the customers who wrote
@@ -1129,6 +1141,9 @@ ELSE
                 while (r.Read())
                 {
                     var until = r["WaUntil"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["WaUntil"], DateTimeKind.Utc);
+                    // a running plan that includes WhatsApp («الاقتصادية») has the service through the plan, until the plan ends
+                    var planEnds = r["PlanEndsAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["PlanEndsAt"], DateTimeKind.Utc);
+                    if (planEnds.HasValue && planEnds.Value > DateTime.UtcNow && Billing.PlanHasWa(r["PlanId"] as int?) && (!until.HasValue || planEnds.Value > until.Value)) until = planEnds;
                     var st = new Dictionary<string, object> {
                         { "id", (int)r["Id"] }, { "slug", (string)r["Slug"] }, { "name", (string)r["Name"] },
                         { "instance", r["WaInstance"] as string ?? "" }, { "own", Convert.ToInt32(r["Own"]) == 1 && r["WaInstance"] != DBNull.Value },

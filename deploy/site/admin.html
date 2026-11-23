@@ -1075,10 +1075,10 @@
   ];
   state.rqType = "all";
   function rqType(r) { return RT[r.what] || RT[r.kind === "topup" ? "topup" : r.kind === "wa" ? "wa-new" : r.kind === "upgrade" ? "upgrade" : "new"]; }
-  function rqTitle(r) { var t = rqType(r); return t.ic + " " + t.t + (r.wa && r.kind !== "wa" ? " + 📱 باقة الواتساب" : ""); }
+  function rqTitle(r) { var t = rqType(r); return t.ic + " " + t.t + (r.wa && r.kind !== "wa" ? " + 📱 باقة الواتساب" : r.waInPlan ? " · 📱 الواتساب جوه الباقة" : ""); }
   // one sentence: what the store wants
   function rqSay(r) {
-    var n = r.now || {}, s = "<b>" + esc(r.store) + "</b> ", pl = "<b>" + esc(r.plan) + "</b>", wa = r.wa && r.kind !== "wa" ? "، ومعاها <b>باقة الواتساب</b> شهر" : "";
+    var n = r.now || {}, s = "<b>" + esc(r.store) + "</b> ", pl = "<b>" + esc(r.plan) + "</b>", wa = r.wa && r.kind !== "wa" ? "، ومعاها <b>باقة الواتساب</b> شهر" : r.waInPlan ? " (الواتساب جوه الباقة)" : "";
     switch (r.what) {
       case "renew": return s + "عايز يجدد باقة " + pl + " " + monthsAr(r.months) + " كمان" + wa + ".";
       case "upgrade": return s + "عايز يرقّي " + (r.currentPlan ? "من " + esc(r.currentPlan) + " " : "") + "لباقة " + pl + " من دلوقتي، ويدفع فرق السعر للأيام الباقية" + wa + ".";
@@ -1101,6 +1101,7 @@
       if (other > 0) h += ln("🏷️ خصم", "− " + money(other), "off");
       if (r.refAmount > 0) h += ln("🎁 خصم دعوة تاجر · " + monthsAr(r.refMonths), "− " + money(r.refAmount), "off");
       if (r.wa) h += ln("📱 باقة الواتساب · شهر", money(r.waAmount));
+      else if (r.waInPlan) h += ln("📱 الواتساب", "جوه الباقة");
     }
     return '<div class="rq-box rq-bill"><h5>🧾 الفاتورة</h5>' + h + ln("الإجمالي", money(r.amount), "tot") + '</div>';
   }
@@ -1118,7 +1119,7 @@
     function add(cls, color, label, a, b) { a = a ? new Date(a).getTime() : now; b = new Date(b).getTime(); if (!(b > now)) return; bars.push({ cls: cls, c: color, l: label, a: Math.max(a, now), b: b }); ends.push(b); }
     if (n.planEnds && !n.planExpired && (r.kind === "plan" || r.kind === "upgrade")) add("cur", "", "الحالية", null, n.planEnds);
     if (o.planStarts) add("", rqType(r).c, "💎 " + r.plan, o.planStarts, o.planEnds);
-    if (o.waStarts) add("", "#1fae55", "📱 واتساب", o.waStarts, o.waEnds);
+    if (o.waStarts) add("", "#1fae55", o.waInPlan ? "📱 واتساب (جوه الباقة)" : "📱 واتساب", o.waStarts, o.waEnds);
     if (o.topupUntil) add("", "#c0392b", "➕ " + (r.msgs ? fmt(r.msgs) + " رسالة" : "رصيد"), null, o.topupUntil);
     if (!bars.length) return "";
     var span = Math.max.apply(null, ends) - now;
@@ -1128,7 +1129,8 @@
     }).join("");
     var soon = function (iso) { return new Date(iso).getTime() > now + 6e4; }, lines = [];
     if (o.planStarts) lines.push("💎 " + (soon(o.planStarts) ? "بتبدأ " + date(o.planStarts) : "من النهارده") + " لحد " + date(o.planEnds));
-    if (o.waStarts) lines.push("📱 الواتساب " + (soon(o.waStarts) ? "من " + date(o.waStarts) : "من النهارده") + " لحد " + date(o.waEnds));
+    if (o.waStarts) lines.push("📱 الواتساب " + (o.waInPlan ? "مع الباقة " : "") + (soon(o.waStarts) ? "من " + date(o.waStarts) : "من النهارده") + " لحد " + date(o.waEnds));
+    if (o.waKeptUntil) lines.push("📱 الواتساب اللي كان جوه باقته الحالية بيكمّل لحد " + date(o.waKeptUntil) + "، وبعدها باشتراك لوحده");
     if (o.topupUntil) lines.push("➕ الرسايل للشهر ده بس، لحد " + date(o.topupUntil));
     return '<div class="rq-box rq-tlbox"><h5>📅 لو وافقت</h5><div class="rq-tl">' + rows +
       '<div class="lbl"><span>النهارده</span><span>' + date(new Date(now + span).toISOString()) + '</span></div><div class="when">' + lines.join("<br>") + '</div></div></div>';
@@ -1248,6 +1250,8 @@
     if (r.kind === "wa") what = 'خدمة الواتساب هتشتغل ' + monthsAr(r.months) + ' من النهارده، أو بعد ميعادها الحالي لو لسه شغالة.';
     else if (r.wa) what += ' و<b>خدمة الواتساب</b> (' + money(r.waAmount) + ') هتشتغل من النهارده لمدة ' + monthsAr(Math.max(1, r.months)) + '.';
     if (r.wa) what += ' رقم الواتساب اللي هيربطه: <span class="ltr" dir="ltr">+' + esc(r.waPhone) + '</span>. لو مفيش رقم فاضي في «الواتساب»، اعمل رقم جديد على Wapilot عشان يلاقي الـ QR في لوحته.';
+    else if (r.waInPlan && r.kind !== "topup") what += ' <b>الواتساب جوه الباقة دي</b>، فبيشتغل معاها من غير طلب لوحده' +
+      (r.waPhone ? '. رقم الواتساب اللي هيربطه: <span class="ltr" dir="ltr">+' + esc(r.waPhone) + '</span>. لو مفيش رقم فاضي في «الواتساب»، اعمل رقم جديد على Wapilot عشان يلاقي الـ QR في لوحته.' : '، ورقمه شغال عنده بالفعل.');
     var m = modal('<h3>' + (r.kind === "wa" ? 'تفعيل خدمة الواتساب لـ ' : topup ? 'رصيد إضافي لـ ' : up ? 'ترقية ' + esc(r.store) + ' لباقة ' + esc(r.plan) : 'تفعيل باقة ' + esc(r.plan) + ' لـ ') + (up ? '' : esc(r.store)) + '</h3>' +
       (r.refNo ? '<div class="calc" style="margin:0 0 10px"><div class="r"><span>🔖 الرقم المرجعي</span><b class="ltr" style="font-size:18px">' + esc(r.refNo) + '</b></div>' +
         '<div class="r"><span>حوّل من</span><b class="ltr">' + esc(r.ref) + '</b></div></div>' : '') +
@@ -1801,13 +1805,15 @@
       return '<div class="card plan anim' + (p.isFeatured ? " feat" : "") + (p.isActive ? "" : " off") + '" style="animation-delay:' + (i * 0.07) + 's">' +
         (p.discount ? '<div class="ribbon">' + esc(discountText(p)) + '</div>' : '') +
         '<div class="feat-tag">' + (p.isFeatured ? '<span class="pill brand">⭐ الأكثر طلبًا</span>' : '') + (p.isActive ? '' : ' <span class="pill err">مخفية</span>') + '</div>' +
+        (p.includesWa || p.noDiscounts ? '<div class="row" style="gap:6px;margin:0 0 6px">' + (p.includesWa ? '<span class="pill ok">📱 الواتساب جوه الباقة</span>' : '') +
+          (p.noDiscounts ? '<span class="pill">💰 سعر ثابت، من غير خصومات</span>' : '') + '</div>' : '') +
         '<div class="p-name" style="margin-top:' + (p.isFeatured || !p.isActive ? "26px" : "0") + '">' + esc(p.name) + '</div><div class="p-desc">' + esc(p.description) + '</div>' +
         '<div class="p-price">' + fmt(p.finalPrice) + ' <small>ج.م / ' + (p.durationDays === 30 ? "شهر" : fmt(p.durationDays) + " يوم") + '</small>' + (p.discount ? '<span class="p-old">' + fmt(p.priceEgp) + '</span>' : '') + '</div>' +
         (p.discount && p.discount.endsAt ? '<div class="hint">⏰ الخصم لحد ' + date(p.discount.endsAt) + '</div>' : '') +
         '<div class="p-stats"><div class="p-stat"><b>' + fmt(p.usdBudget, 2) + '$</b><span>رصيد Claude</span></div><div class="p-stat"><b class="' + (p.minProfitEgp >= 0 ? "up" : "down") + '">' + money(p.minProfitEgp) + '</b><span>أقل ربح لو استهلك كله</span></div>' +
           '<div class="p-stat"><b>~' + fmt(p.messages.small) + '</b><span>رسالة · داتا صغيرة</span></div><div class="p-stat"><b>~' + fmt(p.messages.large) + '</b><span>رسالة · داتا كبيرة</span></div></div>' +
         '<ul>' + p.features.map(function (f) { return sbFeatItem(f, esc); }).join("") + '</ul>' +
-        '<div class="p-actions"><button class="btn sm" data-edit="' + p.id + '">✏️ تعديل</button><button class="btn ghost sm" data-disc="' + p.id + '">🏷️ خصم</button><span class="space"></span><button class="btn danger sm" data-del="' + p.id + '">حذف</button></div></div>';
+        '<div class="p-actions"><button class="btn sm" data-edit="' + p.id + '">✏️ تعديل</button>' + (p.noDiscounts ? '' : '<button class="btn ghost sm" data-disc="' + p.id + '">🏷️ خصم</button>') + '<span class="space"></span><button class="btn danger sm" data-del="' + p.id + '">حذف</button></div></div>';
     }).join("") + '<div class="card plan add anim" id="addPlan" style="animation-delay:' + (state.plans.length * 0.07) + 's"><span class="plus">＋</span><b>باقة جديدة</b></div>';
     $("addPlan").onclick = function () { planForm(null); };
     $("plansGrid").querySelectorAll("[data-edit]").forEach(function (b) { b.onclick = function () { planForm(byId(+b.dataset.edit)); }; });
@@ -1834,11 +1840,13 @@
       '<div class="row" style="gap:20px"><label class="switch"><input type="checkbox" id="plActive"' + (!p || p.isActive ? " checked" : "") + '><span class="tg"></span>ظاهرة للعملاء</label>' +
       '<label class="switch"><input type="checkbox" id="plFeatd"' + (p && p.isFeatured ? " checked" : "") + '><span class="tg"></span>⭐ الأكثر طلبًا</label>' +
       '<div style="width:110px"><label style="margin-top:0">الترتيب</label><input type="number" id="plSort" class="ltr" value="' + (p ? p.sortOrder : state.plans.length + 1) + '"></div></div>' +
-      '<h3 style="margin-top:18px" id="discHead">🏷️ الخصم</h3>' +
+      '<div class="row" style="gap:20px;margin-top:10px"><label class="switch"><input type="checkbox" id="plWa"' + (p && p.includesWa ? " checked" : "") + '><span class="tg"></span>📱 الواتساب جوه الباقة (من غير اشتراك لوحده)</label>' +
+      '<label class="switch"><input type="checkbox" id="plNoDisc"' + (p && p.noDiscounts ? " checked" : "") + '><span class="tg"></span>💰 سعر ثابت: من غير عروض ولا خصم مدة ولا سعر قديم ولا «دعوة تاجر»</label></div>' +
+      '<div id="plDiscPart"><h3 style="margin-top:18px" id="discHead">🏷️ الخصم</h3>' +
       '<div class="seg" id="plDType"><button type="button" data-v="">بدون خصم</button><button type="button" data-v="percent">نسبة %</button><button type="button" data-v="amount">مبلغ ثابت</button></div>' +
       '<div id="plDBox"><div class="cols3"><div><label>قيمة الخصم</label><input type="number" id="plDVal" class="ltr" min="0" step="1" value="' + esc(d.value) + '"></div>' +
       '<div><label>ينتهي يوم (اختياري)</label><input type="date" id="plDEnd" value="' + esc(d.endsAt) + '"></div>' +
-      '<div><label>نص الشارة (اختياري)</label><input type="text" id="plDLabel" maxlength="60" placeholder="عرض رمضان" value="' + esc(d.label) + '"></div></div></div>' +
+      '<div><label>نص الشارة (اختياري)</label><input type="text" id="plDLabel" maxlength="60" placeholder="عرض رمضان" value="' + esc(d.label) + '"></div></div></div></div>' +
       '<div class="calc" id="plCalc"></div>' +
       '<div class="msg" id="plMsg"></div><div class="row" style="margin-top:14px"><button class="btn" id="plBtn">' + (p ? "حفظ التعديلات" : "إنشاء الباقة") + '</button><button type="button" class="btn ghost" data-close>إلغاء</button></div></form>', true);
     var dtype = d.type || "";
@@ -1846,17 +1854,23 @@
     m.querySelector("#plDType").onclick = function (e) { var b = e.target.closest("button"); if (b) setType(b.dataset.v); };
     function calc() {
       var price = +m.querySelector("#plPrice").value || 0, usd = +m.querySelector("#plUsd").value || 0, dv = +m.querySelector("#plDVal").value || 0;
-      var final = dtype === "percent" ? price * (1 - Math.min(100, dv) / 100) : dtype === "amount" ? price - dv : price; final = Math.max(0, Math.round(final));
-      var units = usd * 10000000, cost = usd * state.usdRate, profit = final - cost;
+      var fixed = m.querySelector("#plNoDisc").checked, waIn = m.querySelector("#plWa").checked;
+      m.querySelector("#plDiscPart").hidden = fixed;
+      var final = fixed ? price : dtype === "percent" ? price * (1 - Math.min(100, dv) / 100) : dtype === "amount" ? price - dv : price; final = Math.max(0, Math.round(final));
+      // a plan that includes WhatsApp also pays for the store's number (the provider's monthly cost, typed in «💰 المكسب والتكلفة»)
+      var waNum = waIn ? ((state.plans[0] || {}).waNumberEgp || 0) : 0;
+      var units = usd * 10000000, cost = usd * state.usdRate + waNum, profit = final - cost;
       m.querySelector("#plCalc").innerHTML =
         '<div class="r"><span>السعر للعميل' + (final !== price ? " بعد الخصم" : "") + '</span><b>' + money(final) + (final !== price ? ' <s style="color:var(--muted);font-weight:400">' + money(price) + '</s>' : '') + '</b></div>' +
         '<div class="r"><span>حد الاستهلاك</span><b>' + fmt(units) + ' وحدة</b></div>' +
         '<div class="r"><span>تقريبًا كام رسالة (داتا صغيرة / متوسطة / كبيرة)</span><b id="plMsgs">…</b></div>' +
-        '<div class="r"><span>أقصى تكلفة Claude عليك (الدولار ' + fmt(state.usdRate, 2) + ')</span><b>' + money(cost) + '</b></div>' +
+        '<div class="r"><span>أقصى تكلفة Claude عليك (الدولار ' + fmt(state.usdRate, 2) + ')</span><b>' + money(usd * state.usdRate) + '</b></div>' +
+        (waIn ? '<div class="r"><span>رقم الواتساب في الشهر' + (waNum ? '' : ' (اكتبه في «💰 المكسب والتكلفة»)') + '</span><b>' + money(waNum) + '</b></div>' : '') +
         '<div class="r big"><span>أقل ربح لو العميل استهلك الرصيد كله</span><b class="' + (profit >= 0 ? "up" : "down") + '">' + money(profit) + ' (' + (final > 0 ? Math.round(profit * 100 / final) : 0) + '%)</b></div>';
       unitsP.then(function (U) { var el = m.querySelector("#plMsgs"); if (el) el.textContent = "~" + fmt(units / U.small) + " / ~" + fmt(units / U.medium) + " / ~" + fmt(units / U.large); });
     }
     ["#plPrice", "#plUsd", "#plDVal"].forEach(function (s) { m.querySelector(s).oninput = calc; });
+    ["#plWa", "#plNoDisc"].forEach(function (s) { m.querySelector(s).onchange = calc; });
     setType(dtype);
     if (focusDiscount) setTimeout(function () { m.querySelector("#discHead").scrollIntoView({ behavior: "smooth", block: "center" }); if (!dtype) setType("percent"); m.querySelector("#plDVal").focus(); }, 120);
     m.querySelector("#plF").onsubmit = async function (e) {
@@ -1865,7 +1879,8 @@
         id: p ? p.id : null, name: m.querySelector("#plName").value, description: m.querySelector("#plDesc").value, priceEgp: m.querySelector("#plPrice").value,
         usdBudget: m.querySelector("#plUsd").value, durationDays: +m.querySelector("#plDays").value || 30, features: m.querySelector("#plFeat").value,
         isActive: m.querySelector("#plActive").checked, isFeatured: m.querySelector("#plFeatd").checked, sortOrder: +m.querySelector("#plSort").value || 0,
-        discountType: dtype, discountValue: m.querySelector("#plDVal").value, discountEndsAt: m.querySelector("#plDEnd").value, discountLabel: m.querySelector("#plDLabel").value
+        discountType: m.querySelector("#plNoDisc").checked ? "" : dtype, discountValue: m.querySelector("#plDVal").value, discountEndsAt: m.querySelector("#plDEnd").value, discountLabel: m.querySelector("#plDLabel").value,
+        includesWa: m.querySelector("#plWa").checked, noDiscounts: m.querySelector("#plNoDisc").checked
       };
       try { var r = await api("plan-save", body); state.plans = r.plans; renderPlans(); closeModal(); toast(p ? "اتحفظت الباقة ✓" : "اتعملت الباقة 🎉"); }
       catch (err) { setMsg(m.querySelector("#plMsg"), err.message); busy(btn, false); }
