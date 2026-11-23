@@ -349,7 +349,8 @@ namespace RiwaqChat
         static readonly TimeSpan Debounce = TimeSpan.FromSeconds(4);
         const string Fallback = "مقدرش أساعد في ده 🙏 بس اسألني عن أي حاجة تخص المتجر وأنا أساعدك.";
 
-        public class Incoming { public string Customer, Text, Mid, AppId, ImageUrl, MediaType; public bool Echo, Deleted, HasMedia; }
+        // QuickReply: the payload of a quick-reply button the customer pressed (the phone-number button carries their number)
+        public class Incoming { public string Customer, Text, Mid, AppId, ImageUrl, MediaType, QuickReply; public bool Echo, Deleted, HasMedia; }
 
         // one entry of entry[].messaging[]
         public static Incoming Parse(JsonElement ev)
@@ -367,6 +368,8 @@ namespace RiwaqChat
                 x.Mid = WaJson.S(m, "mid");
                 x.AppId = WaJson.S(m, "app_id");
                 x.Text = WaJson.S(m, "text");
+                var qr = WaJson.O(m, "quick_reply");
+                if (qr.HasValue) x.QuickReply = WaJson.S(qr.Value, "payload");
                 JsonElement atts;
                 if (m.TryGetProperty("attachments", out atts) && atts.ValueKind == JsonValueKind.Array)
                     foreach (var a in atts.EnumerateArray())
@@ -407,6 +410,9 @@ namespace RiwaqChat
                 Save(c, s.Id, ch, chat, false, text.Length > 0 ? text : "[ملف/صورة من المتجر]", "owner:" + (m.Mid ?? Guid.NewGuid().ToString("N")));
                 return;
             }
+
+            // «ابعت عرض»: the answer to «تحب يوصلك جديدنا وعروضنا على الواتساب؟» (their number, or «لأ، شكرًا»)
+            if ((text.Length > 0 || !string.IsNullOrEmpty(m.QuickReply)) && Offers.AskAnswer(c, s, link, chat, m.QuickReply, text, m.Mid)) return;
 
             bool image = !string.IsNullOrEmpty(m.ImageUrl) && WaImages.SafeUrl(m.ImageUrl);
             if (text.Length == 0 && !image)
@@ -536,6 +542,8 @@ ELSE
                     MetaApp.SetStatus(c, s.Id, ch, failed);
                     if (new Random().Next(200) == 0) using (var cmd = Db.Cmd(c, "DELETE TOP (5000) FROM dbo.MetaMessages WHERE CreatedAt < DATEADD(DAY,-60,SYSUTCDATETIME())")) cmd.ExecuteNonQuery();
                 }
+                // «ابعت عرض»: once per customer, ask for their WhatsApp number for the store's offers (when the owner switched it on)
+                if (failed == null) try { await Offers.MaybeAsk(s, link, chat, secret, rows.Count(x => x.Customer), answer); } catch (Exception ex) { Log.Error(ex); }
             }
             catch (OperationCanceledException) { }
             catch (Exception ex) { Log.Error(ex); }

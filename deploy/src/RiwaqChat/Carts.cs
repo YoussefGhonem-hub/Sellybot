@@ -265,8 +265,8 @@ WHEN NOT MATCHED THEN INSERT (StoreId, Source, CheckoutId, Phone, Customer, Item
         }
     }
 
-    // «وقف»: a customer who doesn't want Sellybot's own messages (abandoned cart, back in stock) from this store any more.
-    // Answers to their own questions and order messages they asked for still work.
+    // «وقف»: a customer who doesn't want Sellybot's own messages (abandoned cart, back in stock, the store's offers from «ابعت عرض»)
+    // from this store any more. Answers to their own questions and order messages they asked for still work.
     public static class WaOptOut
     {
         static readonly string[] Words = { "وقف", "stop", "الغاء", "إلغاء", "ستوب", "unsubscribe" };
@@ -284,10 +284,13 @@ WHEN NOT MATCHED THEN INSERT (StoreId, Source, CheckoutId, Phone, Customer, Item
             var phone = WaChat.Digits(chatKey);
             if (phone == null) return false;
             using (var cmd = Db.Cmd(c, @"SELECT (SELECT COUNT(*) FROM dbo.CartReminders WHERE StoreId=@s AND Phone=@p AND SentAt > DATEADD(DAY,-14,SYSUTCDATETIME()))
-                + (SELECT COUNT(*) FROM dbo.RestockWaits WHERE StoreId=@s AND Phone=@p AND (Status='waiting' OR SentAt > DATEADD(DAY,-14,SYSUTCDATETIME())))", "@s", s.Id, "@p", phone))
+                + (SELECT COUNT(*) FROM dbo.RestockWaits WHERE StoreId=@s AND Phone=@p AND (Status='waiting' OR SentAt > DATEADD(DAY,-14,SYSUTCDATETIME())))
+                + (SELECT COUNT(*) FROM dbo.BcSends WHERE StoreId=@s AND Phone=@p AND SentAt > DATEADD(DAY,-14,SYSUTCDATETIME()))", "@s", s.Id, "@p", phone))
                 if ((int)cmd.ExecuteScalar() == 0) return false;   // «وقف» out of the blue is just a message for the assistant
             using (var cmd = Db.Cmd(c, @"IF NOT EXISTS (SELECT 1 FROM dbo.WaOptOuts WHERE StoreId=@s AND Phone=@p) INSERT INTO dbo.WaOptOuts(StoreId, Phone) VALUES(@s, @p);
-                UPDATE dbo.RestockWaits SET Status='expired', Note=N'الزبون بعت «وقف»' WHERE StoreId=@s AND Phone=@p AND Status='waiting';", "@s", s.Id, "@p", phone))
+                UPDATE dbo.RestockWaits SET Status='expired', Note=N'الزبون بعت «وقف»' WHERE StoreId=@s AND Phone=@p AND Status='waiting';
+                UPDATE dbo.BcSends SET StoppedAt=SYSUTCDATETIME() WHERE Id = (SELECT TOP 1 Id FROM dbo.BcSends WHERE StoreId=@s AND Phone=@p AND SentAt IS NOT NULL ORDER BY SentAt DESC);
+                UPDATE dbo.BcSends SET Status='skipped', Note=N'بعت «وقف»' WHERE StoreId=@s AND Phone=@p AND Status='waiting';", "@s", s.Id, "@p", phone))
                 cmd.ExecuteNonQuery();
             const string ok = "تمام 🙏 مش هنبعتلك رسايل زي دي تاني. ولو احتجت أي حاجة، ابعتلنا هنا في أي وقت.";
             var token = WaAccount.Token(c, s);

@@ -1222,6 +1222,54 @@
   [data-theme=dark] .oc-st.recovered{background:#16301f;color:#6fd49a}
   .oc-st.waiting{background:#eef2ff;color:#3b4cca;border-color:transparent}
   [data-theme=dark] .oc-st.waiting{background:#23284a;color:#a9b4ff}
+  /* «📣 ابعت عرض» */
+  .bc-card,.bc-now{max-width:880px;margin-top:16px}
+  .bc-now{margin-top:0;margin-bottom:16px;border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
+  .bc-need{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:880px;margin:0 0 16px}
+  .bc-need span{flex:1;min-width:220px}
+  .bc-now-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .bc-bar{height:10px;border-radius:999px;background:var(--soft);border:1px solid var(--line);overflow:hidden;margin-top:14px}
+  .bc-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok),#25d366);border-radius:inherit;transition:width .6s}
+  .bc-bar-t{font-size:13px;color:var(--muted);margin-top:6px}
+  .bc-sample{white-space:pre-wrap;padding:10px 12px;border-radius:12px;background:var(--soft);border:1px solid var(--line);color:var(--ink)!important}
+  .bc-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .bc-thumb{position:relative;display:inline-block;margin-top:10px}
+  .bc-thumb img{display:block;max-width:220px;max-height:220px;border-radius:12px;border:1px solid var(--line)}
+  .bc-thumb button{position:absolute;top:6px;inset-inline-end:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer}
+  .bc-h{margin:18px 0 8px;font-size:15px}
+  .bc-aud{display:grid;gap:8px}
+  .bc-aud label{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:var(--card);transition:border-color .15s,background .15s}
+  .bc-aud label:has(input:checked){border-color:var(--brand);background:color-mix(in srgb,var(--brand) 6%,var(--card))}
+  .bc-aud label.off{opacity:.55;cursor:default}
+  .bc-aud input{margin-top:5px;accent-color:var(--brand);width:17px;height:17px;flex:none}
+  .bc-aud span{flex:1;min-width:0;font-size:14px}
+  .bc-aud small{display:block;color:var(--muted);font-size:12.5px}
+  .bc-total{margin-top:10px;padding:10px 12px;border-radius:12px;background:#e7f7ec;color:#14361f;font-size:14px;line-height:1.7}
+  [data-theme=dark] .bc-total{background:#16301f;color:#bfeccf}
+  .bc-phone{padding:14px;border-radius:14px;background:#efe7dc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='4' cy='4' r='1.2' fill='%23d9cbb8'/%3E%3C/svg%3E")}
+  [data-theme=dark] .bc-phone{background:#0e1512}
+  .bc-bubble{max-width:340px;margin-inline-start:auto;background:#d9fdd3;color:#111b21;border-radius:12px 0 12px 12px;padding:6px 8px 4px;box-shadow:0 1px .5px rgba(0,0,0,.13);font-size:14px;line-height:1.6}
+  [data-theme=dark] .bc-bubble{background:#005c4b;color:#e9edef}
+  .bc-bubble img{display:block;width:100%;border-radius:8px;margin-bottom:6px}
+  .bc-bubble div{white-space:pre-wrap;word-break:break-word;padding:0 4px}
+  .bc-bubble div .ft{color:#667781;font-size:12.5px}
+  [data-theme=dark] .bc-bubble div .ft{color:#aebac1}
+  .bc-bubble small{display:block;text-align:left;color:#53bdeb;font-size:11px}
+  .bc-test{margin-top:16px;padding:12px 14px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}
+  .bc-test .shop-form input{max-width:260px}
+  .bc-send{margin-top:16px;width:100%;padding:12px;font-size:16px}
+  .bc-drop{display:block;padding:18px;border:2px dashed var(--line);border-radius:14px;text-align:center;cursor:pointer;background:var(--soft)}
+  .bc-drop:hover{border-color:var(--brand)}
+  .bc-drop b{display:block}
+  .bc-drop small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px;line-height:1.6}
+  .bc-consent{display:flex;align-items:flex-start;gap:8px;margin:12px 0;font-size:13.5px;cursor:pointer}
+  .bc-consent input{margin-top:4px;accent-color:var(--brand);width:16px;height:16px;flex:none}
+  .bc-nums .oc-row{grid-template-columns:auto 1fr auto auto}
+  .bc-nums .oc-row button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px}
+  .bc-nums .oc-row button:hover{color:var(--err);background:var(--soft)}
+  .bc-hist .oc-row{grid-template-columns:1fr auto}
+  .oc-st.sending{background:#e6f6ec;color:#1f7a45;border-color:transparent}
+  [data-theme=dark] .oc-st.sending{background:#173726;color:#8be0ad}
   .oc-need{margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--soft);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
   .oc-need span{font-size:13px;color:var(--muted);line-height:1.7}
   .oc-need .btn{margin-top:4px;text-decoration:none}
@@ -1525,6 +1573,7 @@
           <button data-tab="social" id="socialTabBtn" role="menuitem" hidden><span class="dd-ic">📨</span><span><b>مسنجر وإنستجرام</b><small>المساعد يرد على صفحتك والدايركت</small></span></button>
         </div>
       </div>
+      <button data-tab="offers" data-feat="broadcast">📣 ابعت عرض</button>
       <button data-tab="plan">💎 باقتي <span class="nb" id="planNb" hidden title="رد جديد من الإدارة على طلبك">1</span></button>
       <div class="dd">
         <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddMore">✨ المزيد <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -2478,6 +2527,109 @@
     </div>
   </section>
 
+  <!-- «📣 ابعت عرض» (Offers.cs, api/offers.ashx): an offer from the store's WhatsApp number to its customers, one number at a time -->
+  <section data-panel="offers" data-feat="broadcast" hidden>
+    <div class="page-title"><div><h2>📣 ابعت عرض</h2><p>ابعت عرض أو خبر جديد لزباينك على الواتساب من رقم متجرك، ومعاه صورة لو تحب.</p></div></div>
+    <div class="wa-warn bc-need" id="bcNeed" hidden><span id="bcNeedT"></span> <button class="btn sm" type="button" id="bcNeedGo"></button></div>
+
+    <!-- the offer being sent now -->
+    <div class="card bc-now" id="bcNow" hidden>
+      <div class="bc-now-head"><h3 style="margin:0" id="bcNowH">📤 عرضك بيتبعت</h3><span class="st-pill" id="bcNowSt"></span></div>
+      <div class="bc-bar" aria-hidden="true"><i id="bcBar"></i></div>
+      <div class="bc-bar-t" id="bcBarT"></div>
+      <div class="gr-stats" id="bcNowStats"></div>
+      <div class="oc-warn" id="bcNowNote" hidden></div>
+      <details class="name-tip"><summary>💬 رسالة العرض</summary><div class="bc-sample" id="bcNowMsg"></div></details>
+      <details class="name-tip" id="bcFailBox" hidden><summary id="bcFailT"></summary><div class="oc-list" id="bcFails"></div></details>
+      <div class="row" style="margin-top:14px">
+        <button class="btn ghost sm" id="bcPause" type="button">⏸️ وقّف الإرسال</button>
+        <button class="btn sm" id="bcResume" type="button" hidden>▶️ كمّل الإرسال</button>
+        <span class="space"></span>
+        <button class="btn danger sm" id="bcCancel" type="button">إلغاء الباقي</button>
+      </div>
+      <div class="msg" id="bcNowMsgErr"></div>
+    </div>
+
+    <!-- write the offer -->
+    <div class="card bc-card" id="bcNew">
+      <h3>✍️ اكتب العرض</h3>
+      <textarea id="bcText" maxlength="900" aria-label="رسالة العرض" placeholder="أهلًا {الاسم} 👋&#10;عندنا خصم 20% على كل الكوتشيات لحد يوم الجمعة 🔥&#10;اطلب من هنا: …"></textarea>
+      <div class="bc-tools">
+        <button type="button" class="btn ghost sm" id="bcName" title="بيتكتب مكانه الاسم الأول للزبون">👤 + اسم الزبون</button>
+        <input type="file" id="bcFile" accept="image/jpeg,image/png,image/webp" hidden>
+        <button type="button" class="btn ghost sm" id="bcPick">🖼️ ضيف صورة</button>
+        <span class="space"></span><span class="hint" id="bcCount" style="margin:0">0 / 900</span>
+      </div>
+      <div class="bc-thumb" id="bcThumb" hidden><img id="bcImg" alt="صورة العرض"><button type="button" id="bcImgX" aria-label="شيل الصورة">✕</button></div>
+      <p class="hint">«اسم الزبون» بيتكتب مكانه الاسم الأول لو عارفينه (من أوردراته أو من قايمتك)، ولو مش عارفينه بيتشال لوحده.</p>
+
+      <h4 class="bc-h">👥 العرض يروح لمين؟</h4>
+      <div class="bc-aud" id="bcAud">
+        <label><input type="checkbox" value="wa"><span><b>كل اللي كلّموك على الواتساب</b><small id="bcN-wa"></small></span></label>
+        <label><input type="checkbox" value="wa30"><span><b>اللي كلّموك على الواتساب آخر 30 يوم بس</b><small id="bcN-wa30"></small></span></label>
+        <label><input type="checkbox" value="orders"><span><b>اللي عملوا أوردرات</b><small id="bcN-orders"></small></span></label>
+        <label><input type="checkbox" value="restock"><span><b>اللي طلبوا «بلّغني لما يرجع»</b><small id="bcN-restock"></small></span></label>
+        <label><input type="checkbox" value="list"><span><b>قايمتك</b><small id="bcN-list"></small></span></label>
+      </div>
+      <div class="bc-total" id="bcTotal" hidden></div>
+
+      <h4 class="bc-h">👀 هتوصل للزبون كده</h4>
+      <div class="bc-phone"><div class="bc-bubble"><img id="bcPrevImg" hidden alt=""><div id="bcPrev"></div><small>✓✓</small></div></div>
+
+      <div class="bc-test">
+        <div class="shop-form"><input type="tel" id="bcTestPhone" class="ltr" maxlength="25" placeholder="01001234567" aria-label="رقمك للتجربة"><button class="btn ghost" id="bcTest" type="button">📤 جرّب على رقمي</button></div>
+        <div class="hint">الرسالة بتوصلك دلوقتي على الرقم ده من رقم متجرك، عشان تشوف شكلها قبل ما تبعتها للكل.</div>
+      </div>
+      <button class="btn bc-send" id="bcSend" type="button">📣 ابعت العرض</button>
+      <details class="name-tip">
+        <summary>🛡️ إزاي بنحافظ على رقمك من الحظر؟</summary>
+        <div id="bcSafe"></div>
+      </details>
+      <div class="msg" id="bcMsg"></div>
+    </div>
+
+    <!-- the owner's own list: typed, from Excel / CSV, and from Messenger / Instagram -->
+    <div class="card bc-card" id="bcListCard">
+      <div class="shop-head">
+        <div class="shop-logo gr-logo" aria-hidden="true">📒</div>
+        <div><h3 style="margin:0">قايمتك</h3>
+          <p class="sub" style="margin:2px 0 0">أرقام زباينك اللي عندك برّه Sellybot: اكتبها أو ارفعها من ملف Excel، وابعتلهم العروض مع الباقيين.</p></div>
+      </div>
+      <div class="gr-stats" id="bcListStats"></div>
+      <div class="seg" id="bcAddSeg" role="tablist" aria-label="ضيف أرقام">
+        <button type="button" data-v="type" class="on" role="tab">✍️ اكتب الأرقام</button>
+        <button type="button" data-v="file" role="tab">📄 ارفع ملف Excel</button>
+      </div>
+      <div id="bcAddType">
+        <textarea id="bcNums" aria-label="الأرقام" placeholder="كل رقم في سطر، والاسم جنبه لو تحب:&#10;01001234567 أحمد&#10;01112345678 - منى"></textarea>
+      </div>
+      <div id="bcAddFile" hidden>
+        <label class="bc-drop" for="bcXls"><b id="bcXlsName">📄 اختار ملف Excel (.xlsx) أو CSV</b>
+          <small>الأرقام في أي عمود، والاسم جنبها لو موجود. صف العناوين اللي فوق عادي، ولو Excel شال الصفر من أول الرقم بنرجّعه.</small></label>
+        <input type="file" id="bcXls" accept=".xlsx,.csv,.txt" hidden>
+      </div>
+      <label class="bc-consent"><input type="checkbox" id="bcConsent"><span>الناس دي زباين متجري، ووافقوا يوصلهم رسايل منه.</span></label>
+      <button class="btn" id="bcAdd" type="button">➕ ضيف لقايمتي</button>
+      <div class="msg" id="bcListMsg"></div>
+      <div class="oc-list bc-nums" id="bcNumsList"></div>
+      <div class="row" style="margin-top:10px"><span class="hint" id="bcNumsMore" style="margin:0"></span><span class="space"></span><button class="btn danger sm" id="bcClear" type="button" hidden>امسح القايمة كلها</button></div>
+    </div>
+
+    <!-- Messenger / Instagram: ask for the customer's WhatsApp number -->
+    <div class="card bc-card" id="bcAskCard">
+      <label class="toggle"><input type="checkbox" id="bcAsk"><span class="tg" aria-hidden="true"></span>
+        <span><b>💬 اسأل زباين المسنجر والإنستجرام عن رقمهم</b><small>بعد ما المساعد يرد على زبون، يسأله مرة واحدة بس: «تحب يوصلك جديدنا وعروضنا على الواتساب؟». الزبون يدوس على رقمه (فيسبوك بيعرضهوله جاهز) أو يكتبه، فيتضاف لقايمتك بموافقته.</small></span></label>
+      <div class="gr-stats" id="bcAskStats"></div>
+      <div class="oc-warn" id="bcAskWarn" hidden></div>
+    </div>
+
+    <!-- past offers -->
+    <div class="card bc-card" id="bcHistCard" hidden>
+      <h3>🗂️ العروض اللي بعتها</h3>
+      <div class="oc-list" id="bcHist"></div>
+    </div>
+  </section>
+
   <!-- Messenger + Instagram (Meta.cs, api/meta.ashx): the owner links their Facebook Page / Instagram account with Meta's login -->
   <section data-panel="social" hidden>
     <div class="page-title"><div><h2>مسنجر وإنستجرام</h2><p>نفس المساعد، بنفس داتا متجرك وطريقة كلامه، يرد على رسايل صفحتك على فيسبوك والدايركت على الإنستجرام.</p></div></div>
@@ -2999,6 +3151,7 @@
     if (tab === "support") loadSupport();
     if (tab === "wa") loadWa();
     if (tab === "social") loadSocial();
+    if (tab === "offers") loadOffers();
     if (tab === "data" || tab === "look" || tab === "install") loadLocks();   // which features this store's plan doesn't include
     if (tab !== "wa") stopUpsell();
     showLiveChat(tab !== "look");   // the look tab has its own preview of the chat
@@ -3049,7 +3202,7 @@
     // Messenger + Instagram: hidden until it opens to everyone (MetaApp.Visible), and when the plan has neither (applyPlanView)
     unmountHelpChat(); render(); loadItems(); mountLiveChat();
     var want = fresh ? "" : (location.hash || "").replace("#", "");
-    go(["home", "data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) ? want : "home");
+    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) ? want : "home");
     setTimeout(showNews, 1200);   // what's new since this browser last looked
   }
 
@@ -4850,6 +5003,268 @@
   // Owners only see "scan a QR". The provider behind it is never named on this page.
   var wa = null;
   var WA_LIVE = { WORKING: "متصل", CONNECTED: "متصل", ACTIVE: "متصل", SCAN_QR_CODE: "مستني مسح الـ QR", STARTING: "بيبدأ…", STOPPED: "متوقف", FAILED: "فيه مشكلة" };
+  // ---------------- «📣 ابعت عرض»: an offer from the store's WhatsApp number to its customers (api/offers.ashx) ----------------
+  var bc = null, bcImage = null, bcPollT = null, bcCountT = null, bcLastCount = null;
+  var BC_ST = { sending: "📤 بيتبعت", paused: "⏸️ متوقف", done: "✅ خلص", stopped: "⛔ اتلغى الباقي" };
+  var BC_AUD = { wa: "كل اللي كلّموك على الواتساب", wa30: "الواتساب آخر 30 يوم", orders: "اللي عملوا أوردرات", restock: "«بلّغني لما يرجع»", list: "قايمتك" };
+  var BC_SRC = { manual: "✍️ كتبته", excel: "📄 من Excel", messenger: "💬 المسنجر", instagram: "📸 الإنستجرام" };
+  async function loadOffers() {
+    try { bc = await api("api/offers.ashx"); } catch (e) { setMsg("bcMsg", e.message); return; }
+    renderOffers(); bcCount();
+  }
+  // while an offer is going out and the tab is open, its numbers move every 15 seconds
+  function bcPoll() {
+    clearTimeout(bcPollT);
+    if (current !== "offers" || !bc || !bc.current || bc.current.status !== "sending") return;
+    bcPollT = setTimeout(async function () {
+      if (current !== "offers") return;
+      try { bc = await api("api/offers.ashx"); renderOffers(); } catch (e) {}
+    }, 15000);
+  }
+  // Arabic counts: 1 / 2 / 3-10 / 11+ ("رقم واحد", "رقمين", "3 أرقام", "15 رقم")
+  function bcPlural(n, one, two, few, many) { n = +n || 0; return n === 1 ? one : n === 2 ? two : fmt(n) + " " + (n <= 10 ? few : (many || few)); }
+  function bcNums(n) { return bcPlural(n, "رقم واحد", "رقمين", "أرقام", "رقم"); }
+  // how long n numbers take: a message every gapMin-gapMax seconds, at most `daily` a day, nothing at night
+  function bcEta(n) {
+    var L = (bc && bc.limits) || { daily: 250, gapMin: 20, gapMax: 40 };
+    if (!n) return "";
+    if (n > L.daily) return "على حوالي " + bcPlural(Math.ceil(n / L.daily), "يوم", "يومين", "أيام", "يوم") + " (" + fmt(L.daily) + " رسالة في اليوم بالكتير)";
+    var min = Math.ceil(n * (L.gapMin + L.gapMax) / 2 / 60);
+    return min < 60 ? "في حوالي " + bcPlural(min, "دقيقة", "دقيقتين", "دقايق", "دقيقة") : "في حوالي " + bcPlural(Math.round(min / 60) || 1, "ساعة", "ساعتين", "ساعات", "ساعة");
+  }
+  function bcAudiences() { return [].slice.call(document.querySelectorAll("#bcAud input:checked")).map(function (x) { return x.value; }); }
+  // the message as the customer sees it: {الاسم} -> a sample name, *bold*, and the «وقف» line
+  function bcCompose(text, name) {
+    var t = (text || "").replace(/\{الاسم\}/g, name || "");
+    if (!name) t = t.replace(/[ \t]+([،,.!؟?:])/g, "$1").replace(/[ \t]{2,}/g, " ");
+    return t.trim();
+  }
+  function bcFormat(t) { return esc(t).replace(/\*([^*\n]+)\*/g, "<b>$1</b>").replace(/_([^_\n]+)_/g, "<i>$1</i>"); }
+  function bcPreview() {
+    var t = $("bcText").value;
+    $("bcCount").textContent = fmt(t.length) + " / " + fmt(900);
+    var body = bcCompose(t, /\{الاسم\}/.test(t) ? "أحمد" : "");
+    $("bcPrev").innerHTML = (body ? bcFormat(body) : '<span class="ft">اكتب رسالة العرض فوق…</span>') + '\n\n<span class="ft">لو مش عايز توصلك رسايلنا، ابعت «وقف».</span>';
+    $("bcPrevImg").hidden = !bcImage; if (bcImage) $("bcPrevImg").src = bcImage;
+  }
+  function bcNeed() {
+    if (!bc) return null;
+    if (!bc.plan) return ["🔒 «ابعت عرض» مش في باقتك.", "plan", "💎 شوف الباقات"];
+    if (!bc.service) return ["⚠️ العروض بتتبعت من رقم واتساب متجرك. فعّل خدمة الواتساب الأول.", "plan", "💎 فعّلها من «باقتي»"];
+    if (!bc.whatsapp) return ["⚠️ اربط واتساب المتجر الأول، عشان العروض تتبعت من رقمك.", "wa", "💬 اربط الواتساب"];
+    return null;
+  }
+  function renderOffers() {
+    if (!bc) return;
+    var need = bcNeed();
+    $("bcNeed").hidden = !need;
+    if (need) { $("bcNeedT").textContent = need[0]; $("bcNeedGo").textContent = need[2]; $("bcNeedGo").onclick = function () { go(need[1]); }; }
+    // counts per audience
+    var au = bc.audiences || {};
+    Object.keys(BC_AUD).forEach(function (k) { var el = $("bcN-" + k); if (el) el.textContent = au[k] ? bcNums(au[k]) : "لسه مفيش أرقام"; });
+    var wa = document.querySelector('#bcAud input[value="wa"]'), wa30 = document.querySelector('#bcAud input[value="wa30"]');
+    wa30.disabled = wa.checked; if (wa.checked) wa30.checked = false; wa30.closest("label").classList.toggle("off", wa.checked);
+    if (!$("bcTestPhone").value && bc.ownerPhone) $("bcTestPhone").value = localPhone(bc.ownerPhone);
+    var L = bc.limits || {};
+    $("bcSafe").innerHTML = "• الرسايل بتتبعت <b>واحدة واحدة</b>: رسالة كل " + fmt(L.gapMin) + " لـ " + fmt(L.gapMax) + " ثانية، مش كلها مرة واحدة.<br>" +
+      "• <b>" + fmt(L.daily) + " رسالة في اليوم بالكتير</b>، والباقي بيكمّل لوحده تاني يوم. ومش بنبعت بالليل (من 11 بالليل لـ 9 الصبح).<br>" +
+      "• كل رسالة في آخرها «ابعت <b>وقف</b>»، واللي يبعتها مايوصلهوش أي عرض تاني منك" + (bc.optouts ? " (لحد دلوقتي " + bcNums(bc.optouts) + ")" : "") + ".<br>" +
+      "• ابعت لزباين عارفينك بس. الرسايل لناس ماتعرفكش هي أكتر حاجة بتخلي واتساب يقفل الرقم، لأنهم بيعملوا بلاغ (Report).<br>" +
+      "• لما الزبون يرد على العرض، المساعد بيرد عليه وهو عارف العرض، زي أي محادثة.";
+    // the offer going out now
+    var cur = bc.current;
+    $("bcNow").hidden = !cur;
+    if (cur) {
+      var k = cur.counts || {}, done = (k.sent || 0) + (k.delivered || 0) + (k.failed || 0) + (k.skipped || 0), left = (k.waiting || 0) + (k.sending || 0);
+      $("bcNowH").textContent = cur.status === "paused" ? "⏸️ عرضك متوقف لحد ما تكمّله" : "📤 عرضك بيتبعت";
+      $("bcNowSt").textContent = BC_ST[cur.status] || cur.status;
+      $("bcNowSt").className = "st-pill " + (cur.status === "sending" ? "answered" : "open");
+      $("bcBar").style.width = (cur.total ? Math.round(done * 100 / cur.total) : 0) + "%";
+      $("bcBarT").textContent = fmt(done) + " من " + fmt(cur.total) + (left ? " · فاضل " + fmt(left) + " " + (cur.status === "sending" ? bcEta(left) : "") : "");
+      grStats($("bcNowStats"), [[(k.sent || 0) + (k.delivered || 0), "اتبعتت"], [k.delivered || 0, "وصلت", true], [k.failed || 0, "ماوصلتش"], [k.stopped || 0, "بعتوا «وقف»"]]);
+      $("bcNowNote").hidden = !cur.note; $("bcNowNote").textContent = cur.note || "";
+      $("bcNowMsg").textContent = cur.text + (cur.image ? "\n\n📷 ومعاها صورة" : "");
+      var fails = cur.failures || [];
+      $("bcFailBox").hidden = !fails.length;
+      $("bcFailT").textContent = "⚠️ الأرقام اللي ماوصلتهاش (" + fmt(k.failed || 0) + ")";
+      var fl = $("bcFails"); fl.textContent = "";
+      fails.forEach(function (f) {
+        var row = document.createElement("div"); row.className = "oc-row";
+        var b = document.createElement("b"); b.className = "ltr"; b.textContent = localPhone(f.phone);
+        var n = document.createElement("span"); n.textContent = f.name || "";
+        var st = document.createElement("small"); st.textContent = f.note || "";
+        row.appendChild(b); row.appendChild(n); row.appendChild(document.createElement("span")); row.appendChild(st); fl.appendChild(row);
+      });
+      $("bcPause").hidden = cur.status !== "sending"; $("bcResume").hidden = cur.status !== "paused";
+    }
+    $("bcSend").disabled = !!cur || !!need;
+    $("bcSend").textContent = cur ? "⏳ فيه عرض لسه ماخلصش" : "📣 ابعت العرض";
+    $("bcTest").disabled = !!need;
+    // the owner's list
+    var li = bc.list || { bySource: {} }, bs = li.bySource || {};
+    grStats($("bcListStats"), [[li.total || 0, "رقم في قايمتك", true], [(bs.manual || 0) + (bs.excel || 0), "ضفتهم انت"], [(bs.messenger || 0) + (bs.instagram || 0), "من المسنجر والإنستجرام"]]);
+    var nl = $("bcNumsList"), rows = li.recent || []; nl.textContent = "";
+    nl.hidden = !rows.length;
+    rows.forEach(function (r) {
+      var row = document.createElement("div"); row.className = "oc-row";
+      var b = document.createElement("b"); b.className = "ltr"; b.textContent = localPhone(r.phone);
+      var n = document.createElement("span"); n.textContent = r.name || "";
+      var st = document.createElement("span"); st.className = "oc-st"; st.textContent = BC_SRC[r.source] || r.source;
+      var x = document.createElement("button"); x.type = "button"; x.textContent = "✕"; x.title = "شيله من القايمة"; x.setAttribute("aria-label", "شيل " + localPhone(r.phone) + " من القايمة");
+      x.onclick = function () { bcPost("remove", { phone: r.phone }, "اتشال من قايمتك", x, "bcListMsg"); };
+      row.appendChild(b); row.appendChild(n); row.appendChild(st); row.appendChild(x); nl.appendChild(row);
+    });
+    $("bcNumsMore").textContent = li.total > rows.length ? "بنعرض آخر " + fmt(rows.length) + " رقم اتضافوا من " + fmt(li.total) : "";
+    $("bcClear").hidden = !li.total;
+    // Messenger / Instagram
+    var ask = bc.ask || {};
+    $("bcAsk").checked = !!ask.on;
+    grStats($("bcAskStats"), [[ask.asked || 0, "زبون اتسأل"], [ask.yes || 0, "ساب رقمه", true], [ask.no || 0, "قال لأ"]]);
+    var aw = [];
+    if (ask.on && !ask.linked) aw.push("ℹ️ لسه مش رابط صفحة المسنجر أو حساب الإنستجرام. اربطهم من «🔗 ربط بحساباتك ← مسنجر وإنستجرام».");
+    if (ask.on && !bc.service) aw.push("ℹ️ السؤال بيتسأل بس لما خدمة الواتساب تكون مفعّلة، عشان العروض هتوصلهم عليه.");
+    dnWarn($("bcAskWarn"), aw);
+    // past offers
+    var hist = bc.history || [];
+    $("bcHistCard").hidden = !hist.length;
+    var hl = $("bcHist"); hl.textContent = ""; hl.classList.add("bc-hist");
+    hist.forEach(function (h) {
+      var k = h.counts || {};
+      var row = document.createElement("div"); row.className = "oc-row";
+      var b = document.createElement("b"); b.textContent = (h.text || "").split("\n")[0].slice(0, 70) + (h.image ? " 📷" : "");
+      var st = document.createElement("span"); st.className = "oc-st " + (h.status === "done" ? "confirmed" : ""); st.textContent = BC_ST[h.status] || h.status;
+      var sm = document.createElement("small");
+      sm.textContent = ago(h.createdAt) + " · " + (h.audience || []).map(function (a) { return BC_AUD[a] || a; }).join(" + ") + " · اتبعتت لـ " + fmt((k.sent || 0) + (k.delivered || 0)) + " من " + fmt(h.total)
+        + (k.failed ? " · ماوصلتش " + fmt(k.failed) : "") + (k.stopped ? " · بعتوا «وقف» " + fmt(k.stopped) : "");
+      row.appendChild(b); row.appendChild(st); row.appendChild(sm); hl.appendChild(row);
+    });
+    bcPreview(); bcPoll();
+  }
+  // how many numbers the ticked audiences make together (a number in two of them counts once)
+  function bcCount() {
+    clearTimeout(bcCountT);
+    var aud = bcAudiences();
+    if (!aud.length) { $("bcTotal").hidden = true; bcLastCount = 0; return; }
+    bcCountT = setTimeout(async function () {
+      try {
+        var r = await api("api/offers.ashx?action=count", { method: "POST", json: { audiences: aud } });
+        bcLastCount = r.count;
+        $("bcTotal").hidden = false;
+        $("bcTotal").innerHTML = r.count ? "📊 العرض هيروح لـ <b>" + bcNums(r.count) + "</b>، " + esc(bcEta(r.count)) + "."
+          + (r.count > ((bc && bc.limits && bc.limits.maxOffer) || 20000) ? "<br>⚠️ ده أكتر من الحد للعرض الواحد، اختار مجموعة أصغر." : "")
+          : "مفيش أرقام في اللي اخترته لسه.";
+      } catch (e) { $("bcTotal").hidden = true; }
+    }, 250);
+  }
+  document.querySelectorAll("#bcAud input").forEach(function (x) { x.onchange = function () { renderOffers(); bcCount(); }; });
+  $("bcText").oninput = bcPreview;
+  $("bcName").onclick = function () {
+    var t = $("bcText"), at = t.selectionStart || t.value.length;
+    t.value = t.value.slice(0, at) + "{الاسم}" + t.value.slice(t.selectionEnd || at); t.focus(); t.selectionStart = t.selectionEnd = at + 7; bcPreview();
+  };
+  // the picture: shrunk in the browser to 1600px JPEG, so it goes out fast to every number
+  $("bcPick").onclick = function () { $("bcFile").click(); };
+  $("bcFile").onchange = function () {
+    var f = this.files && this.files[0]; this.value = "";
+    if (!f) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { setMsg("bcMsg", "اختار صورة JPG أو PNG أو WebP."); return; }
+    var img = new Image(), url = URL.createObjectURL(f);
+    img.onload = function () {
+      var max = 1600, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
+      var cv = document.createElement("canvas"); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+      var g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      var data = cv.toDataURL("image/jpeg", 0.85);
+      if (data.length > 1950000) data = cv.toDataURL("image/jpeg", 0.7);
+      bcImage = data; $("bcImg").src = data; $("bcThumb").hidden = false; setMsg("bcMsg", ""); bcPreview();
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); setMsg("bcMsg", "مقدرناش نفتح الصورة دي، جرّب صورة تانية."); };
+    img.src = url;
+  };
+  $("bcImgX").onclick = function () { bcImage = null; $("bcThumb").hidden = true; bcPreview(); };
+  async function bcPost(action, json, okText, t, msgId) {
+    if (t) t.disabled = true; setMsg(msgId || "bcMsg", "");
+    try { bc = await api("api/offers.ashx?action=" + action, { method: "POST", json: json }); renderOffers(); if (okText) toast(okText); return true; }
+    catch (err) { setMsg(msgId || "bcMsg", err.message); return false; }
+    finally { if (t) t.disabled = false; }
+  }
+  $("bcTest").onclick = async function () {
+    var text = $("bcText").value.trim(), b = this;
+    if (!text) { setMsg("bcMsg", "اكتب رسالة العرض الأول."); $("bcText").focus(); return; }
+    b.disabled = true; setMsg("bcMsg", "");
+    try {
+      var r = await api("api/offers.ashx?action=test", { method: "POST", json: { text: text, image: bcImage, phone: $("bcTestPhone").value.trim() } });
+      setMsg("bcMsg", "✅ اتبعتت على +" + r.phone + ". بص على الواتساب.", true);
+    } catch (err) { setMsg("bcMsg", err.message); }
+    b.disabled = false;
+  };
+  $("bcSend").onclick = async function () {
+    var text = $("bcText").value.trim(), aud = bcAudiences(), b = this;
+    if (!text) { setMsg("bcMsg", "اكتب رسالة العرض الأول."); $("bcText").focus(); return; }
+    if (!aud.length) { setMsg("bcMsg", "اختار العرض يروح لمين."); return; }
+    var n = bcLastCount;
+    if (!confirm("العرض هيتبعت من رقم متجرك" + (n ? " لـ " + bcNums(n) + "، " + bcEta(n) : "") + ".\nرسالة رسالة، ومش بالليل، وتقدر توقّفه في أي وقت.\n\nتبعته؟")) return;
+    b.disabled = true;
+    if (await bcPost("create", { text: text, image: bcImage, audiences: aud }, "العرض بدأ يتبعت ✅", null, "bcMsg")) {
+      $("bcText").value = ""; bcImage = null; $("bcThumb").hidden = true; bcPreview();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    renderOffers();
+  };
+  $("bcPause").onclick = function () { bcPost("pause", { id: bc.current.id }, "الإرسال وقف ⏸️", this, "bcNowMsgErr"); };
+  $("bcResume").onclick = function () { bcPost("resume", { id: bc.current.id }, "الإرسال كمّل ▶️", this, "bcNowMsgErr"); };
+  $("bcCancel").onclick = function () {
+    var left = bc.current && bc.current.counts ? (bc.current.counts.waiting || 0) : 0;
+    if (!confirm("الأرقام اللي لسه ماوصلهاش العرض (" + fmt(left) + ") مش هيوصلها. متأكد؟")) return;
+    bcPost("cancel", { id: bc.current.id }, "اتلغى باقي الإرسال", this, "bcNowMsgErr");
+  };
+  // the owner's list: typed or from a file
+  var bcAddMode = "type";
+  document.querySelectorAll("#bcAddSeg button").forEach(function (b) {
+    b.onclick = function () {
+      bcAddMode = b.dataset.v;
+      document.querySelectorAll("#bcAddSeg button").forEach(function (x) { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b ? "true" : "false"); });
+      $("bcAddType").hidden = bcAddMode !== "type"; $("bcAddFile").hidden = bcAddMode !== "file"; setMsg("bcListMsg", "");
+    };
+  });
+  $("bcXls").onchange = function () { var f = this.files && this.files[0]; $("bcXlsName").textContent = f ? "📄 " + f.name : "📄 اختار ملف Excel (.xlsx) أو CSV"; };
+  function bcAddedText(a) {
+    if (!a) return "";
+    var t = a.added ? "✅ اتضاف " + bcPlural(a.added, "رقم جديد", "رقمين جداد", "أرقام جديدة", "رقم جديد") + " لقايمتك." : "مفيش أرقام جديدة.";
+    if (a.already) t += " " + bcNums(a.already) + " كانوا موجودين قبل كده.";
+    if (a.stopped) t += " " + bcNums(a.stopped) + " بعتوا «وقف» قبل كده، فمش هيوصلهم عروض.";
+    if (a.bad) t += " " + bcPlural(a.bad, "سطر واحد", "سطرين", "سطور", "سطر") + " فيهم أرقام مش مفهومة واتسابوا.";
+    return t;
+  }
+  $("bcAdd").onclick = async function () {
+    if (!$("bcConsent").checked) { setMsg("bcListMsg", "علّم على «الناس دي زباين متجري ووافقوا…» الأول."); return; }
+    var b = this; b.disabled = true; setMsg("bcListMsg", "");
+    try {
+      if (bcAddMode === "type") {
+        var text = $("bcNums").value.trim();
+        if (!text) { setMsg("bcListMsg", "اكتب الأرقام الأول، كل رقم في سطر."); return; }
+        bc = await api("api/offers.ashx?action=add", { method: "POST", json: { text: text, consent: true } });
+        $("bcNums").value = "";
+      } else {
+        var f = $("bcXls").files && $("bcXls").files[0];
+        if (!f) { setMsg("bcListMsg", "اختار الملف الأول."); return; }
+        var fd = new FormData(); fd.append("file", f); fd.append("consent", "1");
+        bc = await api("api/offers.ashx?action=import", { method: "POST", form: fd });
+        $("bcXls").value = ""; $("bcXlsName").textContent = "📄 اختار ملف Excel (.xlsx) أو CSV";
+      }
+      setMsg("bcListMsg", bcAddedText(bc.added), true); renderOffers(); bcCount();
+    } catch (err) { setMsg("bcListMsg", err.message); }
+    finally { b.disabled = false; }
+  };
+  $("bcClear").onclick = function () {
+    if (!confirm("هتمسح كل الأرقام اللي في قايمتك (" + fmt((bc.list || {}).total) + "). اللي كلّموك على الواتساب هيفضلوا في «كل اللي كلّموك». متأكد؟")) return;
+    bcPost("clear", { source: "all" }, "القايمة اتمسحت", this, "bcListMsg").then(bcCount);
+  };
+  $("bcAsk").onchange = function () {
+    var want = this.checked;
+    bcPost("ask", { enabled: want }, want ? "المساعد هيسأل زباين المسنجر والإنستجرام عن رقمهم ✅" : "اتقفل السؤال", this, "bcListMsg").then(function (ok) { if (!ok) $("bcAsk").checked = !want; });
+  };
+
   async function loadWa() {
     loadGrowth(); loadLocks().then(function () { if (gr) renderGrowth(); });   // the lock badges need both
     try { wa = await api("api/whatsapp.ashx"); renderWa(); }

@@ -37,6 +37,7 @@ namespace RiwaqChat
         // «بلّغني لما يرجع» (Restock.cs), the weekly report (WeeklyReport.cs), handoff to the owner (Handoff.cs)
         public string OwnerPhone, CartCoupon;
         public bool CartOn, CartHooked, RestockOn, ReportOn, HandoffOn;
+        public bool BcAsk;   // «ابعت عرض»: ask Messenger / Instagram customers for their WhatsApp number (Offers.cs)
         public int CartDelay;
         public DateTime? ReportAt;
         // the store's own logo as its chat bubble (style "logo", StoreLogo.cs): when it was uploaded (0 = none), contain / cover
@@ -259,6 +260,7 @@ namespace RiwaqChat
                 ReportOn = r["ReportOn"] is bool && (bool)r["ReportOn"],
                 ReportAt = r["ReportAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["ReportAt"], DateTimeKind.Utc),
                 HandoffOn = r["HandoffOn"] is bool && (bool)r["HandoffOn"],
+                BcAsk = r["BcAsk"] is bool && (bool)r["BcAsk"],
                 LogoVer = r["LogoVer"] is int ? (int)r["LogoVer"] : 0,
                 LogoFit = r["LogoFit"] as string,
                 EoOcScope = r["EoOcScope"] as string ?? "all",
@@ -821,6 +823,71 @@ BEGIN
       WHEN NOT MATCHED THEN INSERT ([Key], [Value]) VALUES (x.[Key], CAST(@basicPlan AS NVARCHAR(20)));
   END
   INSERT INTO dbo.Migrations(Name) VALUES ('plan-economy');
+END
+-- ---------- «ابعت عرض» (Offers.cs, 2026-11-23): the store sends an offer (text, and a picture if it wants) from its WhatsApp number ----------
+-- BcContacts: the numbers an offer can go to. One row per number: Added = the owner put it on their own list (manual / excel), or the
+-- customer gave it on Messenger / Instagram (messenger / instagram); WaLastAt = the last time it wrote to the store's WhatsApp.
+IF OBJECT_ID('dbo.BcContacts') IS NULL
+BEGIN
+  CREATE TABLE dbo.BcContacts(
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Phone NVARCHAR(20) NOT NULL, Name NVARCHAR(100) NULL,
+    Added NVARCHAR(12) NULL, AddedAt DATETIME2 NULL,
+    WaLastAt DATETIME2 NULL,
+    PRIMARY KEY (StoreId, Phone));
+  CREATE INDEX IX_BcContacts_Added ON dbo.BcContacts(StoreId, AddedAt) WHERE Added IS NOT NULL;
+END
+-- an offer: sent one number at a time, slowly (NextAt = when the next one may go), only while Status = 'sending'.
+-- Status: sending / paused / stopped (the owner cancelled the rest) / done
+IF OBJECT_ID('dbo.Broadcasts') IS NULL
+BEGIN
+  CREATE TABLE dbo.Broadcasts(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Text NVARCHAR(1200) NOT NULL, Image VARBINARY(MAX) NULL, ImageType NVARCHAR(20) NULL,
+    Audience NVARCHAR(100) NOT NULL, Total INT NOT NULL DEFAULT 0,
+    Status NVARCHAR(10) NOT NULL, Note NVARCHAR(300) NULL,
+    NextAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), FinishedAt DATETIME2 NULL);
+  CREATE INDEX IX_Broadcasts_Store ON dbo.Broadcasts(StoreId, Id);
+  CREATE INDEX IX_Broadcasts_Due ON dbo.Broadcasts(Status, NextAt);
+END
+-- one row per number an offer goes to. Status: waiting / sending (being sent now) / sent (queued at Wapilot) / delivered / failed /
+-- skipped (not sent: said «وقف», the offer was cancelled…). WaMsgId = Wapilot's message_id, to learn if it went out.
+-- StoppedAt = the customer sent «وقف» after this message.
+IF OBJECT_ID('dbo.BcSends') IS NULL
+BEGIN
+  CREATE TABLE dbo.BcSends(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    BroadcastId INT NOT NULL REFERENCES dbo.Broadcasts(Id) ON DELETE CASCADE,
+    StoreId INT NOT NULL,
+    Phone NVARCHAR(20) NOT NULL, Name NVARCHAR(100) NULL,
+    Status NVARCHAR(10) NOT NULL, Note NVARCHAR(300) NULL, WaMsgId NVARCHAR(100) NULL,
+    ClaimedAt DATETIME2 NULL, SentAt DATETIME2 NULL, CheckedAt DATETIME2 NULL, StoppedAt DATETIME2 NULL);
+  CREATE INDEX IX_BcSends_Queue ON dbo.BcSends(BroadcastId, Status, Id);
+  CREATE INDEX IX_BcSends_Phone ON dbo.BcSends(StoreId, Phone, SentAt);
+  CREATE INDEX IX_BcSends_Sent ON dbo.BcSends(StoreId, SentAt) WHERE SentAt IS NOT NULL;
+END
+-- Messenger / Instagram: «تحب توصلك عروضنا على الواتساب؟» asked once per customer (Stores.BcAsk on). Answer: yes (Phone) / no
+IF COL_LENGTH('dbo.Stores', 'BcAsk') IS NULL ALTER TABLE dbo.Stores ADD BcAsk BIT NOT NULL CONSTRAINT DF_Stores_BcAsk DEFAULT 0;
+IF OBJECT_ID('dbo.BcAsks') IS NULL
+  CREATE TABLE dbo.BcAsks(
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Channel NVARCHAR(4) NOT NULL, ChatId NVARCHAR(64) NOT NULL,
+    AskedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), Answer NVARCHAR(4) NULL, Phone NVARCHAR(20) NULL, AnsweredAt DATETIME2 NULL,
+    PRIMARY KEY (StoreId, Channel, ChatId));
+-- once: everyone who wrote to a store's WhatsApp in the chats kept so far (60 days) goes on its list of WhatsApp customers,
+-- and every plan's card says it has «ابعت عرض» (the user: every plan, «الاقتصادية» too)
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'offers')
+BEGIN
+  INSERT INTO dbo.BcContacts(StoreId, Phone, WaLastAt)
+    SELECT m.StoreId, m.ChatId, MAX(m.CreatedAt) FROM dbo.WaMessages m
+    WHERE m.FromCustomer = 1 AND LEN(m.ChatId) BETWEEN 8 AND 15 AND m.ChatId NOT LIKE '%[^0-9]%'
+      AND NOT EXISTS (SELECT 1 FROM dbo.BcContacts b WHERE b.StoreId = m.StoreId AND b.Phone = m.ChatId)
+    GROUP BY m.StoreId, m.ChatId;
+  UPDATE dbo.Plans SET Features = ISNULL(Features + NCHAR(10), N'') + N'ابعت عروضك لزباينك على الواتساب'
+    WHERE IsDeleted = 0 AND (Features IS NULL OR Features NOT LIKE N'%ابعت عروضك%');
+  INSERT INTO dbo.Migrations(Name) VALUES ('offers');
 END";
     }
 }
