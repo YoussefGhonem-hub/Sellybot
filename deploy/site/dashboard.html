@@ -2670,7 +2670,7 @@
       <div class="why" style="margin:0">
         <b>إزاي بيشتغل؟</b>
         <ul>
-          <li><span>🔐</span><div><b>بالطريقة الرسمية، ومن غير باسوردات</b><small>بتضيف حساب Sellybot على صفحتك بصلاحية الرسايل بس وإحنا نربطها، أو تربط بتطبيق Meta بتاعك. مفيش باسوردات بتتبعتلنا.</small></div></li>
+          <li><span>🔐</span><div><b>بالطريقة الرسمية، ومن غير باسوردات</b><small>بتضيف حساب Sellybot على صفحتك بصلاحية الرسايل بس وإحنا نربطها<span class="mt-own-only">، أو تربط بتطبيق Meta بتاعك</span>. مفيش باسوردات بتتبعتلنا.</small></div></li>
           <li><span>⚡</span><div><b>رد في ثواني</b><small>أي رسالة توصل لصفحتك أو للدايركت، المساعد يرد عليها من داتا متجرك، ويفهم كمان صور المنتجات.</small></div></li>
           <li><span>🙋</span><div><b>لو رديت بنفسك بيسكت</b><small>لما ترد على زبون بنفسك، المساعد يسيبلك المحادثة دي ساعتين.</small></div></li>
           <li><span>📊</span><div><b>من نفس رصيدك</b><small>كل رد بيتحسب رسالة من رصيد باقتك، زي الموقع والواتساب بالظبط.</small></div></li>
@@ -5166,8 +5166,13 @@
   // «تطبيق Meta بتاعك»: the steps on developers.facebook.com in order, the links each one asks for, and the numbers it
   // gives (each saved as soon as its step gets to it). Folded to its header once a channel is linked.
   var mtAppOpen = false;
+  // The old way, the owner's own Meta app (this card, and the «اربط» buttons in the Messenger / Instagram cards that go through
+  // it), is hidden since 2026-11-23 (the user: hide it, don't delete it). Owners link with «ضيفنا على صفحتك». Pages linked the old
+  // way still show, answer, pause and unlink as before. true brings it all back; the server still takes it either way.
+  var MT_OWN_APP = false;
   function renderMtApp(fill) {
-    var a = mt && mt.app; $("mtApp").hidden = !a; if (!a) return;
+    document.querySelectorAll(".mt-own-only").forEach(function (el) { el.hidden = !MT_OWN_APP; });
+    var a = mt && mt.app; $("mtApp").hidden = !a || !MT_OWN_APP; if (!a || !MT_OWN_APP) return;
     var linked = !!((mt.fb && mt.fb.link) || (mt.ig && mt.ig.link));
     $("mtAppHook").textContent = a.hookUrl || ""; $("mtAppVerify").textContent = a.verifyToken || ""; $("mtAppRedirect").textContent = a.redirectUri || "";
     $("mtAppPrivacy").textContent = a.privacyUrl || ""; $("mtAppDelete").textContent = a.deleteUrl || "";
@@ -5226,8 +5231,15 @@
       return;
     }
     if (!L) {
-      if (!d.ready) {
+      if (!d.ready || !MT_OWN_APP) {
         var E = mt.easy, ask = E && E.request, asked = !!(ask && ask.status === "pending" && (ch === "fb" || ask.igUser));
+        if (!MT_OWN_APP) {   // the old way is hidden: «ضيفنا على صفحتك» is the only way in
+          body.appendChild(mtEl("div", "mt-soon", asked ? "⏳ طلب الربط وصلنا، وهنربط " + (ch === "fb" ? "صفحتك" : "حسابك") + " من عندنا. أول ما يتربط هيظهر هنا."
+            : E && E.open ? (ch === "fb" ? "👆 اربط صفحتك من «ضيفنا على صفحتك» فوق، وأول ما نربطها هتظهر هنا."
+              : "👆 اكتب يوزر الإنستجرام في طلب «ضيفنا على صفحتك» فوق، وأول ما نربطه هيظهر هنا.")
+            : "🚧 الربط بـ" + F.name + " هيتفتح قريب جدًا. أول ما يجهز هتلاقي خطواته هنا."));
+          return;
+        }
         body.appendChild(mtEl("div", "mt-soon", asked ? "⏳ طلب الربط وصلنا، وهنربط " + (ch === "fb" ? "صفحتك" : "حسابك") + " من عندنا. أول ما يتربط هيظهر هنا."
           : d.need === "app" && E && E.open ? "👆 أسهل طريقة: «ضيفنا على صفحتك» فوق. أو اعمل «تطبيق Meta بتاعك»، وزرار الربط هيظهر هنا."
           : d.need === "app" ? "⚙️ امشي على خطوات «تطبيق Meta بتاعك» اللي فوق. بعد الخطوة 2 (الـ App ID والـ Secret) زرار الربط هيظهر هنا."
