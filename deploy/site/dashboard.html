@@ -1038,6 +1038,14 @@
   .mt-lang button:hover,.mt-lang button:focus-visible{border-color:var(--brand);outline:none}
   .mt-lang button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
   .mt-plan>li[hidden],.mt-plan [data-fblang][hidden]{display:none}
+  /* one tap per line, joined by a thin line: the order to press things in */
+  .mt-plan p.mt-how{margin:10px 0 2px;color:var(--ink);font-weight:600}
+  .mt-path{list-style:none;margin:0 0 8px;padding:0}
+  .mt-path>li{position:relative;padding:4px 0;padding-inline-start:24px;font-size:13.5px;line-height:1.7;color:var(--muted)}
+  .mt-path>li b{color:var(--ink);font-weight:600}
+  .mt-path>li::before{content:"";position:absolute;inset-inline-start:4px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 3px var(--soft)}
+  .mt-path>li:not(:last-child)::after{content:"";position:absolute;inset-inline-start:8.5px;top:22px;bottom:-12px;width:1px;background:var(--brand);opacity:.4}
+  .mt-path .mt-agent{margin-top:6px}
   .mt-ask{margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft);font-size:13.5px;line-height:1.75}
   .mt-ask.warn{border-color:#f0c36d;background:rgba(240,195,109,.12)}
   .mt-ask.ok{border-color:rgba(46,160,67,.45);background:rgba(46,160,67,.08)}
@@ -2688,37 +2696,112 @@
           <button type="button" data-fblang-pick="en" aria-pressed="false" lang="en">English</button>
         </div>
         <ol class="mt-plan">
+          <!-- each step's taps one under another (.mt-path): what the owner presses, in order -->
           <li data-fblang="ar"><h4>افتح «الوصول إلى الصفحة»</h4>
-            <p>ادخل فيسبوك بحسابك الشخصي اللي أدمن على صفحة المتجر، وحوّل لصفحتك:</p>
-            <p><b>من الكمبيوتر:</b> دوس صورتك فوق ← <b>عرض كل الملفات الشخصية</b> ← اختار صفحة متجرك. بعدين دوس صورة الصفحة فوق ← <b>الإعدادات والخصوصية</b> ← <b>الإعدادات</b> ← <b>إعداد الصفحة</b> ← <b>الوصول إلى الصفحة</b>.</p>
-            <p><b>من الموبايل:</b> من تطبيق فيسبوك حوّل لصفحتك ← <b>☰</b> ← <b>الإعدادات والخصوصية</b> ← <b>الإعدادات</b> ← <b>الوصول إلى الصفحة</b>.</p>
+            <p>ادخل فيسبوك بحسابك الشخصي اللي أدمن على صفحة المتجر.</p>
+            <p class="mt-how">📱 من الموبايل:</p>
+            <ul class="mt-path">
+              <li>من تطبيق فيسبوك حوّل لصفحتك</li>
+              <li><b>☰</b> (القائمة)</li>
+              <li><b>الإعدادات والخصوصية</b></li>
+              <li><b>الإعدادات</b></li>
+              <li><b>الوصول إلى الصفحة</b></li>
+            </ul>
+            <p class="mt-how">💻 من الكمبيوتر:</p>
+            <ul class="mt-path">
+              <li>دوس صورتك فوق</li>
+              <li><b>عرض كل الملفات الشخصية</b>، واختار صفحة متجرك</li>
+              <li>دوس صورة الصفحة فوق</li>
+              <li><b>الإعدادات والخصوصية</b></li>
+              <li><b>الإعدادات</b></li>
+              <li><b>إعداد الصفحة</b></li>
+              <li><b>الوصول إلى الصفحة</b></li>
+            </ul>
             <p class="hint">مش لاقيها؟ اكتب «الوصول إلى الصفحة» في خانة البحث اللي فوق في الإعدادات. الأسامي ممكن تختلف كلمة حسب نسخة فيسبوك.</p></li>
           <li data-fblang="en" dir="ltr" lang="en"><h4>Open "Page access"</h4>
-            <p>Log in to Facebook with your personal account that manages the store's Page, then switch to your Page:</p>
-            <p><b>On a computer:</b> click your profile picture (top right) → <b>See all profiles</b> → choose your store's Page. Then click the Page's picture → <b>Settings &amp; privacy</b> → <b>Settings</b> → <b>Page setup</b> → <b>Page access</b>.</p>
-            <p><b>On your phone:</b> in the Facebook app, switch to your Page → <b>☰ Menu</b> → <b>Settings &amp; privacy</b> → <b>Settings</b> → <b>Page access</b>.</p>
+            <p>Log in to Facebook with your personal account that manages the store's Page.</p>
+            <p class="mt-how">📱 On your phone:</p>
+            <ul class="mt-path">
+              <li>Switch to your Page in the Facebook app</li>
+              <li><b>☰ Menu</b></li>
+              <li><b>Settings &amp; privacy</b></li>
+              <li><b>Settings</b></li>
+              <li><b>Page access</b></li>
+            </ul>
+            <p class="mt-how">💻 On a computer:</p>
+            <ul class="mt-path">
+              <li>Click your profile picture (top right)</li>
+              <li><b>See all profiles</b>, and choose your store's Page</li>
+              <li>Click the Page's picture (top right)</li>
+              <li><b>Settings &amp; privacy</b></li>
+              <li><b>Settings</b></li>
+              <li><b>Page setup</b></li>
+              <li><b>Page access</b></li>
+            </ul>
             <p class="hint">Can't find it? Type "Page access" in the search box at the top of Settings.</p></li>
-          <li data-fblang="ar"><h4>ضيف حساب Sellybot بصلاحية الرسايل بس</h4>
-            <p>انزل لجزء <b>الأشخاص الذين لديهم حق الوصول إلى المهام</b> ودوس <b>إضافة جديد</b>. مش الجزء اللي فوقه بتاع «الوصول إلى فيسبوك».</p>
-            <p>اكتب الاسم ده في البحث واختاره:</p>
-            <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>افتح الحساب واتأكد من الصورة ↗</a></div>
-            <p style="margin-top:8px">فعّل <b>الرسائل ونشاط المجتمع</b> بس، وسيب الباقي مقفول (المحتوى، والإعلانات، والإحصائيات). بعدين دوس <b>منح حق الوصول</b>.</p>
-            <p class="hint">فيسبوك هيطلب باسورد حسابك عشان يتأكد إنه انت: ده بيتكتب عند فيسبوك ومش بيوصلنا.</p></li>
-          <li data-fblang="en" dir="ltr" lang="en"><h4>Add Sellybot's account, messages only</h4>
-            <p>Scroll to <b>People with task access</b> and click <b>Add New</b> (not the "People with Facebook access" part above it).</p>
-            <p>Search for this name and select it:</p>
-            <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>Open the account to check the photo ↗</a></div>
-            <p style="margin-top:8px">Turn on <b>Messages and community activity</b> only, and leave Content, Ads and Insights off. Then click <b>Give access</b>.</p>
-            <p class="hint">Facebook asks for your password to confirm it's you. You type it on Facebook, and it never reaches us.</p></li>
+          <li data-fblang="ar"><h4>ضيف حسابنا بصلاحية الرسايل بس</h4>
+            <ul class="mt-path">
+              <li><b>الوصول إلى الصفحة</b></li>
+              <li><b>الأشخاص الذين لديهم حق الوصول إلى المهام</b> (مش «الوصول إلى فيسبوك» اللي فوقه)</li>
+              <li><b>إضافة جديد</b></li>
+              <li>اكتب الاسم ده في البحث واختاره:
+                <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>افتح الحساب واتأكد من الصورة ↗</a></div></li>
+              <li>فعّل <b>الرسائل ونشاط المجتمع</b> بس، وسيب المحتوى والإعلانات والإحصائيات مقفولين</li>
+              <li><b>منح حق الوصول</b>، واكتب باسورد فيسبوك بتاعك للتأكيد</li>
+            </ul>
+            <p class="hint">الباسورد بيتكتب عند فيسبوك عشان يتأكد إنه انت، ومش بيوصلنا.</p></li>
+          <li data-fblang="en" dir="ltr" lang="en"><h4>Add our account, messages only</h4>
+            <ul class="mt-path">
+              <li><b>Page access</b></li>
+              <li><b>People with task access</b> (not "People with Facebook access" above it)</li>
+              <li><b>Add new</b></li>
+              <li>Search for this name and select it:
+                <div class="mt-agent"><b dir="auto" class="mt-agent-name"></b><a class="btn ghost sm mt-agent-url" target="_blank" rel="noopener" hidden>Open the account to check the photo ↗</a></div></li>
+              <li>Turn on <b>Messages and community activity</b> only (leave Content, Ads and Insights off)</li>
+              <li><b>Give access</b>, then enter your Facebook password to confirm</li>
+            </ul>
+            <p class="hint">Your password is typed on Facebook to confirm it's you. It never reaches us.</p></li>
           <li data-fblang="ar"><h4>الإنستجرام (لو عايزه كمان)</h4>
-            <p>حساب متجرك على الإنستجرام لازم يكون <b>احترافي</b> (نشاط تجاري أو صانع محتوى) ومربوط بصفحتك. لو مش مربوط: إعدادات الصفحة ← <b>الحسابات المرتبطة</b> ← <b>Instagram</b> ← <b>ربط</b>.</p>
-            <p>ومن تطبيق إنستجرام: صفحتك الشخصية ← <b>☰</b> ← <b>الرسائل والردود على القصص</b> ← <b>عناصر التحكم في الرسائل</b> ← تحت <b>الأدوات المتصلة</b> فعّل <b>السماح بالوصول إلى الرسائل</b>.</p></li>
+            <p>حساب متجرك على الإنستجرام لازم يكون <b>احترافي</b> (نشاط تجاري أو صانع محتوى) ومربوط بصفحتك.</p>
+            <p class="mt-how">لو مش مربوط بالصفحة:</p>
+            <ul class="mt-path">
+              <li>إعدادات الصفحة</li>
+              <li><b>الحسابات المرتبطة</b></li>
+              <li><b>Instagram</b></li>
+              <li><b>ربط</b></li>
+            </ul>
+            <p class="mt-how">ومن تطبيق إنستجرام:</p>
+            <ul class="mt-path">
+              <li>صفحتك الشخصية ← <b>☰</b></li>
+              <li><b>الرسائل والردود على القصص</b></li>
+              <li><b>عناصر التحكم في الرسائل</b></li>
+              <li>تحت <b>الأدوات المتصلة</b>: فعّل <b>السماح بالوصول إلى الرسائل</b></li>
+            </ul></li>
           <li data-fblang="en" dir="ltr" lang="en"><h4>Instagram (if you want it too)</h4>
-            <p>Your Instagram must be a <b>Professional</b> account (Business or Creator) linked to your Page. If it isn't: Page settings → <b>Linked accounts</b> → <b>Instagram</b> → <b>Connect</b>.</p>
-            <p>Then in the Instagram app: your profile → <b>☰</b> → <b>Messages and story replies</b> → <b>Message controls</b> → under <b>Connected tools</b>, turn on <b>Allow access to messages</b>.</p></li>
+            <p>Your Instagram must be a <b>Professional</b> account (Business or Creator) linked to your Page.</p>
+            <p class="mt-how">If it isn't linked to the Page:</p>
+            <ul class="mt-path">
+              <li>Page settings</li>
+              <li><b>Linked accounts</b></li>
+              <li><b>Instagram</b></li>
+              <li><b>Connect</b></li>
+            </ul>
+            <p class="mt-how">Then in the Instagram app:</p>
+            <ul class="mt-path">
+              <li>Your profile → <b>☰</b></li>
+              <li><b>Messages and story replies</b></li>
+              <li><b>Message controls</b></li>
+              <li>Under <b>Connected tools</b>: turn on <b>Allow access to messages</b></li>
+            </ul></li>
           <li id="mtEasyStep4"><h4><span data-fblang="ar">ابعتلنا لينك صفحتك</span><span data-fblang="en" lang="en">Send us your Page link</span></h4>
-            <p data-fblang="ar">افتح صفحتك وانسخ اللينك من فوق (أو <b>مشاركة</b> ← <b>نسخ الرابط</b>)، وحطه هنا. وأول ما نربطها هتلاقيها في كارت المسنجر تحت.</p>
-            <p data-fblang="en" lang="en">Open your Page, copy its link from the address bar (or <b>Share</b> → <b>Copy link</b>) and paste it here. Once we link it, it shows in the Messenger card below.</p>
+            <ul class="mt-path" data-fblang="ar">
+              <li>افتح صفحتك وانسخ اللينك من فوق (أو <b>مشاركة</b> ← <b>نسخ الرابط</b>)</li>
+              <li>حطه هنا تحت، ودوس الزرار. أول ما نربطها هتلاقيها في كارت المسنجر تحت</li>
+            </ul>
+            <ul class="mt-path" data-fblang="en" lang="en">
+              <li>Open your Page and copy its link (or <b>Share</b> → <b>Copy link</b>)</li>
+              <li>Paste it below and press the button. Once we link it, it shows in the Messenger card below</li>
+            </ul>
             <div class="shop-fields mt-fields">
               <div><label for="mtEasyPage"><span data-fblang="ar">لينك صفحتك على فيسبوك</span><span data-fblang="en" lang="en">Your Facebook Page link</span></label>
                 <input type="text" id="mtEasyPage" class="ltr" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://www.facebook.com/my.store"></div>

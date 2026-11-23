@@ -53,6 +53,8 @@ namespace RiwaqChat
             { "ReferralPct", "50" },
             // the number owners send the money to (shown with InstaPay's QR in the plan request form)
             { "PayNumber", "01229391155" },
+            // «ضيفنا على صفحتك» (Meta.cs MetaEasy): the personal Facebook account owners add to their Page (the user, 2026-11-23)
+            { "MetaAgentName", "Yousef Ghoniem" },
             // shown to store owners in the plan request form
             { "PaymentInfo", "حوّل المبلغ على InstaPay أو أورانج كاش على رقم الواتساب بتاعنا، وبعدين اكتب رقم العملية (أو الرقم اللي حوّلت منه) في الطلب." },
         };
