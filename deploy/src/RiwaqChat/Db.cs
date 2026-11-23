@@ -888,6 +888,42 @@ BEGIN
   UPDATE dbo.Plans SET Features = ISNULL(Features + NCHAR(10), N'') + N'ابعت عروضك لزباينك على الواتساب'
     WHERE IsDeleted = 0 AND (Features IS NULL OR Features NOT LIKE N'%ابعت عروضك%');
   INSERT INTO dbo.Migrations(Name) VALUES ('offers');
+END
+-- ---------- Telegram (Telegram.cs, 2026-11-23): the store's own Telegram bot answers its customers ----------
+-- TgLinks: one bot per store. Token encrypted (Secrets.Protect); Secret = what Telegram sends back in X-Telegram-Bot-Api-Secret-Token
+-- on this bot's webhook (api/tg-webhook.ashx?b=<BotId>). Managed = made through Sellybot's manager bot (OwnerTgId = the Telegram
+-- account that made it), else the owner's own bot from @BotFather. Its chats go in dbo.MetaMessages with Channel 'tg'.
+IF OBJECT_ID('dbo.TgLinks') IS NULL
+BEGIN
+  CREATE TABLE dbo.TgLinks(
+    StoreId INT NOT NULL PRIMARY KEY REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    BotId BIGINT NOT NULL, Username NVARCHAR(64) NULL, Name NVARCHAR(200) NULL,
+    Token NVARCHAR(1000) NOT NULL, Secret NVARCHAR(64) NOT NULL,
+    Managed BIT NOT NULL DEFAULT 0, OwnerTgId BIGINT NULL,
+    Enabled BIT NOT NULL DEFAULT 1, Status NVARCHAR(400) NULL, LastAt DATETIME2 NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE UNIQUE INDEX UX_TgLinks_Bot ON dbo.TgLinks(BotId);   -- a bot answers for one store only
+END
+-- «اعمل بوت متجرك»: the link t.me/<manager>?start=<Code>, good for 30 minutes. TgUserId = the Telegram account that pressed
+-- Start with it (only that account's new bot counts); UsedAt = its bot came; Error = why that bot wasn't linked.
+IF OBJECT_ID('dbo.TgStarts') IS NULL
+BEGIN
+  CREATE TABLE dbo.TgStarts(
+    Code NVARCHAR(64) NOT NULL PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    TgUserId BIGINT NULL, StartedAt DATETIME2 NULL, UsedAt DATETIME2 NULL, Error NVARCHAR(400) NULL,
+    ExpiresAt DATETIME2 NOT NULL, CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_TgStarts_User ON dbo.TgStarts(TgUserId, UsedAt);
+  CREATE INDEX IX_TgStarts_Store ON dbo.TgStarts(StoreId, CreatedAt);
+END
+-- once: every plan's card says Telegram too (open to every plan, like Messenger and Instagram)
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'telegram')
+BEGIN
+  UPDATE dbo.Plans SET Features = REPLACE(Features, N'المسنجر والإنستجرام', N'المسنجر والإنستجرام وتيليجرام')
+    WHERE IsDeleted = 0 AND Features LIKE N'%المسنجر والإنستجرام%' AND Features NOT LIKE N'%تيليجرام%';
+  UPDATE dbo.Plans SET Features = ISNULL(Features + NCHAR(10), N'') + N'المساعد على تيليجرام'
+    WHERE IsDeleted = 0 AND (Features IS NULL OR Features NOT LIKE N'%تيليجرام%');
+  INSERT INTO dbo.Migrations(Name) VALUES ('telegram');
 END";
     }
 }

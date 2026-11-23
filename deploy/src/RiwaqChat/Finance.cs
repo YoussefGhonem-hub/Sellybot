@@ -194,10 +194,11 @@ namespace RiwaqChat
             int pendingCount = 0; decimal pendingEgp = 0;
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*), ISNULL(SUM(AmountEgp),0) FROM dbo.PlanRequests WHERE Status = 'pending'"))
             using (var r = cmd.ExecuteReader()) if (r.Read()) { pendingCount = Convert.ToInt32(r[0]); pendingEgp = Convert.ToDecimal(r[1]); }
-            int waReplies = 0, fbReplies = 0, igReplies = 0;
+            int waReplies = 0, fbReplies = 0, igReplies = 0, tgReplies = 0;
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.WaMessages WHERE FromCustomer = 0 AND CreatedAt >= @ms", "@ms", monthStart)) waReplies = Convert.ToInt32(cmd.ExecuteScalar());
             using (var cmd = Db.Cmd(c, "SELECT Channel, COUNT(*) FROM dbo.MetaMessages WHERE FromCustomer = 0 AND MsgId IS NULL AND CreatedAt >= @ms GROUP BY Channel", "@ms", monthStart))
-            using (var r = cmd.ExecuteReader()) while (r.Read()) { if ((string)r[0] == MetaApp.Fb) fbReplies = Convert.ToInt32(r[1]); else igReplies = Convert.ToInt32(r[1]); }
+            using (var r = cmd.ExecuteReader())
+                while (r.Read()) { var ch = (string)r[0]; int n = Convert.ToInt32(r[1]); if (ch == MetaApp.Fb) fbReplies = n; else if (ch == Tg.Ch) tgReplies = n; else igReplies = n; }
             var trialRows = rows.Where(x => x.Trial && x.Units > 0).ToList();
 
             return new Dictionary<string, object>
@@ -214,7 +215,7 @@ namespace RiwaqChat
                     { "costPaid", R(Billing.UsdForUnits(rows.Where(x => x.Active).Sum(x => x.Units)) * rate) },
                     { "costTrial", R(Billing.UsdForUnits(rows.Where(x => x.Trial).Sum(x => x.Units)) * rate) },
                     { "costOwn", R(Billing.UsdForUnits(rows.Where(x => x.Own).Sum(x => x.Units)) * rate) },
-                    { "channels", new Dictionary<string, object> { { "site", Math.Max(0, msgsMonth - waReplies - fbReplies - igReplies) }, { "wa", waReplies }, { "fb", fbReplies }, { "ig", igReplies } } } } },
+                    { "channels", new Dictionary<string, object> { { "site", Math.Max(0, msgsMonth - waReplies - fbReplies - igReplies - tgReplies) }, { "wa", waReplies }, { "fb", fbReplies }, { "ig", igReplies }, { "tg", tgReplies } } } } },
                 { "mrr", new Dictionary<string, object> { { "plans", R(mrrPlans) }, { "wa", R(mrrWa) }, { "total", R(mrr) }, { "stores", rows.Count(x => x.Active) }, { "waStores", rows.Count(x => x.Wa) },
                     { "costs", R(monthlyCosts) }, { "profit", R(mrr - monthlyCosts) } } },
                 { "claude", new Dictionary<string, object> {

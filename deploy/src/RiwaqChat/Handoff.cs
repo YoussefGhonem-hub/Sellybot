@@ -26,7 +26,7 @@ namespace RiwaqChat
         // channel "wa": chatKey = the customer's number; "web": chatKey = the site chat's session (the number comes in the call)
         public static ChatHandler.ExtraTool Tool(StoreInfo s, string channel, string chatKey)
         {
-            bool web = channel != "wa";   // the site chat, Messenger (fb) and Instagram (ig): the customer's number comes in the call
+            bool web = channel != "wa";   // the site chat, Messenger (fb), Instagram (ig) and Telegram (tg): the customer's number comes in the call
             var props = new Dictionary<string, JsonElement>
             {
                 ["reason"] = JsonSerializer.SerializeToElement(new { type = "string", description = "السبب في كلمتين، مثلًا: عايز يكلّم حد، شكوى، طلب جملة، مشكلة في أوردر." }),
@@ -90,7 +90,7 @@ namespace RiwaqChat
 
         static string Message(string channel, string reason, string summary, string phone)
         {
-            var sb = new StringBuilder("🙋 *زبون محتاجك*").Append(channel == "wa" ? " (على الواتساب)" : channel == "fb" ? " (على المسنجر)" : channel == "ig" ? " (على الإنستجرام)" : " (من شات موقعك)").Append('\n');
+            var sb = new StringBuilder("🙋 *زبون محتاجك*").Append(channel == "wa" ? " (على الواتساب)" : channel == "fb" ? " (على المسنجر)" : channel == "ig" ? " (على الإنستجرام)" : channel == "tg" ? " (على تيليجرام)" : " (من شات موقعك)").Append('\n');
             if (reason.Length > 0) sb.Append("السبب: *").Append(reason).Append("*\n");
             sb.Append("📝 ").Append(summary).Append("\n\n");
             sb.Append("📱 رقمه: +").Append(phone).Append('\n');

@@ -466,7 +466,19 @@ ELSE
                 return (int)cmd.ExecuteScalar() > 0;
         }
 
-        class Row { public long Id; public bool Customer, Owner; public string Body, Media; public DateTime At; }
+        internal class Row { public long Id; public bool Customer, Owner; public string Body, Media; public DateTime At; }
+
+        // The last day of one chat, newest first (Telegram.cs reads its chats the same way)
+        internal static List<Row> Recent(SqlConnection c, int storeId, string ch, string chat)
+        {
+            var rows = new List<Row>();
+            using (var cmd = Db.Cmd(c, @"SELECT TOP 40 Id, FromCustomer, Body, MsgId, Media, CreatedAt FROM dbo.MetaMessages
+                WHERE StoreId=@s AND Channel=@ch AND ChatId=@c AND CreatedAt > DATEADD(HOUR,-24,SYSUTCDATETIME()) ORDER BY Id DESC", "@s", storeId, "@ch", ch, "@c", chat))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read()) rows.Add(new Row { Id = (long)r["Id"], Customer = (bool)r["FromCustomer"], Body = (string)r["Body"], Media = r["Media"] as string,
+                    Owner = (r["MsgId"] as string ?? "").StartsWith("owner:"), At = DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc) });
+            return rows;
+        }
 
         internal static async Task Reply(int storeId, string ch, string chat, long rowId, CancellationToken ct)
         {
@@ -604,7 +616,7 @@ ELSE
 
         class Turn { public bool Customer; public string Text; public List<ImageBlockParam> Images = new List<ImageBlockParam>(); }
 
-        static List<MessageParam> History(List<Row> newestFirst, Dictionary<long, ImageBlockParam> imgs)
+        internal static List<MessageParam> History(List<Row> newestFirst, Dictionary<long, ImageBlockParam> imgs)
         {
             var turns = new List<Turn>();
             foreach (var r in Enumerable.Reverse(newestFirst))

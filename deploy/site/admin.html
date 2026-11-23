@@ -419,6 +419,7 @@
       <button data-go="support"><span class="ic">🎧</span>الدعم الفني <span class="count" id="tkCount" hidden>0</span></button>
       <button data-go="wa"><span class="ic">💬</span>الواتساب <span class="count" id="waCount" hidden>0</span></button>
       <button data-go="meta"><span class="ic">📨</span>مسنجر وإنستجرام</button>
+      <button data-go="tg"><span class="ic">✈️</span>تيليجرام</button>
       <button data-go="settings"><span class="ic">⚙️</span>الإعدادات</button>
     </nav>
     <div class="side-foot">
@@ -698,6 +699,39 @@
         </table></div>
       </section>
 
+      <!-- Telegram: Sellybot's manager bot, which makes each owner's bot (Telegram's managed bots), and every linked bot (api/tg-admin.ashx, Telegram.cs) -->
+      <section data-page="tg" hidden>
+        <div class="grid2b">
+          <form class="card anim" id="tgForm" autocomplete="off">
+            <h3>بوت Sellybot اللي بيعمل بوتات التجار</h3>
+            <p class="sub">التاجر بيدوس «اعمل بوت متجرك» في لوحته، يفتح البوت ده، ويعمل بوت لمتجره بضغطة (ميزة Managed Bots في تيليجرام)، وبيتربط لوحده. من غير البوت ده، التجار بيربطوا بالتوكن من @BotFather بنفسهم.</p>
+            <ol class="hint" style="padding-inline-start:18px;line-height:1.8">
+              <li>افتح <bdi><a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a></bdi> وابعتله <bdi><b>/newbot</b></bdi>. سمّيه مثلًا «Sellybot»، ويوزرنيم آخره bot.</li>
+              <li>انسخ التوكن اللي بيبعته وحطه هنا ودوس «حفظ والتأكد منه». بنشغّل إدارة البوتات (Bot Management Mode) ونربط الرسايل لوحدنا.</li>
+              <li>لو «عمل بوتات للتجار» فضل ❌: من <bdi>@BotFather</bdi> افتح الـ Mini App ← البوت ← Settings، وشغّل Bot Management Mode، وبعدين دوس «حفظ والتأكد منه» تاني.</li>
+            </ol>
+            <label for="tgTok" style="margin-top:6px">توكن البوت</label>
+            <input type="password" id="tgTok" class="ltr" maxlength="120" placeholder="سيبه فاضي لو مش هتغيّره">
+            <div class="msg" id="tgMsg"></div>
+            <div class="row" style="margin-top:12px"><button class="btn" id="tgSave">حفظ والتأكد منه</button><button class="btn ghost" id="tgClear" type="button" hidden>شيل البوت</button></div>
+          </form>
+          <div class="card anim" style="animation-delay:.1s">
+            <h3>الحالة</h3>
+            <div class="calc">
+              <div class="r"><span>البوت</span><b id="tgBot">—</b></div>
+              <div class="r"><span>عمل بوتات للتجار</span><b id="tgManage">—</b></div>
+              <div class="r"><span>استقبال الرسايل (Webhook)</span><b id="tgHook">—</b></div>
+            </div>
+            <div class="hint" id="tgHint" style="margin-top:10px"></div>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-top:16px"><h3 style="margin:0">بوتات المتاجر</h3><span class="space"></span><button class="btn ghost sm" id="tgReload" type="button">تحديث</button></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>البوت</th><th>المتجر</th><th>اتعمل</th><th>الحالة</th><th>آخر رد</th></tr></thead>
+          <tbody id="tgRows"></tbody>
+        </table></div>
+      </section>
+
       <!-- settings -->
       <section data-page="settings" hidden>
         <div class="grid2b">
@@ -830,7 +864,7 @@
     $("pwWarn").hidden = !defaultPw;
     $("meName").textContent = name; $("meAv").textContent = initial(name);
     var want = (location.hash || "#home").slice(1);
-    go(["home", "money", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "settings"].indexOf(want) >= 0 ? want : "home");
+    go(["home", "money", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "tg", "settings"].indexOf(want) >= 0 ? want : "home");
     api("requests", null, "&status=pending").then(function (d) { rqBadge(d.pending); }).catch(function () {});
   }
   $("pwEye").onclick = function () { var i = $("lPass"); i.type = i.type === "password" ? "text" : "password"; i.focus(); };
@@ -845,7 +879,7 @@
   // ---------- navigation ----------
   var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], money: ["المكسب والتكلفة", "بتكسب كام، بتصرف كام، وتشحن Claude بكام"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
                  subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"],
-                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
+                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
     var on = document.querySelector("#nav button.on"); if (!on) return;
     $("navInd").style.transform = "translateY(" + (on.offsetTop) + "px)"; $("navInd").style.height = on.offsetHeight + "px";
@@ -858,7 +892,7 @@
     moveInd(); closeSide();
     if (history.replaceState) history.replaceState(null, "", "#" + page);
     window.scrollTo(0, 0);
-    ({ home: loadHome, money: loadMoney, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, settings: loadSettings })[page]();
+    ({ home: loadHome, money: loadMoney, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, tg: loadTg, settings: loadSettings })[page]();
   }
 
   // ---------- Messenger + Instagram: one Meta app for every store ----------
@@ -932,6 +966,44 @@
   })();
   async function loadMeta() { try { renderMeta(await metaApi()); } catch (e) { toast(e.message, true); } }
   $("mtReload").onclick = loadMeta;
+  // ---------- Telegram: Sellybot's manager bot (makes each owner's bot) and every store's bot (api/tg-admin.ashx) ----------
+  async function tgApi(action, body) {
+    var init = { method: body ? "POST" : "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch" } };
+    if (body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
+    var r = await fetch("api/tg-admin.ashx" + (action ? "?action=" + action : ""), init), data = null;
+    try { data = await r.json(); } catch (e) {}
+    if (r.status === 401) { showLogin(); throw new Error("سجّل دخول تاني."); }
+    if (!r.ok) throw new Error((data && data.message) || "حصلت مشكلة، جرّب تاني.");
+    return data;
+  }
+  function renderTgAdmin(d) {
+    var m = d.manager, h = d.hook || {};
+    $("tgTok").value = ""; $("tgClear").hidden = !m;
+    $("tgBot").innerHTML = m ? '<a class="ltr" href="https://t.me/' + esc(m.username) + '" target="_blank" rel="noopener">@' + esc(m.username) + "</a>" : "مش متظبط";
+    $("tgManage").textContent = !m ? "—" : m.manage ? "شغال ✅" : "❌ مقفول";
+    $("tgHook").textContent = !m ? "—" : h.set ? (h.error ? "⚠️ " + h.error : "شغال ✅") : "⚠️ مش متظبط" + (h.error ? ": " + h.error : "");
+    $("tgHint").textContent = !m ? "من غير البوت ده، زرار «اعمل بوت متجرك» مش بيظهر للتجار، وبيربطوا بالتوكن بس."
+      : m.manage ? "التجار بيشوفوا «اعمل بوت متجرك» في لوحتهم ← تيليجرام." : "شغّل Bot Management Mode من @BotFather (الخطوة 3)، وبعدين «حفظ والتأكد منه». لحد كده التجار بيربطوا بالتوكن بس.";
+    var rows = d.links || [];
+    $("tgRows").innerHTML = rows.length ? rows.map(function (l) {
+      var st = !l.enabled ? '<span class="pill">متوقف</span>' : l.status ? '<span class="pill warn">' + esc(l.status) + '</span>' : '<span class="pill ok">شغال ✅</span>';
+      return '<tr><td><a class="ltr" href="https://t.me/' + esc(l.username) + '" target="_blank" rel="noopener">@' + esc(l.username) + '</a><div class="hint" dir="auto">' + esc(l.name) + "</div></td><td>" + esc(l.store) +
+        ' <span class="hint ltr">' + esc(l.slug) + "</span></td><td>" + (l.managed ? "بضغطة من Sellybot" : "بالتوكن") + "</td><td>" + st + "</td><td>" + (l.lastAt ? esc(new Date(l.lastAt).toLocaleString("ar-EG")) : "—") + "</td></tr>";
+    }).join("") : '<tr><td colspan="5" class="hint">لسه محدش ربط بوت.</td></tr>';
+  }
+  async function loadTg() { try { renderTgAdmin(await tgApi()); } catch (e) { toast(e.message, true); } }
+  $("tgReload").onclick = loadTg;
+  $("tgForm").onsubmit = async function (e) {
+    e.preventDefault(); var b = $("tgSave"); $("tgMsg").textContent = ""; $("tgMsg").className = "msg";
+    busy(b, true);
+    try { renderTgAdmin(await tgApi("manager", { token: $("tgTok").value.trim() })); toast("اتحفظ ✓"); }
+    catch (err) { $("tgMsg").className = "msg err"; $("tgMsg").textContent = err.message; }
+    busy(b, false);
+  };
+  $("tgClear").onclick = async function () {
+    if (!confirm("شيل بوت Sellybot؟ التجار مش هيقدروا يعملوا بوت بضغطة لحد ما تحط بوت تاني. البوتات المربوطة هتفضل شغالة.")) return;
+    try { renderTgAdmin(await tgApi("clear", {})); toast("اتشال ✓"); } catch (err) { toast(err.message, true); }
+  };
   $("mtForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg($("mtMsg"), ""); busy($("mtSave"), true);
     try {
@@ -1436,7 +1508,7 @@
     if (d.pending.count) tips.push(["📥", fmt(d.pending.count) + " طلب مستني موافقتك", "بـ " + money(d.pending.egp) + ". من «طلبات الاشتراك».", "reqs"]);
     if (n.cacheShare > 0) tips.push(["🧊", "الكاش وفّرلك " + usd(n.cacheSavedUsd) + " الشهر ده", fmt(n.cacheShare, 1) + "% من الكلام اللي Claude قراه جه من الكاش بعُشر السعر."]);
     var ch = n.channels;
-    if (n.messages) tips.push(["📨", "الردود الشهر ده بتيجي منين", "الموقع " + fmt(ch.site) + " · واتساب " + fmt(ch.wa) + " · مسنجر " + fmt(ch.fb) + " · إنستجرام " + fmt(ch.ig) + " (تقريبًا)."]);
+    if (n.messages) tips.push(["📨", "الردود الشهر ده بتيجي منين", "الموقع " + fmt(ch.site) + " · واتساب " + fmt(ch.wa) + " · مسنجر " + fmt(ch.fb) + " · إنستجرام " + fmt(ch.ig) + (ch.tg ? " · تيليجرام " + fmt(ch.tg) : "") + " (تقريبًا)."]);
     if (n.claudeEgp > 0) tips.push(["🧾", "تكلفة Claude الشهر ده راحت فين", "المشتركين " + money(n.costPaid) + " · التجربة " + money(n.costTrial) + " · Sellybot نفسه (سيلّي ومتاجر الإدارة) " + money(n.costOwn) + "."]);
     $("fnTips").innerHTML = tips.length ? tips.map(function (x) {
       return '<div class="li' + (x[3] ? ' click" style="cursor:pointer" data-go="' + x[3] : '') + '"><div class="mini-av" style="background:var(--soft);font-size:18px">' + x[0] + '</div><div class="grow"><div class="ttl" style="white-space:normal">' + esc(x[1]) + '</div><div class="meta">' + esc(x[2]) + '</div></div></div>';

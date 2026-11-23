@@ -76,18 +76,24 @@ namespace RiwaqChat
                             var len = res.Content.Headers.ContentLength;
                             if (len.HasValue && len.Value > MaxBytes) return null;
                             string mime = (res.Content.Headers.ContentType != null ? res.Content.Headers.ContentType.MediaType : "") ?? "";
-                            var bytes = await res.Content.ReadAsByteArrayAsync();
-                            if (bytes.Length == 0 || bytes.Length > MaxBytes) return null;
-                            string type;
-                            if (!Types.TryGetValue(mime.ToLowerInvariant(), out type)) type = Sniff(bytes);
-                            if (type == null) return null;
-                            return new ImageBlockParam { Source = new Base64ImageSource { Data = Convert.ToBase64String(bytes), MediaType = Media(type) } };
+                            return FromBytes(await res.Content.ReadAsByteArrayAsync(), mime);
                         }
                     }
                 }
                 catch (Exception ex) { Log.Error(ex); return null; }
             }
             return null;
+        }
+
+        // A picture already downloaded (Telegram's file links carry the bot's token, so Telegram.cs fetches them itself):
+        // an image block, or null (empty, too big, not a picture). mime may be null: the first bytes tell the format.
+        public static ImageBlockParam FromBytes(byte[] bytes, string mime)
+        {
+            if (bytes == null || bytes.Length == 0 || bytes.Length > MaxBytes) return null;
+            string type;
+            if (!Types.TryGetValue((mime ?? "").ToLowerInvariant(), out type)) type = Sniff(bytes);
+            if (type == null) return null;
+            return new ImageBlockParam { Source = new Base64ImageSource { Data = Convert.ToBase64String(bytes), MediaType = Media(type) } };
         }
 
         static MediaType Media(string type)
