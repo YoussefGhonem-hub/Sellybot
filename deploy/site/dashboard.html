@@ -876,6 +876,7 @@
   .hub-core{grid-area:2/3/5/4}
   .hub-w.o.r1{grid-area:2/4}.hub-w.o.r2{grid-area:3/4}.hub-w.o.r3{grid-area:4/4}
   .hub-item.o.r1{grid-area:2/5}.hub-item.o.r2{grid-area:3/5}.hub-item.o.r3{grid-area:4/5}
+  .hub.src-solo .hub-item.s.r3{grid-area:3/1}.hub.src-solo .hub-w.s.r3{grid-area:3/2}   /* the plan has no store link: the files sit in the middle */
   .hub-w{padding:0 3px}
   .hub-item{--c:var(--brand);display:flex;align-items:center;gap:10px;width:100%;height:100%;text-align:right;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);cursor:pointer;font:inherit;color:inherit;transition:transform .2s,border-color .2s}
   .hub-item:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--c) 55%,var(--line))}
@@ -1156,6 +1157,7 @@
   .lk-strip b{color:var(--ac2,#3f3fb8)}
   .lk-strip .go{margin-inline-start:auto;font-weight:700;white-space:nowrap;color:var(--ac2,#3f3fb8)}
   .lk-strip[hidden]{display:none}
+  .pv-off{display:none!important}   /* a feature this store's plan doesn't include (applyPlanView) */
   .sty.locked{position:relative}
   .sty.locked:after{content:"🔒";position:absolute;top:6px;left:6px;font-size:12px;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:var(--card);box-shadow:0 2px 6px rgba(0,0,0,.15)}
   .src .lk-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#5e8e3e,#95bf47)}
@@ -1704,7 +1706,7 @@
     <div class="hm-card hm-rv">
       <div class="hm-h"><span class="tg">⚙️ إزاي بيشتغل</span><h2>من داتا متجرك لرد في ثانية</h2><p>انت بتديله الداتا مرة واحدة، وهو بيرد على كل زبون بيها.</p></div>
       <div class="hm-flow">
-        <div class="hm-node"><span class="ic">📚</span><b>داتا متجرك</b><small>ملفات ونصوص، أو منتجاتك من Shopify و EasyOrders</small></div>
+        <div class="hm-node"><span class="ic">📚</span><b>داتا متجرك</b><small id="hmSrcTxt">ملفات ونصوص، أو منتجاتك من Shopify و EasyOrders</small></div>
         <div class="hm-wire" aria-hidden="true"><i></i><i></i><i></i></div>
         <div class="hm-node core"><span class="ic"><svg viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span><b>Sellybot</b><small>بيفهم سؤال الزبون ويدوّر على الإجابة في داتاك</small></div>
         <div class="hm-wire" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -1792,26 +1794,26 @@
       </div>
     </div>
     <!-- where the assistant's knowledge comes from: two sources, one at a time -->
-    <h3 class="sec-title">مصادر الداتا</h3>
-    <div class="sources" role="tablist" aria-label="مصادر الداتا">
+    <h3 class="sec-title" data-feat="shopify easyorders">مصادر الداتا</h3>
+    <div class="sources" role="tablist" data-feat="shopify easyorders" aria-label="مصادر الداتا">
       <button class="src on" type="button" role="tab" data-src="files" aria-selected="true">
         <span class="src-ic">📁</span>
         <span class="src-txt"><b>ملفاتك ونصوصك</b><small id="srcFilesInfo">…</small></span>
         <span class="src-count" id="srcFilesCount">0</span>
       </button>
-      <button class="src" type="button" role="tab" data-src="shopify" aria-selected="false">
+      <button class="src" type="button" role="tab" data-src="shopify" data-feat="shopify" aria-selected="false">
         <span class="src-ic shop logo-tile"><img class="plogo" src="logo-shopify.svg" alt=""></span>
         <span class="src-txt"><b>متجرك على Shopify</b><small id="srcShopInfo">…</small></span>
         <span class="src-dot" id="srcShopDot" aria-hidden="true"></span>
       </button>
-      <button class="src" type="button" role="tab" data-src="easyorders" aria-selected="false">
+      <button class="src" type="button" role="tab" data-src="easyorders" data-feat="easyorders" aria-selected="false">
         <span class="src-ic eo logo-tile"><img class="plogo" src="logo-easyorders.png" alt=""></span>
         <span class="src-txt"><b>متجرك على EasyOrders</b><small id="srcEoInfo">…</small></span>
         <span class="src-dot" id="srcEoDot" aria-hidden="true"></span>
       </button>
     </div>
     <div class="wa-warn" id="bothWarn" hidden style="margin:12px 2px 0">⚠️ متجرك مربوط بـ Shopify و EasyOrders، وباقتك دلوقتي بتسمح بمتجر واحد بس. الاتنين هيفضلوا شغالين، بس داتا المتجرين بتستهلك من رصيد رسايلك أكتر. رقّي باقتك من «باقتي»، أو ألغي ربط واحد منهم.</div>
-    <p class="src-rule">⚖️ لو نفس المعلومة موجودة في ملفاتك وفي متجرك (Shopify أو EasyOrders) ومختلفة، المساعد بياخد بكلام <b>ملفاتك</b>. ولو مش موجودة في ملفاتك، بياخدها من متجرك.</p>
+    <p class="src-rule" data-feat="shopify easyorders">⚖️ لو نفس المعلومة موجودة في ملفاتك وفي متجرك (Shopify أو EasyOrders) ومختلفة، المساعد بياخد بكلام <b>ملفاتك</b>. ولو مش موجودة في ملفاتك، بياخدها من متجرك.</p>
 
     <!-- source 1: the owner's own files and texts -->
     <div class="src-panel" id="srcFiles" role="tabpanel">
@@ -1822,7 +1824,7 @@
         <input type="text" id="upTitle" maxlength="200" placeholder="مثلًا: كتالوج المنتجات والأسعار 2026">
         <div class="drop" id="drop" style="margin-top:12px">
           📎 اسحب ملف هنا أو <u>اختار ملف</u><br>
-          <span class="hint">TXT · CSV · PDF · Word (.docx) · Excel (.xlsx) — لحد 10 ميجا</span>
+          <span class="hint" id="dropHint">TXT · CSV · PDF · Word (.docx) · Excel (.xlsx) — لحد 10 ميجا</span>
           <input type="file" id="fileInput" accept=".txt,.md,.csv,.pdf,.docx,.xlsx" hidden>
         </div>
         <button type="button" class="lk-strip" id="lockFiles" hidden></button>
@@ -1871,7 +1873,7 @@
             <b>ليه محتاجين الربط الكامل؟</b>
             <ul>
               <li><span>📦</span><div><b>الكمية بالظبط</b><small>المساعد يقول للزبون "فاضل 3 قطع من مقاس 42" بدل "متاح" بس، فيشجّعه يطلب.</small></div></li>
-              <li><span>🚚</span><div><b>"الأوردر بتاعي فين؟"</b><small>الزبون يعرف حالة أوردره وشركة الشحن ولينك التتبع من الشات، بدل ما يكلّمك. بعد ما يأكد رقم الأوردر والإيميل أو الموبايل اللي طلب بيه.</small></div></li>
+              <li data-feat="tracking"><span>🚚</span><div><b>"الأوردر بتاعي فين؟"</b><small>الزبون يعرف حالة أوردره وشركة الشحن ولينك التتبع من الشات، بدل ما يكلّمك. بعد ما يأكد رقم الأوردر والإيميل أو الموبايل اللي طلب بيه.</small></div></li>
               <li><span>⚡</span><div><b>تحديث فوري</b><small>أول ما تغيّر سعر أو منتج يخلص، المساعد يعرف في ثواني.</small></div></li>
               <li><span>📲</span><div><b>تأكيد الطلبات على واتساب</b><small>كل طلب جديد يوصل للزبون على واتساب يأكده أو يلغيه، والإلغاء بيتنفذ في Shopify لوحده. أقل أوردرات وهمية ومرتجعات. <b style="display:inline">متاحة مع الربط الكامل بس.</b></small></div></li>
               <li><span>🔒</span><div><b>تحت سيطرتك</b><small>مش بنعدّل حاجة في متجرك، غير إننا نلغي الأوردر اللي الزبون نفسه رفضه (لو فعّلت تأكيد الطلبات). مش بنشوف بيانات الدفع، والمفتاح بيتحفظ متشفّر، وتقدر توقفه من Shopify في أي وقت.</small></div></li>
@@ -1917,9 +1919,9 @@
         <div class="shop-status"><span class="ok-pill" id="shopPill">✅ مربوط</span><span class="hint" id="shopInfo" style="margin:0"></span></div>
         <div id="shopFullInfo" hidden>
           <div class="feat-list" id="shopFeats"></div>
-          <label class="toggle" id="ordersRow"><input type="checkbox" id="ordersToggle"><span class="tg" aria-hidden="true"></span>
+          <label class="toggle" id="ordersRow" data-feat="tracking"><input type="checkbox" id="ordersToggle"><span class="tg" aria-hidden="true"></span>
             <span><b>تتبع الأوردرات في الشات</b><small id="ordersHint">الزبون يسأل عن أوردره ويعرف حالته بعد ما يأكد رقم الأوردر والإيميل أو الموبايل.</small></span></label>
-          <div class="oc-box co-box">
+          <div class="oc-box co-box" data-feat="chatorders">
             <label class="toggle"><input type="checkbox" id="coToggle"><span class="tg" aria-hidden="true"></span>
               <span><b>🛒 الطلب من الشات <span class="new-tag">جديد</span></b><small>الزبون يطلب من جوه الشات من غير ما يفتح الموقع: المساعد يسأله عن اختيارات المنتج (المقاس، اللون…) والكمية وعنوانه وطريقة الشحن، Shopify يحسب الإجمالي، والزبون يأكد برقمه على واتساب، والأوردر ينزل عندك في Shopify.</small></span></label>
             <div class="co-lock" id="coLock" hidden></div>
@@ -1946,7 +1948,7 @@
               <div class="oc-list" id="ocList"></div>
             </div>
           </div>
-          <div class="oc-box">
+          <div class="oc-box" data-feat="delivery">
             <label class="toggle"><input type="checkbox" id="dnToggle"><span class="tg" aria-hidden="true"></span>
               <span><b>🚚 رسالة يوم التوصيل <span class="new-tag">جديد</span></b><small>لما شركة الشحن تحدّث الشحنة في Shopify إنها «خرجت للتوصيل»، يوصل للزبون من رقم متجرك: المندوب جايلك النهارده، جهّز المبلغ، وخلّي موبايلك جنبك. بتقلّل الأوردرات اللي بترجع عشان الزبون مارَدّش على المندوب.</small></span></label>
             <details class="name-tip">
@@ -1965,7 +1967,7 @@
         <div class="oc-need" id="shopUpgrade" hidden>
           <b>📲 عايز تأكيد الطلبات على واتساب؟</b>
           <span>الميزة دي محتاجة <b>الربط الكامل</b> مع Shopify، لأنها بتعرف الطلبات الجديدة أول بأول وبتلغي الأوردر اللي الزبون يرفضه. الربط السريع بيقرا المنتجات والأسعار بس.
-          ومع الربط الكامل كمان المساعد يعرف الكمية بالظبط ويرد على "الأوردر بتاعي فين؟".</span>
+          ومع الربط الكامل كمان المساعد يعرف الكمية بالظبط<span data-feat="tracking"> ويرد على "الأوردر بتاعي فين؟"</span>.</span>
           <a href="#" id="shopUpgradeLink" class="btn sm">🔐 اعمل ربط كامل</a>
         </div>
         <div class="row" style="margin-top:10px">
@@ -2014,7 +2016,7 @@
             <p>تصريح منك لـ Sellybot يدخل متجرك على EasyOrders. من غيره مفيش ربط.</p>
             <ul class="eo-gets">
               <li>📦 المنتجات والأسعار والمقاسات والمخزون</li>
-              <li>🚚 حالة الأوردر لما الزبون يسأل «طلبي فين؟»</li>
+              <li data-feat="tracking">🚚 حالة الأوردر لما الزبون يسأل «طلبي فين؟»</li>
               <li>✅ تغيير حالة الأوردر لما الزبون يأكد أو يلغي</li>
             </ul>
             <div class="eo-perms"><span>الصلاحيات:</span><span class="kbd">Read Products</span><span class="kbd">Read Orders</span><span class="kbd">Update Orders</span></div>
@@ -2027,7 +2029,7 @@
               <li>🔄 المخزون يتحدث بعد كل طلب</li>
             </ul>
             <div class="eo-perms"><span>نوعين:</span><span class="kbd">Orders</span><span class="kbd">Order Status Update</span></div>
-            <small class="eo-without">من غيره: المنتجات بتتحدث كل 6 ساعات، وتتبع الأوردر شغال عادي، بس مفيش تأكيد للطلبات على واتساب.</small>
+            <small class="eo-without">من غيره: المنتجات بتتحدث كل 6 ساعات<span data-feat="tracking">، وتتبع الأوردر شغال عادي</span>، بس مفيش تأكيد للطلبات على واتساب.</small>
           </div>
         </div>
         <div class="eo-howto"><span aria-hidden="true">⚡</span><div><b>مع «ربط بضغطة»، EasyOrders بتعمل الاتنين لوحدها.</b><small>ومع «ربط بـ API Key» بتعملهم بإيدك في دقيقتين، والخطوات تحت.</small></div></div>
@@ -2069,7 +2071,7 @@
           <span class="scope-box"><code class="ltr" id="eoHookUrl"></code><button type="button" class="btn ghost sm" id="eoCopyHook">نسخ</button></span>
         </div>
         <p class="hint" id="eoHookState" style="margin:8px 0"></p>
-        <label class="toggle"><input type="checkbox" id="eoOrdersToggle"><span class="tg" aria-hidden="true"></span>
+        <label class="toggle" data-feat="tracking"><input type="checkbox" id="eoOrdersToggle"><span class="tg" aria-hidden="true"></span>
           <span><b>تتبع الأوردرات في الشات</b><small>الزبون يسأل عن أوردره ويعرف حالته بعد ما يأكد رقم الأوردر والموبايل اللي طلب بيه.</small></span></label>
         <div class="oc-box">
           <label class="toggle"><input type="checkbox" id="eoOcToggle"><span class="tg" aria-hidden="true"></span>
@@ -2083,7 +2085,7 @@
             <div class="oc-list" id="eoOcList"></div>
           </div>
         </div>
-        <div class="oc-box">
+        <div class="oc-box" data-feat="delivery">
           <label class="toggle"><input type="checkbox" id="eoDnToggle"><span class="tg" aria-hidden="true"></span>
             <span><b>🚚 رسالة يوم التوصيل <span class="new-tag">جديد</span></b><small>لما حالة الأوردر في EasyOrders تبقى «In delivery»، يوصل للزبون من رقم متجرك إن طلبه خرج مع شركة الشحن، والمبلغ اللي يجهّزه، ويخلّي موبايله جنبه. بتقلّل الأوردرات اللي بترجع عشان الزبون مارَدّش على المندوب.</small></span></label>
           <details class="name-tip">
@@ -2161,8 +2163,8 @@
           <p class="sub">الفقاعة اللي بتظهر في ركن موقعك، والزبون بيدوس عليها عشان يفتح الشات.</p>
           <div class="look-scroll" id="lookScroll">
           <!-- the store's own logo as the bubble (api/logo.ashx): upload / replace / remove, inside a white circle or filling it -->
-          <div class="group-title">🖼️ لوجو متجرك</div>
-          <div class="logo-pick">
+          <div class="group-title" data-feat="styles">🖼️ لوجو متجرك</div>
+          <div class="logo-pick" data-feat="styles">
             <div class="styles" id="stylesLogo"></div>
             <div class="logo-ctl">
               <p class="hint">ارفع لوجو متجرك، وهيبقى هو فقاعة الشات وصورة المساعد جوه الشات. PNG أو JPG أو WebP، والأحسن صورة مربعة بخلفية شفافة.</p>
@@ -2177,7 +2179,7 @@
           </div>
           <div class="group-title">أشكال كلاسيك</div><div class="styles" id="stylesStd"></div>
           <div class="group-title">أشكال مضحكة 😄</div><div class="styles" id="stylesFun"></div>
-          <div class="group-title">تنفع لأي نوع متجر</div><div class="styles" id="stylesAny"></div>
+          <div class="group-title" data-feat="styles">تنفع لأي نوع متجر</div><div class="styles" id="stylesAny" data-feat="styles"></div>
           </div>
           <button type="button" class="lk-strip" id="lockLook" hidden></button>
         </div>
@@ -2185,7 +2187,7 @@
           <h3>اللون الأساسي</h3>
           <p class="sub">اختار لون قريب من لون موقعك أو اللوجو. لون الكلام جوه الشات بيتظبط لوحده عشان يبقى واضح.</p>
           <div class="swatches" id="swatches"></div>
-          <div class="colorrow">
+          <div class="colorrow" data-feat="styles">
             <input type="color" id="colorPick" value="#e8774a" aria-label="اختار لون">
             <input type="text" id="colorHex" class="ltr" maxlength="7" placeholder="#e8774a" aria-label="كود اللون">
             <span class="hint">أو حط كود لون موقعك (زي <span class="ltr">#1a73e8</span>)</span>
@@ -2208,11 +2210,11 @@
       <div class="hub-head"><h3>الصورة كاملة</h3><span class="hint" style="margin:0">دوس على أي حاجة عشان تروحلها</span></div>
       <div class="hub" id="hub">
         <span class="hub-cap s">📥 الداتا بتوصل للمساعد منين</span>
-        <button type="button" class="hub-item s r1" data-hub="shopify" style="--c:#6f9e35"><span class="hi-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-shopify.svg" alt=""></span><span class="hi-tx"><b>Shopify</b><small>بلينك متجرك أو ربط كامل · المنتجات والسياسات والأوردرات</small></span><span class="hi-st" id="hubShop"></span></button>
-        <button type="button" class="hub-item s r2" data-hub="easyorders" style="--c:#16a34a"><span class="hi-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-easyorders.png" alt=""></span><span class="hi-tx"><b>EasyOrders</b><small>بضغطة أو بـ API Key · المنتجات والأوردرات وتأكيدها</small></span><span class="hi-st" id="hubEo"></span></button>
-        <button type="button" class="hub-item s r3" data-hub="files" style="--c:#e8774a"><span class="hi-ic" aria-hidden="true">📄</span><span class="hi-tx"><b>ملفاتك ونصوصك</b><small>PDF · Word · Excel · CSV، أو نص تكتبه</small></span><span class="hi-st" id="hubFiles"></span></button>
-        <span class="eo-lane hub-w s r1" id="hwShop" style="--c:#6f9e35" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
-        <span class="eo-lane hub-w s r2" id="hwEo" style="--c:#16a34a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <button type="button" class="hub-item s r1" data-hub="shopify" data-feat="shopify" style="--c:#6f9e35"><span class="hi-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-shopify.svg" alt=""></span><span class="hi-tx"><b>Shopify</b><small>بلينك متجرك أو ربط كامل · المنتجات والسياسات والأوردرات</small></span><span class="hi-st" id="hubShop"></span></button>
+        <button type="button" class="hub-item s r2" data-hub="easyorders" data-feat="easyorders" style="--c:#16a34a"><span class="hi-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-easyorders.png" alt=""></span><span class="hi-tx"><b>EasyOrders</b><small>بضغطة أو بـ API Key · المنتجات والأوردرات وتأكيدها</small></span><span class="hi-st" id="hubEo"></span></button>
+        <button type="button" class="hub-item s r3" data-hub="files" style="--c:#e8774a"><span class="hi-ic" aria-hidden="true">📄</span><span class="hi-tx"><b>ملفاتك ونصوصك</b><small id="hubFilesS">PDF · Word · Excel · CSV، أو نص تكتبه</small></span><span class="hi-st" id="hubFiles"></span></button>
+        <span class="eo-lane hub-w s r1" id="hwShop" data-feat="shopify" style="--c:#6f9e35" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
+        <span class="eo-lane hub-w s r2" id="hwEo" data-feat="easyorders" style="--c:#16a34a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
         <span class="eo-lane hub-w s r3" id="hwFiles" style="--c:#e8774a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
         <div class="hub-core"><span class="hub-logo"><img src="sellybot-icon.svg" alt=""></span><span class="tx"><b>المساعد</b><small>بيقرا كل ده ويرد في ثانية، 24 ساعة</small></span></div>
         <span class="eo-lane hub-w o r1" id="hwBubble" style="--c:#e8774a" aria-hidden="true"><span class="eo-wire"><i></i><i></i></span></span>
@@ -2229,8 +2231,8 @@
       <h3>متجرك على إيه؟</h3>
       <p class="sub">اختار، وهنوريك الخطوات بالظبط.</p>
       <div class="plat" role="tablist" aria-label="متجرك على إيه">
-        <button type="button" role="tab" data-plat="shopify" style="--c:#6f9e35"><span class="pl-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-shopify.svg" alt=""></span><b>Shopify</b><small>الشات + ربط الداتا</small></button>
-        <button type="button" role="tab" data-plat="easyorders" style="--c:#16a34a"><span class="pl-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-easyorders.png" alt=""></span><b>EasyOrders</b><small>الشات + ربط الداتا</small></button>
+        <button type="button" role="tab" data-plat="shopify" style="--c:#6f9e35"><span class="pl-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-shopify.svg" alt=""></span><b>Shopify</b><small data-plat-sub="shopify">الشات + ربط الداتا</small></button>
+        <button type="button" role="tab" data-plat="easyorders" style="--c:#16a34a"><span class="pl-ic logo-tile" aria-hidden="true"><img class="plogo" src="logo-easyorders.png" alt=""></span><b>EasyOrders</b><small data-plat-sub="easyorders">الشات + ربط الداتا</small></button>
         <button type="button" role="tab" data-plat="site" style="--c:#3b82c4"><span class="pl-ic" aria-hidden="true">🌐</span><b>موقع تاني</b><small>WordPress، سلة، زد…</small></button>
         <button type="button" role="tab" data-plat="link" style="--c:#7c5cff"><span class="pl-ic" aria-hidden="true">🔗</span><b>من غير موقع</b><small>لينك تشاركه</small></button>
       </div>
@@ -2335,7 +2337,7 @@
         <div class="why" id="waWhy">
           <b>إزاي بيشتغل؟</b>
           <ul>
-            <li><span>💬</span><div><b>نفس ردود الموقع</b><small>نفس الداتا والتعليمات وتتبع الأوردرات، بس على رقم الواتساب بتاعك وبشكل رسايل الواتساب.</small></div></li>
+            <li><span>💬</span><div><b>نفس ردود الموقع</b><small>نفس الداتا والتعليمات<span data-feat="tracking"> وتتبع الأوردرات</span>، بس على رقم الواتساب بتاعك وبشكل رسايل الواتساب.</small></div></li>
             <li><span>🧠</span><div><b>فاكر المحادثة</b><small>بيفتكر كلام الزبون في آخر 24 ساعة، ولو بعت كذا رسالة ورا بعض بيرد عليهم مرة واحدة.</small></div></li>
             <li><span>🙋</span><div><b>لو رديت بنفسك بيسكت</b><small>لما ترد على زبون من موبايلك، المساعد يسيبلك المحادثة دي ساعتين.</small></div></li>
             <li><span>📊</span><div><b>من نفس رصيدك</b><small>كل رد على الواتساب بيتحسب رسالة من رصيد باقتك، زي الموقع بالظبط. الجروبات مش بيرد فيها.</small></div></li>
@@ -2393,17 +2395,17 @@
     </div>
 
     <!-- WhatsApp growth features: messages Sellybot sends by itself from the store's number (Growth.cs, api/growth.ashx) -->
-    <div class="card gr" id="growth" style="max-width:880px;margin-top:16px">
+    <div class="card gr" id="growth" data-feat="carts waimages restock report handoff" style="max-width:880px;margin-top:16px">
       <div class="shop-head">
         <div class="shop-logo gr-logo" aria-hidden="true">🚀</div>
         <div><h3 style="margin:0">مميزات الواتساب <span class="new-tag">جديد</span></h3>
           <p class="sub" style="margin:2px 0 0">رسايل بتتبعت لوحدها من رقم متجرك، كل واحدة لزبون معيّن بسبب حاجة عملها، عشان تبيع أكتر وماتفوّتش زبون.</p></div>
       </div>
-      <div class="gr-owner">
+      <div class="gr-owner" data-feat="report handoff">
         <label for="grOwner"><b>📱 رقمك انت على الواتساب</b><small>التقرير الأسبوعي وتنبيه «زبون محتاجك» بيوصلوك على الرقم ده من رقم المتجر. ممكن يكون نفس رقم المتجر.</small></label>
         <div class="shop-form"><input type="tel" id="grOwner" class="ltr" maxlength="20" placeholder="01001234567" autocomplete="tel"><button class="btn ghost" id="grOwnerSave" type="button">💾 حفظ</button></div>
       </div>
-      <div class="oc-box" id="gfCarts">
+      <div class="oc-box" id="gfCarts" data-feat="carts">
         <label class="toggle"><input type="checkbox" id="cartToggle"><span class="tg" aria-hidden="true"></span>
           <span><b>🛒 استرجاع السلة المتروكة</b><small>زبون وصل لصفحة الدفع وكتب رقمه ومشي من غير ما يطلب؟ يوصله تذكير واحد من رقم متجرك فيه اللي اختاره ولينك يكمّل منه الطلب.</small></span></label>
         <details class="name-tip">
@@ -2424,13 +2426,13 @@
           <div class="oc-list" id="cartList"></div>
         </div>
       </div>
-      <div class="oc-box" id="gfImages">
+      <div class="oc-box" id="gfImages" data-feat="waimages">
         <div class="gr-static"><span class="gr-ic" aria-hidden="true">📷</span>
           <span class="grow"><b>المساعد بيفهم الصور</b><small>الزبون يبعت صورة منتج شافه في حتة تانية، والمساعد يدوّر في منتجاتك ويرشّحله الأقرب بسعره ولينكه. ولو صورة مشكلة، يعتذر ويقوله إنك هتتابع معاه.</small></span>
           <span class="st-pill" id="imgState"></span></div>
         <p class="hint" style="margin:8px 0 0">🎤 الفويس نوت لسه مش مدعومة: المساعد بيطلب من الزبون يكتب سؤاله.</p>
       </div>
-      <div class="oc-box" id="gfRestock">
+      <div class="oc-box" id="gfRestock" data-feat="restock">
         <label class="toggle"><input type="checkbox" id="rsToggle"><span class="tg" aria-hidden="true"></span>
           <span><b>🔔 «بلّغني لما يرجع»</b><small>زبون سأل على منتج أو مقاس خلصان؟ المساعد يعرض يبلّغه، ولو وافق، يوصله رسالة من رقم متجرك أول ما المنتج يرجع المخزون، فيه لينكه.</small></span></label>
         <details class="name-tip">
@@ -2448,7 +2450,7 @@
           <div class="oc-list" id="rsList"></div>
         </div>
       </div>
-      <div class="oc-box" id="gfReport">
+      <div class="oc-box" id="gfReport" data-feat="report">
         <label class="toggle"><input type="checkbox" id="rpToggle"><span class="tg" aria-hidden="true"></span>
           <span><b>📊 التقرير الأسبوعي على واتساب</b><small>كل يوم سبت الصبح يوصلك على رقمك: المساعد رد على كام رسالة، ونتايج المميزات، وأكتر حاجات الزباين سألوا عنها، والأسئلة اللي المساعد ماكانش عنده إجابتها عشان تضيفها.</small></span></label>
         <div id="rpOpts" hidden>
@@ -2457,7 +2459,7 @@
           <pre class="gr-preview" id="rpPreview" hidden></pre>
         </div>
       </div>
-      <div class="oc-box" id="gfHandoff">
+      <div class="oc-box" id="gfHandoff" data-feat="handoff">
         <label class="toggle"><input type="checkbox" id="hoToggle"><span class="tg" aria-hidden="true"></span>
           <span><b>🙋 «الزبون محتاجك»</b><small>زبون طلب يكلّم حد من المتجر، أو عنده شكوى، أو عايز حاجة مهمة مش في داتا متجرك (جملة، مشكلة في أوردر، استرجاع)؟ المساعد يبلّغك على رقمك بالسبب وطلبه ورقم الزبون، فتكلّمه بنفسك.</small></span></label>
         <details class="name-tip">
@@ -2567,7 +2569,7 @@
       </div>
     </div>
     <div class="mt-grid">
-      <div class="card mt-card" id="mtFb" data-ch="fb">
+      <div class="card mt-card" id="mtFb" data-ch="fb" data-feat="messenger">
         <div class="shop-head">
           <div class="shop-logo mt-logo mt-fb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.4 2 2 6.1 2 11.6c0 2.9 1.2 5.4 3.1 7.1.2.1.3.4.3.6l.1 1.8c0 .6.6 1 1.2.7l2-.9c.2-.1.4-.1.6-.1.9.3 1.8.4 2.7.4 5.6 0 10-4.1 10-9.6S17.6 2 12 2zm6 7.5-2.9 4.6c-.5.7-1.5.9-2.1.4l-2.3-1.7a.6.6 0 0 0-.7 0l-3.1 2.4c-.4.3-1-.2-.7-.6L9 10c.5-.7 1.5-.9 2.1-.4l2.3 1.7c.2.2.5.2.7 0l3.1-2.4c.4-.3 1 .2.8.6z"/></svg></div>
           <div><h3 style="margin:0">مسنجر صفحتك <span class="new-tag">جديد</span></h3>
@@ -2575,7 +2577,7 @@
         </div>
         <div class="mt-body"></div>
       </div>
-      <div class="card mt-card" id="mtIg" data-ch="ig">
+      <div class="card mt-card" id="mtIg" data-ch="ig" data-feat="instagram">
         <div class="shop-head">
           <div class="shop-logo mt-logo mt-ig" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></div>
           <div><h3 style="margin:0">دايركت الإنستجرام <span class="new-tag">جديد</span></h3>
@@ -3044,10 +3046,10 @@
   function showApp(fresh) {
     $("authView").hidden = true; $("appView").hidden = false; $("navLinks").hidden = false; $("menuBtn").hidden = false; $("acct").hidden = false; heroStop();
     $("adminTabBtn").hidden = !me.isAdmin;
-    $("socialTabBtn").hidden = !me.meta;   // Messenger + Instagram: hidden from owners until it opens to everyone (MetaApp.Visible)
+    // Messenger + Instagram: hidden until it opens to everyone (MetaApp.Visible), and when the plan has neither (applyPlanView)
     unmountHelpChat(); render(); loadItems(); mountLiveChat();
     var want = fresh ? "" : (location.hash || "").replace("#", "");
-    go(["home", "data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && me.meta) ? want : "home");
+    go(["home", "data", "look", "install", "wa", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) ? want : "home");
     setTimeout(showNews, 1200);   // what's new since this browser last looked
   }
 
@@ -3081,7 +3083,7 @@
       var r = c.getBoundingClientRect(); c.style.setProperty("--mx", (e.clientX - r.left) + "px"); c.style.setProperty("--my", (e.clientY - r.top) + "px");
     });
     // what's new: the 3 newest entries of whats-new.js
-    $("hmNews").innerHTML = NEWS.slice(0, 3).map(function (n) {
+    $("hmNews").innerHTML = NEWS.filter(newsVisible).slice(0, 3).map(function (n) {
       var l = "";
       if (n.link && n.link.tab) l = '<button class="nl" type="button" data-home-tab="' + esc(n.link.tab) + '">' + esc(n.link.label || "شوفه") + ' ←</button>';
       else if (n.link && n.link.href && /download\.html/.test(n.link.href)) l = IN_APP ? "" : '<button class="nl" type="button" data-home-app>' + esc(n.link.label || "شوفه") + ' ↓</button>';
@@ -3131,8 +3133,14 @@
     // where the assistant answers, and which store system feeds it
     var sh = shopLinked(), eo = !!eoState().connected, wa = !!(me.orderConfirm || {}).whatsapp;
     var origins = (me.allowedOrigins || "").split(",").filter(Boolean).length, hasData = (kn.chars || 0) > 0 || sh || eo;
-    $("hmChans").innerHTML = [[origins > 0, "🌐 شات موقعك"], [true, "🔗 لينك الشات"], [wa, "💬 واتساب"], [sh, '<img src="logo-shopify.svg" alt=""> Shopify'], [eo, '<img src="logo-easyorders.png" alt=""> EasyOrders']]
-      .map(function (c) { return '<span class="' + (c[0] ? "on" : "") + '">' + c[1] + (c[0] ? " ✓" : "") + '</span>'; }).join("");
+    // only the channels and store links this plan has (applyPlanView); one already linked still shows
+    var shF = hasF("shopify") || sh, eoF = hasF("easyorders") || eo;
+    $("hmChans").innerHTML = [[origins > 0, "🌐 شات موقعك"], [true, "🔗 لينك الشات"], [wa, "💬 واتساب"], shF && [sh, '<img src="logo-shopify.svg" alt=""> Shopify'], eoF && [eo, '<img src="logo-easyorders.png" alt=""> EasyOrders']]
+      .filter(Boolean).map(function (c) { return '<span class="' + (c[0] ? "on" : "") + '">' + c[1] + (c[0] ? " ✓" : "") + '</span>'; }).join("");
+    $("hmSrcTxt").textContent = shF || eoF ? "ملفات ونصوص، أو منتجاتك من " + (shF && eoF ? "Shopify و EasyOrders" : shF ? "Shopify" : "EasyOrders") : "ملفاتك ونصوصك اللي بتكتبها";
+    var tileP = function (tab, text) { var t = document.querySelector('#hmTiles [data-home-tab="' + tab + '"] p'); if (t) t.textContent = text; };
+    tileP("data", shF || eoF ? "ارفع ملفاتك أو اربط متجرك، والمساعد يتعلّم منها" : "ارفع ملفاتك أو اكتب نص، والمساعد يتعلّم منه");
+    tileP("look", hasF("styles") ? "أكتر من 30 شكل للفقاعة وأي لون يناسب براندك" : "اسم الشات وشكل الفقاعة ولونها");
     // each card says where the store stands; the first thing still to do glows
     function chip(tab, cls, text) { var c = $("hmChip-" + tab); c.className = "chip" + (cls ? " " + cls : ""); c.textContent = text; }
     chip("data", hasData ? "ok" : "go", hasData ? "✓ فيه داتا · " + fmtSize(kn.chars) : "ابدأ من هنا");
@@ -3976,7 +3984,7 @@
 
   function render() {
     var link = BASE + "?store=" + me.slug;
-    syncLiveChat(); renderShop(); renderEo(); applyLocks();
+    syncLiveChat(); renderShop(); renderEo(); applyLocks(); applyPlanView();
     $("acctName").textContent = me.name; $("acctAvatar").textContent = (me.name || "م").trim().charAt(0);
     $("acctStatus").textContent = me.status === "active" ? "شغال" : "موقوف";
     $("acctDot").className = "sdot" + (me.status === "active" ? "" : " off");
@@ -4097,10 +4105,10 @@
   // ---------------- install tab: the whole picture, and steps for the owner's platform ----------------
   var PLAT = {
     shopify: { name: "Shopify", src: "shopify", paste: "الصقه في Shopify", fname: "theme.liquid — before </body>",
-      gets: ["💬 الشات في متجرك", "📦 المنتجات والسياسات بتتسحب لوحدها", "🚚 تتبع وتأكيد الأوردرات", "🛒 الطلب من جوه الشات"],
+      gets: ["💬 الشات في متجرك", ["📦 المنتجات والسياسات بتتسحب لوحدها", "shopify"], ["🚚 تتبع الأوردرات", "tracking"], ["📲 تأكيد الأوردرات على واتساب", "shopify"], ["🛒 الطلب من جوه الشات", "chatorders"]],
       ph: "my-shop.myshopify.com, www.mystore.com", hint: ["حط دومين Shopify بتاعك (اللي آخره ", ".myshopify.com", ") وكمان دومينك الخاص لو عندك. افصل بينهم بفاصلة."] },
     easyorders: { name: "EasyOrders", src: "easyorders", paste: "الصقه في EasyOrders", fname: "EasyOrders — Add Custom Code",
-      gets: ["💬 الشات في متجرك", "📦 المنتجات والمخزون بيتسحبوا لوحدهم", "🚚 تتبع وتأكيد الأوردرات"],
+      gets: ["💬 الشات في متجرك", ["📦 المنتجات والمخزون بيتسحبوا لوحدهم", "easyorders"], ["🚚 تتبع الأوردرات", "tracking"], ["📲 تأكيد الأوردرات على واتساب", "easyorders"]],
       ph: "my-shop.myeasyorders.com, www.mystore.com", hint: ["حط لينك متجرك على EasyOrders (اللي آخره ", ".myeasyorders.com", ") وكمان دومينك الخاص لو مربوط. افصل بينهم بفاصلة."] },
     site: { name: "", src: "files", paste: "الصقه في موقعك", fname: "before </body>",
       gets: ["💬 الشات في موقعك", "📄 الداتا من ملفاتك ونصوصك", "📲 وكمان على واتساب"],
@@ -4116,8 +4124,8 @@
     // the picture: each source / channel says whether it's live, and its wire runs only when it is
     var origins = (me.allowedOrigins || "").split(",").filter(Boolean).length;
     var shL = storeLock("shopify"), eoL = storeLock("easyorders");   // locked by plan, or by "one store per plan"
-    hubState("hubShop", "hwShop", shopLinked(), "✓ مربوط", shL ? "🔒 باقة أعلى" : "اربطه ←");
-    hubState("hubEo", "hwEo", !!eo.connected, "✓ مربوط", eoL ? "🔒 باقة أعلى" : "اربطه ←");
+    hubState("hubShop", "hwShop", shopLinked(), "✓ مربوط", shL ? lockWord(shL) : "اربطه ←");
+    hubState("hubEo", "hwEo", !!eo.connected, "✓ مربوط", eoL ? lockWord(eoL) : "اربطه ←");
     hubState("hubFiles", "hwFiles", (kn.items || 0) > 0, "✓ فيه داتا", "ضيف ←");
     hubState("hubBubble", "hwBubble", origins > 0, "✓ " + fmt(origins) + " دومين", "⏳ ضيف الكود");
     hubState("hubWa", "hwWa", !!(me.orderConfirm || {}).whatsapp, "✓ مربوط", "اربطه ←");
@@ -4126,18 +4134,22 @@
     var P = PLAT[plat];
     document.querySelectorAll("#instPick .plat button").forEach(function (b) { var on = b.dataset.plat === plat; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); });
     var g = $("platGets"); g.textContent = "";
-    P.gets.forEach(function (t) { var c = document.createElement("span"); c.className = "chip-g"; c.textContent = t; g.appendChild(c); });
+    P.gets.forEach(function (t) {   // [text, feature]: only what this plan has (tracking needs the store link too)
+      if (Array.isArray(t)) { if (!hasF(t[1]) || (t[1] === "tracking" && !hasF(P.src))) return; t = t[0]; }
+      var c = document.createElement("span"); c.className = "chip-g"; c.textContent = t; g.appendChild(c);
+    });
     var sp = document.createElement("span"); sp.className = "space"; g.appendChild(sp);
-    if (plat === "easyorders") {
+    if (plat === "easyorders" && hasF("easyorders")) {
       var cmp = document.createElement("button"); cmp.type = "button"; cmp.className = "lk"; cmp.textContent = "⚖️ إيه الفرق بينها وبين Shopify؟";
       cmp.onclick = function () { go("data"); showSource("easyorders"); $("eoCmp").open = true; setTimeout(function () { $("eoCmp").scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); };
       g.appendChild(cmp);
     }
-    if (P.src) {
+    if (P.src && hasF(P.src)) {
       var linked = P.src === "shopify" ? shopLinked() : P.src === "easyorders" ? !!eo.connected : (kn.items || 0) > 0;
       var cta = document.createElement("button"); cta.type = "button"; cta.className = "btn sm" + (linked ? " ghost" : "");
       cta.textContent = P.src === "files" ? (linked ? "📄 ملفاتك وداتا متجرك" : "📄 ارفع ملفاتك ←") : linked ? "✓ داتا " + P.name + " مربوطة · افتحها"
-        : storeLock(P.src) ? "🔒 ربط " + P.name + " من باقة أعلى ←" : "اربط داتا " + P.name + " ←";
+        : storeLock(P.src) ? (storeLock(P.src).up.renew ? "⏳ جدّد باقتك عشان ربط " + P.name + " ←" : storeLock(P.src).key === "bothstores" ? "ربط " + P.name + " (متجر واحد في باقتك) ←" : "🔒 ربط " + P.name + " من باقة أعلى ←")
+        : "اربط داتا " + P.name + " ←";
       cta.onclick = function () { go("data"); showSource(P.src); };
       g.appendChild(cta);
     }
@@ -4152,6 +4164,8 @@
     h.appendChild(document.createTextNode(P.hint[0])); var l = document.createElement("bdi"); l.dir = "ltr"; l.textContent = P.hint[1]; h.appendChild(l); h.appendChild(document.createTextNode(P.hint[2]));
     renderOriginSugg();
   }
+  // a store link the plan stops: an ended plan (renew), one store per plan, or (while the plan has it) a higher plan
+  function lockWord(L) { return L.up.renew ? "⏳ جدّد باقتك" : L.key === "bothstores" ? "متجر واحد في باقتك" : "🔒 باقة أعلى"; }
   function hubState(stId, wireId, live, onText, offText) {
     var st = $(stId); st.textContent = live ? onText : offText; st.classList.toggle("ok", live);
     $(wireId).classList.toggle("on", live);
@@ -4301,7 +4315,7 @@
         var has = function (sc) { return (sh.missing || []).indexOf(sc) < 0; };
         chip(has("read_products"), "المنتجات والأسعار");
         chip(has("read_inventory"), "الكمية بالظبط");
-        chip(has("read_orders"), "تتبع الأوردرات");
+        if (hasF("tracking")) chip(has("read_orders"), "تتبع الأوردرات");
         chip(sh.webhooks > 0, sh.webhooks > 0 ? "تحديث فوري" : "تحديث فوري (بيشتغل على السيرفر بس)");
         $("ordersToggle").checked = !!sh.orders; $("ordersToggle").disabled = !sh.ordersAvailable;
         $("ordersHint").textContent = sh.ordersAvailable
@@ -4641,18 +4655,18 @@
     b.onclick = async function () { if (b.classList.contains("on")) return; if (await saveEoOc(true, b.dataset.v)) toast("اتحفظ ✓"); };
   });
   $("eoDnToggle").onchange = function () { saveDelivery("api/easyorders.ashx?action=delivery", this, "eoMsg", function () { renderEo(); }); };
-  // EasyOrders vs Shopify, said plainly: [icon, feature, EasyOrders has it, EasyOrders note, Shopify note].
+  // EasyOrders vs Shopify, said plainly: [icon, feature, EasyOrders has it, EasyOrders note, Shopify note, plan feature (optional)].
   // The gaps are EasyOrders' public API (no courier, tracking number, delivery date, policies or create-order), not ours.
   var EO_CMP = [
     ["📦", "المنتجات والأسعار والخصومات", 1, "", ""],
     ["🎨", "المقاسات والألوان والمخزون", 1, "", ""],
     ["🔄", "التحديث لوحده", 1, "بعد كل طلب، وكل 6 ساعات", ""],
-    ["🚚", "«طلبي فين؟» وحالة الأوردر", 1, "", ""],
+    ["🚚", "«طلبي فين؟» وحالة الأوردر", 1, "", "", "tracking"],
     ["📲", "تأكيد الطلبات على واتساب", 1, "والحالة بتتغيّر في EasyOrders لوحدها", ""],
-    ["🏷️", "اسم شركة الشحن ورقم ولينك التتبع", 0, "المساعد بيقول الحالة بس، زي «خرج مع شركة الشحن»", ""],
+    ["🏷️", "اسم شركة الشحن ورقم ولينك التتبع", 0, "المساعد بيقول الحالة بس، زي «خرج مع شركة الشحن»", "", "tracking"],
     ["📅", "ميعاد التوصيل المتوقع", 0, "اكتب مدة التوصيل في معلومات الشحن", "لو شركة الشحن بتدّيه"],
     ["📜", "سياسة الشحن والاسترجاع", 0, "اكتبها في معلومات الشحن", "بتتسحب من متجرك"],
-    ["🛒", "الطلب من جوه الشات", 0, "المساعد بيبعت لينك المنتج والزبون يطلب من متجرك", ""]
+    ["🛒", "الطلب من جوه الشات", 0, "المساعد بيبعت لينك المنتج والزبون يطلب من متجرك", "", "chatorders"]
   ];
   (function () {
     var t = $("eoCmpT"), has = 0;
@@ -4665,17 +4679,24 @@
     }
     EO_CMP.forEach(function (r) {
       var row = document.createElement("div"); row.className = "eo-cr" + (r[2] ? "" : " gap"); row.setAttribute("role", "row");
+      if (r[5]) row.dataset.feat = r[5];   // applyPlanView hides it when the plan doesn't have it
       var f = document.createElement("span"); f.className = "f"; f.setAttribute("role", "rowheader");
       var ic = document.createElement("span"); ic.setAttribute("aria-hidden", "true"); ic.textContent = r[0];
       f.appendChild(ic); f.appendChild(document.createTextNode(r[1]));
       row.appendChild(f); row.appendChild(cell(r[2], r[3], "EasyOrders", "logo-easyorders.png")); row.appendChild(cell(1, r[4], "Shopify", "logo-shopify.svg"));
-      t.appendChild(row); if (r[2]) has++;
+      t.appendChild(row);
     });
-    $("eoScEo").textContent = has + " من " + EO_CMP.length; $("eoScSh").textContent = EO_CMP.length + " من " + EO_CMP.length;
+    function score() {   // the rows this plan shows
+      var rows = [].filter.call(t.querySelectorAll(".eo-cr"), function (x) { return !x.classList.contains("pv-off"); }), all = rows.length;
+      has = rows.filter(function (x) { return !x.classList.contains("gap"); }).length;
+      $("eoScEo").textContent = has + " من " + all; $("eoScSh").textContent = all + " من " + all;
+      return all;
+    }
+    var total = score();
     $("eoCmp").addEventListener("toggle", function () {
-      var open = this.open;
+      var open = this.open; total = score();
       requestAnimationFrame(function () { requestAnimationFrame(function () {
-        $("eoBarEo").style.width = open ? Math.round(100 * has / EO_CMP.length) + "%" : "0";
+        $("eoBarEo").style.width = open ? Math.round(100 * has / total) + "%" : "0";
         $("eoBarSh").style.width = open ? "100%" : "0";
       }); });
     });
@@ -4868,7 +4889,7 @@
     // pictures: on with the WhatsApp service (its plan may not include it)
     var im = $("imgState"), imOn = gr.images && gr.images.on;
     im.className = "st-pill " + (imOn ? "answered" : locks.waimages ? "lock" : "");
-    im.textContent = imOn ? "✅ شغالة لوحدها" : locks.waimages ? "🔒 مش في باقتك" : "مع خدمة الواتساب";
+    im.textContent = imOn ? "✅ شغالة لوحدها" : locks.waimages ? (locks.waimages.renew ? "⏳ جدّد باقتك" : "🔒 مش في باقتك") : "مع خدمة الواتساب";
     im.onclick = locks.waimages ? function () { openLock("waimages"); } : null;
     // back in stock
     var rs = gr.restock || {};
@@ -5076,6 +5097,36 @@
       list: [["🎨", "أي لون بكود لون البراند بتاعك"], ["🐱", "أشكال مضحكة وأشكال لكل نوع متجر"], ["✨", "حركات بتشد الزبون يدوس ويسأل"]],
       chips: ["🐱 قطة", "🐼 باندا", "🎨 أي لون"] }
   };
+  // ---------------- what this store's plan includes ----------------
+  // The user's rule (2026-11-23): each store sees only its own plan's features. me.hide (PlanGate.Hidden) lists the ones its plan
+  // doesn't include: none on the free trial, its own plan's on an ended plan (the renew card shows there), and what every plan has
+  // when the trial ended with no plan. Those parts aren't drawn at all, no lock and no upgrade card: plans are compared and
+  // upgraded from «باقتي» alone. [data-feat="a b"] = drawn while the plan has any of them. The server still refuses what's locked.
+  function hasF(f) { return !(me && me.hide && me.hide.indexOf(f) >= 0); }
+  function anyF(list) { return String(list || "").split(/[\s,]+/).filter(Boolean).some(hasF); }
+  function applyPlanView() {
+    if (!me) return;
+    document.querySelectorAll("[data-feat]").forEach(function (el) { el.classList.toggle("pv-off", !anyF(el.dataset.feat)); });
+    var cur = document.querySelector(".sources .src.on");   // a data source the plan doesn't have can't stay open
+    if (cur && cur.classList.contains("pv-off")) showSource("files");
+    var files = hasF("files");   // files: only the kinds the plan uploads
+    $("dropHint").textContent = files ? "TXT · CSV · PDF · Word (.docx) · Excel (.xlsx) — لحد 10 ميجا" : "TXT · CSV — لحد 10 ميجا";
+    $("fileInput").accept = files ? ".txt,.md,.csv,.pdf,.docx,.xlsx" : ".txt,.md,.csv";
+    $("hubFilesS").textContent = files ? "PDF · Word · Excel · CSV، أو نص تكتبه" : "CSV أو TXT، أو نص تكتبه";
+    $("hub").classList.toggle("src-solo", !hasF("shopify") && !hasF("easyorders"));
+    document.querySelectorAll("[data-plat-sub]").forEach(function (x) { x.textContent = hasF(x.dataset.platSub) ? "الشات + ربط الداتا" : "الشات في متجرك"; });
+    var allStyles = hasF("styles");   // the chat's look: the shapes the plan has
+    document.querySelectorAll(".sty").forEach(function (c) { c.classList.toggle("pv-off", !allStyles && FREE_STYLES.indexOf(c.dataset.style) < 0); });
+    $("socialTabBtn").hidden = !me.meta || !anyF("messenger instagram");
+  }
+  // the shape and color the customers see now: one the plan doesn't have shows as the default (PlanGate.Apply), and comes back on upgrade
+  function lookSaved() {
+    var st = me.bubbleStyle || "bear", col = me.brandColor || "#e8774a";
+    if (!hasF("styles")) { if (FREE_STYLES.indexOf(st) < 0) st = "bear"; if (SWATCHES.indexOf(col.toLowerCase()) < 0) col = "#e8774a"; }
+    return { style: st, color: col };
+  }
+  // what's new: an entry about a feature (n.feature: a key or a list) shows only when the plan has it
+  function newsVisible(n) { return !n.feature || anyF([].concat(n.feature).join(" ")); }
   var FREE_STYLES = ["classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear"];
   var BUB_EMO = ["🐻", "🐱", "🐼", "🤖", "🐧", "🦉", "🦊", "👻", "🐸", "🐰", "🎁", "💎", "⭐", "🎂", "☕", "🛒"], BUB_COL = ["#e8774a", "#9b5de5", "#1a73e8", "#0ea5a4", "#e84a8a", "#2f8f5b", "#d64545", "#1f3a5f"];
   var locks = {}, lockTimers = {};
@@ -5144,6 +5195,7 @@
   function stopUpsell() { stopLock($("waUp")); }
   // the popup, for a lock met inside a page (a PDF, a locked style)
   function openLock(key) {
+    if (key !== "wa" && !hasF(key)) { closeLock(); go("plan"); return; }   // not in this plan: no upgrade card, plans are compared in «باقتي»
     var up = key === "wa" ? wa && wa.upsell : locks[key]; if (!up) return;
     renderLock($("lockCard"), key, up); $("lockModal").hidden = false;
   }
@@ -5156,7 +5208,7 @@
     applyLocks();
   }
   function lockStrip(el, key, html) {
-    var up = locks[key]; el.hidden = !up || !up.id; if (el.hidden) return;
+    var up = locks[key]; el.hidden = !up || !up.id || !hasF(key); if (el.hidden) return;
     el.style.setProperty("--ac", LOCK[key].ac); el.style.setProperty("--ac2", LOCK[key].ac2);
     el.innerHTML = '<span>' + html.replace("{plan}", '<b>' + esc(up.name) + '</b>') + '</span><span class="go">اعرف أكتر ←</span>';
     el.onclick = function () { openLock(key); };
@@ -5169,7 +5221,16 @@
     return other && !mine && locks.bothstores ? { key: "bothstores", up: locks.bothstores } : null;
   }
   function storeLockInfo(L, infoId) {
-    if (L && L.up.name) $(infoId).textContent = L.key === "bothstores" ? "🔒 باقتك فيها متجر واحد بس" : "🔒 متاح من باقة " + L.up.name;
+    if (L && L.up.name) $(infoId).textContent = L.key === "bothstores" ? "باقتك فيها متجر واحد بس" : L.up.renew ? "⏳ جدّد باقتك" : "🔒 متاح من باقة " + L.up.name;
+  }
+  // the store system's lock: the upgrade card while the plan has the feature (an ended plan: renew it). "Both stores" outside the
+  // plan is no upsell: just the rule and the way to switch (unlink the other store first)
+  function lockOrNote(box, L, which) {
+    if (L.key === "bothstores" && !hasF("bothstores")) {
+      stopLock(box); box.innerHTML = '<div><span class="wa-up-badge">🔗 متجر واحد في باقتك</span><h3>باقتك فيها ربط متجر واحد: Shopify أو EasyOrders</h3></div>';
+      bothAlt(box, "bothstores", which); return;
+    }
+    renderLock(box, L.key, L.up); bothAlt(box, L.key, which);
   }
   // under the "both stores" upgrade card: the way to stay on one plan (unlink the other store first)
   function bothAlt(box, key, which) {
@@ -5183,10 +5244,10 @@
   function applyLocks() {
     var sh = storeLock("shopify");
     $("lockShop").hidden = !sh; $("shopCard").hidden = !!sh;
-    if (sh) { renderLock($("lockShop"), sh.key, sh.up); bothAlt($("lockShop"), sh.key, "shopify"); storeLockInfo(sh, "srcShopInfo"); } else stopLock($("lockShop"));
+    if (sh) { lockOrNote($("lockShop"), sh, "shopify"); storeLockInfo(sh, "srcShopInfo"); } else stopLock($("lockShop"));
     var eol = storeLock("easyorders");
     $("lockEo").hidden = !eol; $("eoCard").hidden = !!eol;
-    if (eol) { renderLock($("lockEo"), eol.key, eol.up); bothAlt($("lockEo"), eol.key, "easyorders"); storeLockInfo(eol, "srcEoInfo"); } else stopLock($("lockEo"));
+    if (eol) { lockOrNote($("lockEo"), eol, "easyorders"); storeLockInfo(eol, "srcEoInfo"); } else stopLock($("lockEo"));
     $("bothWarn").hidden = !(locks.bothstores && shopLinked() && eoState().connected);   // linked both, then moved to a plan without it
     if (me) renderInstall();
     lockStrip($("lockFiles"), "files", "🔒 ارفع ملفات <b>PDF و Word و Excel</b> زي ما هي مع باقة {plan}. ملفات TXT و CSV والنص متاحين ليك دلوقتي.");
@@ -5327,7 +5388,10 @@
   ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); }); });
   drop.addEventListener("drop", function (e) { var f = e.dataTransfer.files[0]; if (f) upload(f); });
   async function upload(file) {
-    if (locks.files && /\.(pdf|docx|xlsx)$/i.test(file.name)) { openLock("files"); return; }   // the plan doesn't include these
+    if (locks.files && /\.(pdf|docx|xlsx)$/i.test(file.name)) {   // the plan doesn't include these
+      if (hasF("files")) openLock("files"); else setMsg("upMsg", "باقتك بترفع ملفات TXT و CSV، أو اكتب النص بنفسك من «➕ اكتب نص».");
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) { setMsg("upMsg", "الملف أكبر من 10 ميجا."); return; }
     setMsg("upMsg", (/\.pdf$/i.test(file.name) ? "بنقرا الـ PDF بالذكاء الاصطناعي، ممكن ياخد دقيقة… ⏳" : "بنقرا الملف… ⏳"), true);
     var fd = new FormData(); fd.append("file", file);
@@ -5348,7 +5412,7 @@
   var SWATCHES = ["#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222"];
   var look = { style: "bear", color: "#e8774a", title: "", logoFit: "contain" }, lookInit = false, pvView = "bubble";
   function initLook() {
-    look.style = me.bubbleStyle || "bear"; look.color = me.brandColor || "#e8774a"; look.title = me.chatTitle || ""; look.logoFit = me.logoFit || "contain";
+    var sv = lookSaved(); look.style = sv.style; look.color = sv.color; look.title = me.chatTitle || ""; look.logoFit = me.logoFit || "contain";
     var def = me.name || me.botName || "";
     $("chatTitle").value = look.title; $("chatTitle").placeholder = def; $("chatTitleDef").textContent = def;
     if (!lookInit) {
@@ -5375,7 +5439,7 @@
       document.querySelectorAll("#pvSeg button").forEach(function (b) { b.onclick = function () { pvView = b.dataset.view; document.querySelectorAll("#pvSeg button").forEach(function (x) { x.classList.toggle("on", x === b); }); loadPreview(); }; });
       loadPreview();
     }
-    updateLook(); applyLocks();
+    updateLook(); applyLocks(); applyPlanView();
   }
   function theme() { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; }
   function loadPreview() { $("preview").src = BASE + "?store=" + me.slug + "&preview=1&view=" + pvView + "&style=" + look.style + "&color=" + encodeURIComponent(look.color) + "&theme=" + theme(); }
@@ -5391,7 +5455,7 @@
     $("logoDel").hidden = !me.logo; $("logoFit").hidden = !me.logo;
     document.querySelectorAll("#logoFit button").forEach(function (b) { b.classList.toggle("on", b.dataset.fit === look.logoFit); });
     postLook();
-    var changed = look.style !== me.bubbleStyle || look.color !== me.brandColor || look.title.trim() !== (me.chatTitle || "") || look.logoFit !== (me.logoFit || "contain");
+    var sv = lookSaved(), changed = look.style !== sv.style || look.color !== sv.color || look.title.trim() !== (me.chatTitle || "") || look.logoFit !== (me.logoFit || "contain");
     $("saveLook").textContent = changed ? "حفظ الشكل •" : "محفوظ ✓"; $("saveLook").disabled = !changed;
   }
   function postLook() {
@@ -5537,7 +5601,7 @@
     if (newsShown || !NEWS.length || !me) return;
     newsShown = true;
     var seen = lsGet("sb-news-seen"), fresh = [];
-    for (var i = 0; i < NEWS.length && NEWS[i].id !== seen; i++) fresh.push(NEWS[i]);
+    for (var i = 0; i < NEWS.length && NEWS[i].id !== seen; i++) if (newsVisible(NEWS[i])) fresh.push(NEWS[i]);
     // only what's recent (a first visit, or a long time away, doesn't get the whole history)
     fresh = fresh.filter(function (n) { return Date.now() - new Date(n.date).getTime() < (seen ? 60 : 21) * 864e5; }).slice(0, 5);
     lsSet("sb-news-seen", NEWS_TOP);
@@ -5590,9 +5654,11 @@
     document.head.appendChild(s);
   }
   function newsArrived(latest) {
-    var top = latest[0];
-    if (!top || top.id === NEWS_TOP || Date.now() < updLaterUntil) return;
-    var more = 0; for (var i = 1; i < latest.length && latest[i].id !== NEWS_TOP; i++) more++;
+    var known = {}; NEWS.forEach(function (n) { known[n.id] = 1; });
+    var fresh = []; for (var i = 0; i < latest.length && latest[i].id !== NEWS_TOP; i++) if (!known[latest[i].id] && newsVisible(latest[i])) fresh.push(latest[i]);
+    var top = fresh[0];   // only news about what this store's plan has
+    if (!top || Date.now() < updLaterUntil) return;
+    var more = fresh.length - 1;
     showUpd("site", "جديد في Sellybot: " + top.title, more ? "و" + fmt(more) + (more === 1 ? " حاجة تانية" : " حاجات تانية") + " جديدة. حدّث الصفحة عشان تشوفهم." : "حدّث الصفحة عشان تشوفه.");
     // the desktop app in the background: a Windows notification too (once per update)
     if (IN_APP && document.hidden && !updNotified[top.id] && "Notification" in window) {

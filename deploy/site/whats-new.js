@@ -3,12 +3,20 @@
 // Every new feature an owner can see: add an entry AT THE TOP, with an id that was never used before (the date + a word).
 //   icon · title · text: one line · items: details (optional)
 //   link (optional): { tab: "look", label: "جرّبه" } opens a dashboard tab · { href: "download.html", label: "..." } opens a page
+//   feature (optional): the plan feature it is about ("styles", or a list ["carts", "report"]): the dashboard shows it only to
+//     stores whose plan has it (PlanGate keys; each store sees only its own plan's features)
 //
 // How it reaches them:
 // - An open dashboard (or the desktop app) re-reads this file every 10 minutes and whenever its window comes back to the front.
 //   A new id at the top shows the bar "✨ جديد في Sellybot" with a reload button; in the desktop app also a Windows notification.
 // - After loading, the entries this browser hasn't seen yet open once in the "الجديد في Sellybot" window.
 window.SB_NEWS = [
+  {
+    id: "2026-11-23-plan-view", date: "2026-11-23", icon: "🧭",
+    title: "لوحة التحكم بقت بتوريك مميزات باقتك بس",
+    text: "كل صفحة في اللوحة فيها دلوقتي المميزات اللي في باقتك بس، من غير أقفال ولا كروت ترقية في النص. عايز تعرف الباقات التانية فيها إيه؟ المقارنة كاملة في «باقتي».",
+    link: { tab: "plan", label: "قارن الباقات" }
+  },
   {
     id: "2026-11-23-economy-plan", date: "2026-11-23", icon: "💰",
     title: "باقة جديدة «الاقتصادية» بـ 850 ج.م، والواتساب جواها",
@@ -33,7 +41,7 @@ window.SB_NEWS = [
     link: { tab: "plan", label: "شوف باقتي" }
   },
   {
-    id: "2026-11-21-connect-accounts", date: "2026-11-21", icon: "📨",
+    id: "2026-11-21-connect-accounts", date: "2026-11-21", icon: "📨", feature: ["messenger", "instagram"],
     title: "المساعد بقى يرد على مسنجر صفحتك ودايركت الإنستجرام",
     text: "نفس المساعد، بنفس داتا متجرك وطريقة كلامه، يرد على رسايل صفحتك على فيسبوك والدايركت على الإنستجرام في ثواني.",
     items: ["قايمة جديدة فوق اسمها «🔗 ربط بحساباتك»: فيها «واتساب» و«مسنجر وإنستجرام»", "بتعمل تطبيق Meta بحسابك مرة واحدة: الخطوات بالترتيب وكل لينك جنبه زرار «نسخ»",
@@ -63,7 +71,7 @@ window.SB_NEWS = [
     link: { href: "reels.html", label: "شوف الريلز" }
   },
   {
-    id: "2026-11-17-logo-bubble", date: "2026-11-17", icon: "🖼️",
+    id: "2026-11-17-logo-bubble", date: "2026-11-17", icon: "🖼️", feature: "styles",
     title: "لوجو متجرك بقى ينفع يبقى فقاعة الشات",
     text: "ارفع اللوجو من «شكل الشات»، ويظهر هو في ركن موقعك وصورة للمساعد جوه الشات، بدايرة بلون البراند بتاعك.",
     link: { tab: "look", label: "ارفع اللوجو" }
@@ -75,7 +83,7 @@ window.SB_NEWS = [
     link: { tab: "look", label: "جرّب شاتك" }
   },
   {
-    id: "2026-11-17-wa-growth", date: "2026-11-17", icon: "🚀",
+    id: "2026-11-17-wa-growth", date: "2026-11-17", icon: "🚀", feature: ["carts", "waimages", "restock", "report", "handoff"],
     title: "5 مميزات جديدة على الواتساب",
     text: "المساعد بقى يبيع معاك أكتر: يرجّع السلات المتروكة، ويفهم الصور، ويبلّغ الزباين لما المنتج يرجع، ويبعتلك تقرير كل أسبوع، ويناديك لما زبون يحتاجك.",
     items: ["🛒 استرجاع السلة المتروكة: تذكير بلينك يكمّل منه الطلب (Shopify)", "📷 الزبون يبعت صورة منتج، والمساعد يلاقيله الأقرب من منتجاتك",
@@ -114,7 +122,7 @@ window.SB_NEWS = [
     link: { tab: "wa", label: "فعّل الواتساب" }
   },
   {
-    id: "2026-11-16-delivery", date: "2026-11-16", icon: "🚚",
+    id: "2026-11-16-delivery", date: "2026-11-16", icon: "🚚", feature: "delivery",
     title: "رسالة يوم التوصيل على واتساب",
     text: "أول ما الأوردر يخرج للتوصيل، الزبون يوصله من رقم متجرك إن المندوب جايله والمبلغ اللي يجهّزه، فالمرتجعات تقل.",
     items: ["مع EasyOrders: لما حالة الأوردر تبقى «In delivery»", "مع Shopify: لما شركة الشحن تحدّث الشحنة إنها «Out for delivery»", "شغّلها من «داتا المتجر» تحت تأكيد الطلبات"],
@@ -141,7 +149,7 @@ window.SB_NEWS = [
     link: { href: "download.html", label: "حمّل البرنامج" }
   },
   {
-    id: "2026-11-15-monkey", date: "2026-11-15", icon: "🐒",
+    id: "2026-11-15-monkey", date: "2026-11-15", icon: "🐒", feature: "styles",
     title: "شكل جديد للشات: القرد المبرمج",
     text: "بيسمع مزيكا وبيسلّم على زباينك، وسماعاته بتاخد لون براندك.",
     link: { tab: "look", label: "جرّبه على متجرك" }

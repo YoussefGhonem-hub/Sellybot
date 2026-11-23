@@ -981,7 +981,12 @@ ELSE
             // the WhatsApp service (an add-on on any plan): when it's off, the dashboard sells it instead of the link button
             var svc = WaAccount.ServiceJson(c, s);
             d["service"] = svc;
-            if (!(bool)svc["on"]) d["upsell"] = new Dictionary<string, object>(svc) { { "addon", true } };
+            if (!(bool)svc["on"])
+            {
+                // a plan with WhatsApp inside («الاقتصادية») that ended: renewing the plan brings WhatsApp back, not the 300 add-on
+                var mine = s.PlanId.HasValue && Billing.Expired(s) && Billing.PlanHasWa(s.PlanId) ? Billing.Plan(c, s.PlanId.Value) : null;
+                d["upsell"] = mine != null && mine.IsActive ? PlanGate.OfferJson(c, s, mine) : new Dictionary<string, object>(svc) { { "addon", true } };
+            }
             if (!on)
             {
                 // can the owner just scan a QR (Sellybot's account)?

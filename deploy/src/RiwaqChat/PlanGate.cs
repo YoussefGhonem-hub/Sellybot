@@ -16,7 +16,8 @@
 //   carts / waimages / restock / report / handoff: the WhatsApp growth features (Carts.cs, the bot reading images, Restock.cs,
 //            WeeklyReport.cs, Handoff.cs). They need the WhatsApp service; open to every plan until the super admin picks a minimum.
 //   messenger / instagram: the assistant answering the store's Facebook Page / Instagram account (Meta.cs); open to every plan until set
-// The dashboard asks api/locks.ashx which features are locked and shows an upgrade card with the plan to suggest.
+// The dashboard hides what the store's plan doesn't include (Hidden(), sent as "hide" in the store's data), and asks
+// api/locks.ashx which features are locked right now (an ended plan: the renew card).
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -124,6 +125,27 @@ namespace RiwaqChat
             return false;
         }
 
+        // What the dashboard shows (the user's rule, 2026-11-23): each store sees only its own plan's features, in the menu and inside
+        // the pages; a feature its plan doesn't include is hidden, not shown locked (plans are compared and upgraded from «باقتي» alone).
+        //   - the free trial: everything;
+        //   - a plan, running or ended: that plan's features (an ended plan keeps its pages, and the assistant stays stopped until renewal);
+        //   - the trial over with no plan: only what every plan has.
+        // Allows() still decides what actually works; this only decides what's drawn.
+        public static List<string> Hidden(SqlConnection c, StoreInfo s)
+        {
+            var hidden = new List<string>();
+            if (s == null || s.IsAdmin || (Billing.OnTrial(s) && !Billing.TrialEnded(c, s))) return hidden;
+            var all = Billing.Plans(c, true);
+            int myRank = s.PlanId.HasValue ? all.FindIndex(p => p.Id == s.PlanId.Value) : -1;
+            if (myRank < 0) myRank = all.FindIndex(p => p.IsActive);   // no plan (or a deleted one): what the cheapest plan has
+            foreach (var f in Features)
+            {
+                int minId = MinPlanId(c, f), minRank = minId > 0 ? all.FindIndex(p => p.Id == minId) : -1;
+                if (minRank >= 0 && (myRank < 0 || myRank < minRank)) hidden.Add(f);
+            }
+            return hidden;
+        }
+
         // What the dashboard needs to draw an upgrade card for this plan
         public static Dictionary<string, object> OfferJson(SqlConnection c, StoreInfo s, PlanInfo offer)
         {
@@ -221,7 +243,8 @@ namespace RiwaqChat
         {
             var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify" }, { "tracking", "📦 تتبع الأوردرات في الشات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة ولوجو متجرك والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتأكيد طلباته" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" },
                 { "carts", "🛒 استرجاع السلة المتروكة على واتساب" }, { "waimages", "📷 المساعد يفهم الصور على واتساب" }, { "restock", "🔔 «بلّغني لما يرجع»" },
-                { "report", "📊 التقرير الأسبوعي على واتساب" }, { "handoff", "🙋 التحويل لصاحب المتجر" } };
+                { "report", "📊 التقرير الأسبوعي على واتساب" }, { "handoff", "🙋 التحويل لصاحب المتجر" },
+                { "messenger", "💬 المساعد على المسنجر" }, { "instagram", "📸 المساعد على الإنستجرام" } };
             return new Dictionary<string, object> {
                 { "features", PlanGate.Features.Select(f => new Dictionary<string, object> { { "key", f }, { "name", names[f] }, { "minPlan", PlanGate.MinPlanId(c, f) } }).ToList() },
                 { "plans", Billing.Plans(c, false).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } }).ToList() } };
