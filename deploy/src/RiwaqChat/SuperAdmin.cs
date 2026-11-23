@@ -1810,14 +1810,14 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             // a running plan that includes WhatsApp: the service comes and renews with that plan, there's nothing to buy on its own
             if (waOnly && Billing.WaInPlan(s))
             { Web.Error(res, 400, "wa_in_plan", "الواتساب جوه باقتك «" + s.PlanName + "» لحد يوم " + s.PlanEndsAt.Value.ToString("yyyy-MM-dd") + "، وبيتجدد مع الباقة من غير اشتراك زيادة."); return; }
-            // a plan that includes WhatsApp (new, renewed, or later): no separate service. The number the owner will link comes with it
-            // (so the admin can get one ready), unless the store's WhatsApp already runs.
+            // a plan that includes WhatsApp (new, renewed, or later): no separate service and nothing to ask for. Approving the plan
+            // turns WhatsApp on (Billing.WaInPlan) and the owner links the number from «واتساب» (the user, 2026-11-23). The number
+            // they'll link is optional, so the admin can see it.
             if (!waOnly && !topup && p.IncludesWa)
             {
                 wantWa = false;
                 var ph = Web.Str(b, "waPhone", 40);
                 if (!string.IsNullOrWhiteSpace(ph)) { waPhone = WaChat.Phone(ph); if (waPhone == null) { Web.Error(res, 400, "bad_wa_phone", "رقم الواتساب ده مش مظبوط، اكتبه كده مثلًا 01001234567."); return; } }
-                else if (!WaAccount.HasService(s)) { Web.Error(res, 400, "bad_wa_phone", "اكتب رقم الواتساب اللي هتربطه بالمساعد، مثلًا 01001234567."); return; }
             }
             // renewing the plan never renews the service: while it runs, it's renewed alone (kind "wa") on its own date
             if (wantWa && !waOnly && WaAccount.HasService(s) && s.WaUntil.HasValue)

@@ -46,6 +46,10 @@ namespace RiwaqChat
                 { "plan", Billing.StorePlan(s) }, { "whatsapp", Billing.WaNumber(Billing.WhatsApp(c)) },
                 // the WhatsApp service (its own monthly subscription): on / until / price / this month's numbers, for the banners, «داتا المتجر» and «باقتي»
                 { "waService", WaAccount.ServiceJson(c, s) },
+                // a request waiting for a plan that includes WhatsApp: it comes with that plan, so nothing sells the add-on meanwhile
+                { "waComing", WaComing(c, s.Id) },
+                // the plan that includes WhatsApp (cheapest active), for the line under the add-on card: no paying for it twice
+                { "waPlan", WaPlan(c) },
                 // a request waiting for the admin ("plan", "upgrade", "topup", "wa", or ""), so the banners don't ask for one again
                 { "pendingRequest", PendingKind(c, s.Id) },
                 // the admin's latest answer to a request (last 14 days), so every page can say it was approved or rejected, and why
@@ -61,6 +65,19 @@ namespace RiwaqChat
         {
             using (var cmd = Db.Cmd(c, "SELECT TOP 1 Kind FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending' ORDER BY Id DESC", "@s", storeId))
                 return cmd.ExecuteScalar() as string ?? "";
+        }
+
+        static string WaComing(SqlConnection c, int storeId)
+        {
+            using (var cmd = Db.Cmd(c, @"SELECT TOP 1 p.Name FROM dbo.PlanRequests r JOIN dbo.Plans p ON p.Id = r.PlanId
+                WHERE r.StoreId=@s AND r.Status='pending' AND r.Kind IN ('plan','upgrade') AND p.IncludesWa = 1 ORDER BY r.Id DESC", "@s", storeId))
+                return cmd.ExecuteScalar() as string ?? "";
+        }
+
+        static Dictionary<string, object> WaPlan(SqlConnection c)
+        {
+            var p = Billing.Plans(c, false).FirstOrDefault(x => x.IncludesWa);
+            return p == null ? null : new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } };
         }
 
         static Dictionary<string, object> LastReply(SqlConnection c, int storeId)

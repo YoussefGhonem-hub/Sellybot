@@ -2639,7 +2639,7 @@
       <!-- the WhatsApp service, offered with every plan (alone too, on a running plan) -->
       <div class="wa-add" id="waAdd" hidden>
         <label class="wa-add-top" for="waAddOn"><input type="checkbox" id="waAddOn"><span class="wa-add-ic" aria-hidden="true">📱</span>
-          <span class="grow"><b>ضيف خدمة الواتساب</b><small>المساعد يرد على زباينك على رقم واتساب متجرك 24 ساعة، ويأكد الطلبات ويبعت رسالة يوم التوصيل.</small></span>
+          <span class="grow"><b id="waAddTitle">ضيف خدمة الواتساب</b><small>المساعد يرد على زباينك على رقم واتساب متجرك 24 ساعة، ويأكد الطلبات ويبعت رسالة يوم التوصيل.</small></span>
           <span class="wa-add-pr"><b id="waAddPrice">+300</b><small>ج.م في الشهر</small></span></label>
         <div class="wa-add-body" id="waAddBody" hidden>
           <ul>
@@ -2647,7 +2647,7 @@
             <li><span>💬</span><span>ردود المساعد بتتحسب من رصيد باقتك، زي الشات على موقعك بالظبط</span></li>
             <li><span>📅</span><span id="waAddWhen">بتشتغل من يوم ما الإدارة توافق، لمدة شهر</span></li>
           </ul>
-          <label for="waAddPhone">رقم الواتساب اللي هتربطه بالمساعد</label>
+          <label for="waAddPhone" id="waAddPhoneLbl">رقم الواتساب اللي هتربطه بالمساعد</label>
           <div class="wa-phone" id="waPhoneBox">
             <span class="wa-ph-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></span>
             <input type="tel" id="waAddPhone" inputmode="tel" maxlength="20" placeholder="01001234567" autocomplete="tel" spellcheck="false" aria-describedby="waPhoneHint">
@@ -3147,7 +3147,7 @@
     chip("look", "", "🎨 غيّر الشكل واللون");
     chip("install", origins ? "ok" : "", origins ? "✓ شغال على " + fmt(origins) + " دومين" : "⏳ ضيف الكود لموقعك");
     var waSv = me.waService || {};   // WhatsApp is a service added to the plan
-    chip("wa", wa && waSv.on ? "ok" : "", wa && waSv.on ? "✓ مربوط" : wa ? "⏳ الخدمة خلصت، جدّدها" : waSv.on ? "اربطه" : "📱 ضيفه لباقتك");
+    chip("wa", wa && waSv.on ? "ok" : "", wa && waSv.on ? "✓ مربوط" : wa ? "⏳ الخدمة خلصت، جدّدها" : waSv.on ? "اربطه" : me.waComing ? "⏳ جاي مع «" + me.waComing + "»" : "📱 ضيفه لباقتك");
     chip("settings", "", me.botName ? "🤖 " + me.botName : "سمّيه");
     chip("plan", pl.name && !pl.expired ? "ok" : "", pl.name ? (pl.expired ? "⛔ جدّدها" : "✓ " + pl.name) : "تجربة مجانية");
     var next = !hasData ? "data" : !origins ? "install" : null;
@@ -3312,9 +3312,9 @@
       }
       if (p.expired) act("plans", "🔀", "غيّر لباقة تانية", "شوف كل الباقات واختار اللي على أد استهلاكك.");
     }
-    if (sv.price && !sv.always && !sv.inPlan) act("wa", "📱", sv.on ? "جدّد خدمة الواتساب" : sv.until ? "رجّع خدمة الواتساب" : "فعّل خدمة الواتساب",
+    if (sv.price && !sv.always && !sv.inPlan && !sv.coming) act("wa", "📱", sv.on ? "جدّد خدمة الواتساب" : sv.until ? "رجّع خدمة الواتساب" : "فعّل خدمة الواتساب",
       (sv.on ? "شغالة لحد يوم " + dateAr(sv.until) + "، والشهر الجديد بيتضاف بعدها. " : sv.until ? "خلصت يوم " + dateAr(sv.until) + "، فالمساعد مش بيرد على الواتساب. " : "المساعد يرد على زباينك على رقم واتساب متجرك. ") +
-      "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م." + (tu.trial && !tu.trialEnded && !sv.until ? " مش ضمن التجربة المجانية." : ""), !sv.on && !!sv.until);
+      "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م." + (tu.trial && !tu.trialEnded && !sv.until ? " مش ضمن التجربة المجانية." : "") + (sv.on || sv.until ? "" : waPlanHint().replace(" 💡", "")), !sv.on && !!sv.until);
     el.innerHTML = A.map(function (a, i) {
       return '<button type="button" class="pa' + (a.main ? " main" : "") + (pend ? " wait" : "") + '" data-act="' + a.k + '" style="animation-delay:' + (i * 0.06) + 's">' +
         '<span class="pa-ic" aria-hidden="true">' + a.ic + '</span><span class="pa-t"><b>' + a.t + '</b><small>' + a.s + '</small>' +
@@ -3629,12 +3629,18 @@
   // ---------------- the WhatsApp service: its own monthly subscription, at any time ----------------
   // Asked for alone (kind "wa": «باقتي», the WhatsApp tab, the banner, «داتا المتجر»), or ticked in a plan request while it isn't running.
   // It renews on its own date, never with the plan. The admin sees the request with the number to link.
-  function waSvc() { return me.waService || {}; }
+  // coming = a request waiting for a plan that includes WhatsApp («الاقتصادية»): WhatsApp comes with its approval, nothing to ask for
+  function waSvc() { var s = me.waService || {}; s.coming = !s.on && !s.always && me.waComing ? me.waComing : ""; return s; }
+  // under the add-on's offer, for a store with no running plan: the plan with WhatsApp inside, so nobody pays for it twice
+  function waPlanHint() {
+    var pl = me && me.plan || {}, wp = me && me.waPlan;
+    return wp && !(pl.name && !pl.expired) ? " 💡 ولو هتشترك في باقة «" + esc(wp.name) + "» (" + fmt(wp.price) + " ج.م)، الواتساب جواها ومش محتاج تفعّله لوحده." : "";
+  }
   // in «باقتي» it's a date in «مواعيدك» and a tile in «عايز تعمل إيه؟» (mpDatesHtml / renderActs)
   // a line above the plans: WhatsApp isn't part of a plan
   function renderWaStrip() {
     var sv = waSvc(), el = $("waStrip"); if (!el) return;
-    el.hidden = !sv.price || sv.always || sv.on || sv.inPlan; if (el.hidden) return;
+    el.hidden = !sv.price || sv.always || sv.on || sv.inPlan || !!sv.coming; if (el.hidden) return;
     el.innerHTML = '<span aria-hidden="true">📱</span><span class="grow"><b>خدمة الواتساب</b> اشتراك شهري لوحده بـ ' + fmt(sv.price) +
       ' ج.م: المساعد يرد على زباينك على رقم واتساب متجرك. تفعّلها في أي وقت، مع باقة أو من غيرها.</span>' +
       (sv.pending ? '' : '<button type="button" class="btn sm" id="waStripGo">📱 فعّلها</button>');
@@ -3665,10 +3671,10 @@
     var left = sv.always ? 100 : on ? Math.min(100, Math.round((sv.daysLeft || 0) * 100 / (sv.days || 30))) : 0;
     $("waStatBar").querySelector("i").style.width = left + "%"; $("waStatBar").classList.toggle("hot", ended);
     $("waStatHint").className = "hint" + (ended ? " warn" : "");
-    $("waStatHint").textContent = sv.inPlan ? "📱 جوه باقتك «" + sv.planName + "» وبيتجدد معاها، وردود المساعد من رصيد باقتك" : on ? "♾️ رسايل غير محدودة، وردود المساعد من رصيد باقتك" : ended ? "⚠️ المساعد مش بيرد على الواتساب لحد ما تجدّدها" : "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م، المساعد يرد على واتساب متجرك";
+    $("waStatHint").textContent = sv.coming ? "📱 جاي مع باقة «" + sv.coming + "»: بيتفعّل لوحده أول ما الإدارة توافق على طلبك" : sv.inPlan ? "📱 جوه باقتك «" + sv.planName + "» وبيتجدد معاها، وردود المساعد من رصيد باقتك" : on ? "♾️ رسايل غير محدودة، وردود المساعد من رصيد باقتك" : ended ? "⚠️ المساعد مش بيرد على الواتساب لحد ما تجدّدها" : "اشتراك شهري لوحده بـ " + fmt(sv.price) + " ج.م، المساعد يرد على واتساب متجرك";
     var ends = $("waStatEnds");
     ends.textContent = sv.always ? "📅 شغالة دايمًا" : on ? "📅 لحد يوم " + dateAr(sv.until) + " (فاضل " + fmt(sv.daysLeft) + " يوم)" : ended ? "📅 خلصت يوم " + dateAr(sv.until) : "";
-    if (!sv.always && !sv.inPlan && !sv.pending && (!on || sv.daysLeft <= (sv.warnDays || 2))) {
+    if (!sv.always && !sv.inPlan && !sv.pending && !sv.coming && (!on || sv.daysLeft <= (sv.warnDays || 2))) {
       var b = document.createElement("button"); b.type = "button"; b.className = "btn sm st-act"; b.style.display = "block";
       b.textContent = on || ended ? "🔁 جدّد باقة الواتساب" : "📱 فعّل خدمة الواتساب"; b.onclick = addWaService; ends.appendChild(b);
     } else if (sv.pending) { var p = document.createElement("div"); p.textContent = "⏳ طلبك بيتراجع"; ends.appendChild(p); }
@@ -3693,11 +3699,15 @@
   function waInPlanReq() { return !!(rq.plan && rq.plan.includesWa && (rq.kind === "plan" || rq.kind === "upgrade")); }
   function waAddSetup() {
     var sv = waSvc();
-    if (waInPlanReq()) {
+    var inPlan = waInPlanReq();   // the plan picked has WhatsApp inside: nothing to add, the number is only so we know it
+    $("waAddTitle").textContent = inPlan ? "📱 الواتساب جوه الباقة" : "ضيف خدمة الواتساب";
+    $("waAddOn").style.display = inPlan ? "none" : "";
+    $("waAddPhoneLbl").textContent = inPlan ? "رقم الواتساب اللي هتربطه بالمساعد (اختياري)" : "رقم الواتساب اللي هتربطه بالمساعد";
+    if (inPlan) {
       $("waAdd").hidden = false; $("waRunNote").hidden = true;
       $("waAddOn").checked = true; $("waAddOn").disabled = true;
       $("waAddPrice").textContent = "جوه الباقة";
-      $("waAddWhen").textContent = "بيشتغل مع الباقة ويتجدد معاها، من غير اشتراك زيادة";
+      $("waAddWhen").textContent = "بيتفعّل لوحده أول ما الإدارة توافق على الباقة، ويتجدد معاها، من غير اشتراك ولا طلب زيادة";
       if (!$("waAddPhone").value) {
         var lastP = (mine.requests || []).filter(function (r) { return r.waPhone; })[0];
         $("waAddPhone").value = sv.number || (lastP ? lastP.waPhone : "");
@@ -3912,7 +3922,8 @@
   }
   $("reqForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("rqMsg", "");
-    if (waAddOn() && !(waInPlanReq() && waSvc().on) && ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length < 8) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waPhoneBox").classList.add("bad"); $("waAddPhone").focus(); return; }
+    var phN = ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length;   // in a plan with WhatsApp inside the number is optional
+    if (waAddOn() && (waInPlanReq() ? phN > 0 && phN < 8 : phN < 8)) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waPhoneBox").classList.add("bad"); $("waAddPhone").focus(); return; }
     var nothingToPay = rq.kind === "upgrade" && rq.change && rq.change.amount <= 0 && (!waAddOn() || waInPlanReq());   // a plan at the same price, no WhatsApp service
     if (!nothingToPay && !$("rqMethod").value) { setMsg("rqMsg", "اختار دفعت بإيه."); return; }
     var refNo = normRef($("rqRefNo").value);
@@ -5155,6 +5166,7 @@
              : up.renew ? "باقة " + esc(up.name) + " فيها " + F.what + "، والمدة الجديدة بتكمّل من آخر يوم في اشتراكك."
              : up.current ? "باقتك دلوقتي: " + esc(up.current) + " ← الترقية بتفتح " + F.what + " على طول، من غير عقود."
              : "من غير عقود، وتقدر توقف وقت ما تحب.";
+    if (A && !AE) note += waPlanHint();
     var screen = F.site
       ? '<div class="lk-site"><div class="bar w60"></div><div class="bar w40"></div><div class="grid"><div class="pc"></div><div class="pc"></div><div class="pc"></div><div class="pc"></div></div>' +
         '<div class="lk-hello">أهلاً 👋 محتاج مساعدة؟</div><div class="lk-bub">🐻</div></div>'
@@ -5264,7 +5276,9 @@
     $("waOff").hidden = on; $("waOn").hidden = !on;
     if (!on) {
       var blocked = wa.platformAvailable ? wa.platformBlocked : "ربط الواتساب هيتفعّل قريب.";
-      var up = wa.platformAvailable && wa.upsell;   // the WhatsApp service is what's in the way: sell it instead of a plain notice
+      var coming = waSvc().coming;   // a plan with WhatsApp inside is waiting for approval: nothing to buy, it comes with the plan
+      if (coming) blocked = "الواتساب جاي مع باقة «" + coming + "»، ومش محتاج تطلبه لوحده. أول ما الإدارة توافق على طلبك، هتلاقي هنا زرار «📱 اربط واتساب المتجر» على طول.";
+      var up = !coming && wa.platformAvailable && wa.upsell;   // the WhatsApp service is what's in the way: sell it instead of a plain notice
       $("waUp").hidden = !up; $("waWhy").hidden = $("waStepsT").hidden = $("waSteps").hidden = !!up;
       if (up) { renderUpsell(up); blocked = ""; } else stopUpsell();
       $("waPlatBlocked").hidden = !blocked; $("waPlatBlocked").textContent = blocked ? "ℹ️ " + blocked : "";

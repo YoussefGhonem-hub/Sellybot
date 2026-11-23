@@ -1251,7 +1251,7 @@
     else if (r.wa) what += ' و<b>خدمة الواتساب</b> (' + money(r.waAmount) + ') هتشتغل من النهارده لمدة ' + monthsAr(Math.max(1, r.months)) + '.';
     if (r.wa) what += ' رقم الواتساب اللي هيربطه: <span class="ltr" dir="ltr">+' + esc(r.waPhone) + '</span>. لو مفيش رقم فاضي في «الواتساب»، اعمل رقم جديد على Wapilot عشان يلاقي الـ QR في لوحته.';
     else if (r.waInPlan && r.kind !== "topup") what += ' <b>الواتساب جوه الباقة دي</b>، فبيشتغل معاها من غير طلب لوحده' +
-      (r.waPhone ? '. رقم الواتساب اللي هيربطه: <span class="ltr" dir="ltr">+' + esc(r.waPhone) + '</span>. لو مفيش رقم فاضي في «الواتساب»، اعمل رقم جديد على Wapilot عشان يلاقي الـ QR في لوحته.' : '، ورقمه شغال عنده بالفعل.');
+      (r.waPhone ? '. رقم الواتساب اللي هيربطه: <span class="ltr" dir="ltr">+' + esc(r.waPhone) + '</span>. لو مفيش رقم فاضي في «الواتساب»، اعمل رقم جديد على Wapilot عشان يلاقي الـ QR في لوحته.' : '. لو متجره مش مربوط بواتساب ومفيش رقم فاضي في «الواتساب»، اعمل رقم جديد على Wapilot عشان يلاقي الـ QR في لوحته.');
     var m = modal('<h3>' + (r.kind === "wa" ? 'تفعيل خدمة الواتساب لـ ' : topup ? 'رصيد إضافي لـ ' : up ? 'ترقية ' + esc(r.store) + ' لباقة ' + esc(r.plan) : 'تفعيل باقة ' + esc(r.plan) + ' لـ ') + (up ? '' : esc(r.store)) + '</h3>' +
       (r.refNo ? '<div class="calc" style="margin:0 0 10px"><div class="r"><span>🔖 الرقم المرجعي</span><b class="ltr" style="font-size:18px">' + esc(r.refNo) + '</b></div>' +
         '<div class="r"><span>حوّل من</span><b class="ltr">' + esc(r.ref) + '</b></div></div>' : '') +
