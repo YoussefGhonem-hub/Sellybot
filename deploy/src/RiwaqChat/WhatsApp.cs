@@ -47,7 +47,13 @@ namespace RiwaqChat
 
         public class Instance { public string Id, Name, Status, Number; public bool IsApi; }
 
-        static async Task<JsonElement> Call(HttpMethod method, string path, string token, object body = null, string idem = null)
+        static Task<JsonElement> Call(HttpMethod method, string path, string token, object body = null, string idem = null)
+        {
+            return Call(method, path, token, body == null ? null : (Func<HttpContent>)(() => new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")), idem);
+        }
+
+        // content: made fresh for each attempt (a request's content can't be sent twice), null for none
+        static async Task<JsonElement> Call(HttpMethod method, string path, string token, Func<HttpContent> content, string idem)
         {
             var req = new HttpRequestMessage(method, Base + path);
             // Wapilot reads either header (Authorization wins). Both go out, so a host that strips the non-standard "token" header still authenticates.
@@ -55,7 +61,7 @@ namespace RiwaqChat
             req.Headers.TryAddWithoutValidation("token", token);
             req.Headers.TryAddWithoutValidation("Accept", "application/json");
             if (idem != null) req.Headers.TryAddWithoutValidation("Idempotency-Key", idem);
-            if (body != null) req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+            if (content != null) req.Content = content();
             HttpResponseMessage resp;
             try { resp = await Http.SendAsync(req); }
             catch (Exception ex) { Log.Error(ex); throw new WaException("مقدرناش نوصل لخدمة الواتساب دلوقتي. جرّب تاني كمان شوية."); }
@@ -153,18 +159,65 @@ namespace RiwaqChat
         // Which send route works for an instance (QR "/{id}/send-message" or Official "/official/{id}/send-message"), learned on first use.
         static readonly ConcurrentDictionary<string, bool> Official = new ConcurrentDictionary<string, bool>();
 
-        public static async Task Send(string token, string instance, string chatId, string text, string idem)
+        // Returns Wapilot's message_id (null when it gives none). The message is only queued at Wapilot: MessageStatus tells if it went out.
+        public static Task<string> Send(string token, string instance, string chatId, string text, string idem)
+        {
+            var body = new Dictionary<string, object> { { "chat_id", chatId }, { "text", text } };
+            return Queue(token, instance, "send-message", () => new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"), idem);
+        }
+
+        // A picture (jpg / png / webp; Wapilot takes up to 10 MB) with an optional caption (Official numbers: up to 1024 characters)
+        public static Task<string> SendImage(string token, string instance, string chatId, byte[] image, string contentType, string caption, string idem)
+        {
+            string ext = contentType == "image/png" ? "png" : contentType == "image/webp" ? "webp" : "jpg";
+            return Queue(token, instance, "send-image", () =>
+            {
+                var form = new MultipartFormDataContent();
+                form.Add(new StringContent(chatId, Encoding.UTF8), "chat_id");
+                var pic = new ByteArrayContent(image);
+                pic.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+                form.Add(pic, "media", "offer." + ext);
+                if (!string.IsNullOrEmpty(caption)) form.Add(new StringContent(caption, Encoding.UTF8), "caption");
+                return form;
+            }, idem);
+        }
+
+        // QR numbers: /{id}/<what>; Official ones: /official/{id}/<what>. The QR route is tried first and the one that worked is remembered.
+        static async Task<string> Queue(string token, string instance, string what, Func<HttpContent> content, string idem)
         {
             string id = Uri.EscapeDataString(instance);
-            var body = new Dictionary<string, object> { { "chat_id", chatId }, { "text", text } };
             bool official;
-            if (Official.TryGetValue(instance, out official) && official) { await Call(HttpMethod.Post, "official/" + id + "/send-message", token, body, idem); return; }
-            try { await Call(HttpMethod.Post, id + "/send-message", token, body, idem); Official[instance] = false; }
+            if (Official.TryGetValue(instance, out official) && official) return WaJson.S(await Call(HttpMethod.Post, "official/" + id + "/" + what, token, content, idem), "message_id");
+            try
+            {
+                var r = await Call(HttpMethod.Post, id + "/" + what, token, content, idem);
+                Official[instance] = false;
+                return WaJson.S(r, "message_id");
+            }
             catch (WaException ex) when (ex.Status == 404 || ex.Code == "MESSAGE_TYPE_UNSUPPORTED" || (ex.Code ?? "").Contains("OFFICIAL"))
             {
-                await Call(HttpMethod.Post, "official/" + id + "/send-message", token, body, idem);
+                var r = await Call(HttpMethod.Post, "official/" + id + "/" + what, token, content, idem);
                 Official[instance] = true;
+                return WaJson.S(r, "message_id");
             }
+        }
+
+        // What happened to a queued message: "pending" (still in Wapilot's queue), "delivered" (it went out) or "failed" (Error = why),
+        // or null when Wapilot doesn't know it. Wapilot's finished messages are "delivered", or carry an error_code / error_type.
+        public class Sent { public string Status, Error; }
+        public static async Task<Sent> MessageStatus(string token, string instance, string messageId)
+        {
+            bool official;
+            string path = (Official.TryGetValue(instance, out official) && official ? "official/" : "") + Uri.EscapeDataString(instance) + "/messages/" + Uri.EscapeDataString(messageId);
+            JsonElement r;
+            try { r = await Call(HttpMethod.Get, path, token); }
+            catch (WaException ex) when (ex.Status == 404) { return null; }
+            var d = WaJson.O(r, "data") ?? r;
+            string status = (WaJson.S(d, "status") ?? "").ToLowerInvariant(), err = WaJson.S(d, "error_code", "error_type");
+            if (!string.IsNullOrEmpty(err) || status.Contains("fail") || status.Contains("error") || status.Contains("reject") || status == "cancelled")
+                return new Sent { Status = "failed", Error = err ?? status };
+            if (status == "" || status == "pending" || status == "queued" || status == "processing" || status == "sending" || status == "scheduled") return new Sent { Status = "pending" };
+            return new Sent { Status = "delivered" };
         }
 
         // Reply buttons exist only on Official (Meta) numbers. True when sent, false when the number is a QR one (send text instead).
@@ -545,6 +598,7 @@ END", "@s", s.Id, "@sub", AskSubject, "@b", "(رسالة تلقائية) عاي�
 
             long? row = Save(c, s.Id, key, true, text.Length > 0 ? text : WaImages.Placeholder, m.Id, image ? m.MediaUrl : null);
             if (row == null) return true;                                                // duplicate delivery
+            Offers.Seen(c, s.Id, key);                                                   // «ابعت عرض»: everyone who wrote to the store's number
             if (OrderConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;   // "1"/"2" answering an order confirmation (works with the bot off too)
             if (EoConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;      // the same for EasyOrders orders
             if (WaOptOut.Intercept(c, s, key, m.Chat, text)) return true;                  // «وقف» after an abandoned-cart / back-in-stock message
