@@ -198,14 +198,37 @@
   @media (max-width:1000px){.mt-site{grid-template-columns:1fr}}
   .mt-agent-f{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:6px}
   .mt-agent-f>div{flex:1;min-width:200px}.mt-agent-f>div.wide{flex:2;min-width:240px}
-  .mt-asks{display:grid;gap:10px;margin-top:12px}
-  .mt-asks .ask{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
-  .mt-asks .ask-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .mt-asks .ask-links{overflow-wrap:anywhere;font-size:13.5px}
-  .mt-asks .ask-ch{display:grid;gap:8px}
-  .mt-asks .ch{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;background:var(--soft);min-width:0}
-  .mt-asks .ch .row{flex-wrap:wrap;gap:6px}
-  .mt-asks a.btn{text-decoration:none;align-self:flex-start}
+  /* «ضيفنا على صفحتك»: the asks as a table (one row per store, a column per channel) */
+  .ask-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 10px}
+  .ask-bar h4{margin:0;font-size:15px}
+  .ask-bar .seg b{font-weight:700;margin-inline-start:4px;color:var(--brand)}
+  .ask-wrap{box-shadow:none}
+  .ask-tbl td{vertical-align:top}
+  .ask-tbl tr:last-child td{border-bottom:0}
+  .ask-tbl tbody tr{transition:background .15s}
+  .ask-tbl tbody tr:hover{background:color-mix(in srgb,var(--soft) 60%,transparent)}
+  .ask-tbl td:first-child{box-shadow:inset -3px 0 0 var(--ask-c,transparent)}
+  .ask-tbl tr.ask-pending{--ask-c:#f0b04a}.ask-tbl tr.ask-problem{--ask-c:#9a8b7d}.ask-tbl tr.ask-done{--ask-c:#2e9d5b}
+  .ask-store b{display:block;font-size:14.5px;white-space:nowrap}
+  .ask-store .hint{margin-top:2px}
+  .ask-page{display:inline-block;max-width:170px;padding:4px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--line);
+    color:var(--ink);text-decoration:none;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+  .ask-page:hover{border-color:var(--brand);color:var(--brand)}
+  .ask-ig{display:block;font-size:12.5px;margin-bottom:6px}
+  .ask-ch{min-width:130px}
+  .ask-ch a.btn{text-decoration:none}
+  .ask-linked{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+  .ask-linked span[dir]{font-weight:600;font-size:13.5px}
+  .ask-picks{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin-top:4px}
+  .ask-picks .btn{justify-content:flex-start}
+  .ask-none{color:var(--muted);font-size:13px}
+  .ask-note{margin-top:6px;font-size:12.5px;color:var(--muted);max-width:260px;line-height:1.6}
+  .ask-at{white-space:nowrap;color:var(--muted);font-size:13px}
+  .ask-act{white-space:nowrap;width:1%}
+  .ask-act .btn{display:flex;width:100%;justify-content:center}
+  .ask-act .btn + .btn{margin-top:6px}
+  .ask-tbl{min-width:900px}
+  .ask-empty{text-align:center;padding:26px 14px !important;color:var(--muted)}
   @media (max-width:1000px){.grid2,.grid2b{grid-template-columns:1fr}}
 
   /* chart */
@@ -668,9 +691,16 @@
           <div class="hint" id="mtAgentHint" style="margin-top:8px"></div>
           <div class="hint">⚠️ لازم يكون حساب شخصي (بروفايل) مش صفحة: فيسبوك مابيسمحش تتضاف صفحة على صفحة. واسمه يكون سهل التاجر يلاقيه في البحث.</div>
           <div class="hint">⚠️ الحساب ده لازم يكون أدمن على تطبيق Sellybot في developers.facebook.com. ولما فيسبوك يسألك على الصفحات، سيب كل الصفحات المتعلّمة زي ما هي وعلّم على صفحة التاجر الجديدة كمان: لو شلت العلامة من صفحة، المساعد يقف عليها.</div>
-          <div class="mt-asks" id="mtAsks"></div>
+          <div class="ask-bar"><h4>الطلبات</h4><span class="space"></span>
+            <div class="seg" id="mtAskFilter"><button type="button" data-f="pending">مستنية الربط<b></b></button><button type="button" data-f="problem">مستنية التاجر<b></b></button><button type="button" data-f="done">اتربطت<b></b></button><button type="button" data-f="all">الكل<b></b></button></div>
+          </div>
+          <div class="tbl-wrap ask-wrap"><table class="ask-tbl">
+            <thead><tr><th>المتجر</th><th>صفحته</th><th>💬 المسنجر</th><th>📸 الإنستجرام</th><th>الحالة</th><th>وصل</th><th></th></tr></thead>
+            <tbody id="mtAsks"></tbody>
+          </table></div>
         </div>
-        <div class="grid2b">
+        <!-- Sellybot's Meta app (its numbers, and the links to copy into it): hidden once it's set up (MT_APP_FORM in the script) -->
+        <div class="grid2b" id="mtAppCards">
           <form class="card anim" id="mtForm" autocomplete="off">
             <h3>تطبيق Meta بتاع Sellybot</h3>
             <p class="sub">التطبيق ده لصفحة Sellybot نفسها ومتاجر الإدارة ومتاجر التجربة. باقي التجار كل واحد بيعمل تطبيقه بنفس الخطوات، وبيلاقي لينكاته وخاناته في لوحته ← «مسنجر وإنستجرام» ← «تطبيق Meta بتاعك».</p>
@@ -931,7 +961,11 @@
     if (!r.ok) throw new Error((data && data.message) || "حصلت مشكلة، جرّب تاني.");
     return data;
   }
+  // The old way is hidden since 2026-11-23 (the user: hide it, don't delete it): «تطبيق Meta بتاع Sellybot» and «انسخ دول في تطبيق
+  // Meta» show only while the app's App ID or Secret is missing (the «ضيفنا على صفحتك» links go through that app). true = always shown.
+  var MT_APP_FORM = false;
   function renderMeta(d) {
+    $("mtAppCards").hidden = !MT_APP_FORM && !!(d.appId && d.hasSecret);
     $("mtApp").value = d.appId || ""; $("mtSecret").value = ""; $("mtIg").value = d.igConfig || ""; $("mtFb").value = d.fbConfig || "";
     $("mtTesters").value = (d.testers || "").split(",").filter(Boolean).join(", ");
     $("mtSecretState").textContent = d.hasSecret ? "✅ الـ Secret محفوظ (متشفّر)." : "لسه مفيش Secret.";
@@ -953,34 +987,62 @@
     $("mtAgentHint").textContent = !d.agentName ? "لحد ما تكتب اسم الحساب، «ضيفنا على صفحتك» مش بيظهر للتجار."
       : !d.easyOpen ? "كمّل إعدادات تطبيق Meta تحت (App ID و Secret) عشان الطريقة تظهر للتجار." : "✅ التجار شايفين «ضيفنا على صفحتك» في لوحتهم.";
     mtBadge(d.asksWaiting);
-    var asks = d.asks || [];
-    $("mtAsks").innerHTML = asks.length ? asks.map(askHtml).join("") : '<div class="hint">مفيش طلبات دلوقتي.</div>';
+    mtAsksAll = d.asks || [];
+    // first look: the ones waiting for us, or everything when none is
+    if (mtAskF === null) mtAskF = mtAsksAll.some(function (a) { return a.status === "pending"; }) ? "pending" : "all";
+    drawAsks();
   }
+  // the asks as a table: waiting ones first (oldest on top, it's a queue), then the owner's turn, then the linked ones (newest first)
+  var mtAsksAll = [], mtAskF = null;
+  var ASK_ORDER = { pending: 0, problem: 1, done: 2 };
+  function drawAsks() {
+    var n = { pending: 0, problem: 0, done: 0, all: mtAsksAll.length };
+    mtAsksAll.forEach(function (a) { if (n[a.status] !== undefined) n[a.status]++; });
+    document.querySelectorAll("#mtAskFilter button").forEach(function (b) {
+      var f = b.dataset.f; b.classList.toggle("on", f === mtAskF); b.querySelector("b").textContent = n[f] ? fmt(n[f]) : "";
+    });
+    var rows = mtAsksAll.filter(function (a) { return mtAskF === "all" || a.status === mtAskF; }).sort(function (x, y) {
+      var o = (ASK_ORDER[x.status] || 0) - (ASK_ORDER[y.status] || 0); if (o) return o;
+      var tx = new Date(x.updatedAt).getTime(), ty = new Date(y.updatedAt).getTime();
+      return x.status === "done" ? ty - tx : tx - ty;
+    });
+    var EMPTY = { pending: "مفيش طلبات مستنية الربط 🎉", problem: "مفيش طلبات مستنية التاجر.", done: "مفيش صفحات اتربطت آخر 7 أيام.", all: "لسه محدش طلب الربط." };
+    $("mtAsks").innerHTML = rows.length ? rows.map(askHtml).join("") : '<tr><td colspan="7" class="ask-empty">' + EMPTY[mtAskF] + "</td></tr>";
+  }
+  $("mtAskFilter").onclick = function (e) { var b = e.target.closest("button[data-f]"); if (!b) return; mtAskF = b.dataset.f; drawAsks(); };
+  // facebook.com/my.store or facebook.com/profile.php?id=…: short enough for the cell (the full link is on hover and on click)
+  function askShort(u) { return String(u || "").replace(/^https?:\/\/(www\.|m\.)?/i, "").replace(/\/$/, ""); }
   function askHtml(a) {
-    var ST = { pending: '<span class="pill warn">مستني الربط</span>', problem: '<span class="pill">مستني التاجر يصلّح</span>', done: '<span class="pill ok">اتربط ✅</span>' };
-    var h = '<div class="ask" data-store="' + a.store + '"><div class="ask-head"><b>' + esc(a.storeName) + '</b><span class="hint ltr">' + esc(a.slug) + "</span>" + (ST[a.status] || "")
-      + '<span class="space"></span><span class="hint">' + esc(new Date(a.updatedAt).toLocaleString("ar-EG")) + "</span></div>";
-    h += '<div class="ask-links"><a class="ltr" target="_blank" rel="noopener noreferrer" href="' + esc(a.pageUrl) + '">' + esc(a.pageUrl) + "</a>"
-      + (a.igUser ? ' · <a class="ltr" target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/' + esc(a.igUser) + '/">@' + esc(a.igUser) + "</a>" : "") + "</div>";
-    if (a.note) h += '<div class="hint" dir="auto">📝 ' + esc(a.note) + "</div>";
-    h += '<div class="ask-ch">' + (a.igUser ? ["fb", "ig"] : ["fb"]).map(function (ch) { return askCh(a, ch); }).join("") + "</div>";
-    if (a.status !== "done") h += '<div class="row" style="gap:6px"><button class="btn ghost sm" type="button" data-ask="problem">فيه مشكلة…</button><button class="btn ghost sm" type="button" data-ask="done">تم</button></div>';
-    return h + "</div>";
+    var ST = { pending: '<span class="pill warn">⏳ مستني الربط</span>', problem: '<span class="pill">✍️ مستني التاجر يصلّح</span>', done: '<span class="pill ok">✅ اتربط</span>' };
+    var at = new Date(a.updatedAt);
+    return '<tr data-store="' + a.store + '" class="ask-' + esc(a.status) + '">'
+      + '<td class="ask-store"><b dir="auto">' + esc(a.storeName) + '</b><div class="hint ltr">' + esc(a.slug) + "</div></td>"
+      + '<td><a class="ask-page ltr" target="_blank" rel="noopener noreferrer" href="' + esc(a.pageUrl) + '" title="' + esc(a.pageUrl) + '">' + esc(askShort(a.pageUrl)) + " ↗</a></td>"
+      + askCh(a, "fb") + askCh(a, "ig")
+      + "<td>" + (ST[a.status] || esc(a.status)) + (a.note ? '<div class="ask-note" dir="auto">📝 ' + esc(a.note) + "</div>" : "") + "</td>"
+      + '<td class="ask-at" title="' + esc(at.toLocaleString("ar-EG")) + '">' + esc(ago(a.updatedAt)) + "</td>"
+      + '<td class="ask-act">' + (a.status !== "done" ? '<button class="btn ghost sm" type="button" data-ask="problem" title="ابعت للتاجر يصلّح حاجة">⚠️ فيه مشكلة</button><button class="btn ghost sm" type="button" data-ask="done" title="اقفل الطلب">✓ تم</button>' : "") + "</td>"
+      + "</tr>";
   }
+  // one channel's cell: linked / not in the plan / the Pages to pick from / «اربط» (a plain link: Facebook's login as our account)
   function askCh(a, ch) {
     var x = a[ch] || {}, l = x.link, go = "api/meta-connect.ashx?start=" + ch + "&for=" + a.store;
-    var h = '<div class="ch" data-ch="' + ch + '"><b>' + (ch === "fb" ? "💬 المسنجر" : "📸 الإنستجرام") + "</b>";
-    if (l) return h + '<div><span dir="auto">' + esc(l.name || l.id) + '</span> <span class="pill ok">مربوط ✅</span>' + (l.status ? ' <span class="pill warn">' + esc(l.status) + "</span>" : "") + "</div></div>";
-    if (!x.allowed) return h + '<div class="hint">باقة المتجر ده مافيهاش ' + (ch === "fb" ? "المسنجر" : "الإنستجرام") + ".</div></div>";
+    var h = '<td class="ask-ch" data-ch="' + ch + '">';
+    if (ch === "ig") {
+      if (!a.igUser) return h + '<span class="ask-none" title="التاجر ماطلبش الإنستجرام">—</span></td>';
+      h += '<a class="ask-ig ltr" target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/' + esc(a.igUser) + '/">@' + esc(a.igUser) + "</a>";
+    }
+    if (l) return h + '<div class="ask-linked"><span dir="auto">' + esc(l.name || l.id) + '</span><span class="pill ok">مربوط ✅</span>' + (l.status ? '<span class="pill warn">' + esc(l.status) + "</span>" : "") + "</div></td>";
+    if (!x.allowed) return h + '<span class="ask-none">باقته مافيهاش ' + (ch === "fb" ? "المسنجر" : "الإنستجرام") + "</span></td>";
     if (x.choices && x.choices.length) {
       var pageId = (a.pageUrl.match(/[?&]id=(\d+)/) || [])[1];   // a profile.php?id= link names the Page: mark it
-      h += '<div class="hint">اختار صفحة التاجر:</div><div class="row">' + x.choices.map(function (o) {
+      h += '<div class="hint">اختار صفحة التاجر:</div><div class="ask-picks">' + x.choices.map(function (o) {
         return '<button class="btn ' + (pageId && o.id === pageId ? "" : "ghost ") + 'sm" type="button" data-ask="pick" data-id="' + esc(o.id) + '"' + (o.taken ? " disabled" : "") + '><span dir="auto">'
           + esc(o.name) + "</span>" + (o.taken ? ' <span class="hint ltr">(' + esc(o.taken) + ")</span>" : "") + "</button>";
       }).join("") + "</div>";
-      return h + '<div class="hint">مش لاقيها؟ <a href="' + go + '">ادخل تاني</a> وعلّم عليها في شاشة فيسبوك.</div></div>';
+      return h + '<div class="hint" style="margin-top:6px">مش لاقيها؟ <a href="' + go + '">ادخل تاني</a></div></td>';
     }
-    return h + '<a class="btn sm" href="' + go + '">' + (ch === "fb" ? "اربط المسنجر" : "اربط الإنستجرام") + "</a></div>";
+    return h + '<a class="btn sm" href="' + go + '">' + (ch === "fb" ? "اربط المسنجر" : "اربط الإنستجرام") + "</a></td>";
   }
   $("mtAsks").onclick = async function (e) {
     var b = e.target.closest("[data-ask]"); if (!b) return;
