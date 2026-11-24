@@ -1001,6 +1001,50 @@ IF COL_LENGTH('dbo.Stores', 'OcFollow') IS NULL ALTER TABLE dbo.Stores ADD OcFol
 IF COL_LENGTH('dbo.OrderConfirms', 'RemindedAt') IS NULL ALTER TABLE dbo.OrderConfirms ADD RemindedAt DATETIME2 NULL, AlertedAt DATETIME2 NULL, AlertTo NVARCHAR(80) NULL;
 IF COL_LENGTH('dbo.EoConfirms', 'RemindedAt') IS NULL ALTER TABLE dbo.EoConfirms ADD RemindedAt DATETIME2 NULL, AlertedAt DATETIME2 NULL, AlertTo NVARCHAR(80) NULL;
 -- ---------- the morning summary on WhatsApp (WeeklyReport.cs): every day at 9, next to the weekly report ----------
-IF COL_LENGTH('dbo.Stores', 'ReportDaily') IS NULL ALTER TABLE dbo.Stores ADD ReportDaily BIT NOT NULL CONSTRAINT DF_Stores_ReportDaily DEFAULT 0, ReportDayAt DATETIME2 NULL;";
+IF COL_LENGTH('dbo.Stores', 'ReportDaily') IS NULL ALTER TABLE dbo.Stores ADD ReportDaily BIT NOT NULL CONSTRAINT DF_Stores_ReportDaily DEFAULT 0, ReportDayAt DATETIME2 NULL;
+-- ---------- «مجلس المستشارين» (Council.cs, 2026-11-24, the user): its own prepaid tokens, apart from the plan ----------
+-- CouncilWallets: what's left (Balance, never below 0, no expiry) and the free tokens it started with · CouncilLedger: every change
+-- (free / topup / session / gift) · CouncilSessions: an idea and the council's answer; Tokens = what Claude used, Charged = what the
+-- wallet paid (0 without a verdict), Units = Claude's cost the way Finance counts it · CouncilTopups: paid by transfer, approved by the
+-- super admin (-> Subscriptions, Kind 'council'). One payment backs one request, here and in PlanRequests (Billing.RefUsed).
+IF OBJECT_ID('dbo.CouncilWallets') IS NULL
+  CREATE TABLE dbo.CouncilWallets(
+    StoreId INT NOT NULL PRIMARY KEY REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Balance BIGINT NOT NULL DEFAULT 0, Free BIGINT NOT NULL DEFAULT 0,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+IF OBJECT_ID('dbo.CouncilLedger') IS NULL
+BEGIN
+  CREATE TABLE dbo.CouncilLedger(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Kind NVARCHAR(10) NOT NULL, Tokens BIGINT NOT NULL, RefId INT NULL, Note NVARCHAR(200) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_CouncilLedger_Store ON dbo.CouncilLedger(StoreId, Id);
+END
+IF OBJECT_ID('dbo.CouncilSessions') IS NULL
+BEGIN
+  CREATE TABLE dbo.CouncilSessions(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Idea NVARCHAR(3000) NOT NULL, UseData BIT NOT NULL DEFAULT 1,
+    Status NVARCHAR(10) NOT NULL DEFAULT 'running',     -- running / done / failed / no (not a decision)
+    Answer NVARCHAR(MAX) NULL,
+    InTok INT NOT NULL DEFAULT 0, CacheWrite INT NOT NULL DEFAULT 0, CacheRead INT NOT NULL DEFAULT 0, OutTok INT NOT NULL DEFAULT 0,
+    Tokens INT NOT NULL DEFAULT 0, Charged INT NOT NULL DEFAULT 0, Units BIGINT NOT NULL DEFAULT 0,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), DoneAt DATETIME2 NULL);
+  CREATE INDEX IX_CouncilSessions_Store ON dbo.CouncilSessions(StoreId, Id);
+END
+IF OBJECT_ID('dbo.CouncilTopups') IS NULL
+BEGIN
+  CREATE TABLE dbo.CouncilTopups(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    AmountEgp DECIMAL(12,2) NOT NULL, Tokens BIGINT NOT NULL, Per1k DECIMAL(12,4) NOT NULL,   -- the price per 1000 tokens the owner saw
+    PaymentMethod NVARCHAR(40) NULL, PaymentRef NVARCHAR(100) NULL, RefNo NVARCHAR(40) NOT NULL, Note NVARCHAR(500) NULL,
+    Status NVARCHAR(12) NOT NULL DEFAULT 'pending', AdminNote NVARCHAR(400) NULL, SubscriptionId INT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), DecidedAt DATETIME2 NULL);
+  CREATE INDEX IX_CouncilTopups_Store ON dbo.CouncilTopups(StoreId, Id);
+  EXEC sp_executesql N'CREATE UNIQUE INDEX UX_CouncilTopups_RefNo ON dbo.CouncilTopups(RefNo) WHERE Status IN (''pending'', ''approved'');';
+END";
     }
 }

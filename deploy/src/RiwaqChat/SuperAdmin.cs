@@ -748,7 +748,9 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
         // already backing a request that is waiting or was approved (UX_PlanRequests_RefNo enforces the same)
         public static bool RefUsed(SqlConnection c, string norm)
         {
-            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE RefNo = @r AND Status IN ('pending', 'approved')", "@r", norm)) return (int)cmd.ExecuteScalar() > 0;
+            // plan requests and the council's top-ups share it: one transfer pays for one thing
+            using (var cmd = Db.Cmd(c, @"SELECT (SELECT COUNT(*) FROM dbo.PlanRequests WHERE RefNo = @r AND Status IN ('pending', 'approved'))
+                                              + (SELECT COUNT(*) FROM dbo.CouncilTopups WHERE RefNo = @r AND Status IN ('pending', 'approved'))", "@r", norm)) return (int)cmd.ExecuteScalar() > 0;
         }
         public const string RefUsedMessage = "الرقم المرجعي ده اتسجل قبل كده في طلب تاني، وكل دفعة ليها رقم واحد بس. اتأكد إنك كاتبه صح، ولو متأكد منه كلّمنا.";
 
@@ -1702,6 +1704,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                             { "multi", WaLines.MultiPrice(c) } } },   // each number's month with more than one (WaLines.cs)
                         // «السعر القديم» while it's open: pay before the end of that day and the first months stay at today's price (null = off / over)
                         { "oldOffer", Billing.OldOfferJson(c) },
+                        { "council", Council.On(c) },   // «مجلس المستشارين» is open (about.html lists it then)
                     });
                 }
             }

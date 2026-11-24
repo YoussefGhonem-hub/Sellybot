@@ -467,6 +467,7 @@
       <button data-go="wa"><span class="ic">💬</span>الواتساب <span class="count" id="waCount" hidden>0</span></button>
       <button data-go="meta"><span class="ic">📨</span>مسنجر وإنستجرام <span class="count" id="mtCount" hidden>0</span></button>
       <button data-go="tg"><span class="ic">✈️</span>تيليجرام</button>
+      <button data-go="council"><span class="ic">🏛️</span>المجلس <span class="count" id="cnCount" hidden>0</span></button>
       <button data-go="settings"><span class="ic">⚙️</span>الإعدادات</button>
     </nav>
     <div class="side-foot">
@@ -557,7 +558,7 @@
           <div class="card anim">
             <h3>📅 آخر 6 شهور</h3>
             <p class="sub">الفلوس اللي دخلت كل شهر، وتكلفة Claude فيه.</p>
-            <div class="tbl-wrap"><table style="min-width:520px"><thead><tr><th>الشهر</th><th>باقات</th><th>رسايل إضافية</th><th>واتساب</th><th>تكلفة Claude</th><th>الفرق</th></tr></thead><tbody id="fnHist"></tbody></table></div>
+            <div class="tbl-wrap"><table style="min-width:520px"><thead><tr><th>الشهر</th><th>باقات</th><th>رسايل إضافية</th><th>واتساب</th><th>المجلس</th><th>تكلفة Claude</th><th>الفرق</th></tr></thead><tbody id="fnHist"></tbody></table></div>
           </div>
           <form class="card anim" id="fnSet" autocomplete="off">
             <h3>⚙️ مصاريفك التانية</h3>
@@ -805,6 +806,50 @@
         </table></div>
       </section>
 
+      <!-- «مجلس المستشارين» (Council.cs): its own prepaid tokens, off until it's turned on here -->
+      <section data-page="council" hidden>
+        <div class="kpis" id="cnKpis"></div>
+        <div class="grid2b">
+          <form class="card anim" id="cnSet" autocomplete="off">
+            <h3>إعدادات المجلس</h3>
+            <p class="sub">التاجر بيدفع الأول وبعدين يستخدم، والتوكنز مابتخلصش بوقت. السعر الجديد بيمشي على الطلبات الجديدة بس.</p>
+            <label class="switch"><input type="checkbox" id="cnOn"><span class="tg"></span><span id="cnOnT">المجلس ظاهر للتجار</span></label>
+            <div class="hint" id="cnOnH"></div>
+            <div class="cols" style="margin-top:8px">
+              <div><label for="cnPer">سعر الـ 1000 توكن (ج.م)</label><input type="number" id="cnPer" class="ltr" step="0.01" min="0.01"><div class="hint" id="cnPerH"></div></div>
+              <div><label for="cnFree">توكنز هدية لكل متجر (مرة واحدة)</label><input type="number" id="cnFree" class="ltr" step="1000" min="0"><div class="hint" id="cnFreeH"></div></div>
+              <div><label for="cnMin">أقل شحنة (ج.م)</label><input type="number" id="cnMin" class="ltr" step="1" min="1"></div>
+              <div><label for="cnPk">مبالغ الشحن المقترحة</label><input type="text" id="cnPk" class="ltr" maxlength="100" placeholder="100,300,500,1000"><div class="hint">بينهم فاصلة، لحد 6 مبالغ.</div></div>
+            </div>
+            <div class="msg" id="cnSetMsg"></div>
+            <button class="btn" id="cnSave" style="margin-top:10px">حفظ</button>
+          </form>
+          <div class="card anim" style="animation-delay:.1s">
+            <h3>اللي التاجر هيشوفه</h3>
+            <p class="sub">محسوب على السعر المكتوب، والجلسة الواحدة حوالي <b id="cnAvg">—</b> توكن.</p>
+            <div class="calc" id="cnPrev"></div>
+            <h3 style="margin-top:18px">🎁 زوّد توكنز لمتجر</h3>
+            <div class="cols">
+              <div><label for="cnGs">لينك المتجر (slug)</label><input type="text" id="cnGs" class="ltr" maxlength="40" placeholder="my-store"></div>
+              <div><label for="cnGt">كام توكن (بالسالب لو هتشيل)</label><input type="number" id="cnGt" class="ltr" step="1000" placeholder="20000"></div>
+            </div>
+            <label for="cnGn">السبب (بيظهر للتاجر)</label><input type="text" id="cnGn" maxlength="200" placeholder="مثلًا: هدية عشان…">
+            <div class="msg" id="cnGm"></div>
+            <button class="btn ghost" type="button" id="cnGb" style="margin-top:10px">زوّدهم</button>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-top:16px"><h3 style="margin:0">طلبات الشحن</h3><span class="space"></span><button class="btn ghost sm" id="cnReload" type="button">تحديث</button></div>
+        <div class="tbl-wrap"><table class="cn-tbl">
+          <thead><tr><th>المتجر</th><th>المبلغ</th><th>التوكنز</th><th>التحويل</th><th>الحالة</th><th></th></tr></thead>
+          <tbody id="cnTops"></tbody>
+        </table></div>
+        <div class="toolbar" style="margin-top:18px"><h3 style="margin:0">أرصدة المتاجر</h3></div>
+        <div class="tbl-wrap"><table class="cn-tbl">
+          <thead><tr><th>المتجر</th><th>الرصيد</th><th>جلسات</th><th>استهلك</th><th>دفع</th><th>آخر جلسة</th></tr></thead>
+          <tbody id="cnStores"></tbody>
+        </table></div>
+      </section>
+
       <!-- settings -->
       <section data-page="settings" hidden>
         <div class="grid2b">
@@ -937,9 +982,10 @@
     $("pwWarn").hidden = !defaultPw;
     $("meName").textContent = name; $("meAv").textContent = initial(name);
     var want = (location.hash || "#home").slice(1);
-    go(["home", "money", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "tg", "settings"].indexOf(want) >= 0 ? want : "home");
+    go(["home", "money", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "tg", "council", "settings"].indexOf(want) >= 0 ? want : "home");
     api("requests", null, "&status=pending").then(function (d) { rqBadge(d.pending); }).catch(function () {});
     metaApi().then(function (d) { mtBadge(d.asksWaiting); }).catch(function () {});
+    cnApi(null, null, "?count=1").then(function (d) { cnBadge(d.waiting); }).catch(function () {});
   }
   $("pwEye").onclick = function () { var i = $("lPass"); i.type = i.type === "password" ? "text" : "password"; i.focus(); };
   $("loginForm").onsubmit = async function (e) {
@@ -953,7 +999,7 @@
   // ---------- navigation ----------
   var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], money: ["المكسب والتكلفة", "بتكسب كام، بتصرف كام، وتشحن Claude بكام"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
                  subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"],
-                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
+                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], council: ["مجلس المستشارين", "التاجر يعرض فكرته، وبيدفع بالتوكنز لوحدها"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
     var on = document.querySelector("#nav button.on"); if (!on) return;
     $("navInd").style.transform = "translateY(" + (on.offsetTop) + "px)"; $("navInd").style.height = on.offsetHeight + "px";
@@ -966,7 +1012,7 @@
     moveInd(); closeSide();
     if (history.replaceState) history.replaceState(null, "", "#" + page);
     window.scrollTo(0, 0);
-    ({ home: loadHome, money: loadMoney, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, tg: loadTg, settings: loadSettings })[page]();
+    ({ home: loadHome, money: loadMoney, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, tg: loadTg, council: loadCouncil, settings: loadSettings })[page]();
   }
 
   // ---------- Messenger + Instagram: one Meta app for every store ----------
@@ -1173,6 +1219,85 @@
     if (!confirm("شيل بوت Sellybot؟ التجار مش هيقدروا يعملوا بوت بضغطة لحد ما تحط بوت تاني. البوتات المربوطة هتفضل شغالة.")) return;
     try { renderTgAdmin(await tgApi("clear", {})); toast("اتشال ✓"); } catch (err) { toast(err.message, true); }
   };
+  // ---------- «مجلس المستشارين» (api/council-admin.ashx): the switch and prices, top-ups to approve, each store's balance ----------
+  async function cnApi(action, body, qs) {
+    var init = { method: body ? "POST" : "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch" } };
+    if (body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
+    var r = await fetch("api/council-admin.ashx" + (action ? "?action=" + action : qs || ""), init), data = null;
+    try { data = await r.json(); } catch (e) {}
+    if (r.status === 401) { showLogin(); throw new Error("سجّل دخول تاني."); }
+    if (!r.ok) throw new Error((data && data.message) || "حصلت مشكلة، جرّب تاني.");
+    return data;
+  }
+  function cnBadge(n) { $("cnCount").textContent = fmt(n || 0); $("cnCount").hidden = !n; }
+  var cnA = null;
+  function cnNum(n) { return '<bdi dir="ltr">' + fmt(n) + "</bdi>"; }
+  function renderCouncil(d) {
+    cnA = d; var s = d.settings, st = d.stats; cnBadge(d.waiting);
+    kpiCards($("cnKpis"), [
+      { ic: "💰", label: "شحن الشهر ده", val: st.paidMonth, f: money, hl: true, sub: "من الأول: " + money(st.paid) },
+      { ic: "🤖", label: "تكلفة Claude الشهر ده", val: st.costMonth, f: egp2, sub: "من الأول: " + egp2(st.cost) + " (فيها الهدايا)" },
+      { ic: "🏛️", label: "جلسات اتعملت", val: st.sessions, f: fmt, sub: fmt(st.tokens) + " توكن اتخصموا" },
+      { ic: "🏪", label: "متاجر جرّبت", val: st.stores, f: fmt, sub: fmt(d.stores.length) + " متجر فتح الصفحة" }
+    ]);
+    $("cnOn").checked = s.on; $("cnOnT").textContent = s.on ? "المجلس ظاهر للتجار" : "المجلس مقفول";
+    $("cnOnH").textContent = s.on ? "كل تاجر شايف «المجلس» في لوحته، وSellybot بيرد على أسئلته عنه." : "مش ظاهر غير لحسابات الإدارة، عشان تجرّبه. أول ما تشغّله بيظهر لكل التجار.";
+    $("cnPer").value = s.per1k; $("cnFree").value = s.free; $("cnMin").value = s.minEgp; $("cnPk").value = s.packs; $("cnAvg").textContent = fmt(d.avg);
+    cnPreview();
+    var ST = { pending: '<span class="pill warn">⏳ مستني مراجعة</span>', approved: '<span class="pill ok">✅ اتضاف</span>', rejected: '<span class="pill err">❌ اترفض</span>', cancelled: '<span class="pill">التاجر لغاه</span>' };
+    $("cnTops").innerHTML = d.topups.length ? d.topups.map(function (t) {
+      return "<tr data-id=\"" + t.id + "\"><td><b dir=\"auto\">" + esc(t.store) + '</b><div class="hint"><span dir="ltr">' + esc(t.slug) + "</span></div></td><td><b>" + money(t.amount) + "</b></td><td>" + cnNum(t.tokens) + "</td>" +
+        "<td>" + esc(t.method) + '<div class="hint">🔖 <bdi dir="ltr">' + esc(t.refNo) + "</bdi></div>" + (t.ref ? '<div class="hint">من: <bdi dir="ltr">' + esc(t.ref) + "</bdi></div>" : "") + (t.note ? '<div class="hint" dir="auto">📝 ' + esc(t.note) + "</div>" : "") + "</td>" +
+        "<td>" + (ST[t.status] || esc(t.status)) + '<div class="hint">' + esc(ago(t.status === "pending" ? t.at : t.decidedAt || t.at)) + "</div>" + (t.adminNote ? '<div class="hint" dir="auto">' + esc(t.adminNote) + "</div>" : "") + "</td>" +
+        "<td>" + (t.status === "pending" ? '<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn ok sm" type="button" data-cn="yes">✓ وافق</button><button class="btn ghost sm" type="button" data-cn="no">ارفض</button></div>' : "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="6" class="hint">لسه محدش طلب شحن.</td></tr>';
+    $("cnStores").innerHTML = d.stores.length ? d.stores.map(function (x) {
+      return "<tr><td><b dir=\"auto\">" + esc(x.store) + '</b> <span class="hint ltr">' + esc(x.slug) + "</span></td><td><b>" + cnNum(x.balance) + "</b>" + (x.free ? '<div class="hint">بدأ بهدية ' + cnNum(x.free) + "</div>" : "") + "</td><td>" + fmt(x.sessions) + "</td><td>" + cnNum(x.used) + "</td><td>" + money(x.paid) + "</td><td>" + (x.lastAt ? esc(ago(x.lastAt)) : "—") + "</td></tr>";
+    }).join("") : '<tr><td colspan="6" class="hint">لسه محدش فتح صفحة المجلس.</td></tr>';
+  }
+  // what owners see at the numbers typed (before saving too)
+  function cnPreview() {
+    if (!cnA) return;
+    var per = +$("cnPer").value, free = +$("cnFree").value, avg = cnA.avg, st = cnA.stats;
+    var cost1k = st.tokens > 50000 ? st.cost / st.tokens * 1000 : 0.01;   // what 1000 tokens cost us: the real average, else Haiku's estimate
+    $("cnPerH").textContent = per > 0 ? "الجلسة على التاجر حوالي " + egp2(avg / 1000 * per) + "، وعليك حوالي " + egp2(avg / 1000 * cost1k) + "." : "";
+    $("cnFreeH").textContent = free > 0 ? "حوالي " + fmt(Math.max(1, Math.floor(free / avg))) + " جلسة، وبتكلّفك حوالي " + egp2(free / 1000 * cost1k) + " لو خلّصها." : "من غير هدية: التاجر بيدفع قبل ما يجرّب.";
+    var packs = $("cnPk").value.split(/[,،\s]+/).map(Number).filter(function (n) { return n > 0; }).slice(0, 6);
+    $("cnPrev").innerHTML = per > 0 ? packs.map(function (p) { var t = Math.floor(p / per * 1000), n = Math.max(1, Math.floor(t / avg)); return '<div class="r"><span>' + money(p) + "</span><b>" + fmt(t) + " توكن <small>حوالي " + fmt(n) + " جلسة</small></b></div>"; }).join("") : "";
+  }
+  ["cnPer", "cnFree", "cnPk"].forEach(function (id) { $(id).oninput = cnPreview; });
+  async function loadCouncil() { try { renderCouncil(await cnApi()); } catch (e) { toast(e.message, true); } }
+  $("cnReload").onclick = loadCouncil;
+  $("cnSet").onsubmit = async function (e) {
+    e.preventDefault(); var b = $("cnSave"), on = $("cnOn").checked; setMsg($("cnSetMsg"), "");
+    if (cnA && on && !cnA.settings.on && !confirm("المجلس هيظهر لكل التجار دلوقتي، وكل متجر هياخد " + fmt(+$("cnFree").value) + " توكن هدية أول ما يفتح الصفحة. أكمّل؟")) return;
+    busy(b, true);
+    try { renderCouncil(await cnApi("settings", { on: on, per1k: $("cnPer").value, free: $("cnFree").value, minEgp: $("cnMin").value, packs: $("cnPk").value })); toast("اتحفظ ✓"); }
+    catch (err) { setMsg($("cnSetMsg"), err.message); }
+    busy(b, false);
+  };
+  $("cnTops").onclick = async function (e) {
+    var b = e.target.closest("[data-cn]"); if (!b) return;
+    var id = +b.closest("[data-id]").dataset.id, t = cnA.topups.filter(function (x) { return x.id === id; })[0], body = { id: id, approve: b.dataset.cn === "yes" };
+    if (body.approve) {
+      var p = prompt("وصلك كام جنيه فعلًا؟ التوكنز هتتحسب على المبلغ ده بالسعر اللي التاجر شافه.", String(t.amount)); if (p === null) return;
+      body.paid = p.trim();
+    } else {
+      var n = prompt("سبب الرفض (هيظهر لصاحب المتجر):", "مالقيناش التحويل بالرقم المرجعي ده. اتأكد منه وابعت الطلب تاني."); if (!n || !n.trim()) return;
+      body.note = n.trim();
+    }
+    busy(b, true);
+    try { renderCouncil(await cnApi("decide", body)); toast(body.approve ? "التوكنز اتضافت ✅" : "اترفض الطلب"); } catch (err) { toast(err.message, true); busy(b, false); }
+  };
+  $("cnGb").onclick = async function () {
+    var b = this; setMsg($("cnGm"), "");
+    if (!$("cnGs").value.trim() || !$("cnGt").value) { setMsg($("cnGm"), "اكتب لينك المتجر وعدد التوكنز."); return; }
+    busy(b, true);
+    try { renderCouncil(await cnApi("gift", { slug: $("cnGs").value.trim(), tokens: $("cnGt").value, note: $("cnGn").value.trim() })); setMsg($("cnGm"), "اتضافوا ✓", true); $("cnGt").value = ""; $("cnGn").value = ""; }
+    catch (err) { setMsg($("cnGm"), err.message); }
+    busy(b, false);
+  };
+
   $("mtForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg($("mtMsg"), ""); busy($("mtSave"), true);
     try {
@@ -1311,7 +1436,7 @@
   function rqBadge(n) { $("rqCount").textContent = fmt(n); $("rqCount").hidden = !n; }
   function monthsAr(m) { return m === 1 ? "شهر" : m === 12 ? "سنة" : fmt(m) + " شهور"; }
   // a payment row: a period, extra quota for one month, or the price difference of an upgrade
-  function subLen(x) { return x.kind === "topup" ? "رصيد إضافي" : x.kind === "upgrade" ? "ترقية (فرق السعر)" : x.months === 1 ? "شهر" : fmt(x.months) + " شهور"; }
+  function subLen(x) { return x.kind === "council" ? "شحن المجلس" : x.kind === "topup" ? "رصيد إضافي" : x.kind === "upgrade" ? "ترقية (فرق السعر)" : x.months === 1 ? "شهر" : fmt(x.months) + " شهور"; }
   // the WhatsApp service on a request: its share of the amount, and the number the owner will link (to get a Wapilot number ready)
   // ---- request types: what the store asks for, in the admin's words (r.what is kept from when the request was sent) ----
   var RT = {
@@ -1463,7 +1588,7 @@
           (r.adminNote ? '<div class="meta">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظة: ") + esc(r.adminNote) + '</div>' : '') +
           (r.calc ? '<div class="meta">📊 ' + esc(r.calc) + '</div>' : '') + '</div>';
       } else {
-        var x = it.sub, ic = x.kind === "wa" ? "📱" : x.kind === "topup" ? "➕" : x.kind === "upgrade" ? "⬆️" : "💳";
+        var x = it.sub, ic = x.kind === "council" ? "🏛️" : x.kind === "wa" ? "📱" : x.kind === "topup" ? "➕" : x.kind === "upgrade" ? "⬆️" : "💳";
         h += '<div class="it" style="--tc:#2e9d5b"><span class="dot">' + ic + '</span><div class="row" style="gap:8px;align-items:flex-start;flex-wrap:nowrap"><div class="grow" style="min-width:0">' +
           '<div class="ttl">✓ اتسجّل: ' + esc(x.plan) + (x.kind === "topup" ? "" : ' · ' + subLen(x)) + ' · ' + money(x.paid) + '</div>' +
           '<div class="meta">' + date(x.startsAt) + ' ← ' + date(x.endsAt) + ' · ' + esc(x.method || "—") + (x.notes ? " · " + esc(x.notes) : "") + '</div></div>' +
@@ -1655,7 +1780,7 @@
     var d = fn.d, n = d.now, m = d.mrr, cl = d.claude, st = d.settings;
     kpiCards($("fnKpis"), [
       { ic: "💰", label: "الإيرادات الشهر ده", val: n.revenue, f: money, hl: true,
-        sub: "باقات " + money(n.byKind.plan + n.byKind.upgrade) + " · رسايل إضافية " + money(n.byKind.topup) + " · واتساب " + money(n.byKind.wa) },
+        sub: "باقات " + money(n.byKind.plan + n.byKind.upgrade) + " · رسايل إضافية " + money(n.byKind.topup) + " · واتساب " + money(n.byKind.wa) + (n.byKind.council ? " · المجلس " + money(n.byKind.council) : "") },
       { ic: "🤖", label: "تكلفة Claude الشهر ده", val: n.claudeEgp, f: egp2, sub: "≈ " + usd(n.claudeUsd) + " · آخر الشهر حوالي " + money(n.claudeProjEgp) },
       { ic: "📈", label: "صافي الربح الشهر ده", val: n.profit, f: money, sub: "الإيرادات − Claude − الواتساب − المصاريف الثابتة", cls: n.profit >= 0 ? "up" : "down" },
       { ic: "🔁", label: "الدخل الشهري الثابت", val: m.total, f: money, sub: fmt(m.stores) + " اشتراك شغال + " + fmt(m.waStores) + " واتساب، لو كله جدد" },
@@ -1718,8 +1843,8 @@
 
     // the last 6 months
     $("fnHist").innerHTML = d.history.map(function (h) {
-      var mo = new Date(h.month + "-01T00:00:00Z").toLocaleDateString("ar-EG", { month: "long", year: "numeric" }), diff = h.plan + h.topup + h.wa - h.claude;
-      return '<tr><td>' + mo + '</td><td>' + money(h.plan) + '</td><td>' + money(h.topup) + '</td><td>' + money(h.wa) + '</td><td>' + egp2(h.claude) + ' <span class="meta">' + fmt(h.msgs) + ' رد</span></td><td>' + signed(diff) + '</td></tr>';
+      var mo = new Date(h.month + "-01T00:00:00Z").toLocaleDateString("ar-EG", { month: "long", year: "numeric" }), diff = h.plan + h.topup + h.wa + h.council - h.claude;
+      return '<tr><td>' + mo + '</td><td>' + money(h.plan) + '</td><td>' + money(h.topup) + '</td><td>' + money(h.wa) + '</td><td>' + money(h.council) + '</td><td>' + egp2(h.claude) + ' <span class="meta">' + fmt(h.msgs) + ' رد</span></td><td>' + signed(diff) + '</td></tr>';
     }).reverse().join("");
 
     // other costs

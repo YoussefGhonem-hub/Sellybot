@@ -1634,6 +1634,111 @@
     .hm-rv{opacity:1;transform:none}
     .hm-lap .win,.hm-lap .wb .ch span{opacity:1;transform:none}
   }
+  /* ---------- «مجلس المستشارين» ---------- */
+  /* its nav button: a tab of its own, or an item of «المزيد» when the tabs don't fit (cnPlace) */
+  .links>#cnTabBtn .cn-nm,.dd-menu #cnTabBtn .cn-nw{display:none}
+  [data-panel="council"]>*{max-width:1080px}
+  .cn-admin{padding:9px 14px;border-radius:12px;background:#e5efff;color:#1f4f99;font-size:13.5px;margin-bottom:12px}
+  [data-theme=dark] .cn-admin{background:#162a47;color:#9cc3ff}
+  .cn-wallet{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px 26px;align-items:center;padding:16px 20px;margin-bottom:14px;border-radius:18px;border:1px solid var(--line);
+    background:linear-gradient(120deg,color-mix(in srgb,var(--brand) 13%,var(--card)),var(--card) 62%);box-shadow:var(--shadow)}
+  .cn-wallet.empty{background:linear-gradient(120deg,color-mix(in srgb,var(--err) 12%,var(--card)),var(--card) 62%);border-color:color-mix(in srgb,var(--err) 35%,var(--line))}
+  .cn-bal span{display:block;font-size:13px;color:var(--muted)}
+  .cn-bal b{font-size:32px;line-height:1.15;font-variant-numeric:tabular-nums}
+  .cn-bal small{font-size:14px;color:var(--muted);margin-inline-start:6px}
+  .cn-bal em{display:block;font-style:normal;font-size:13px;color:var(--brand);font-weight:600}
+  .cn-wallet.empty .cn-bal em{color:var(--err)}
+  .cn-facts{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px;color:var(--muted)}
+  .cn-facts li{display:flex;gap:8px}
+  @media (max-width:760px){.cn-wallet{grid-template-columns:minmax(0,1fr)}.cn-wallet .btn{justify-self:stretch}}
+  .cn-note{padding:11px 15px;border-radius:13px;margin-bottom:14px;border:1px solid var(--line);background:var(--card);font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .cn-note.wait{background:#fff1d6;color:#8a5200;border-color:transparent}.cn-note.good{background:#e6f6ec;color:#1f7a45;border-color:transparent}.cn-note.bad{background:#fdecea;color:#b23324;border-color:transparent}
+  [data-theme=dark] .cn-note.wait{background:#3d2c10;color:#f3c26b}[data-theme=dark] .cn-note.good{background:#173726;color:#8be0ad}[data-theme=dark] .cn-note.bad{background:#3a1d1b;color:#ffb4ab}
+  .cn-note span{flex:1;min-width:200px}
+  .cn-form,.cn-who,.cn-top,.cn-out{margin-bottom:16px}
+  .cn-lab{font-size:15px;font-weight:600;color:var(--ink);margin:0 0 8px}
+  .cn-form textarea{min-height:130px;font-size:15.5px;line-height:1.8}
+  .cn-under{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin-top:8px}
+  .cn-ex{display:flex;gap:6px;flex-wrap:wrap}
+  .cn-ex button{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:4px 12px;font-size:12.5px;cursor:pointer;color:var(--muted);text-align:start;transition:border-color .15s,color .15s}
+  .cn-ex button:hover{border-color:var(--brand);color:var(--ink)}
+  .cn-count{font-size:12px;color:var(--muted);flex:none;padding-top:4px}
+  .cn-check{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;padding:11px 13px;border:1px solid var(--line);border-radius:13px;background:var(--soft);cursor:pointer;color:var(--ink)}
+  .cn-check input{width:18px;height:18px;flex:none;margin:3px 0 0;accent-color:var(--brand)}
+  .cn-check b{display:block;font-size:14px}.cn-check small{display:block;font-size:12.5px;color:var(--muted);line-height:1.6}
+  .cn-send{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .cn-send .btn{font-size:15.5px;padding:11px 22px}
+  .cn-who h3,.cn-cols h3{margin:0 0 12px;font-size:16px}
+  .cn-who-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .cn-w{display:flex;gap:11px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:13px;border-inline-start:3px solid var(--pc)}
+  .cn-w b{display:block;font-size:14px}.cn-w small{display:block;font-size:12.5px;color:var(--muted);line-height:1.5}
+  .cn-av{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,var(--pc) 14%,var(--card))}
+  /* the session */
+  .cn-stage{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0 14px}
+  .cn-stage .cn-av{opacity:.35;filter:grayscale(.8);transition:opacity .3s,filter .3s,transform .3s,box-shadow .3s}
+  .cn-stage .cn-av.done{opacity:1;filter:none}
+  .cn-stage .cn-av.now{opacity:1;filter:none;transform:translateY(-4px) scale(1.1);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 45%,transparent)}
+  .cn-stage.think .cn-av{animation:cnPulse 1.8s ease-in-out infinite;animation-delay:calc(var(--i)*.16s)}
+  @keyframes cnPulse{0%,100%{opacity:.3;transform:none}40%{opacity:1;transform:translateY(-4px)}}
+  .cn-wait{text-align:center;color:var(--muted);font-size:14px;margin:0 0 12px}
+  .cn-q{text-align:center;margin:2px auto 16px;max-width:760px}
+  .cn-q small{display:block;font-size:12.5px;color:var(--muted)}
+  .cn-q b{font-size:18px;line-height:1.7}
+  .cn-deb{display:grid;gap:10px}
+  .cn-p{display:flex;gap:13px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--card);border-inline-start:4px solid var(--pc)}
+  .cn-p.new{animation:cnIn .35s ease-out}
+  @keyframes cnIn{from{opacity:0;transform:translateY(8px)}}
+  .cn-p h4{margin:0 0 4px;font-size:15px;color:var(--pc);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  [data-theme=dark] .cn-p h4{color:color-mix(in srgb,var(--pc) 60%,#fff)}
+  .cn-p h4 small{font-size:12px;font-weight:400;color:var(--muted)}
+  .cn-p p{margin:0;font-size:15px;line-height:1.9;white-space:pre-line}
+  .cn-p.now p:after{content:"";display:inline-block;width:8px;height:1em;margin-inline-start:3px;vertical-align:-2px;border-radius:2px;background:var(--pc);animation:cnCur 1s steps(2) infinite}
+  @keyframes cnCur{50%{opacity:0}}
+  .cn-v{margin-top:16px;border-radius:20px;border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--brand) 11%,var(--card)),var(--card) 48%);padding:20px;box-shadow:var(--shadow)}
+  .cn-v.new{animation:cnIn .4s ease-out}
+  .cn-v-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}
+  .cn-v h3{margin:0 0 6px;font-size:14px;color:var(--brand)}
+  .cn-pos{margin:0;font-size:19px;font-weight:700;line-height:1.75}
+  .cn-conf{text-align:center;width:132px}
+  .cn-ring{width:104px;height:104px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--brand) calc(var(--p)*1%),var(--line) 0)}
+  .cn-ring b{width:80px;height:80px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:23px}
+  .cn-conf small{font-size:12.5px;color:var(--muted)}
+  .cn-why{margin:12px 0 0;font-size:14px;color:var(--muted);line-height:1.8}
+  .cn-v h5{margin:18px 0 8px;font-size:15px}
+  .cn-risks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .cn-risks div{padding:12px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--err) 28%,var(--line));background:color-mix(in srgb,var(--err) 5%,var(--card));font-size:14px;line-height:1.75}
+  .cn-risks b{display:block;color:var(--err);margin-bottom:2px}
+  .cn-steps{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:cn}
+  .cn-steps li{counter-increment:cn;display:flex;gap:11px;padding:10px 13px;border-radius:13px;border:1px solid var(--line);background:var(--card);font-size:14.5px;line-height:1.75}
+  .cn-steps li:before{content:counter(cn);flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#fff;font-size:13px;font-weight:700}
+  .cn-min{display:flex;gap:12px;margin-top:16px;padding:13px 15px;border-radius:15px;border:1px dashed color-mix(in srgb,var(--pc) 55%,var(--line));background:var(--card)}
+  .cn-min b{display:block;font-size:13.5px;color:var(--muted);font-weight:600}.cn-min p{margin:3px 0 0;font-size:14.5px;line-height:1.8}
+  .cn-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:18px}
+  .cn-acts .hint{margin:0 auto 0 0}
+  .cn-raw{white-space:pre-wrap;font-size:14.5px;line-height:1.85}
+  .cn-idea{padding:12px 15px;border-radius:14px;background:var(--soft);border:1px solid var(--line);font-size:14px;line-height:1.8;margin-bottom:14px;white-space:pre-wrap}
+  .cn-idea b{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
+  @media (max-width:640px){.cn-v-top{grid-template-columns:minmax(0,1fr)}.cn-conf{width:auto;display:flex;gap:14px;align-items:center;text-align:start}.cn-ring{margin:0;width:84px;height:84px}.cn-ring b{width:64px;height:64px;font-size:19px}.cn-p{padding:13px;gap:10px}.cn-av{width:36px;height:36px;font-size:18px}}
+  /* top-up */
+  .cn-packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px}
+  .cn-pack{position:relative;border:1.5px solid var(--line);border-radius:15px;background:var(--card);padding:14px 12px 12px;cursor:pointer;text-align:center;transition:border-color .15s,transform .15s,box-shadow .15s}
+  .cn-pack:hover{border-color:var(--brand);transform:translateY(-2px)}
+  .cn-pack.on{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
+  .cn-pack b{display:block;font-size:20px}.cn-pack span{display:block;font-size:13.5px}.cn-pack small{display:block;font-size:12.5px;color:var(--muted)}
+  .cn-pack i{position:absolute;top:-9px;inset-inline-start:50%;transform:translateX(50%);font-style:normal;font-size:11px;font-weight:700;padding:1px 10px;border-radius:999px;color:#fff;background:var(--brand);white-space:nowrap}
+  .cn-amt{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .cn-amt input{width:150px}
+  .cn-amt span{font-size:14px;font-weight:600}
+  .cn-amt span.bad{color:var(--err);font-weight:400}
+  .cn-cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
+  @media (max-width:860px){.cn-cols{grid-template-columns:minmax(0,1fr)}}
+  .cn-list{display:grid;gap:8px}
+  .cn-li{display:flex;gap:10px;align-items:center;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:13px;background:var(--card);text-align:start;font-size:14px}
+  button.cn-li{cursor:pointer;transition:border-color .15s}button.cn-li:hover{border-color:var(--brand)}
+  .cn-li>span{flex:1;min-width:0}.cn-li b{display:block;font-weight:500;line-height:1.6;overflow-wrap:anywhere}.cn-li small{display:block;font-size:12px;color:var(--muted)}
+  .cn-li em{font-style:normal;font-weight:700;flex:none;font-variant-numeric:tabular-nums}.cn-li em.in{color:var(--ok)}
+  .cn-credit{margin-top:14px}
+  @media (prefers-reduced-motion:reduce){.cn-p.new,.cn-v.new,.cn-stage.think .cn-av,.cn-p.now p:after{animation:none}}
 </style>
 <!-- Meta Pixel: quiet here (no page views of the dashboard), only a new account is reported (see pixel.js) -->
 <script src="pixel.js" data-quiet></script>
@@ -1679,6 +1784,7 @@
         </div>
       </div>
       <button data-tab="offers" data-feat="broadcast">📣 ابعت عرض</button>
+      <button data-tab="council" data-feat="council" id="cnTabBtn"><span class="cn-nw">🏛️ المجلس</span><span class="dd-ic cn-nm">🏛️</span><span class="cn-nm"><b>مجلس المستشارين</b><small>اعرض فكرتك وخد حكم</small></span></button>
       <button data-tab="plan">💎 باقتي <span class="nb" id="planNb" hidden title="رد جديد من الإدارة على طلبك">1</span></button>
       <div class="dd">
         <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddMore">✨ المزيد <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -3093,6 +3199,73 @@
     <p class="hint" style="max-width:880px">على تيليجرام مفيش حد 24 ساعة زي فيسبوك، بس البوت مايقدرش يبدأ الكلام: الزبون هو اللي بيفتح البوت ويدوس «Start». البوت بيرد في المحادثات الخاصة بس، مش في الجروبات.</p>
   </section>
 
+  <!-- «مجلس المستشارين» (Council.cs): an idea -> seven advisors argue -> one verdict. Its own prepaid tokens. Hidden until the admin opens it (me.hide "council"). -->
+  <section data-panel="council" data-feat="council" hidden>
+    <div class="page-title"><div><h2>🏛️ مجلس المستشارين <span class="new-tag">جديد</span></h2><p>اعرض فكرتك أو قرار محتار فيه: 7 مستشارين يتناقشوا قدامك ويختلفوا، وفي الآخر حكم واضح.</p></div></div>
+    <div class="cn-admin" id="cnAdminNote" hidden>👀 الصفحة دي ظاهرة لحسابات الإدارة بس دلوقتي. عشان تظهر للتجار شغّلها من لوحة الإدارة ← «المجلس».</div>
+
+    <div class="cn-wallet" id="cnWallet">
+      <div class="cn-bal"><span>رصيدك</span><b id="cnBal">—</b><small>توكن</small><em id="cnBalS"></em></div>
+      <ul class="cn-facts">
+        <li>♾️ <span>التوكنز مابتخلصش بوقت، وكل شحنة بتزيد على الباقي.</span></li>
+        <li>🧾 <span>رصيد لوحده: مالهوش علاقة برسايل باقتك.</span></li>
+        <li id="cnFreeL">🎁 <span id="cnFreeT"></span></li>
+      </ul>
+      <button class="btn" id="cnTopGo" type="button">➕ اشحن توكنز</button>
+    </div>
+    <div class="cn-note" id="cnNote" hidden></div>
+
+    <form class="card cn-form" id="cnForm">
+      <label for="cnIdea" class="cn-lab">إيه الفكرة أو القرار؟</label>
+      <textarea id="cnIdea" rows="5" maxlength="3000" placeholder="احكيها زي ما بتحكيها لواحد صاحبك: عايز تعمل إيه، بكام، وليه محتار."></textarea>
+      <div class="cn-under"><div class="cn-ex" id="cnEx"></div><span class="cn-count ltr" id="cnCount">0 / 3000</span></div>
+      <label class="cn-check"><input type="checkbox" id="cnData" checked><span><b>خلّي المجلس يشوف متجرك</b><small>داتا متجرك (منتجات وأسعار وسياسات) وآخر أسئلة زباينك، من غير أرقامهم. كده الحكم يبقى على متجرك إنت، مش كلام عام.</small></span></label>
+      <div class="cn-send"><button class="btn" id="cnAsk">🏛️ اعرضها على المجلس</button><span class="hint" id="cnCost"></span></div>
+      <div class="msg" id="cnMsg" role="status"></div>
+    </form>
+
+    <!-- who sits on it, until there's a session to show -->
+    <div class="card cn-who" id="cnWho"><h3>مين في المجلس؟</h3><div class="cn-who-g" id="cnWhoG"></div></div>
+
+    <div class="cn-out" id="cnOut" hidden aria-live="polite"></div>
+
+    <!-- top-up: an amount -> tokens, then the same transfer as a plan request -->
+    <form class="card cn-top" id="cnTop" hidden autocomplete="off">
+      <div class="row"><h3 style="margin:0">➕ اشحن توكنز</h3><span class="space" style="flex:1"></span><button class="btn ghost sm" id="cnTopX" type="button">إلغاء</button></div>
+      <p class="sub" id="cnRate" style="margin:4px 0 12px"></p>
+      <div class="cn-packs" id="cnPacks" role="radiogroup" aria-label="مبلغ الشحن"></div>
+      <label for="cnAmt">أو اكتب المبلغ اللي يناسبك (بالجنيه)</label>
+      <div class="cn-amt"><input type="number" id="cnAmt" class="ltr" min="1" step="1" inputmode="numeric" placeholder="مثلًا 150"><span id="cnAmtT" aria-live="polite"></span></div>
+      <div class="pay-box" style="margin-top:14px">
+        <div class="pay-amt"><span>المبلغ المطلوب</span><b id="cnPayAmt">—</b><small id="cnPayTok"></small></div>
+        <div class="pay-how"><b>💳 طريقة الدفع</b>
+          <div class="pay-to" id="cnPayTo" hidden><span>حوّل على الرقم</span><b class="ltr" id="cnPayNum"></b><button type="button" class="btn ghost sm" id="cnPayCopy">📋 نسخ</button></div>
+          <p id="cnPayInfo"></p>
+          <figure class="pay-qr" id="cnQrBox" hidden><img id="cnQr" alt="QR InstaPay للتحويل"><figcaption>امسح الكود من تطبيق InstaPay وحوّل على طول</figcaption></figure>
+        </div>
+      </div>
+      <div class="ref-box">
+        <label for="cnRefNo">🔖 الرقم المرجعي <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="cnRefNo" class="ltr" maxlength="40" autocomplete="off" spellcheck="false" placeholder="مثلًا: 123456789012">
+        <small>الرقم اللي بيظهرلك بعد ما التحويل يتم، جنب «الرقم المرجعي». كل دفعة ليها رقم واحد، ومينفعش يتبعت في طلبين.</small>
+      </div>
+      <div class="cols2">
+        <div><label for="cnMethod">دفعت بإيه؟</label><select id="cnMethod"></select></div>
+        <div><label for="cnRef">الرقم أو الحساب اللي حوّلت منه</label><input type="text" id="cnRef" class="ltr" maxlength="100" placeholder="مثلًا: 0101234567 أو name@instapay"></div>
+      </div>
+      <label for="cnPayNote">ملاحظة (اختياري)</label>
+      <input type="text" id="cnPayNote" maxlength="500" placeholder="أي حاجة عايز الإدارة تعرفها">
+      <div class="msg" id="cnTopMsg" role="status"></div>
+      <button class="btn" id="cnTopSend">📨 ابعت طلب الشحن</button>
+    </form>
+
+    <div class="cn-cols">
+      <div class="card"><h3>جلساتك</h3><div class="cn-list" id="cnList"></div></div>
+      <div class="card"><h3>حركة الرصيد</h3><div class="cn-list" id="cnMoves"></div></div>
+    </div>
+    <p class="hint cn-credit">المجلس شغال بـ <a href="https://github.com/itshussainsprojects/Claude-Council-Skill" target="_blank" rel="noopener">Claude Council</a> (مفتوح المصدر، رخصة MIT). الحكم رأي يساعدك تفكّر، والقرار في الآخر ليك.</p>
+  </section>
+
   <!-- settings -->
   <section data-panel="settings" hidden>
     <div class="page-title"><div><h2>إعدادات المساعد</h2><p>اسمه وطريقة كلامه وأول رسالة الزبون بيشوفها</p></div></div>
@@ -3508,6 +3681,7 @@
     if (tab === "wa") loadWa();
     if (tab === "social") loadSocial();
     if (tab === "offers") loadOffers();
+    if (tab === "council") loadCouncil();
     if (tab === "telegram") loadTg(); else tgStopPoll();
     if (tab === "data" || tab === "look" || tab === "install") loadLocks();   // which features this store's plan doesn't include
     if (tab !== "wa") stopUpsell();
@@ -3559,7 +3733,7 @@
     // Messenger + Instagram: hidden until it opens to everyone (MetaApp.Visible), and when the plan has neither (applyPlanView)
     unmountHelpChat(); render(); loadItems(); mountLiveChat();
     var want = fresh ? "" : (location.hash || "").replace("#", "");
-    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) ? want : "home");
+    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) || (want === "council" && hasF("council")) ? want : "home");
     setTimeout(showNews, 1200);   // what's new since this browser last looked
   }
 
@@ -4095,13 +4269,13 @@
     if (!ss.length) { el.innerHTML = '<div class="card empty">مفيش اشتراكات لسه. أول ما الإدارة تفعّل طلبك هيظهر هنا.</div>'; return; }
     el.innerHTML = ss.map(function (s, i) {
       var live = new Date(s.endsAt) > now && new Date(s.startsAt) <= now, later = new Date(s.startsAt) > now;
-      var t = RQT[s.topup ? "topup" : s.kind === "upgrade" ? "upgrade" : s.kind === "wa" ? "wa-new" : "new"];
-      var title = s.topup ? esc(s.plan) : s.kind === "upgrade" ? "ترقية لباقة " + esc(s.plan) : s.kind === "wa" ? "خدمة الواتساب · " + monthsAr(s.months) : esc(s.plan) + " · " + monthsAr(s.months);
-      var meta = s.topup ? "لشهر " + new Date(s.startsAt).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }) + " · دفعت " + fmt(s.paid) + " ج.م"
+      var cnl = s.kind === "council", t = cnl ? ["🏛️", "#b0762a", "مجلس المستشارين"] : RQT[s.topup ? "topup" : s.kind === "upgrade" ? "upgrade" : s.kind === "wa" ? "wa-new" : "new"];
+      var title = s.topup || cnl ? esc(s.plan) : s.kind === "upgrade" ? "ترقية لباقة " + esc(s.plan) : s.kind === "wa" ? "خدمة الواتساب · " + monthsAr(s.months) : esc(s.plan) + " · " + monthsAr(s.months);
+      var meta = cnl ? dateAr(s.startsAt) + " · دفعت " + fmt(s.paid) + " ج.م · مابتخلصش بوقت" : s.topup ? "لشهر " + new Date(s.startsAt).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }) + " · دفعت " + fmt(s.paid) + " ج.م"
         : "من " + dateAr(s.startsAt) + " لحد " + dateAr(s.endsAt) + " · " + (s.kind === "upgrade" ? "دفعت فرق السعر " : "دفعت ") + fmt(s.paid) + " ج.م";
-      var pill = s.topup ? "" : live ? '<span class="st-pill answered">شغالة دلوقتي</span>' : later ? '<span class="st-pill open">هتبدأ ' + dateAr(s.startsAt) + '</span>' : '<span class="st-pill">خلصت</span>';
+      var pill = s.topup || cnl ? "" : live ? '<span class="st-pill answered">شغالة دلوقتي</span>' : later ? '<span class="st-pill open">هتبدأ ' + dateAr(s.startsAt) + '</span>' : '<span class="st-pill">خلصت</span>';
       var span = new Date(s.endsAt) - new Date(s.startsAt), leftPct = live && span > 0 ? (new Date(s.endsAt) - now) * 100 / span : 0;
-      return '<div class="ti' + (!live && !later && !s.topup ? " dim" : "") + '" style="--c:' + t[1] + ';animation-delay:' + (Math.min(i, 8) * 0.04) + 's">' +
+      return '<div class="ti' + (!live && !later && !s.topup && !cnl ? " dim" : "") + '" style="--c:' + t[1] + ';animation-delay:' + (Math.min(i, 8) * 0.04) + 's">' +
         '<div class="ti-h"><span class="ti-ic" aria-hidden="true">' + t[0] + '</span><div class="grow"><small>' + t[2] + '</small><b>' + title + '</b></div>' + pill + '</div>' +
         '<div class="meta">' + meta + '</div>' +
         (live && !s.topup ? '<div class="md-bar" style="--c:' + t[1] + '" title="الوقت الباقي"><i style="width:' + Math.max(3, Math.round(leftPct)) + '%"></i></div>' : '') + '</div>';
@@ -6264,6 +6438,290 @@
     if (!hasF("styles")) { if (FREE_STYLES.indexOf(st) < 0) st = "bear"; if (SWATCHES.indexOf(col.toLowerCase()) < 0) col = "#e8774a"; }
     return { style: st, color: col };
   }
+  // ---------------- «مجلس المستشارين» (api/council.ashx): the owner's idea goes to the Claude Council skill, the debate streams in
+  // as Claude writes it (the skill's own text format, drawn here as cards), and the wallet pays for it in its own prepaid tokens.
+  var CN_P = {
+    ADVERSARY: { n: "المشكّك", e: "⚔️", c: "#c0392b", d: "بيدوّر على الغلطة اللي ممكن تموّت الفكرة" },
+    STRATEGIST: { n: "الاستراتيجي", e: "📈", c: "#2e8b57", d: "السوق والمنافسة والمكسب والتوقيت" },
+    SCIENTIST: { n: "العالِم", e: "🔬", c: "#2f6fb5", d: "إيه اللي متأكدين منه، وإيه اللي محتاج تجربة" },
+    VISIONARY: { n: "صاحب الرؤية", e: "🎨", c: "#9b4fb0", d: "بيشوفها من زاوية محدش فكّر فيها" },
+    ENGINEER: { n: "المهندس", e: "⚙️", c: "#5f6b78", d: "التنفيذ: المخزون والشحن والمرتجعات" },
+    PHILOSOPHER: { n: "الفيلسوف", e: "🧘", c: "#b0762a", d: "إنت عايز إيه بجد، على المدى البعيد" },
+    HUMANIST: { n: "الإنساني", e: "❤️", c: "#cf4b78", d: "الزبون، وإنت ووقتك وأعصابك" }
+  };
+  var CN_K = Object.keys(CN_P);
+  var CN_EX = [
+    ["عرض جديد", "بفكر أعمل عرض «اشتري 2 والتالتة بنص التمن» على التيشيرتات لمدة أسبوع، عشان أخلّص المخزون قبل الموسم الجديد. خايف أخسر في الهامش بعد الشحن."],
+    ["منتج جديد", "عايز أنزّل منتج جديد سعره 600 جنيه، وأغلى حاجة عندي دلوقتي بـ 350. زبايني هيشتروه ولا أبعد عنه؟"],
+    ["شحن مجاني", "محتار أخلّي الشحن مجاني لأي أوردر فوق 500 جنيه ولا أسيبه زي ما هو وأصرف الفرق ده إعلانات."]
+  ];
+  var cn = null, cnAmount = 0, cnBusy = false, cnPollT = null, cnFull = "", cnDrawn = 0;   // cnDrawn: cards already on the page while the answer streams
+  function cnTok(n) { return fmt(n) + " توكن"; }
+  // "≈ N sessions" by what real sessions use; a balance that isn't a whole one still opens one (the last one runs to its end)
+  function cnSess(tokens) {
+    var n = Math.floor(tokens / Math.max(1, cn.avg)); if (tokens > 0 && n < 1) n = 1;
+    return n === 0 ? "0 جلسة" : n === 1 ? "جلسة واحدة" : n === 2 ? "جلستين" : n <= 10 ? fmt(n) + " جلسات" : fmt(n) + " جلسة";
+  }
+  function cnTokensFor(egp) { return Math.floor(egp / cn.per1k * 1000); }
+  async function loadCouncil() {
+    if (!hasF("council")) return;
+    try { cn = await api("api/council.ashx"); } catch (e) { setMsg("cnMsg", e.message); return; }
+    cnRender();
+    var run = cn.sessions.filter(function (s) { return s.status === "running"; })[0];
+    if (run && !cnBusy) { cnOutWait("المجلس لسه بيتناقش في فكرتك. هنعرض الحكم أول ما يخلص…"); cnPoll(run.id); }
+  }
+  function cnRender() {
+    var empty = cn.balance <= 0;
+    $("cnAdminNote").hidden = cn.on;
+    $("cnWallet").classList.toggle("empty", empty);
+    $("cnBal").textContent = empty ? "صفر" : fmt(cn.balance);   // «٠» alone reads as a dot
+    $("cnBalS").textContent = empty ? "الرصيد خلص" : "يكفي حوالي " + cnSess(cn.balance);
+    $("cnFreeL").hidden = !cn.free;
+    $("cnFreeT").textContent = cn.free ? (empty && !cn.everPaid ? "خلّصت الهدية (" + cnTok(cn.free) + "). اشحن وكمّل." : "هدية للتجربة: " + cnTok(cn.free) + ".") : "";
+    $("cnAsk").disabled = empty || cnBusy;
+    $("cnCost").textContent = empty ? "اشحن الأول عشان تعرض فكرة جديدة." : "الجلسة بتاخد حوالي " + cnTok(cn.avg) + "، ولو المجلس ماطلعش بحكم مابتتحسبش.";
+    // the last top-up: waiting, refused, or just added (3 days)
+    var t = cn.topups[0], n = $("cnNote"), recent = t && t.decidedAt && Date.now() - new Date(t.decidedAt).getTime() < 3 * 864e5;
+    n.hidden = true; n.className = "cn-note"; n.innerHTML = "";
+    if (t && t.status === "pending") {
+      n.hidden = false; n.className = "cn-note wait";
+      n.innerHTML = "<span>⏳ طلب شحن <b>" + fmt(t.amount) + " ج.م</b> (" + cnTok(t.tokens) + ") بيتراجع. التوكنز هتتضاف أول ما نتأكد من التحويل.</span><button class=\"btn ghost sm\" type=\"button\" id=\"cnCancel\">إلغاء الطلب</button>";
+      $("cnCancel").onclick = async function () {
+        if (!confirm("تلغي طلب الشحن؟ لو حوّلت الفلوس فعلًا، ماتلغيهوش.")) return;
+        try { cn = await api("api/council.ashx?action=cancel", { method: "POST", json: { id: t.id } }); cnRender(); toast("اتلغى الطلب"); } catch (e) { toast(e.message); }
+      };
+    } else if (t && t.status === "rejected" && recent) { n.hidden = false; n.className = "cn-note bad"; n.innerHTML = "<span>❌ طلب الشحن (" + fmt(t.amount) + " ج.م) اترفض" + (t.adminNote ? ": " + esc(t.adminNote) : ".") + "</span>"; }
+    else if (t && t.status === "approved" && recent) { n.hidden = false; n.className = "cn-note good"; n.innerHTML = "<span>✅ اتضاف " + cnTok(t.tokens) + " لرصيدك.</span>"; }
+    $("cnTopGo").hidden = !!(t && t.status === "pending");
+    if (t && t.status === "pending") $("cnTop").hidden = true;
+    else if (empty && !cnBusy) cnTopOpen(false);
+    // sessions and the wallet's movements
+    $("cnList").innerHTML = cn.sessions.length ? cn.sessions.map(function (s) {
+      return '<button type="button" class="cn-li" data-cn="' + s.id + '"><span><b>' + esc(s.idea) + "</b><small>" + dateAr(s.at) + (s.status === "running" ? " · ⏳ بيتناقشوا" : " · " + cnTok(s.charged)) + '</small></span><em aria-hidden="true">‹</em></button>';
+    }).join("") : '<div class="hint">لسه ماعرضتش أي فكرة.</div>';
+    $("cnList").querySelectorAll("[data-cn]").forEach(function (b) { b.onclick = function () { cnOpen(+b.dataset.cn); }; });
+    var KIND = { free: "🎁 هدية للتجربة", topup: "➕ شحن", session: "🏛️ جلسة", gift: "🎁 من إدارة Sellybot" };
+    $("cnMoves").innerHTML = cn.ledger.length ? cn.ledger.map(function (m) {
+      var k = m.kind === "gift" && m.tokens < 0 ? "✏️ تعديل من الإدارة" : KIND[m.kind] || m.kind;
+      return '<div class="cn-li"><span><b>' + k + "</b><small>" + dateAr(m.at) + (m.note ? " · " + esc(m.note) : "") + '</small></span><em class="' + (m.tokens > 0 ? "in" : "") + '"><bdi dir="ltr">' + (m.tokens > 0 ? "+" : "−") + fmt(Math.abs(m.tokens)) + "</bdi></em></div>";
+    }).join("") : '<div class="hint">مفيش حركة لسه.</div>';
+    $("cnRate").textContent = "كل " + fmt(1000) + " توكن بـ " + money2(cn.per1k) + " ج.م. التوكنز مابتخلصش بوقت، وبتزيد على اللي باقي عندك" + (empty ? "." : " (" + cnTok(cn.balance) + ").");
+  }
+  (function () {
+    $("cnWhoG").innerHTML = CN_K.map(function (k) { var p = CN_P[k]; return '<div class="cn-w" style="--pc:' + p.c + '"><span class="cn-av" aria-hidden="true">' + p.e + "</span><div><b>" + p.n + "</b><small>" + p.d + "</small></div></div>"; }).join("");
+    $("cnEx").innerHTML = CN_EX.map(function (x, i) { return '<button type="button" data-ex="' + i + '">💡 ' + x[0] + "</button>"; }).join("");
+    $("cnEx").onclick = function (e) { var b = e.target.closest("[data-ex]"); if (!b) return; $("cnIdea").value = CN_EX[+b.dataset.ex][1]; $("cnIdea").oninput(); $("cnIdea").focus(); };
+    $("cnIdea").oninput = function () { $("cnCount").textContent = this.value.length + " / 3000"; };
+  })();
+
+  // its nav button moves into «المزيد» where the tabs wouldn't fit (from the phone's sidebar up to 1280)
+  (function cnPlaceSetup() {
+    var b = $("cnTabBtn"), after = document.querySelector('#navLinks > [data-tab="offers"]'), menu = $("ddMore"), wide = matchMedia("(max-width:760px), (min-width:1280px)");
+    function cnPlace() {
+      if (wide.matches) after.parentNode.insertBefore(b, after.nextSibling); else menu.insertBefore(b, menu.firstChild);
+      document.querySelectorAll(".dd").forEach(function (d) { d.querySelector(".dd-btn").classList.toggle("on", !!d.querySelector('.dd-menu [data-tab="' + current + '"]')); });
+    }
+    wide.addEventListener("change", cnPlace); cnPlace();
+  })();
+
+  // ---- the skill's text -> its parts. Works on a half-written answer too (live = still being written). ----
+  function cnParse(text, live) {
+    var o = { q: "", deb: [], v: null }, mode = "", cur = null, sec = "", last = null;
+    var lines = String(text || "").replace(/\r/g, "").split("\n");
+    if (live && lines.length && !/[؀-ۿ]/.test(lines[lines.length - 1])) lines.pop();   // half a label: wait for the rest
+    var west = function (s) { return s.replace(/[٠-٩]/g, function (d) { return "٠١٢٣٤٥٦٧٨٩".indexOf(d); }); };
+    var who = function (s) { var m = /\b(ADVERSARY|STRATEGIST|SCIENTIST|VISIONARY|ENGINEER|PHILOSOPHER|HUMANIST)\b/i.exec(s); return m ? m[1].toUpperCase() : ""; };
+    lines.forEach(function (raw) {
+      var line = raw.trim(), plain = line.replace(/[*#_`]/g, "").trim(), m;
+      if (/^[═─=—–\-\s]{4,}$/.test(line) || /^`{3}/.test(line)) return;
+      if (!plain) { if (cur && mode === "deb" && cur.t) cur.t += "\n"; return; }
+      if (/^(THE COUNCIL|المجلس|مجلس المستشارين)$/i.test(plain)) { mode = "q"; return; }
+      if (/^(THE VERDICT|الحكم|حكم المجلس)$/i.test(plain)) { mode = "v"; sec = ""; cur = null; o.v = { pos: "", pct: null, why: "", risks: [], steps: [], mk: "", min: "" }; return; }
+      if (mode !== "v") {
+        m = /^[^A-Za-z؀-ۿ]*THE\s+([A-Z]+)\s*[::]?\s*(.*)$/i.exec(plain);
+        if (m && CN_P[m[1].toUpperCase()]) { mode = "deb"; cur = { k: m[1].toUpperCase(), t: m[2] || "" }; o.deb.push(cur); return; }
+        m = /^(⚔|📈|🔬|🎨|⚙|🧘|❤)\uFE0F?\s*([^.!؟?،:]{2,40})\s*:?$/u.exec(plain);   // the label in Arabic: its mark says who
+        if (m) { mode = "deb"; cur = { k: CN_K.filter(function (k) { return CN_P[k].e.replace("\uFE0F", "") === m[1]; })[0], t: "" }; o.deb.push(cur); return; }
+        if (mode === "q") { o.q += (o.q ? " " : "") + plain; return; }
+        if (cur) cur.t += (cur.t && !/\n$/.test(cur.t) ? " " : "") + line;
+        return;
+      }
+      var v = o.v;
+      if ((m = /^(?:POSITION|الموقف|الرأي|القرار)\s*[::]\s*(.*)$/i.exec(plain))) { sec = "pos"; v.pos = m[1]; return; }
+      if ((m = /^(?:CONFIDENCE|الثقة|نسبة الثقة)\s*[::]\s*(.*)$/i.exec(plain))) {
+        sec = "why"; var w = west(m[1]), p = /(\d{1,3})\s*[%٪]|[%٪]\s*(\d{1,3})/.exec(w);
+        if (p) { v.pct = Math.min(100, +(p[1] || p[2])); w = w.slice(p.index + p[0].length); }
+        v.why = w.replace(/^[\s—–:،,-]+/, ""); return;
+      }
+      if (/^(CRITICAL RISKS|المخاطر|أخطر|3 مخاطر)/i.test(plain)) { sec = "risks"; return; }
+      if (/^(NEXT STEPS|الخطوات|خطواتك|5 خطوات)/i.test(plain)) { sec = "steps"; return; }
+      if ((m = /^(?:MINORITY REPORT|الرأي المخالف|أقوى رأي مخالف|رأي الأقلية|تقرير الأقلية)\s*[::]?\s*(.*)$/i.exec(plain))) { sec = "min"; v.mk = who(m[1]); v.min = v.mk ? "" : m[1]; return; }
+      m = /^([\d٠-٩]{1,2})\s*[.)\-–]\s*(.*)$/.exec(line.replace(/^\*+\s*(?=[\d٠-٩])/, ""));
+      if (sec === "risks" || sec === "steps") {
+        if (m) { last = { t: m[2] }; v[sec].push(last); } else if (v[sec].length) last.t += " " + line;
+      }
+      else if (sec === "pos") v.pos += " " + plain;
+      else if (sec === "why") v.why += " " + plain;
+      else if (sec === "min") { if (!v.mk && !v.min) v.mk = who(plain); if (!/^[^؀-ۿ]*THE\s+[A-Z]+[^؀-ۿ]*$/i.test(plain)) v.min += (v.min ? " " : "") + plain; }
+    });
+    o.q = o.q.replace(/^["'«“”\s]+|["'»“”\s]+$/g, "");
+    if (o.v) {
+      o.v.risks = o.v.risks.map(function (r) {
+        var m = /^\*{0,2}\[?([^:*\]]{2,70}?)\]?\*{0,2}\s*[::]\s*\*{0,2}\s*([\s\S]+)$/.exec(r.t);
+        return m ? { n: m[1].trim(), t: m[2].trim() } : { n: "", t: r.t };
+      });
+      o.v.min = o.v.min.replace(/^[^\w؀-ۿ«]+|["'“”»\s]+$/g, "").replace(/^«/, "");
+    }
+    return o;
+  }
+  function cnText(s) { return esc(String(s || "").trim()).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*\*/g, ""); }
+  function cnPersona(k) { return CN_P[k] || { n: "", e: "💬", c: "#888" }; }
+
+  // ---- drawing ----
+  function cnStage(o, live) {
+    var now = live && o && o.deb.length && !o.v ? o.deb[o.deb.length - 1].k : "", spoke = {}; if (o) o.deb.forEach(function (d) { spoke[d.k] = 1; });
+    return '<div class="cn-stage' + (live && (!o || !o.deb.length) ? " think" : "") + '" aria-hidden="true">' + CN_K.map(function (k, i) {
+      var p = CN_P[k]; return '<span class="cn-av' + (k === now ? " now" : spoke[k] ? " done" : "") + '" style="--pc:' + p.c + ";--i:" + i + '" title="' + p.n + '">' + p.e + "</span>"; }).join("") + "</div>";
+  }
+  function cnOutWait(text) { $("cnWho").hidden = true; $("cnOut").hidden = false; $("cnOut").innerHTML = cnStage(null, true) + '<p class="cn-wait">' + esc(text) + "</p>"; }
+  function cnDraw(text, live, meta) {
+    var o = cnParse(text, live), h = "", v = o.v;
+    if (meta && meta.idea) h += '<div class="cn-idea"><b>فكرتك</b>' + esc(meta.idea) + "</div>";
+    h += cnStage(o, live);
+    if (live && !o.deb.length) h += '<p class="cn-wait">المجلس بيقرا فكرتك… بياخد لحد دقيقة.</p>';
+    if (o.q) h += '<div class="cn-q"><small>السؤال اللي قدام المجلس</small><b>' + cnText(o.q) + "</b></div>";
+    h += '<div class="cn-deb">' + o.deb.map(function (d, i) {
+      var p = cnPersona(d.k), now = live && !v && i === o.deb.length - 1;
+      return '<article class="cn-p' + (now ? " now" : "") + (i >= cnDrawn ? " new" : "") + '" style="--pc:' + p.c + '"><span class="cn-av" aria-hidden="true">' + p.e + "</span><div><h4>" + p.n + " <small>" + p.d + "</small></h4><p>" + cnText(d.t) + "</p></div></article>";
+    }).join("") + "</div>";
+    if (v && v.pos) {
+      h += '<div class="cn-v' + (cnDrawn < 100 ? " new" : "") + '"><div class="cn-v-top"><div><h3>⚖️ حكم المجلس</h3><p class="cn-pos">' + cnText(v.pos) + "</p></div>" +
+        (v.pct !== null ? '<div class="cn-conf"><div class="cn-ring" style="--p:' + v.pct + '"><b>' + fmt(v.pct) + "٪</b></div><small>ثقة المجلس في الحكم</small></div>" : "") + "</div>" +
+        (v.why ? '<p class="cn-why">' + cnText(v.why) + "</p>" : "");
+      if (v.risks.length) h += "<h5>⚠️ 3 حاجات ممكن توقّع الفكرة</h5><div class=\"cn-risks\">" + v.risks.map(function (r) { return "<div>" + (r.n ? "<b>" + cnText(r.n) + "</b>" : "") + cnText(r.t) + "</div>"; }).join("") + "</div>";
+      if (v.steps.length) h += "<h5>✅ اعمل إيه من بكرة</h5><ol class=\"cn-steps\">" + v.steps.map(function (s) { return "<li><span>" + cnText(s.t) + "</span></li>"; }).join("") + "</ol>";
+      if (v.min) { var mp = cnPersona(v.mk); h += '<div class="cn-min" style="--pc:' + mp.c + '"><span class="cn-av" aria-hidden="true">' + mp.e + "</span><div><b>أقوى رأي مخالف" + (mp.n ? " · " + mp.n : "") + "</b><p>" + cnText(v.min) + "</p></div></div>"; }
+      if (!live) h += '<div class="cn-acts"><button class="btn ghost sm" type="button" id="cnCopy">📋 انسخ الحكم</button><button class="btn ghost sm" type="button" id="cnAgain">💡 اعرض فكرة تانية</button>' +
+        (meta && meta.charged !== undefined ? '<span class="hint">الجلسة دي: ' + cnTok(meta.charged) + "</span>" : "") + "</div>";
+      h += "</div>";
+    } else if (!live && !o.deb.length && text) h += '<div class="card cn-raw">' + esc(text) + "</div>";
+    $("cnWho").hidden = true; $("cnOut").hidden = false; $("cnOut").innerHTML = h;
+    cnDrawn = live ? (v && v.pos ? 100 : o.deb.length) : 0;
+    if ($("cnCopy")) $("cnCopy").onclick = function () { cnCopy(o, meta); };
+    if ($("cnAgain")) $("cnAgain").onclick = function () { $("cnOut").hidden = true; $("cnWho").hidden = false; $("cnIdea").value = ""; $("cnIdea").oninput(); $("cnIdea").focus(); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); };
+  }
+  function cnCopy(o, meta) {
+    var v = o.v, cl = function (s) { return String(s || "").replace(/\*\*/g, "").trim(); };
+    var t = "🏛️ حكم مجلس المستشارين\n" + (meta && meta.idea ? "الفكرة: " + meta.idea.trim() + "\n" : "") + "\n⚖️ " + cl(v.pos) + (v.pct !== null ? "\nالثقة: " + v.pct + "%" : "") + (v.why ? " — " + cl(v.why) : "") +
+      "\n\n⚠️ المخاطر:\n" + v.risks.map(function (r, i) { return (i + 1) + ". " + (r.n ? cl(r.n) + ": " : "") + cl(r.t); }).join("\n") + "\n\n✅ الخطوات:\n" + v.steps.map(function (s, i) { return (i + 1) + ". " + cl(s.t); }).join("\n") +
+      (v.min ? "\n\nأقوى رأي مخالف (" + cnPersona(v.mk).n + "): " + cl(v.min) : "");
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast("اتنسخ ✓"); }, function () { toast("المتصفح مانسخش. حدّد الكلام وانسخه."); });
+  }
+  async function cnOpen(id) {
+    if (cnBusy) { toast("استنى المجلس يخلص الأول."); return; }
+    try {
+      var s = await api("api/council.ashx?id=" + id);
+      if (s.status === "running") { cnOutWait("المجلس لسه بيتناقش في فكرتك…"); cnPoll(id); }
+      else cnDraw(s.answer, false, s);
+      $("cnOut").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) { toast(e.message); }
+  }
+  // the page was closed or the connection dropped while the council talked: it finished on the server, so ask for it
+  function cnPoll(id, n) {
+    clearTimeout(cnPollT); n = n || 0;
+    cnPollT = setTimeout(async function () {
+      try {
+        var s = await api("api/council.ashx?id=" + id);
+        if (s.status === "running") { if (n < 75) cnPoll(id, n + 1); return; }
+        if (s.status === "done") cnDraw(s.answer, false, s);
+        else { $("cnOut").hidden = true; $("cnWho").hidden = false; cnEnd(s.status, s.answer); }
+      } catch (e) { if (n < 75) { cnPoll(id, n + 1); return; } }
+      cnBusy = false;
+      try { cn = await api("api/council.ashx"); cnRender(); } catch (e) { }
+    }, 4000);
+  }
+  // a session with no verdict: nothing was charged, and the idea stays in the box
+  function cnEnd(status, answer) {
+    if (status === "no") setMsg("cnMsg", (String(answer || "").split("\n").slice(1).join(" ").trim() || "المجلس للأفكار والقرارات.") + " (ماتخصمش منك حاجة)");
+    else setMsg("cnMsg", "المجلس ماقدرش يطلع بحكم المرة دي، وماتخصمش منك حاجة. جرّب تاني، أو اكتب الفكرة بطريقة تانية.");
+  }
+  $("cnForm").onsubmit = async function (e) {
+    e.preventDefault(); if (cnBusy || !cn) return;
+    var idea = $("cnIdea").value.trim(); setMsg("cnMsg", "");
+    if (idea.length < cn.minIdea) { setMsg("cnMsg", "اكتب فكرتك بتفاصيل أكتر شوية، عشان المجلس يفهمها."); $("cnIdea").focus(); return; }
+    cnBusy = true; $("cnAsk").disabled = true; cnFull = ""; cnDrawn = 0; var sid = 0, ended = null, drawT = 0;
+    cnOutWait("المجلس بيقرا فكرتك… بياخد لحد دقيقة."); $("cnOut").scrollIntoView({ behavior: "smooth", block: "start" });
+    var draw = function () { drawT = 0; if (!ended && !/^NOT A/i.test(cnFull.trim()) && cnFull.trim().length > 8) cnDraw(cnFull, true); };
+    try {
+      var r = await fetch("api/council.ashx?action=ask", { method: "POST", credentials: "same-origin", headers: { "X-Requested-With": "fetch", "Content-Type": "application/json" }, body: JSON.stringify({ idea: idea, useData: $("cnData").checked }) });
+      if (!r.ok) { var er = null; try { er = await r.json(); } catch (x) { } throw Object.assign(new Error((er && er.message) || "حصلت مشكلة، جرّب تاني."), { shown: true }); }
+      var rd = r.body.getReader(), dec = new TextDecoder(), buf = "", one;
+      while (!(one = await rd.read()).done) {
+        buf += dec.decode(one.value, { stream: true });
+        var i; while ((i = buf.indexOf("\n\n")) >= 0) {
+          var block = buf.slice(0, i); buf = buf.slice(i + 2);
+          var ev = (/^event: (.*)$/m.exec(block) || [])[1], da = (/^data: (.*)$/m.exec(block) || [])[1]; if (!ev || !da) continue;
+          var d = JSON.parse(da);
+          if (ev === "start") sid = d.id;
+          else if (ev === "text") { cnFull += d.t; if (!drawT) drawT = setTimeout(draw, 140); }
+          else if (ev === "end") ended = d;
+        }
+      }
+    } catch (err) {
+      if (err.shown || !sid) { clearTimeout(drawT); cnBusy = false; $("cnOut").hidden = true; $("cnWho").hidden = false; setMsg("cnMsg", err.shown ? err.message : "النت قطع قبل ما الفكرة توصل. جرّب تاني."); loadCouncil(); return; }
+    }
+    clearTimeout(drawT);
+    if (!ended) { cnOutWait("الاتصال قطع، بس المجلس مكمّل عندنا. هنعرض الحكم أول ما يخلص…"); cnPoll(sid); return; }
+    cnBusy = false;
+    if (ended.status === "done") { cnDraw(cnFull, false, { idea: idea, charged: ended.charged }); $("cnIdea").value = ""; $("cnIdea").oninput(); }
+    else { $("cnOut").hidden = true; $("cnWho").hidden = false; cnEnd(ended.status, cnFull); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); }
+    try { cn = await api("api/council.ashx"); cnRender(); } catch (e2) { }
+  };
+
+  // ---- top-up ----
+  function cnTopOpen(scroll) {
+    if (!cn) return;
+    var was = !$("cnTop").hidden; $("cnTop").hidden = false;
+    if (!was) {
+      var packs = cn.packs, best = packs.length > 2 ? packs[1] : packs[packs.length - 1];
+      $("cnPacks").innerHTML = packs.map(function (p) {
+        return '<button type="button" role="radio" aria-checked="false" class="cn-pack" data-egp="' + p.egp + '">' + (p === best ? "<i>الأنسب</i>" : "") + "<b>" + fmt(p.egp) + " ج.م</b><span>" + cnTok(p.tokens) + "</span><small>حوالي " + cnSess(p.tokens) + "</small></button>";
+      }).join("");
+      $("cnPacks").onclick = function (e) { var b = e.target.closest("[data-egp]"); if (b) { $("cnAmt").value = ""; cnPick(+b.dataset.egp); } };
+      var pay = cn.pay;
+      $("cnPayInfo").textContent = pay.info; $("cnPayNum").textContent = pay.number; $("cnPayTo").hidden = !pay.number;
+      $("cnQrBox").hidden = !pay.qr; if (pay.qr) $("cnQr").src = "api/plans.ashx?payqr=1&v=" + encodeURIComponent(pay.qr);
+      $("cnMethod").innerHTML = '<option value="">اختار…</option>' + pay.methods.map(function (m) { return "<option>" + esc(m) + "</option>"; }).join("");
+      $("cnAmt").value = ""; $("cnAmt").min = cn.minEgp; $("cnRefNo").value = ""; $("cnRef").value = ""; $("cnPayNote").value = ""; setMsg("cnTopMsg", "");
+      cnPick(best ? best.egp : 0);
+    }
+    if (scroll) $("cnTop").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function cnPick(egp) {
+    cnAmount = Math.floor(egp || 0); var ok = cnAmount >= cn.minEgp, tok = ok ? cnTokensFor(cnAmount) : 0;
+    $("cnPacks").querySelectorAll("[data-egp]").forEach(function (b) { var on = +b.dataset.egp === cnAmount && !$("cnAmt").value; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
+    $("cnPayAmt").textContent = ok ? fmt(cnAmount) + " ج.م" : "—"; $("cnPayTok").textContent = ok ? cnTok(tok) + " · حوالي " + cnSess(tok) : "";
+    var typed = $("cnAmt").value !== "", h = $("cnAmtT");
+    h.className = typed && !ok ? "bad" : ""; h.textContent = !typed ? "" : ok ? "= " + cnTok(tok) + "، حوالي " + cnSess(tok) : "أقل شحنة " + fmt(cn.minEgp) + " جنيه";
+  }
+  $("cnAmt").oninput = function () { if (cn) cnPick(this.value === "" ? 0 : +this.value); };
+  $("cnTopGo").onclick = function () { cnTopOpen(true); };
+  $("cnTopX").onclick = function () { $("cnTop").hidden = true; };
+  $("cnPayCopy").onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText($("cnPayNum").textContent) : Promise.reject()).then(function () { toast("اتنسخ ✓"); }, function () { toast($("cnPayNum").textContent); }); };
+  $("cnTop").onsubmit = async function (e) {
+    e.preventDefault(); if (!cn) return; setMsg("cnTopMsg", "");
+    if (!(cnAmount >= cn.minEgp)) { setMsg("cnTopMsg", "اختار مبلغ، أو اكتب مبلغ من " + fmt(cn.minEgp) + " جنيه."); return; }
+    var ref = normRef($("cnRefNo").value);
+    if (ref.length < 6 || ref.length > 30) { setMsg("cnTopMsg", "اكتب الرقم المرجعي اللي ظهرلك بعد التحويل (من 6 لـ 30 حرف أو رقم)."); $("cnRefNo").focus(); return; }
+    if (!$("cnMethod").value) { setMsg("cnTopMsg", "اختار دفعت بإيه."); return; }
+    $("cnTopSend").disabled = true;
+    try {
+      cn = await api("api/council.ashx?action=topup", { method: "POST", json: { amount: cnAmount, method: $("cnMethod").value, ref: $("cnRef").value.trim(), refNo: ref, note: $("cnPayNote").value.trim() } });
+      $("cnTop").hidden = true; cnRender(); toast("اتبعت الطلب ✅ هنضيف التوكنز أول ما نتأكد من الدفع"); $("cnNote").scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (err) { setMsg("cnTopMsg", err.message); }
+    $("cnTopSend").disabled = false;
+  };
+
   // what's new: an entry about a feature (n.feature: a key or a list) shows only when the plan has it
   function newsVisible(n) { return !n.feature || anyF([].concat(n.feature).join(" ")); }
   var FREE_STYLES = ["classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear"];

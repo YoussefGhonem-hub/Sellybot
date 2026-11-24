@@ -43,6 +43,7 @@ namespace RiwaqChat
             var parts = new List<Part>();
             foreach (var f in Directory.GetFiles(dir, "*.md").OrderBy(x => x, StringComparer.Ordinal))
             {
+                if (Path.GetFileName(f) == "20-council.md" && !Council.On(c)) continue;   // «مجلس المستشارين»: known once the admin opens it
                 string text = File.ReadAllText(f, Encoding.UTF8).Replace("\r\n", "\n").Trim();
                 if (text.Length == 0) continue;
                 string first = text.Split('\n')[0].Trim().TrimStart('#').Trim();

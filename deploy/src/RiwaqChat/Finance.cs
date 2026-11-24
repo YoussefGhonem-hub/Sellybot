@@ -100,7 +100,8 @@ namespace RiwaqChat
             // units one reply costs: this month's when there's enough of it, else last month's, else the medium-data estimate
             long perMsg = msgsMonth >= 20 && unitsMonth > 0 ? unitsMonth / msgsMonth : msgsLast >= 20 && unitsLast > 0 ? unitsLast / msgsLast : Billing.Units(c, "UnitsMedium");
             perMsg = Math.Max(1, perMsg);
-            decimal claudeUsd = Billing.UsdForUnits(unitsMonth);
+            long councilUnits = Council.Units(c, monthStart);   // «مجلس المستشارين»: paid in its own tokens, so it isn't in UsageMonthly
+            decimal claudeUsd = Billing.UsdForUnits(unitsMonth + councilUnits);
             // what the cache saved: every cached token read would have been a full-price input token
             decimal cacheSavedUsd = Billing.UsdForUnits((long)(cr * 0.9));
             double cacheShare = inTok + cr + cw > 0 ? (double)cr / (inTok + cr + cw) : 0;
@@ -114,6 +115,7 @@ namespace RiwaqChat
                     "@f", today.AddDays(-days), "@t", today))
                 using (var r = cmd.ExecuteReader())
                     while (r.Read()) { long u = Convert.ToInt64(r["U"]); units += u > 0 ? u : Convert.ToInt64(r["M"]) * perMsg; }
+                units += Council.Units(c, today.AddDays(-days), today);
                 return Billing.UsdForUnits(units) / days;
             };
             decimal burn7 = burn(7), burn30 = burn(30);
@@ -138,7 +140,7 @@ namespace RiwaqChat
             suggest = Math.Ceiling(suggest / 5m) * 5m;   // the console sells credit in round amounts
 
             // ---------- money in ----------
-            var revByKind = new Dictionary<string, decimal> { { "plan", 0 }, { "upgrade", 0 }, { "topup", 0 }, { "wa", 0 } };
+            var revByKind = new Dictionary<string, decimal> { { "plan", 0 }, { "upgrade", 0 }, { "topup", 0 }, { "wa", 0 }, { "council", 0 } };
             using (var cmd = Db.Cmd(c, "SELECT Kind, ISNULL(SUM(PaidEgp),0) FROM dbo.Subscriptions WHERE CreatedAt >= @ms GROUP BY Kind", "@ms", monthStart))
             using (var r = cmd.ExecuteReader()) while (r.Read()) { var k = (string)r[0]; revByKind[revByKind.ContainsKey(k) ? k : "plan"] += Convert.ToDecimal(r[1]); }
             decimal revenue = revByKind.Values.Sum();
@@ -181,18 +183,23 @@ namespace RiwaqChat
 
             // ---------- the last 6 months ----------
             var months = Enumerable.Range(0, 6).Select(i => monthStart.AddMonths(-5 + i).ToString("yyyy-MM")).ToList();
-            var hist = months.ToDictionary(m => m, m => new Dictionary<string, object> { { "month", m }, { "plan", 0m }, { "topup", 0m }, { "wa", 0m }, { "msgs", 0 }, { "claude", 0m } });
+            var hist = months.ToDictionary(m => m, m => new Dictionary<string, object> { { "month", m }, { "plan", 0m }, { "topup", 0m }, { "wa", 0m }, { "council", 0m }, { "msgs", 0 }, { "claude", 0m } });
             using (var cmd = Db.Cmd(c, "SELECT CONVERT(CHAR(7), CreatedAt, 126), Kind, SUM(PaidEgp) FROM dbo.Subscriptions WHERE CreatedAt >= @f GROUP BY CONVERT(CHAR(7), CreatedAt, 126), Kind", "@f", monthStart.AddMonths(-5)))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                 {
                     var m = (string)r[0]; if (!hist.ContainsKey(m)) continue;
-                    string k = (string)r[1] == "topup" ? "topup" : (string)r[1] == "wa" ? "wa" : "plan";
+                    string k = (string)r[1] == "topup" ? "topup" : (string)r[1] == "wa" ? "wa" : (string)r[1] == "council" ? "council" : "plan";
                     hist[m][k] = (decimal)hist[m][k] + Convert.ToDecimal(r[2]);
                 }
             using (var cmd = Db.Cmd(c, "SELECT u.Month, SUM(u.Messages), SUM(" + W("u") + ") FROM dbo.UsageMonthly u WHERE u.Month >= @f GROUP BY u.Month", "@f", months[0]))
             using (var r = cmd.ExecuteReader())
                 while (r.Read()) { var m = (string)r[0]; if (hist.ContainsKey(m)) { hist[m]["msgs"] = Convert.ToInt32(r[1]); hist[m]["claude"] = R(Billing.UsdForUnits(Convert.ToInt64(r[2])) * rate); } }
+            foreach (var m in months)
+            {
+                var f = DateTime.SpecifyKind(DateTime.ParseExact(m + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture), DateTimeKind.Utc);
+                hist[m]["claude"] = (decimal)hist[m]["claude"] + R(Billing.UsdForUnits(Council.Units(c, f, f.AddMonths(1))) * rate);
+            }
 
             // ---------- trials, renewals, requests waiting, replies per channel ----------
             var stores90 = rows.Where(x => !x.Own && x.Created >= now.AddDays(-90)).ToList();
@@ -221,6 +228,7 @@ namespace RiwaqChat
                     { "waNumbers", waNumbers }, { "waCost", R(waCostMonth) }, { "fixed", R(fixedCost) },
                     { "profit", R(revenue - claudeEgp - waCostMonth - fixedCost) }, { "messages", msgsMonth },
                     { "cacheSavedUsd", R(cacheSavedUsd, 4) }, { "cacheShare", Math.Round(cacheShare * 100, 1) },
+                    { "councilCost", R(Billing.UsdForUnits(councilUnits) * rate) },
                     { "costPaid", R(Billing.UsdForUnits(rows.Where(x => x.Active).Sum(x => x.Units)) * rate) },
                     { "costTrial", R(Billing.UsdForUnits(rows.Where(x => x.Trial).Sum(x => x.Units)) * rate) },
                     { "costOwn", R(Billing.UsdForUnits(rows.Where(x => x.Own).Sum(x => x.Units)) * rate) },
@@ -245,7 +253,7 @@ namespace RiwaqChat
         // every store's units, all months: the base the typed credit is counted down from
         static long TotalUnits(SqlConnection c)
         {
-            using (var cmd = Db.Cmd(c, "SELECT ISNULL(SUM(" + W("u") + "),0) FROM dbo.UsageMonthly u")) return Convert.ToInt64(cmd.ExecuteScalar());
+            using (var cmd = Db.Cmd(c, "SELECT ISNULL(SUM(" + W("u") + "),0) FROM dbo.UsageMonthly u")) return Convert.ToInt64(cmd.ExecuteScalar()) + Council.Units(c);
         }
 
         // POST money-settings: the Claude credit now ("" = forget it), the spare %, a WhatsApp number's monthly cost, fixed costs

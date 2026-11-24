@@ -1,0 +1,3 @@
+The Claude Council skill, used by Council.cs for «مجلس المستشارين».
+Source: https://github.com/itshussainsprojects/Claude-Council-Skill (folder claude-council-skill), MIT License (LICENSE here), copied 2026-11-24 unchanged.
+Council.cs puts SKILL.md, personas/ and templates/ in the prompt as they are, then adds Sellybot's own notes (Arabic, the store's data, no invented numbers).
