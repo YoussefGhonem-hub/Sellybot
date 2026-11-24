@@ -826,7 +826,7 @@
           </form>
           <div class="card anim" style="animation-delay:.1s">
             <h3>اللي التاجر هيشوفه</h3>
-            <p class="sub">محسوب على السعر المكتوب، والجلسة الواحدة حوالي <b id="cnAvg">—</b> توكن.</p>
+            <p class="sub">محسوب على السعر المكتوب. الفكرة الواحدة حوالي <b id="cnAvg">—</b> توكن، ورسالة بعد الحكم حوالي <b id="cnAvgQ">—</b>.</p>
             <div class="calc" id="cnPrev"></div>
             <h3 style="margin-top:18px">🎁 زوّد توكنز لمتجر</h3>
             <div class="cols">
@@ -845,7 +845,7 @@
         </table></div>
         <div class="toolbar" style="margin-top:18px"><h3 style="margin:0">أرصدة المتاجر</h3></div>
         <div class="tbl-wrap"><table class="cn-tbl">
-          <thead><tr><th>المتجر</th><th>الرصيد</th><th>جلسات</th><th>استهلك</th><th>دفع</th><th>آخر جلسة</th></tr></thead>
+          <thead><tr><th>المتجر</th><th>الرصيد</th><th>أفكار</th><th>استهلك</th><th>دفع</th><th>آخر مرة</th></tr></thead>
           <tbody id="cnStores"></tbody>
         </table></div>
       </section>
@@ -1237,12 +1237,12 @@
     kpiCards($("cnKpis"), [
       { ic: "💰", label: "شحن الشهر ده", val: st.paidMonth, f: money, hl: true, sub: "من الأول: " + money(st.paid) },
       { ic: "🤖", label: "تكلفة Claude الشهر ده", val: st.costMonth, f: egp2, sub: "من الأول: " + egp2(st.cost) + " (فيها الهدايا)" },
-      { ic: "🏛️", label: "جلسات اتعملت", val: st.sessions, f: fmt, sub: fmt(st.tokens) + " توكن اتخصموا" },
+      { ic: "🏛️", label: "أفكار اتعرضت", val: st.sessions, f: fmt, sub: "💬 رسايل بعد الحكم: " + fmt(st.asks) + " · " + fmt(st.tokens) + " توكن اتخصموا" },
       { ic: "🏪", label: "متاجر جرّبت", val: st.stores, f: fmt, sub: fmt(d.stores.length) + " متجر فتح الصفحة" }
     ]);
     $("cnOn").checked = s.on; $("cnOnT").textContent = s.on ? "المجلس ظاهر للتجار" : "المجلس مقفول";
     $("cnOnH").textContent = s.on ? "كل تاجر شايف «المجلس» في لوحته، وSellybot بيرد على أسئلته عنه." : "مش ظاهر غير لحسابات الإدارة، عشان تجرّبه. أول ما تشغّله بيظهر لكل التجار.";
-    $("cnPer").value = s.per1k; $("cnFree").value = s.free; $("cnMin").value = s.minEgp; $("cnPk").value = s.packs; $("cnAvg").textContent = fmt(d.avg);
+    $("cnPer").value = s.per1k; $("cnFree").value = s.free; $("cnMin").value = s.minEgp; $("cnPk").value = s.packs; $("cnAvg").textContent = fmt(d.avg); $("cnAvgQ").textContent = fmt(d.avgAsk);
     cnPreview();
     var ST = { pending: '<span class="pill warn">⏳ مستني مراجعة</span>', approved: '<span class="pill ok">✅ اتضاف</span>', rejected: '<span class="pill err">❌ اترفض</span>', cancelled: '<span class="pill">التاجر لغاه</span>' };
     $("cnTops").innerHTML = d.topups.length ? d.topups.map(function (t) {
@@ -1252,18 +1252,19 @@
         "<td>" + (t.status === "pending" ? '<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn ok sm" type="button" data-cn="yes">✓ وافق</button><button class="btn ghost sm" type="button" data-cn="no">ارفض</button></div>' : "") + "</td></tr>";
     }).join("") : '<tr><td colspan="6" class="hint">لسه محدش طلب شحن.</td></tr>';
     $("cnStores").innerHTML = d.stores.length ? d.stores.map(function (x) {
-      return "<tr><td><b dir=\"auto\">" + esc(x.store) + '</b> <span class="hint ltr">' + esc(x.slug) + "</span></td><td><b>" + cnNum(x.balance) + "</b>" + (x.free ? '<div class="hint">بدأ بهدية ' + cnNum(x.free) + "</div>" : "") + "</td><td>" + fmt(x.sessions) + "</td><td>" + cnNum(x.used) + "</td><td>" + money(x.paid) + "</td><td>" + (x.lastAt ? esc(ago(x.lastAt)) : "—") + "</td></tr>";
+      return "<tr><td><b dir=\"auto\">" + esc(x.store) + '</b> <span class="hint ltr">' + esc(x.slug) + "</span></td><td><b>" + cnNum(x.balance) + "</b>" + (x.free ? '<div class="hint">بدأ بهدية ' + cnNum(x.free) + "</div>" : "") + "</td><td>" + fmt(x.sessions) + (x.asks ? '<div class="hint">💬 ' + fmt(x.asks) + "</div>" : "") + "</td><td>" + cnNum(x.used) + "</td><td>" + money(x.paid) + "</td><td>" + (x.lastAt ? esc(ago(x.lastAt)) : "—") + "</td></tr>";
     }).join("") : '<tr><td colspan="6" class="hint">لسه محدش فتح صفحة المجلس.</td></tr>';
   }
+  function cnIdeas(n) { return n === 1 ? "فكرة واحدة" : n === 2 ? "فكرتين" : n >= 3 && n <= 10 ? fmt(n) + " أفكار" : fmt(n) + " فكرة"; }
   // what owners see at the numbers typed (before saving too)
   function cnPreview() {
     if (!cnA) return;
     var per = +$("cnPer").value, free = +$("cnFree").value, avg = cnA.avg, st = cnA.stats;
     var cost1k = st.tokens > 50000 ? st.cost / st.tokens * 1000 : 0.01;   // what 1000 tokens cost us: the real average, else Haiku's estimate
-    $("cnPerH").textContent = per > 0 ? "الجلسة على التاجر حوالي " + egp2(avg / 1000 * per) + "، وعليك حوالي " + egp2(avg / 1000 * cost1k) + "." : "";
-    $("cnFreeH").textContent = free > 0 ? "حوالي " + fmt(Math.max(1, Math.floor(free / avg))) + " جلسة، وبتكلّفك حوالي " + egp2(free / 1000 * cost1k) + " لو خلّصها." : "من غير هدية: التاجر بيدفع قبل ما يجرّب.";
+    $("cnPerH").textContent = per > 0 ? "الفكرة على التاجر حوالي " + egp2(avg / 1000 * per) + "، وعليك حوالي " + egp2(avg / 1000 * cost1k) + "." : "";
+    $("cnFreeH").textContent = free > 0 ? "حوالي " + cnIdeas(Math.max(1, Math.floor(free / avg))) + "، وبتكلّفك حوالي " + egp2(free / 1000 * cost1k) + " لو خلّصها." : "من غير هدية: التاجر بيدفع قبل ما يجرّب.";
     var packs = $("cnPk").value.split(/[,،\s]+/).map(Number).filter(function (n) { return n > 0; }).slice(0, 6);
-    $("cnPrev").innerHTML = per > 0 ? packs.map(function (p) { var t = Math.floor(p / per * 1000), n = Math.max(1, Math.floor(t / avg)); return '<div class="r"><span>' + money(p) + "</span><b>" + fmt(t) + " توكن <small>حوالي " + fmt(n) + " جلسة</small></b></div>"; }).join("") : "";
+    $("cnPrev").innerHTML = per > 0 ? packs.map(function (p) { var t = Math.floor(p / per * 1000), n = Math.max(1, Math.floor(t / avg)); return '<div class="r"><span>' + money(p) + "</span><b>" + fmt(t) + " توكن <small>حوالي " + cnIdeas(n) + "</small></b></div>"; }).join("") : "";
   }
   ["cnPer", "cnFree", "cnPk"].forEach(function (id) { $(id).oninput = cnPreview; });
   async function loadCouncil() { try { renderCouncil(await cnApi()); } catch (e) { toast(e.message, true); } }

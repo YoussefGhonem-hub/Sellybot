@@ -1004,8 +1004,8 @@ IF COL_LENGTH('dbo.EoConfirms', 'RemindedAt') IS NULL ALTER TABLE dbo.EoConfirms
 IF COL_LENGTH('dbo.Stores', 'ReportDaily') IS NULL ALTER TABLE dbo.Stores ADD ReportDaily BIT NOT NULL CONSTRAINT DF_Stores_ReportDaily DEFAULT 0, ReportDayAt DATETIME2 NULL;
 -- ---------- «مجلس المستشارين» (Council.cs, 2026-11-24, the user): its own prepaid tokens, apart from the plan ----------
 -- CouncilWallets: what's left (Balance, never below 0, no expiry) and the free tokens it started with · CouncilLedger: every change
--- (free / topup / session / gift) · CouncilSessions: an idea and the council's answer; Tokens = what Claude used, Charged = what the
--- wallet paid (0 without a verdict), Units = Claude's cost the way Finance counts it · CouncilTopups: paid by transfer, approved by the
+-- (free / topup / session / follow / gift) · CouncilSessions: an idea and the council's answer, or (ParentId) a follow-up on one and
+-- its reply; Tokens = what Claude used, Charged = what the wallet paid (0 without an answer), Units = Claude's cost the way Finance counts it · CouncilTopups: paid by transfer, approved by the
 -- super admin (-> Subscriptions, Kind 'council'). One payment backs one request, here and in PlanRequests (Billing.RefUsed).
 IF OBJECT_ID('dbo.CouncilWallets') IS NULL
   CREATE TABLE dbo.CouncilWallets(
@@ -1026,14 +1026,15 @@ BEGIN
   CREATE TABLE dbo.CouncilSessions(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
-    Idea NVARCHAR(3000) NOT NULL, UseData BIT NOT NULL DEFAULT 1,
-    Status NVARCHAR(10) NOT NULL DEFAULT 'running',     -- running / done / failed / no (not a decision)
+    Idea NVARCHAR(3000) NOT NULL, UseData BIT NOT NULL DEFAULT 1, ParentId INT NULL,   -- ParentId: the idea this message follows up on
+    Status NVARCHAR(10) NOT NULL DEFAULT 'running',     -- running / done / failed / no (not a decision, not about this idea)
     Answer NVARCHAR(MAX) NULL,
     InTok INT NOT NULL DEFAULT 0, CacheWrite INT NOT NULL DEFAULT 0, CacheRead INT NOT NULL DEFAULT 0, OutTok INT NOT NULL DEFAULT 0,
     Tokens INT NOT NULL DEFAULT 0, Charged INT NOT NULL DEFAULT 0, Units BIGINT NOT NULL DEFAULT 0,
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), DoneAt DATETIME2 NULL);
   CREATE INDEX IX_CouncilSessions_Store ON dbo.CouncilSessions(StoreId, Id);
 END
+IF COL_LENGTH('dbo.CouncilSessions', 'ParentId') IS NULL ALTER TABLE dbo.CouncilSessions ADD ParentId INT NULL;
 IF OBJECT_ID('dbo.CouncilTopups') IS NULL
 BEGIN
   CREATE TABLE dbo.CouncilTopups(

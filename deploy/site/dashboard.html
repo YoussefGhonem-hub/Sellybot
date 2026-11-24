@@ -1719,6 +1719,27 @@
   .cn-idea{padding:12px 15px;border-radius:14px;background:var(--soft);border:1px solid var(--line);font-size:14px;line-height:1.8;margin-bottom:14px;white-space:pre-wrap}
   .cn-idea b{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
   @media (max-width:640px){.cn-v-top{grid-template-columns:minmax(0,1fr)}.cn-conf{width:auto;display:flex;gap:14px;align-items:center;text-align:start}.cn-ring{margin:0;width:84px;height:84px}.cn-ring b{width:64px;height:64px;font-size:19px}.cn-p{padding:13px;gap:10px}.cn-av{width:36px;height:36px;font-size:18px}}
+  /* «اسأل المجلس عن الحكم ده»: the talk after the verdict */
+  .cn-talk{margin-bottom:16px}
+  .cn-talk h3{margin:0;font-size:16px}
+  .cn-msgs{display:grid;gap:12px;margin:14px 0}
+  .cn-msgs:empty{display:none}
+  .cn-m{display:flex;gap:10px;align-items:flex-start;max-width:min(88%,760px);justify-self:start}
+  .cn-m.me{justify-self:end}
+  .cn-m>div{min-width:0}
+  .cn-b{padding:11px 15px;border-radius:16px;border-start-start-radius:5px;border:1px solid var(--line);background:var(--soft);font-size:14.5px;line-height:1.9;white-space:pre-line;overflow-wrap:anywhere}
+  .cn-m.me .cn-b{border-start-start-radius:16px;border-end-end-radius:5px;background:color-mix(in srgb,var(--brand) 13%,var(--card));border-color:color-mix(in srgb,var(--brand) 32%,var(--line))}
+  .cn-m small{display:block;margin-top:3px;font-size:12px;color:var(--muted)}
+  .cn-m .cn-av{--pc:var(--brand);width:36px;height:36px;font-size:18px}
+  .cn-dots{display:inline-flex;gap:5px;padding:5px 0}
+  .cn-dots i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:cnPulse 1.2s ease-in-out infinite}
+  .cn-dots i:nth-child(2){animation-delay:.18s}.cn-dots i:nth-child(3){animation-delay:.36s}
+  .cn-say{display:flex;gap:10px;align-items:flex-end;margin-top:10px}
+  .cn-say textarea{flex:1;min-width:0;min-height:58px;font-size:15px;line-height:1.7}
+  .cn-say .btn{flex:none}
+  .cn-talk .hint{margin:8px 0 0}
+  .cn-talk .hint button{border:0;background:none;padding:0;color:var(--brand);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
+  @media (max-width:640px){.cn-m{max-width:100%}.cn-say{flex-direction:column;align-items:stretch}}
   /* top-up */
   .cn-packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px}
   .cn-pack{position:relative;border:1.5px solid var(--line);border-radius:15px;background:var(--card);padding:14px 12px 12px;cursor:pointer;text-align:center;transition:border-color .15s,transform .15s,box-shadow .15s}
@@ -1738,7 +1759,7 @@
   .cn-li>span{flex:1;min-width:0}.cn-li b{display:block;font-weight:500;line-height:1.6;overflow-wrap:anywhere}.cn-li small{display:block;font-size:12px;color:var(--muted)}
   .cn-li em{font-style:normal;font-weight:700;flex:none;font-variant-numeric:tabular-nums}.cn-li em.in{color:var(--ok)}
   .cn-credit{margin-top:14px}
-  @media (prefers-reduced-motion:reduce){.cn-p.new,.cn-v.new,.cn-stage.think .cn-av,.cn-p.now p:after{animation:none}}
+  @media (prefers-reduced-motion:reduce){.cn-p.new,.cn-v.new,.cn-stage.think .cn-av,.cn-p.now p:after,.cn-dots i{animation:none}}
 </style>
 <!-- Meta Pixel: quiet here (no page views of the dashboard), only a new account is reported (see pixel.js) -->
 <script src="pixel.js" data-quiet></script>
@@ -3209,6 +3230,7 @@
       <ul class="cn-facts">
         <li>♾️ <span>التوكنز مابتخلصش بوقت، وكل شحنة بتزيد على الباقي.</span></li>
         <li>🧾 <span>رصيد لوحده: مالهوش علاقة برسايل باقتك.</span></li>
+        <li>💬 <span>بعد الحكم تقدر تكمّل كلام مع المجلس في نفس الفكرة.</span></li>
         <li id="cnFreeL">🎁 <span id="cnFreeT"></span></li>
       </ul>
       <button class="btn" id="cnTopGo" type="button">➕ اشحن توكنز</button>
@@ -3224,10 +3246,20 @@
       <div class="msg" id="cnMsg" role="status"></div>
     </form>
 
-    <!-- who sits on it, until there's a session to show -->
+    <!-- who sits on it, until there's an idea's debate to show -->
     <div class="card cn-who" id="cnWho"><h3>مين في المجلس؟</h3><div class="cn-who-g" id="cnWhoG"></div></div>
 
     <div class="cn-out" id="cnOut" hidden aria-live="polite"></div>
+
+    <!-- the talk after the verdict: short replies that know the idea and the debate -->
+    <form class="card cn-talk" id="cnTalk" hidden autocomplete="off">
+      <h3>💬 اسأل المجلس عن الحكم ده</h3>
+      <div class="cn-msgs" id="cnMsgs" aria-live="polite"></div>
+      <div class="cn-ex" id="cnQEx" style="margin-top:12px"></div>
+      <div class="cn-say"><textarea id="cnQ" rows="2" maxlength="1000" aria-label="رسالتك للمجلس" placeholder="مثلًا: طب لو خليتها فوق 700 بدل 500؟"></textarea><button class="btn" id="cnQSend">ابعت</button></div>
+      <p class="hint" id="cnQCost"></p>
+      <div class="msg" id="cnQMsg" role="status"></div>
+    </form>
 
     <!-- top-up: an amount -> tokens, then the same transfer as a plan request -->
     <form class="card cn-top" id="cnTop" hidden autocomplete="off">
@@ -3260,7 +3292,7 @@
     </form>
 
     <div class="cn-cols">
-      <div class="card"><h3>جلساتك</h3><div class="cn-list" id="cnList"></div></div>
+      <div class="card"><h3>أفكارك</h3><div class="cn-list" id="cnList"></div></div>
       <div class="card"><h3>حركة الرصيد</h3><div class="cn-list" id="cnMoves"></div></div>
     </div>
     <p class="hint cn-credit">المجلس شغال بـ <a href="https://github.com/itshussainsprojects/Claude-Council-Skill" target="_blank" rel="noopener">Claude Council</a> (مفتوح المصدر، رخصة MIT). الحكم رأي يساعدك تفكّر، والقرار في الآخر ليك.</p>
@@ -6456,12 +6488,15 @@
     ["شحن مجاني", "محتار أخلّي الشحن مجاني لأي أوردر فوق 500 جنيه ولا أسيبه زي ما هو وأصرف الفرق ده إعلانات."]
   ];
   var cn = null, cnAmount = 0, cnBusy = false, cnPollT = null, cnFull = "", cnDrawn = 0;   // cnDrawn: cards already on the page while the answer streams
+  var cnCur = null;   // the idea on the page, once it has its verdict: {id, asks: [{q, a, status, charged}]}
+  var CN_Q = ["ابدأ إزاي لو ميزانيتي صغيرة؟", "اشرحلي أول خطوة بالتفصيل", "إيه اللي يخليكم تغيّروا رأيكم؟"];
   function cnTok(n) { return fmt(n) + " توكن"; }
-  // "≈ N sessions" by what real sessions use; a balance that isn't a whole one still opens one (the last one runs to its end)
-  function cnSess(tokens) {
+  // "≈ N ideas" by what real ones use; a balance that isn't a whole one still opens one (the last one runs to its end)
+  function cnIdeas(tokens) {
     var n = Math.floor(tokens / Math.max(1, cn.avg)); if (tokens > 0 && n < 1) n = 1;
-    return n === 0 ? "0 جلسة" : n === 1 ? "جلسة واحدة" : n === 2 ? "جلستين" : n <= 10 ? fmt(n) + " جلسات" : fmt(n) + " جلسة";
+    return n === 1 ? "فكرة واحدة" : n === 2 ? "فكرتين" : n >= 3 && n <= 10 ? fmt(n) + " أفكار" : fmt(n) + " فكرة";
   }
+  function cnMsgsN(n) { return n === 1 ? "رسالة واحدة" : n === 2 ? "رسالتين" : n <= 10 ? fmt(n) + " رسايل" : fmt(n) + " رسالة"; }
   function cnTokensFor(egp) { return Math.floor(egp / cn.per1k * 1000); }
   async function loadCouncil() {
     if (!hasF("council")) return;
@@ -6469,17 +6504,22 @@
     cnRender();
     var run = cn.sessions.filter(function (s) { return s.status === "running"; })[0];
     if (run && !cnBusy) { cnOutWait("المجلس لسه بيتناقش في فكرتك. هنعرض الحكم أول ما يخلص…"); cnPoll(run.id); }
+    else if (cn.asking && !cnBusy && !cnCur) { try { cnShow(await api("api/council.ashx?id=" + cn.asking)); } catch (e) { } }   // left while the council was replying
   }
+  async function cnReload() { try { cn = await api("api/council.ashx"); cnRender(); } catch (e) { } }
   function cnRender() {
     var empty = cn.balance <= 0;
     $("cnAdminNote").hidden = cn.on;
     $("cnWallet").classList.toggle("empty", empty);
     $("cnBal").textContent = empty ? "صفر" : fmt(cn.balance);   // «٠» alone reads as a dot
-    $("cnBalS").textContent = empty ? "الرصيد خلص" : "يكفي حوالي " + cnSess(cn.balance);
+    $("cnBalS").textContent = empty ? "الرصيد خلص" : "يكفي حوالي " + cnIdeas(cn.balance);
     $("cnFreeL").hidden = !cn.free;
     $("cnFreeT").textContent = cn.free ? (empty && !cn.everPaid ? "خلّصت الهدية (" + cnTok(cn.free) + "). اشحن وكمّل." : "هدية للتجربة: " + cnTok(cn.free) + ".") : "";
-    $("cnAsk").disabled = empty || cnBusy;
-    $("cnCost").textContent = empty ? "اشحن الأول عشان تعرض فكرة جديدة." : "الجلسة بتاخد حوالي " + cnTok(cn.avg) + "، ولو المجلس ماطلعش بحكم مابتتحسبش.";
+    cnLock();
+    $("cnCost").textContent = empty ? "اشحن الأول عشان تعرض فكرة جديدة." : "الفكرة بتاخد حوالي " + cnTok(cn.avg) + "، ولو المجلس ماطلعش بحكم مابتتحسبش.";
+    $("cnQCost").innerHTML = empty ? 'رصيدك خلص. <button type="button" id="cnQTop">اشحن توكنز</button> وكمّل كلامك مع المجلس.'
+      : "المجلس فاكر الفكرة والحكم. الرسالة بتاخد حوالي " + cnTok(cn.avgAsk) + "، وبتزيد شوية كل ما الكلام يطول. لو عندك فكرة تانية، اكتبها فوق.";
+    if ($("cnQTop")) $("cnQTop").onclick = function () { cnTopOpen(true); };
     // the last top-up: waiting, refused, or just added (3 days)
     var t = cn.topups[0], n = $("cnNote"), recent = t && t.decidedAt && Date.now() - new Date(t.decidedAt).getTime() < 3 * 864e5;
     n.hidden = true; n.className = "cn-note"; n.innerHTML = "";
@@ -6495,12 +6535,12 @@
     $("cnTopGo").hidden = !!(t && t.status === "pending");
     if (t && t.status === "pending") $("cnTop").hidden = true;
     else if (empty && !cnBusy) cnTopOpen(false);
-    // sessions and the wallet's movements
+    // the ideas and the wallet's movements
     $("cnList").innerHTML = cn.sessions.length ? cn.sessions.map(function (s) {
-      return '<button type="button" class="cn-li" data-cn="' + s.id + '"><span><b>' + esc(s.idea) + "</b><small>" + dateAr(s.at) + (s.status === "running" ? " · ⏳ بيتناقشوا" : " · " + cnTok(s.charged)) + '</small></span><em aria-hidden="true">‹</em></button>';
+      return '<button type="button" class="cn-li" data-cn="' + s.id + '"><span><b>' + esc(s.idea) + "</b><small>" + dateAr(s.at) + (s.status === "running" ? " · ⏳ بيتناقشوا" : " · " + cnTok(s.total) + (s.asks ? " · 💬 " + cnMsgsN(s.asks) : "")) + '</small></span><em aria-hidden="true">‹</em></button>';
     }).join("") : '<div class="hint">لسه ماعرضتش أي فكرة.</div>';
     $("cnList").querySelectorAll("[data-cn]").forEach(function (b) { b.onclick = function () { cnOpen(+b.dataset.cn); }; });
-    var KIND = { free: "🎁 هدية للتجربة", topup: "➕ شحن", session: "🏛️ جلسة", gift: "🎁 من إدارة Sellybot" };
+    var KIND = { free: "🎁 هدية للتجربة", topup: "➕ شحن", session: "🏛️ فكرة", follow: "💬 رسالة بعد الحكم", gift: "🎁 من إدارة Sellybot" };
     $("cnMoves").innerHTML = cn.ledger.length ? cn.ledger.map(function (m) {
       var k = m.kind === "gift" && m.tokens < 0 ? "✏️ تعديل من الإدارة" : KIND[m.kind] || m.kind;
       return '<div class="cn-li"><span><b>' + k + "</b><small>" + dateAr(m.at) + (m.note ? " · " + esc(m.note) : "") + '</small></span><em class="' + (m.tokens > 0 ? "in" : "") + '"><bdi dir="ltr">' + (m.tokens > 0 ? "+" : "−") + fmt(Math.abs(m.tokens)) + "</bdi></em></div>";
@@ -6512,7 +6552,11 @@
     $("cnEx").innerHTML = CN_EX.map(function (x, i) { return '<button type="button" data-ex="' + i + '">💡 ' + x[0] + "</button>"; }).join("");
     $("cnEx").onclick = function (e) { var b = e.target.closest("[data-ex]"); if (!b) return; $("cnIdea").value = CN_EX[+b.dataset.ex][1]; $("cnIdea").oninput(); $("cnIdea").focus(); };
     $("cnIdea").oninput = function () { $("cnCount").textContent = this.value.length + " / 3000"; };
+    $("cnQEx").innerHTML = CN_Q.map(function (x, i) { return '<button type="button" data-ex="' + i + '">' + x + "</button>"; }).join("");
+    $("cnQEx").onclick = function (e) { var b = e.target.closest("[data-ex]"); if (!b) return; $("cnQ").value = CN_Q[+b.dataset.ex]; $("cnQ").focus(); };
   })();
+  // one thing at a time: an idea being argued about, or a message being answered
+  function cnLock() { var off = cnBusy || !cn || cn.balance <= 0; $("cnAsk").disabled = off; $("cnQSend").disabled = off; }
 
   // its nav button moves into «المزيد» where the tabs wouldn't fit (from the phone's sidebar up to 1280)
   (function cnPlaceSetup() {
@@ -6583,7 +6627,8 @@
     return '<div class="cn-stage' + (live && (!o || !o.deb.length) ? " think" : "") + '" aria-hidden="true">' + CN_K.map(function (k, i) {
       var p = CN_P[k]; return '<span class="cn-av' + (k === now ? " now" : spoke[k] ? " done" : "") + '" style="--pc:' + p.c + ";--i:" + i + '" title="' + p.n + '">' + p.e + "</span>"; }).join("") + "</div>";
   }
-  function cnOutWait(text) { $("cnWho").hidden = true; $("cnOut").hidden = false; $("cnOut").innerHTML = cnStage(null, true) + '<p class="cn-wait">' + esc(text) + "</p>"; }
+  function cnOutWait(text) { $("cnWho").hidden = true; $("cnOut").hidden = false; $("cnOut").innerHTML = cnStage(null, true) + '<p class="cn-wait">' + esc(text) + "</p>"; cnTalkSet(null); }
+  function cnOutClose() { $("cnOut").hidden = true; $("cnWho").hidden = false; cnTalkSet(null); }
   function cnDraw(text, live, meta) {
     var o = cnParse(text, live), h = "", v = o.v;
     if (meta && meta.idea) h += '<div class="cn-idea"><b>فكرتك</b>' + esc(meta.idea) + "</div>";
@@ -6602,13 +6647,14 @@
       if (v.steps.length) h += "<h5>✅ اعمل إيه من بكرة</h5><ol class=\"cn-steps\">" + v.steps.map(function (s) { return "<li><span>" + cnText(s.t) + "</span></li>"; }).join("") + "</ol>";
       if (v.min) { var mp = cnPersona(v.mk); h += '<div class="cn-min" style="--pc:' + mp.c + '"><span class="cn-av" aria-hidden="true">' + mp.e + "</span><div><b>أقوى رأي مخالف" + (mp.n ? " · " + mp.n : "") + "</b><p>" + cnText(v.min) + "</p></div></div>"; }
       if (!live) h += '<div class="cn-acts"><button class="btn ghost sm" type="button" id="cnCopy">📋 انسخ الحكم</button><button class="btn ghost sm" type="button" id="cnAgain">💡 اعرض فكرة تانية</button>' +
-        (meta && meta.charged !== undefined ? '<span class="hint">الجلسة دي: ' + cnTok(meta.charged) + "</span>" : "") + "</div>";
+        (meta && meta.charged !== undefined ? '<span class="hint">الفكرة دي: ' + cnTok(meta.charged) + "</span>" : "") + "</div>";
       h += "</div>";
     } else if (!live && !o.deb.length && text) h += '<div class="card cn-raw">' + esc(text) + "</div>";
     $("cnWho").hidden = true; $("cnOut").hidden = false; $("cnOut").innerHTML = h;
     cnDrawn = live ? (v && v.pos ? 100 : o.deb.length) : 0;
     if ($("cnCopy")) $("cnCopy").onclick = function () { cnCopy(o, meta); };
-    if ($("cnAgain")) $("cnAgain").onclick = function () { $("cnOut").hidden = true; $("cnWho").hidden = false; $("cnIdea").value = ""; $("cnIdea").oninput(); $("cnIdea").focus(); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); };
+    if (!live) cnTalkSet(meta && meta.id ? meta : null);
+    if ($("cnAgain")) $("cnAgain").onclick = function () { if (cnBusy) { toast("استنى المجلس يرد عليك الأول."); return; } cnOutClose(); $("cnIdea").value = ""; $("cnIdea").oninput(); $("cnIdea").focus(); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); };
   }
   function cnCopy(o, meta) {
     var v = o.v, cl = function (s) { return String(s || "").replace(/\*\*/g, "").trim(); };
@@ -6620,11 +6666,14 @@
   async function cnOpen(id) {
     if (cnBusy) { toast("استنى المجلس يخلص الأول."); return; }
     try {
-      var s = await api("api/council.ashx?id=" + id);
-      if (s.status === "running") { cnOutWait("المجلس لسه بيتناقش في فكرتك…"); cnPoll(id); }
-      else cnDraw(s.answer, false, s);
+      cnShow(await api("api/council.ashx?id=" + id));
       $("cnOut").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (e) { toast(e.message); }
+  }
+  function cnShow(s) {
+    if (s.status === "running") { cnOutWait("المجلس لسه بيتناقش في فكرتك…"); cnPoll(s.id); return; }
+    cnDraw(s.answer, false, s);
+    if (s.asks.some(function (a) { return a.status === "running"; })) { cnBusy = true; cnLock(); cnTalkPoll(s.id); }
   }
   // the page was closed or the connection dropped while the council talked: it finished on the server, so ask for it
   function cnPoll(id, n) {
@@ -6634,27 +6683,22 @@
         var s = await api("api/council.ashx?id=" + id);
         if (s.status === "running") { if (n < 75) cnPoll(id, n + 1); return; }
         if (s.status === "done") cnDraw(s.answer, false, s);
-        else { $("cnOut").hidden = true; $("cnWho").hidden = false; cnEnd(s.status, s.answer); }
+        else { cnOutClose(); cnEnd(s.status, s.answer); }
       } catch (e) { if (n < 75) { cnPoll(id, n + 1); return; } }
-      cnBusy = false;
-      try { cn = await api("api/council.ashx"); cnRender(); } catch (e) { }
+      cnBusy = false; cnReload();
     }, 4000);
   }
-  // a session with no verdict: nothing was charged, and the idea stays in the box
+  // no verdict: nothing was charged, and the idea stays in the box
   function cnEnd(status, answer) {
     if (status === "no") setMsg("cnMsg", (String(answer || "").split("\n").slice(1).join(" ").trim() || "المجلس للأفكار والقرارات.") + " (ماتخصمش منك حاجة)");
     else setMsg("cnMsg", "المجلس ماقدرش يطلع بحكم المرة دي، وماتخصمش منك حاجة. جرّب تاني، أو اكتب الفكرة بطريقة تانية.");
   }
-  $("cnForm").onsubmit = async function (e) {
-    e.preventDefault(); if (cnBusy || !cn) return;
-    var idea = $("cnIdea").value.trim(); setMsg("cnMsg", "");
-    if (idea.length < cn.minIdea) { setMsg("cnMsg", "اكتب فكرتك بتفاصيل أكتر شوية، عشان المجلس يفهمها."); $("cnIdea").focus(); return; }
-    cnBusy = true; $("cnAsk").disabled = true; cnFull = ""; cnDrawn = 0; var sid = 0, ended = null, drawT = 0;
-    cnOutWait("المجلس بيقرا فكرتك… بياخد لحد دقيقة."); $("cnOut").scrollIntoView({ behavior: "smooth", block: "start" });
-    var draw = function () { drawT = 0; if (!ended && !/^NOT A/i.test(cnFull.trim()) && cnFull.trim().length > 8) cnDraw(cnFull, true); };
+  // posts, and hands over the answer as Claude writes it: {id, end, err} (end stays null when the connection dropped on the way)
+  async function cnStream(action, body, onText) {
+    var o = { id: 0, end: null, err: "" };
     try {
-      var r = await fetch("api/council.ashx?action=ask", { method: "POST", credentials: "same-origin", headers: { "X-Requested-With": "fetch", "Content-Type": "application/json" }, body: JSON.stringify({ idea: idea, useData: $("cnData").checked }) });
-      if (!r.ok) { var er = null; try { er = await r.json(); } catch (x) { } throw Object.assign(new Error((er && er.message) || "حصلت مشكلة، جرّب تاني."), { shown: true }); }
+      var r = await fetch("api/council.ashx?action=" + action, { method: "POST", credentials: "same-origin", headers: { "X-Requested-With": "fetch", "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!r.ok) { var er = null; try { er = await r.json(); } catch (x) { } o.err = (er && er.message) || "حصلت مشكلة، جرّب تاني."; return o; }
       var rd = r.body.getReader(), dec = new TextDecoder(), buf = "", one;
       while (!(one = await rd.read()).done) {
         buf += dec.decode(one.value, { stream: true });
@@ -6662,20 +6706,79 @@
           var block = buf.slice(0, i); buf = buf.slice(i + 2);
           var ev = (/^event: (.*)$/m.exec(block) || [])[1], da = (/^data: (.*)$/m.exec(block) || [])[1]; if (!ev || !da) continue;
           var d = JSON.parse(da);
-          if (ev === "start") sid = d.id;
-          else if (ev === "text") { cnFull += d.t; if (!drawT) drawT = setTimeout(draw, 140); }
-          else if (ev === "end") ended = d;
+          if (ev === "start") o.id = d.id; else if (ev === "text") onText(d.t); else if (ev === "end") o.end = d;
         }
       }
-    } catch (err) {
-      if (err.shown || !sid) { clearTimeout(drawT); cnBusy = false; $("cnOut").hidden = true; $("cnWho").hidden = false; setMsg("cnMsg", err.shown ? err.message : "النت قطع قبل ما الفكرة توصل. جرّب تاني."); loadCouncil(); return; }
-    }
+    } catch (e) { if (!o.id) o.err = "النت قطع قبل ما كلامك يوصل. جرّب تاني."; }
+    return o;
+  }
+  $("cnForm").onsubmit = async function (e) {
+    e.preventDefault(); if (cnBusy || !cn) return;
+    var idea = $("cnIdea").value.trim(); setMsg("cnMsg", "");
+    if (idea.length < cn.minIdea) { setMsg("cnMsg", "اكتب فكرتك بتفاصيل أكتر شوية، عشان المجلس يفهمها."); $("cnIdea").focus(); return; }
+    cnBusy = true; cnLock(); cnFull = ""; cnDrawn = 0; var drawT = 0;
+    cnOutWait("المجلس بيقرا فكرتك… بياخد لحد دقيقة."); $("cnOut").scrollIntoView({ behavior: "smooth", block: "start" });
+    var draw = function () { drawT = 0; if (!/^NOT A/i.test(cnFull.trim()) && cnFull.trim().length > 8) cnDraw(cnFull, true); };
+    var s = await cnStream("ask", { idea: idea, useData: $("cnData").checked }, function (t) { cnFull += t; if (!drawT) drawT = setTimeout(draw, 140); });
     clearTimeout(drawT);
-    if (!ended) { cnOutWait("الاتصال قطع، بس المجلس مكمّل عندنا. هنعرض الحكم أول ما يخلص…"); cnPoll(sid); return; }
+    if (s.err) { cnBusy = false; cnOutClose(); setMsg("cnMsg", s.err); loadCouncil(); return; }
+    if (!s.end) { cnOutWait("الاتصال قطع، بس المجلس مكمّل عندنا. هنعرض الحكم أول ما يخلص…"); cnPoll(s.id); return; }
     cnBusy = false;
-    if (ended.status === "done") { cnDraw(cnFull, false, { idea: idea, charged: ended.charged }); $("cnIdea").value = ""; $("cnIdea").oninput(); }
-    else { $("cnOut").hidden = true; $("cnWho").hidden = false; cnEnd(ended.status, cnFull); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); }
-    try { cn = await api("api/council.ashx"); cnRender(); } catch (e2) { }
+    if (s.end.status === "done") { cnDraw(cnFull, false, { id: s.id, idea: idea, charged: s.end.charged, asks: [] }); $("cnIdea").value = ""; $("cnIdea").oninput(); }
+    else { cnOutClose(); cnEnd(s.end.status, cnFull); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); }
+    cnReload();
+  };
+
+  // ---- «اسأل المجلس عن الحكم ده»: short replies about the idea on the page ----
+  function cnTalkSet(s) {
+    var other = !cnCur || !s || cnCur.id !== s.id;
+    cnCur = s ? { id: s.id, asks: s.asks || [] } : null;
+    $("cnTalk").hidden = !s; if (other) { $("cnQ").value = ""; setMsg("cnQMsg", ""); }
+    cnTalkDraw();
+  }
+  function cnTalkDraw() {
+    $("cnMsgs").innerHTML = !cnCur ? "" : cnCur.asks.map(function (m) {
+      var off = /^NOT A/i.test(m.a.trim()), text = off ? m.a.trim().replace(/^NOT A[A-Z ]*[^؀-ۿ]*/i, "") : m.a.trim(), wait = m.status === "running";
+      return '<div class="cn-m me"><div><div class="cn-b">' + esc(m.q) + '</div></div></div><div class="cn-m"><span class="cn-av" aria-hidden="true">🏛️</span><div><div class="cn-b">' +
+        (wait && (off || text.length < 9) ? '<span class="cn-dots" role="img" aria-label="المجلس بيرد"><i></i><i></i><i></i></span>' : cnText(text || "ده مش عن الفكرة دي. لو عندك فكرة جديدة، اكتبها فوق.")) + "</div>" +
+        (wait ? "" : "<small>" + (m.status === "no" ? "ماتخصمش منك حاجة" : cnTok(m.charged)) + "</small>") + "</div></div>";
+    }).join("");
+    $("cnQEx").hidden = !cnCur || cnCur.asks.length > 0;   // the examples are for the first message
+  }
+  function cnTalkFail(cur, q) {
+    if (cnCur !== cur) return;
+    cur.asks = cur.asks.filter(function (m) { return m.status !== "running"; }); cnTalkDraw();
+    if (q && !$("cnQ").value) $("cnQ").value = q;
+    setMsg("cnQMsg", "المجلس ماقدرش يرد المرة دي، وماتخصمش منك حاجة. جرّب تاني.");
+  }
+  // the page was closed or the connection dropped while the council was replying: the reply is on the server
+  function cnTalkPoll(id, n) {
+    clearTimeout(cnPollT); n = n || 0;
+    cnPollT = setTimeout(async function () {
+      var s = null; try { s = await api("api/council.ashx?id=" + id); } catch (e) { }
+      var run = s && s.asks.some(function (a) { return a.status === "running"; });
+      if ((!s || run) && n < 100) { cnTalkPoll(id, n + 1); return; }
+      cnBusy = false;
+      if (s && cnCur && cnCur.id === id) {
+        var was = cnCur.asks.filter(function (m) { return m.status === "running"; })[0], last = s.asks[s.asks.length - 1];
+        if (was && !(last && last.q === was.q)) cnTalkFail(cnCur, was.q); else { cnCur.asks = s.asks; cnTalkDraw(); }
+      }
+      cnReload();
+    }, 3000);
+  }
+  $("cnTalk").onsubmit = async function (e) {
+    e.preventDefault(); if (cnBusy || !cn || !cnCur) return;
+    var q = $("cnQ").value.trim(), cur = cnCur; setMsg("cnQMsg", "");
+    if (q.length < 2) { setMsg("cnQMsg", "اكتب سؤالك للمجلس."); $("cnQ").focus(); return; }
+    var m = { q: q, a: "", status: "running", charged: 0 }, drawT = 0;
+    cnBusy = true; cnLock(); cur.asks.push(m); $("cnQ").value = ""; cnTalkDraw(); $("cnQ").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    var s = await cnStream("follow", { id: cur.id, q: q }, function (t) { m.a += t; if (!drawT) drawT = setTimeout(function () { drawT = 0; cnTalkDraw(); }, 120); });
+    clearTimeout(drawT);
+    if (s.err) { cur.asks.pop(); $("cnQ").value = q; cnTalkDraw(); setMsg("cnQMsg", s.err); }
+    else if (!s.end) { cnTalkPoll(cur.id); return; }
+    else if (s.end.status === "failed") cnTalkFail(cur, q);
+    else { m.status = s.end.status; m.charged = s.end.charged; cnTalkDraw(); }
+    cnBusy = false; cnReload();
   };
 
   // ---- top-up ----
@@ -6685,7 +6788,7 @@
     if (!was) {
       var packs = cn.packs, best = packs.length > 2 ? packs[1] : packs[packs.length - 1];
       $("cnPacks").innerHTML = packs.map(function (p) {
-        return '<button type="button" role="radio" aria-checked="false" class="cn-pack" data-egp="' + p.egp + '">' + (p === best ? "<i>الأنسب</i>" : "") + "<b>" + fmt(p.egp) + " ج.م</b><span>" + cnTok(p.tokens) + "</span><small>حوالي " + cnSess(p.tokens) + "</small></button>";
+        return '<button type="button" role="radio" aria-checked="false" class="cn-pack" data-egp="' + p.egp + '">' + (p === best ? "<i>الأنسب</i>" : "") + "<b>" + fmt(p.egp) + " ج.م</b><span>" + cnTok(p.tokens) + "</span><small>حوالي " + cnIdeas(p.tokens) + "</small></button>";
       }).join("");
       $("cnPacks").onclick = function (e) { var b = e.target.closest("[data-egp]"); if (b) { $("cnAmt").value = ""; cnPick(+b.dataset.egp); } };
       var pay = cn.pay;
@@ -6700,9 +6803,9 @@
   function cnPick(egp) {
     cnAmount = Math.floor(egp || 0); var ok = cnAmount >= cn.minEgp, tok = ok ? cnTokensFor(cnAmount) : 0;
     $("cnPacks").querySelectorAll("[data-egp]").forEach(function (b) { var on = +b.dataset.egp === cnAmount && !$("cnAmt").value; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
-    $("cnPayAmt").textContent = ok ? fmt(cnAmount) + " ج.م" : "—"; $("cnPayTok").textContent = ok ? cnTok(tok) + " · حوالي " + cnSess(tok) : "";
+    $("cnPayAmt").textContent = ok ? fmt(cnAmount) + " ج.م" : "—"; $("cnPayTok").textContent = ok ? cnTok(tok) + " · حوالي " + cnIdeas(tok) : "";
     var typed = $("cnAmt").value !== "", h = $("cnAmtT");
-    h.className = typed && !ok ? "bad" : ""; h.textContent = !typed ? "" : ok ? "= " + cnTok(tok) + "، حوالي " + cnSess(tok) : "أقل شحنة " + fmt(cn.minEgp) + " جنيه";
+    h.className = typed && !ok ? "bad" : ""; h.textContent = !typed ? "" : ok ? "= " + cnTok(tok) + "، حوالي " + cnIdeas(tok) : "أقل شحنة " + fmt(cn.minEgp) + " جنيه";
   }
   $("cnAmt").oninput = function () { if (cn) cnPick(this.value === "" ? 0 : +this.value); };
   $("cnTopGo").onclick = function () { cnTopOpen(true); };
