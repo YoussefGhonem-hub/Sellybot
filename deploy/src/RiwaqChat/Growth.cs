@@ -95,6 +95,28 @@ namespace RiwaqChat
                         Web.Json(res, 200, State(c, Db.StoreById(c, s.Id)));
                         return;
                     }
+                    if (action == "report-daily")
+                    {
+                        // the morning summary: the first one comes tomorrow at 9 ("ابعتلي ملخص دلوقتي" sends one at once)
+                        if (on)
+                        {
+                            var stop = Needs(c, s, WeeklyReport.Feature);
+                            if (stop != null) { Deny(res, c, s, stop); return; }
+                            if (string.IsNullOrEmpty(s.OwnerPhone)) { Web.Error(res, 400, "no_owner", "اكتب رقمك انت على الواتساب الأول، عشان الملخص يوصلك عليه."); return; }
+                        }
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ReportDaily=@o, ReportDayAt=CASE WHEN @o=1 AND ReportDaily=0 THEN SYSUTCDATETIME() ELSE ReportDayAt END WHERE Id=@s", "@o", on, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        Web.Json(res, 200, State(c, Db.StoreById(c, s.Id)));
+                        return;
+                    }
+                    if (action == "follow")
+                    {
+                        // following up an unanswered order confirmation (Followup.cs): hours before the reminder, 0 = off
+                        int hours = Web.Int(body, "hours") ?? -1;
+                        if (hours != 0 && !Followup.Hours.Contains(hours)) { Web.Error(res, 400, "bad_hours", "اختار بعد قد إيه."); return; }
+                        using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET OcFollow=@h WHERE Id=@s", "@h", hours, "@s", s.Id)) cmd.ExecuteNonQuery();
+                        Web.Json(res, 200, State(c, Db.StoreById(c, s.Id)));
+                        return;
+                    }
                     if (action == "handoff")
                     {
                         if (on)
@@ -112,7 +134,8 @@ namespace RiwaqChat
                         if (stop != null) { Deny(res, c, s, stop); return; }
                         if (string.IsNullOrEmpty(s.OwnerPhone)) { Web.Error(res, 400, "no_owner", "اكتب رقمك انت على الواتساب الأول، عشان التقرير يوصلك عليه."); return; }
                         if (!Web.Allow("report-now:" + s.Id, 3, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "بعتنا تقارير كتير في الساعة دي، جرّب بعدين."); return; }
-                        var text = await WeeklyReport.Build(c, s);
+                        object dl; bool daily = body.TryGetValue("daily", out dl) && dl is bool && (bool)dl;   // the morning summary
+                        var text = await WeeklyReport.Build(c, s, daily);
                         var why = await WaNotify.ToOwner(c, s, text, "sb-report-now-" + s.Id + "-" + DateTime.UtcNow.Ticks);
                         if (why != null) { Web.Error(res, 502, "not_sent", "التقرير ماتبعتش: " + why); return; }
                         Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "text", text } });
@@ -156,7 +179,10 @@ namespace RiwaqChat
                 { "images", new Dictionary<string, object> { { "on", WaAccount.HasService(s) && PlanGate.Allows(c, s, WaImages.Feature) } } },
                 { "restock", new Dictionary<string, object>(Restock.State(c, s.Id)) { { "on", s.RestockOn }, { "canWatch", Restock.CanWatch(s) } } },
                 { "handoff", new Dictionary<string, object> { { "on", s.HandoffOn }, { "recent", Handoff.Recent(c, s.Id) } } },
-                { "report", new Dictionary<string, object> { { "on", s.ReportOn }, { "lastAt", s.ReportAt.HasValue ? s.ReportAt.Value.ToString("o") : "" } } },
+                { "report", new Dictionary<string, object> { { "on", s.ReportOn }, { "lastAt", s.ReportAt.HasValue ? s.ReportAt.Value.ToString("o") : "" },
+                    { "daily", s.ReportDaily }, { "dayAt", s.ReportDayAt.HasValue ? s.ReportDayAt.Value.ToString("o") : "" } } },
+                // with more than one number: the alerts go to the team in turn (WaLines.cs)
+                { "team", Team.Members(c, s).Select(m => m.Name).ToList() },
             };
             return d;
         }

@@ -40,6 +40,13 @@ namespace RiwaqChat
         public bool BcAsk;   // «ابعت عرض»: ask Messenger / Instagram customers for their WhatsApp number (Offers.cs)
         public int CartDelay;
         public DateTime? ReportAt;
+        // more than one WhatsApp number (WaLines.cs): who holds the main number, how many numbers are paid for, the line the
+        // owner's reports come from (0 = main); following up an unanswered confirmation (Followup.cs, hours, 0 = off);
+        // the morning summary (WeeklyReport.cs)
+        public string WaStaff;
+        public int WaCount = 1, ReportLine, OcFollow = 3;
+        public bool ReportDaily;
+        public DateTime? ReportDayAt;
         // the store's own logo as its chat bubble (style "logo", StoreLogo.cs): when it was uploaded (0 = none), contain / cover
         public int LogoVer; public string LogoFit;
         public bool IsAdmin;
@@ -260,6 +267,12 @@ namespace RiwaqChat
                 ReportOn = r["ReportOn"] is bool && (bool)r["ReportOn"],
                 ReportAt = r["ReportAt"] == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind((DateTime)r["ReportAt"], DateTimeKind.Utc),
                 HandoffOn = r["HandoffOn"] is bool && (bool)r["HandoffOn"],
+                WaStaff = r["WaStaff"] as string,
+                WaCount = r["WaCount"] is int ? Math.Max(1, (int)r["WaCount"]) : 1,
+                ReportLine = r["ReportLine"] is int ? (int)r["ReportLine"] : 0,
+                OcFollow = r["OcFollow"] is int ? (int)r["OcFollow"] : 3,
+                ReportDaily = r["ReportDaily"] is bool && (bool)r["ReportDaily"],
+                ReportDayAt = r["ReportDayAt"] is DateTime ? DateTime.SpecifyKind((DateTime)r["ReportDayAt"], DateTimeKind.Utc) : (DateTime?)null,
                 BcAsk = r["BcAsk"] is bool && (bool)r["BcAsk"],
                 LogoVer = r["LogoVer"] is int ? (int)r["LogoVer"] : 0,
                 LogoFit = r["LogoFit"] as string,
@@ -953,6 +966,41 @@ BEGIN
   INSERT INTO dbo.TgContacts(StoreId, ChatId, LastAt)
     SELECT StoreId, ChatId, MAX(CreatedAt) FROM dbo.MetaMessages WHERE Channel = 'tg' AND FromCustomer = 1 AND LEN(ChatId) <= 20 GROUP BY StoreId, ChatId;
   INSERT INTO dbo.Migrations(Name) VALUES ('tg-offers');
-END";
+END
+-- ---------- more than one WhatsApp number + the store's team (WaLines.cs, 2026-11-24, the user) ----------
+-- WaLines: the store's extra WhatsApp numbers (the main one stays in Stores.WaInstance / WaNumber, line 0). Each is a number on
+-- Sellybot's Wapilot account linked by QR. Want = the number the owner said they'll link; Number = the phone actually linked;
+-- Staff = who holds it (optional). The bot answers on every line the subscription covers (WaLines.Allowed).
+IF OBJECT_ID('dbo.WaLines') IS NULL
+BEGIN
+  CREATE TABLE dbo.WaLines(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Instance NVARCHAR(150) NULL, Number NVARCHAR(20) NULL, Want NVARCHAR(20) NULL, Staff NVARCHAR(60) NULL,
+    Status NVARCHAR(400) NULL, LastAt DATETIME2 NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_WaLines_Store ON dbo.WaLines(StoreId, Id);
+  CREATE UNIQUE INDEX UX_WaLines_Instance ON dbo.WaLines(Instance) WHERE Instance IS NOT NULL;
+END
+-- WaStaff: who holds the main number · WaCount: how many numbers the WhatsApp service is paid for (300 for one, 260 each for more)
+-- ReportLine: the line the reports and the owner's alerts go out from (0 = the main number) · TeamTurn: whose turn the next alert is
+IF COL_LENGTH('dbo.Stores', 'WaStaff') IS NULL ALTER TABLE dbo.Stores ADD WaStaff NVARCHAR(60) NULL,
+  WaCount INT NOT NULL CONSTRAINT DF_Stores_WaCount DEFAULT 1, ReportLine INT NOT NULL CONSTRAINT DF_Stores_ReportLine DEFAULT 0,
+  TeamTurn INT NOT NULL CONSTRAINT DF_Stores_TeamTurn DEFAULT 0;
+-- which number a message came to / went out from (0 = the main number)
+IF COL_LENGTH('dbo.WaMessages', 'Line') IS NULL ALTER TABLE dbo.WaMessages ADD Line INT NOT NULL CONSTRAINT DF_WaMessages_Line DEFAULT 0;
+-- a handoff: the number the customer wrote to, and who on the team the alert went to
+IF COL_LENGTH('dbo.Handoffs', 'Line') IS NULL ALTER TABLE dbo.Handoffs ADD Line INT NULL, ToName NVARCHAR(60) NULL, ToPhone NVARCHAR(20) NULL;
+-- how many numbers a WhatsApp request / payment is for
+IF COL_LENGTH('dbo.PlanRequests', 'WaCount') IS NULL ALTER TABLE dbo.PlanRequests ADD WaCount INT NULL;
+IF COL_LENGTH('dbo.Subscriptions', 'WaCount') IS NULL ALTER TABLE dbo.Subscriptions ADD WaCount INT NULL;
+-- ---------- following up an order confirmation nobody answered (Followup.cs, 2026-11-24) ----------
+-- Stores.OcFollow: hours before the reminder, and again before the team is told to call (0 = off). RemindedAt: the reminder went;
+-- AlertedAt / AlertTo: still no answer, and who was told to call the customer
+IF COL_LENGTH('dbo.Stores', 'OcFollow') IS NULL ALTER TABLE dbo.Stores ADD OcFollow INT NOT NULL CONSTRAINT DF_Stores_OcFollow DEFAULT 3;
+IF COL_LENGTH('dbo.OrderConfirms', 'RemindedAt') IS NULL ALTER TABLE dbo.OrderConfirms ADD RemindedAt DATETIME2 NULL, AlertedAt DATETIME2 NULL, AlertTo NVARCHAR(80) NULL;
+IF COL_LENGTH('dbo.EoConfirms', 'RemindedAt') IS NULL ALTER TABLE dbo.EoConfirms ADD RemindedAt DATETIME2 NULL, AlertedAt DATETIME2 NULL, AlertTo NVARCHAR(80) NULL;
+-- ---------- the morning summary on WhatsApp (WeeklyReport.cs): every day at 9, next to the weekly report ----------
+IF COL_LENGTH('dbo.Stores', 'ReportDaily') IS NULL ALTER TABLE dbo.Stores ADD ReportDaily BIT NOT NULL CONSTRAINT DF_Stores_ReportDaily DEFAULT 0, ReportDayAt DATETIME2 NULL;";
     }
 }

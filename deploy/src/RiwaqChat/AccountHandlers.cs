@@ -35,6 +35,7 @@ namespace RiwaqChat
                 { "orderConfirm", new Dictionary<string, object> {
                     { "on", s.OcOn }, { "scope", s.OcScope }, { "canCancel", ShopifyAdmin.Has(s.ShopifyScopes, OrderConfirm.Scope) },
                     { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
+                    { "follow", Followup.Json(c, s, "OrderConfirms") },   // the reminder / «مردّش» follow-up and the rate (Followup.cs)
                     { "recent", s.OcOn || s.OcHooked ? (object)OrderConfirm.Recent(c, s.Id) : new object[0] } } },
                 // the delivery-day message on WhatsApp, Shopify side (EasyOrders' is in easyorders.delivery)
                 { "delivery", new Dictionary<string, object> {

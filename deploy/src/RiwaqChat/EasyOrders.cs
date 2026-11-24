@@ -598,6 +598,7 @@ namespace RiwaqChat
                 { "confirm", new Dictionary<string, object> {
                     { "on", s.EoOcOn }, { "scope", s.EoOcScope ?? "all" },
                     { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
+                    { "follow", Followup.Json(c, s, "EoConfirms") },   // the reminder / «مردّش» follow-up and the rate (Followup.cs)
                     { "recent", on ? (object)EoConfirm.Recent(c, s.Id) : new object[0] } } },
                 { "delivery", new Dictionary<string, object> {
                     { "on", s.EoDnOn }, { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
@@ -921,14 +922,18 @@ namespace RiwaqChat
         public static List<Dictionary<string, object>> Recent(SqlConnection c, int storeId, int n = 15)
         {
             var list = new List<Dictionary<string, object>>();
-            using (var cmd = Db.Cmd(c, "SELECT TOP (@n) OrderName, Customer, Total, Status, Note, CreatedAt, AnsweredAt FROM dbo.EoConfirms WHERE StoreId=@s ORDER BY Id DESC", "@n", n, "@s", storeId))
+            using (var cmd = Db.Cmd(c, "SELECT TOP (@n) OrderName, Customer, Total, Status, Note, CreatedAt, AnsweredAt, RemindedAt, AlertedAt, AlertTo FROM dbo.EoConfirms WHERE StoreId=@s ORDER BY Id DESC", "@n", n, "@s", storeId))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
-                    list.Add(new Dictionary<string, object> {
+                {
+                    var row = new Dictionary<string, object> {
                         { "order", r["OrderName"] as string ?? "" }, { "customer", r["Customer"] as string ?? "" }, { "total", r["Total"] as string ?? "" },
                         { "status", r["Status"] as string }, { "note", r["Note"] as string ?? "" },
                         { "at", DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc).ToString("o") },
-                        { "answeredAt", r["AnsweredAt"] == DBNull.Value ? "" : DateTime.SpecifyKind((DateTime)r["AnsweredAt"], DateTimeKind.Utc).ToString("o") } });
+                        { "answeredAt", r["AnsweredAt"] == DBNull.Value ? "" : DateTime.SpecifyKind((DateTime)r["AnsweredAt"], DateTimeKind.Utc).ToString("o") } };
+                    Followup.Decorate(row, r);   // pending: a reminder went, or nobody answered and someone was told to call
+                    list.Add(row);
+                }
             return list;
         }
 

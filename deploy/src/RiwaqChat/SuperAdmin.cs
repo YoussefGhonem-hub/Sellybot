@@ -720,6 +720,8 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                 { "subscriptionId", r["SubscriptionId"] == DBNull.Value ? 0 : Convert.ToInt32(r["SubscriptionId"]) },
                 // the WhatsApp service with this request (or the whole request, kind "wa"): its share of the amount and the number to link
                 { "wa", r["WaAddon"] is bool && (bool)r["WaAddon"] }, { "waAmount", r["WaEgp"] == DBNull.Value ? 0m : (decimal)r["WaEgp"] }, { "waPhone", r["WaPhone"] as string ?? "" },
+                // how many WhatsApp numbers it's for (WaLines.cs; 0 = from before, one number)
+                { "waCount", r["WaCount"] is int ? (int)r["WaCount"] : 0 },
                 // its type when it was sent (new / renew / upgrade / downgrade / wa-new / wa-renew / topup); extra messages: how many, and how we worked them out
                 { "what", r["What"] as string ?? "" }, { "msgs", r["Msgs"] == DBNull.Value ? 0 : (int)r["Msgs"] }, { "calc", r["Calc"] as string ?? "" },
                 // «دعوة تاجر»: how many of its months are at the invite discount, and how much it took off (Referral.cs)
@@ -1341,7 +1343,12 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                     else if (Billing.WaInPlan(st) && (kind == "upgrade" || ch.Kind == "upgrade")) o["waKeptUntil"] = st.PlanEndsAt.Value.ToString("o");
                 }
             }
-            if (kind == "wa" || (d["wa"] is bool && (bool)d["wa"]))
+            if (kind == "wa" && (d["what"] as string) == "wa-add" && st.WaUntil.HasValue)
+            {
+                // more numbers on the running service (WaLines.cs): from now until its own renewal date, which doesn't move
+                o["waStarts"] = now.ToString("o"); o["waEnds"] = st.WaUntil.Value.ToString("o"); o["waAdd"] = true;
+            }
+            else if (kind == "wa" || (d["wa"] is bool && (bool)d["wa"]))
             {
                 var ws = st.WaUntil.HasValue && st.WaUntil.Value > now ? st.WaUntil.Value : now;
                 o["waStarts"] = ws.ToString("o"); o["waEnds"] = ws.AddDays(WaAccount.ServiceDays).ToString("o");
@@ -1356,6 +1363,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             if (id == null) { Web.Error(res, 400, "bad_request"); return; }
             int storeId = 0, planId = 0, months = 0; decimal price = 0, amount = 0; string status = null, method = null, refNo = null, note = null, kind = "plan"; long units = 0;
             bool waAddon = false; decimal waEgp = 0;   // the WhatsApp service asked for with this request, and its share of the amount
+            int waCount = 1; string reqWhat = null;    // how many WhatsApp numbers (WaLines.cs), and "wa-add" = more numbers on the running service
             int reqMsgs = 0;                           // extra messages: how many were asked for (0 = an older +% request)
             Billing.OldInfo old = null;                 // «السعر القديم»: what the request got at the store's old price
             string payRef = null;                       // the payment's reference number (الرقم المرجعي), kept with the payment record
@@ -1367,6 +1375,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                     status = (string)r["Status"]; method = r["PaymentMethod"] as string; refNo = r["PaymentRef"] as string; note = r["Note"] as string; payRef = r["RefNo"] as string;
                     kind = r["Kind"] as string ?? "plan"; units = r["Units"] == DBNull.Value ? 0 : Convert.ToInt64(r["Units"]);
                     waAddon = r["WaAddon"] is bool && (bool)r["WaAddon"]; waEgp = r["WaEgp"] == DBNull.Value ? 0 : (decimal)r["WaEgp"];
+                    waCount = r["WaCount"] is int ? Math.Max(1, (int)r["WaCount"]) : 1; reqWhat = r["What"] as string;
                     reqMsgs = r["Msgs"] == DBNull.Value ? 0 : (int)r["Msgs"];
                     if (r["OldPrice"] != DBNull.Value) old = new Billing.OldInfo { Price = (decimal)r["OldPrice"], LeftAfter = r["OldLeft"] == DBNull.Value ? 0 : (int)r["OldLeft"] };
                 }
@@ -1393,12 +1402,26 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 string.IsNullOrWhiteSpace(refNo) || refNo == "—" ? null : (payRef == null ? "رقم العملية: " : "من: ") + refNo, note, adminNote }.Where(x => !string.IsNullOrWhiteSpace(x)));
             if (notes.Length > 500) notes = notes.Substring(0, 500);
             int subId;
+            if (kind == "wa" && reqWhat == "wa-add")
+            {
+                // more numbers on the running service (WaLines.cs): paid for the days left, so its renewal date stays where it is
+                if (!(s.WaUntil.HasValue && s.WaUntil.Value > DateTime.UtcNow)) { Web.Error(res, 400, "wa_ended", "خدمة الواتساب عند المتجر ده خلصت قبل الموافقة، فالمبلغ كان على أيام خلاص عدّت. ارفض الطلب وخليه يجدّد الخدمة بعدد الأرقام اللي عايزه."); return; }
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.Subscriptions(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, PaidEgp, PaymentMethod, Notes, StartsAt, EndsAt, Kind, WaCount)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, 0, @price, @disc, @paid, @method, @notes, SYSUTCDATETIME(), @end, 'wa', @k)",
+                    "@s", s.Id, "@p", planId > 0 ? (object)planId : DBNull.Value, "@n", WaAccount.ServiceName + " · " + waCount + " رقم إضافي", "@price", price, "@disc", Math.Max(0, price - paid),
+                    "@paid", paid, "@method", (object)method ?? DBNull.Value, "@notes", (object)notes ?? DBNull.Value, "@end", s.WaUntil.Value, "@k", waCount)) subId = (int)cmd.ExecuteScalar();
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET WaCount = WaCount + @k WHERE Id=@s; UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
+                    "@k", waCount, "@s", s.Id, "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
+                Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", "wa" }, { "endsAt", s.WaUntil.Value.ToString("o") } });
+                return;
+            }
             if (kind == "wa")
             {
-                // the WhatsApp service alone: its months from today, or after the end of the service that's still running
+                // the WhatsApp service alone: its months from today, or after the end of the service that's still running, for this many numbers
                 var waEnd = WaAccount.AddService(c, s, planId, Math.Max(1, months), price, paid, method, notes, out subId);
-                using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
-                    "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
+                using (var cmd = Db.Cmd(c, @"UPDATE dbo.Subscriptions SET WaCount=@k WHERE Id=@sub; UPDATE dbo.Stores SET WaCount=@k WHERE Id=@s;
+                    UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
+                    "@k", waCount, "@s", s.Id, "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
                 Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", "wa" }, { "endsAt", waEnd.ToString("o") } });
                 return;
             }
@@ -1428,7 +1451,11 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             Referral.Use(c, id.Value);                       // the invite months this request took are used
             Referral.Paid(c, s.Id, paid);                    // the store that invited this one earns its month (its first paid plan)
             // after the plan (a plan that can't start leaves the service alone): a month from today, or after the running service
-            if (waAddon && waEgp > 0) { int waSub; WaAccount.AddService(c, s, p.Id, 1, waEgp, waPaid, method, notes, out waSub); }   // always one month: it renews on its own
+            if (waAddon && waEgp > 0)   // always one month: it renews on its own
+            {
+                int waSub; WaAccount.AddService(c, s, p.Id, 1, waEgp, waPaid, method, notes, out waSub);
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.Subscriptions SET WaCount=@k WHERE Id=@sub; UPDATE dbo.Stores SET WaCount=@k WHERE Id=@s;", "@k", waCount, "@sub", waSub, "@s", s.Id)) cmd.ExecuteNonQuery();
+            }
             using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
                 "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", kind }, { "startsAt", start.ToString("o") }, { "endsAt", end.ToString("o") } });
@@ -1671,7 +1698,8 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                         // the lowest plan that includes each locked feature (0 = every plan), for the features list on the pricing page
                         { "gates", PlanGate.Features.ToDictionary(f => f, f => (object)PlanGate.MinPlanId(c, f)) },
                         // WhatsApp isn't in any plan: it's a service added to any plan, for this much a month
-                        { "waAddon", new Dictionary<string, object> { { "price", WaAccount.ServicePrice(c) }, { "days", WaAccount.ServiceDays } } },
+                        { "waAddon", new Dictionary<string, object> { { "price", WaAccount.ServicePrice(c) }, { "days", WaAccount.ServiceDays },
+                            { "multi", WaLines.MultiPrice(c) } } },   // each number's month with more than one (WaLines.cs)
                         // «السعر القديم» while it's open: pay before the end of that day and the first months stay at today's price (null = off / over)
                         { "oldOffer", Billing.OldOfferJson(c) },
                     });
@@ -1740,6 +1768,10 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             bool topup = (Web.Str(b, "kind", 10) ?? "") == "topup";
             PlanInfo p; int months; Billing.Quote q; long units = 0; string kind = topup ? "topup" : "plan";
             bool waOnly = (Web.Str(b, "kind", 10) ?? "") == "wa";
+            // the WhatsApp service for how many numbers (WaLines.cs): count, and "add" = more numbers on the running service (paid for the days left)
+            int waCount = Math.Max(1, Math.Min(WaLines.Max, Web.Int(b, "count") ?? 1));
+            bool waAdd = waOnly && (Web.Str(b, "mode", 10) ?? "") == "add";
+            WaLines.WaQuote waQ = null;
             int topupMsgs = 0; string topupCalc = null;   // extra messages: how many, and how the suggestion was worked out
             Billing.OldInfo old = null;                  // «السعر القديم»: what this plan request gets at the store's old price (kept for the admin)
             if (waOnly)
@@ -1809,9 +1841,9 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             // and the number the owner will link, so the admin can get a number ready on Wapilot
             object waAsk; bool wantWa = waOnly || (!topup && b.TryGetValue("wa", out waAsk) && waAsk is bool && (bool)waAsk);
             string waPhone = null; decimal waEgp = 0;
-            // a running plan that includes WhatsApp: the service comes and renews with that plan, there's nothing to buy on its own
-            if (waOnly && Billing.WaInPlan(s))
-            { Web.Error(res, 400, "wa_in_plan", "الواتساب جوه باقتك «" + s.PlanName + "» لحد يوم " + s.PlanEndsAt.Value.ToString("yyyy-MM-dd") + "، وبيتجدد مع الباقة من غير اشتراك زيادة."); return; }
+            // a running plan that includes WhatsApp: its one number comes and renews with that plan; what's bought on its own is more numbers
+            // (WaLines.cs, at the "more than one" price). Adding numbers needs the paid service running (else it's a month of them).
+            if (waAdd && !(s.WaUntil.HasValue && s.WaUntil.Value > DateTime.UtcNow)) waAdd = false;
             // a plan that includes WhatsApp (new, renewed, or later): no separate service and nothing to ask for. Approving the plan
             // turns WhatsApp on (Billing.WaInPlan) and the owner links the number from «واتساب» (the user, 2026-11-23). The number
             // they'll link is optional, so the admin can see it.
@@ -1826,9 +1858,15 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             { Web.Error(res, 400, "wa_running", "خدمة الواتساب شغالة عندك لحد يوم " + s.WaUntil.Value.ToString("yyyy-MM-dd") + "، وتجديدها شهري لوحده. ابعت طلب الباقة من غيرها."); return; }
             if (wantWa)
             {
-                waPhone = WaChat.Phone(Web.Str(b, "waPhone", 40));
-                if (waPhone == null) { Web.Error(res, 400, "bad_wa_phone", "اكتب رقم الواتساب اللي هتربطه بالمساعد، مثلًا 01001234567."); return; }
-                waEgp = WaAccount.ServicePrice(c);   // one month, whatever the plan's period: the service renews monthly on its own
+                // the number they'll link: needed for a first number; more numbers (added, or on top of a plan with WhatsApp inside) may skip it
+                var rawPhone = Web.Str(b, "waPhone", 40);
+                bool phoneOptional = waOnly && (waAdd || Billing.WaInPlan(s));
+                waPhone = WaChat.Phone(rawPhone);
+                if (waPhone == null && !(phoneOptional && string.IsNullOrWhiteSpace(rawPhone))) { Web.Error(res, 400, "bad_wa_phone", "اكتب رقم الواتساب اللي هتربطه بالمساعد، مثلًا 01001234567."); return; }
+                // one month of the numbers, whatever the plan's period (the service renews monthly on its own): 300 for one, 260 each for
+                // more; added numbers pay only the days left until the service's renewal date. With a plan: one number.
+                waQ = WaLines.Quote(c, s, waOnly ? waCount : 1, waAdd);
+                waEgp = waQ.Amount;
                 q.Price += waEgp; q.Total += waEgp;
             }
             // nothing to pay (a plan at the same price): no transfer to check
@@ -1847,12 +1885,15 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 if ((int)cmd.ExecuteScalar() > 0) { Web.Error(res, 409, "has_pending", "عندك طلب لسه بيتراجع. استنى الرد عليه، أو الغيه وابعت طلب جديد."); return; }
 
             // what the request means right now, kept for the admin's cards and the store's history
-            string what = kind == "topup" ? "topup" : kind == "upgrade" ? "upgrade" : kind == "wa" ? (s.WaUntil.HasValue ? "wa-renew" : "wa-new") : Billing.ChangeFor(c, s, p).Kind;
+            string what = kind == "topup" ? "topup" : kind == "upgrade" ? "upgrade" : kind == "wa" ? (waAdd ? "wa-add" : s.WaUntil.HasValue ? "wa-renew" : "wa-new") : Billing.ChangeFor(c, s, p).Kind;
+            // added numbers: how the amount was worked out, for the admin's card and the store's history
+            if (waAdd && waQ != null) topupCalc = waQ.Count + " رقم × " + waQ.Unit.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " ج.م × " + waQ.Days + " يوم من " + WaAccount.ServiceDays;
             int newId;
             try
             {
-                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note, Kind, Units, WaAddon, WaEgp, WaPhone, RefNo, What, Msgs, Calc, OldPrice, OldLeft, RefMonths, RefEgp)
-                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note, @kind, @units, @wa, @waEgp, @waPhone, @refNo, @what, @msgs, @calc, @oldP, @oldL, @refM, @refE)",
+                using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.PlanRequests(StoreId, PlanId, PlanName, Months, PriceEgp, DiscountEgp, AmountEgp, PaymentMethod, PaymentRef, Note, Kind, Units, WaAddon, WaEgp, WaPhone, RefNo, What, Msgs, Calc, OldPrice, OldLeft, RefMonths, RefEgp, WaCount)
+                                             OUTPUT INSERTED.Id VALUES (@s, @p, @n, @m, @price, @disc, @amt, @method, @ref, @note, @kind, @units, @wa, @waEgp, @waPhone, @refNo, @what, @msgs, @calc, @oldP, @oldL, @refM, @refE, @waN)",
+                    "@waN", wantWa && waQ != null ? (object)waQ.Count : DBNull.Value,
                     "@refM", refK > 0 ? (object)refK : DBNull.Value, "@refE", refK > 0 ? (object)refEgp : DBNull.Value,
                     "@oldP", old != null ? (object)old.Price : DBNull.Value, "@oldL", old != null ? (object)old.LeftAfter : DBNull.Value,
                     "@s", s.Id, "@p", p.Id, "@n", p.Name, "@m", months, "@price", q.Price, "@disc", q.Discount, "@amt", q.Total,

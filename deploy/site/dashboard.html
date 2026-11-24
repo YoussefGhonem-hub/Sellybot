@@ -1285,6 +1285,47 @@
   [data-theme=dark] .oc-st.recovered{background:#16301f;color:#6fd49a}
   .oc-st.waiting{background:#eef2ff;color:#3b4cca;border-color:transparent}
   [data-theme=dark] .oc-st.waiting{background:#23284a;color:#a9b4ff}
+  /* following up an unanswered confirmation (Followup.cs) */
+  .oc-follow{margin-top:12px}
+  .oc-follow .seg button{font-size:12.5px}
+  .oc-follow-t{margin:6px 0 0;line-height:1.7}
+  .oc-rate:empty{display:none}
+  .oc-rate .bad b{color:#c2410c}
+  .oc-st.reminded{background:#eef2ff;color:#3b4cca;border-color:transparent}
+  .oc-st.silent{background:#ffedd5;color:#9a3412;border-color:transparent;font-weight:700}
+  [data-theme=dark] .oc-st.reminded{background:#23284a;color:#a9b4ff}
+  [data-theme=dark] .oc-st.silent{background:#3a2412;color:#fdba74}
+  /* «📱 أرقام الواتساب والفريق» (WaLines.cs, api/wa-lines.ashx) */
+  .wl-logo{font-size:24px;display:grid;place-items:center;background:linear-gradient(135deg,color-mix(in srgb,#25d366 18%,var(--card)),color-mix(in srgb,#3b82f6 14%,var(--card)))}
+  .wl-list{display:grid;gap:10px;margin-top:14px}
+  .wl-row{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+  .wl-row.main{background:var(--soft)}
+  .wl-row.off{opacity:.75;border-style:dashed}
+  .wl-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .wl-n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:color-mix(in srgb,#25d366 20%,var(--card));color:#1f7a45}
+  .wl-head b{font-size:14.5px;unicode-bidi:plaintext}
+  .wl-head .space{flex:1}
+  .wl-top{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:linear-gradient(135deg,#fff4cc,#ffe08a);color:#7a4a00}
+  [data-theme=dark] .wl-top{background:#3a2f0c;color:#ffd666}
+  .wl-stats{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12.5px;color:var(--muted)}
+  .wl-staff{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+  .wl-staff label{font-size:12.5px;color:var(--muted);margin:0;min-width:110px}
+  .wl-staff input{flex:1;min-width:160px;max-width:280px}
+  .wl-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .wl-warn{margin-top:8px;font-size:12.5px;color:#8a5200}
+  .wl-row .wa-qr{margin-top:10px}
+  .wl-add{margin-top:14px;padding:12px 14px;border-radius:14px;border:1px dashed color-mix(in srgb,#25d366 45%,var(--line))}
+  .wl-add p{margin:0 0 10px;font-size:13px;line-height:1.7;color:var(--muted)}
+  .wl-add .shop-form{flex-wrap:wrap}
+  .wl-add .shop-form input{flex:1;min-width:150px}
+  .wl-team{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--soft);border:1px solid var(--line);font-size:13px;line-height:1.75}
+  .wl-team b{color:var(--ink)}
+  .wl-rep{margin-top:10px}
+  .wl-rep select{flex:1;max-width:320px}
+  @media (max-width:600px){ .wl-rep>span{flex-basis:100%} .wl-rep select{max-width:none;width:100%} }
+  .wa-cnt{margin:10px 0 2px}
+  .wa-cnt .seg{max-width:260px}
+  .wa-cnt-t{display:block;margin:4px 0 10px;line-height:1.7}
   /* «📣 ابعت عرض» */
   .bc-card,.bc-now{max-width:880px;margin-top:16px}
   .bc-now{margin-top:0;margin-bottom:16px;border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
@@ -2057,6 +2098,11 @@
                 <button type="button" data-v="all">كل الطلبات</button>
                 <button type="button" data-v="cod">الدفع عند الاستلام بس</button>
               </div>
+              <!-- the customer didn't answer: a reminder, then someone calls them (Followup.cs) -->
+              <div class="gr-row oc-follow"><span>📵 لو الزبون مردّش</span>
+                <div class="seg" id="ocFollow" role="radiogroup" aria-label="لو الزبون مردّش"><button type="button" data-v="1">تذكير بعد ساعة</button><button type="button" data-v="3">بعد 3 ساعات</button><button type="button" data-v="6">بعد 6 ساعات</button><button type="button" data-v="0">من غير تذكير</button></div></div>
+              <p class="hint oc-follow-t" id="ocFollowT"></p>
+              <div class="gr-stats oc-rate" id="ocRate"></div>
               <div class="oc-warn" id="ocWarn" hidden></div>
               <div class="oc-list" id="ocList"></div>
             </div>
@@ -2194,6 +2240,11 @@
               <button type="button" data-v="all">كل الطلبات</button>
               <button type="button" data-v="cod">الدفع عند الاستلام بس</button>
             </div>
+            <!-- the customer didn't answer: a reminder, then someone calls them (Followup.cs) -->
+            <div class="gr-row oc-follow"><span>📵 لو الزبون مردّش</span>
+              <div class="seg" id="eoOcFollow" role="radiogroup" aria-label="لو الزبون مردّش"><button type="button" data-v="1">تذكير بعد ساعة</button><button type="button" data-v="3">بعد 3 ساعات</button><button type="button" data-v="6">بعد 6 ساعات</button><button type="button" data-v="0">من غير تذكير</button></div></div>
+            <p class="hint oc-follow-t" id="eoOcFollowT"></p>
+            <div class="gr-stats oc-rate" id="eoOcRate"></div>
             <div class="oc-warn" id="eoOcWarn" hidden></div>
             <div class="oc-list" id="eoOcList"></div>
           </div>
@@ -2507,6 +2558,30 @@
       <div class="msg" id="waMsg"></div>
     </div>
 
+    <!-- more than one WhatsApp number, and who holds each (WaLines.cs, api/wa-lines.ashx) -->
+    <div class="card" id="wl" hidden style="max-width:880px;margin-top:16px">
+      <div class="shop-head">
+        <div class="shop-logo wl-logo" aria-hidden="true">👥</div>
+        <div><h3 style="margin:0">أرقام الواتساب والفريق <span class="new-tag">جديد</span></h3>
+          <p class="sub" style="margin:2px 0 0">عندك أكتر من رقم واتساب وعليهم موظفين؟ اربطهم كلهم، والمساعد يرد على كل رقم. واكتب اسم الموظف جنب رقمه، فلو زبون محتاج حد أو أوردر مردّش، التنبيه يروح للموظفين بالدور.</p></div>
+      </div>
+      <div class="wl-list" id="wlList"></div>
+      <div class="wl-team" id="wlTeam"></div>
+      <div class="gr-row wl-rep" id="wlRepRow" hidden><span>📊 التقارير والتنبيهات بتوصلك من رقم</span><select id="wlRep" aria-label="التقارير بتوصلك من رقم"></select></div>
+      <div class="wl-add" id="wlAdd">
+        <p id="wlAddT"></p>
+        <div id="wlAddForm" hidden>
+          <div class="shop-form">
+            <input type="text" id="wlAddStaff" maxlength="40" placeholder="اسم الموظف (اختياري)" aria-label="اسم الموظف اللي ماسك الرقم (اختياري)">
+            <input type="tel" id="wlAddPhone" class="ltr" maxlength="20" placeholder="رقمه، مثلًا 01001234567 (اختياري)" aria-label="رقم الواتساب اللي هتربطه (اختياري)">
+            <button class="btn" id="wlAddGo" type="button">📱 ضيف الرقم واعرض الـ QR</button>
+          </div>
+        </div>
+        <button class="btn ghost" id="wlAddBtn" type="button">➕ ضيف رقم واتساب</button>
+      </div>
+      <div class="msg" id="wlMsg"></div>
+    </div>
+
     <!-- WhatsApp growth features: messages Sellybot sends by itself from the store's number (Growth.cs, api/growth.ashx) -->
     <div class="card gr" id="growth" data-feat="carts waimages restock report handoff" style="max-width:880px;margin-top:16px">
       <div class="shop-head">
@@ -2572,6 +2647,15 @@
           <pre class="gr-preview" id="rpPreview" hidden></pre>
         </div>
       </div>
+      <div class="oc-box" id="gfDaily" data-feat="report">
+        <label class="toggle"><input type="checkbox" id="rdToggle"><span class="tg" aria-hidden="true"></span>
+          <span><b>☀️ ملخص كل صباح على واتساب</b><small>كل يوم الساعة 9 الصبح يوصلك على رقمك ملخص امبارح: المساعد رد على كام زبون، والأوردرات اللي اتأكدت واللي اتلغت واللي مردّش أصحابها ومين اتبلّغ يكلّمهم، والزباين اللي طلبوا يكلّموكم، والأسئلة اللي المساعد ماعرفش يرد عليها.</small></span></label>
+        <div id="rdOpts" hidden>
+          <div class="gr-row"><button class="btn ghost sm" id="rdNow" type="button">📤 ابعتلي ملخص دلوقتي</button><span class="hint">📅 الملخص الجاي بكرة الساعة 9 الصبح</span></div>
+          <div class="oc-warn" id="rdWarn" hidden></div>
+          <pre class="gr-preview" id="rdPreview" hidden></pre>
+        </div>
+      </div>
       <div class="oc-box" id="gfHandoff" data-feat="handoff">
         <label class="toggle"><input type="checkbox" id="hoToggle"><span class="tg" aria-hidden="true"></span>
           <span><b>🙋 «الزبون محتاجك»</b><small>زبون طلب يكلّم حد من المتجر، أو عنده شكوى، أو عايز حاجة مهمة مش في داتا متجرك (جملة، مشكلة في أوردر، استرجاع)؟ المساعد يبلّغك على رقمك بالسبب وطلبه ورقم الزبون، فتكلّمه بنفسك.</small></span></label>
@@ -2579,6 +2663,7 @@
           <summary>💡 إزاي بتشتغل؟</summary>
           <div>• شغالة على <b>الواتساب</b> و<b>شات الموقع</b>. على الموقع المساعد بياخد رقم الزبون الأول.<br>
           • التنبيه بيوصلك من رقم المتجر على <b>رقمك انت</b> (اكتبه فوق)، ومعاه لينك تكلّم الزبون منه. مرة واحدة لكل زبون كل ساعتين.<br>
+          • عندك أكتر من رقم واتساب وعليهم موظفين؟ اكتب اسم الموظف جنب رقمه في «👥 أرقام الواتساب والفريق» فوق، والتنبيهات تروح لهم <b>بالدور</b> بدل ما تيجي ليك لوحدك.<br>
           • لو رديت على الزبون بنفسك من رقم المتجر، المساعد بيسكت في المحادثة دي ساعتين.<br>
           • كل الزباين اللي طلبوك بيظهروا هنا تحت، حتى لو التنبيه ماوصلكش.</div>
         </details>
@@ -3066,6 +3151,10 @@
             <li><span>💬</span><span>ردود المساعد بتتحسب من رصيد باقتك، زي الشات على موقعك بالظبط</span></li>
             <li><span>📅</span><span id="waAddWhen">بتشتغل من يوم ما الإدارة توافق، لمدة شهر</span></li>
           </ul>
+          <!-- how many WhatsApp numbers (WaLines.cs): 300 for one, 260 each for more -->
+          <div class="gr-row wa-cnt" id="waCntRow" hidden><span id="waCntLbl">عدد أرقام الواتساب</span>
+            <div class="seg" id="waCnt" role="radiogroup" aria-label="عدد أرقام الواتساب"><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button></div></div>
+          <small class="hint wa-cnt-t" id="waCntT" hidden></small>
           <label for="waAddPhone" id="waAddPhoneLbl">رقم الواتساب اللي هتربطه بالمساعد</label>
           <div class="wa-phone" id="waPhoneBox">
             <span class="wa-ph-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></span>
@@ -3891,7 +3980,7 @@
   }
   // a request's type when it was sent: icon, colour, name (the same types the admin sees)
   var RQT = { "new": ["💎", "#e8774a", "باقة جديدة"], renew: ["🔁", "#3b82f6", "تجديد الباقة"], upgrade: ["⬆️", "#7c5cff", "ترقية"], downgrade: ["⬇️", "#64748b", "نزول لباقة أقل"],
-              "wa-new": ["📱", "#1fae55", "خدمة الواتساب"], "wa-renew": ["📱", "#1fae55", "تجديد الواتساب"], topup: ["➕", "#0ea5a4", "رسايل إضافية"] };
+              "wa-new": ["📱", "#1fae55", "خدمة الواتساب"], "wa-renew": ["📱", "#1fae55", "تجديد الواتساب"], "wa-add": ["📱", "#1fae55", "أرقام واتساب زيادة"], topup: ["➕", "#0ea5a4", "رسايل إضافية"] };
   function rqType(r) { return RQT[r.what] || RQT[r.kind === "wa" ? "wa-new" : r.kind === "topup" ? "topup" : r.kind === "upgrade" ? "upgrade" : "new"]; }
   function pendingReq() { return (mine.requests || []).filter(function (r) { return r.status === "pending"; })[0] || null; }
   function subOf(r) { return r.subscriptionId ? (mine.subscriptions || []).filter(function (s) { return s.id === r.subscriptionId; })[0] || null : null; }
@@ -3984,7 +4073,8 @@
         '<div class="ti-h"><span class="ti-ic" aria-hidden="true">' + t[0] + '</span><div class="grow"><small>' + t[2] + '</small><b>' + reqTitle(r) + '</b></div>' +
           '<span class="st-pill ' + st[0] + '">' + (r.kind === "topup" && r.status === "approved" ? "✅ اتضاف" : st[1]) + '</span></div>' +
         '<div class="meta">' + dateAr(r.at) + ' · ' + fmt(r.amount) + ' ج.م' + (r.refAmount > 0 ? ' · 🎁 خصم دعوة تاجر ' + fmt(r.refAmount) + ' ج.م' : '') + (r.method ? ' · ' + esc(r.method) : '') +
-          (r.refNo ? ' · الرقم المرجعي: <span class="ltr">' + esc(r.refNo) + '</span>' : '') + (r.waPhone ? ' · 📱 <span class="ltr">' + esc(r.waPhone) + '</span>' : '') + '</div>' +
+          (r.refNo ? ' · الرقم المرجعي: <span class="ltr">' + esc(r.refNo) + '</span>' : '') + (r.waPhone ? ' · 📱 <span class="ltr">' + esc(r.waPhone) + '</span>' : '') +
+          (r.kind === "wa" && r.waCount > 1 ? ' · ' + fmt(r.waCount) + ' رقم واتساب' : '') + (r.calc && r.what === "wa-add" ? ' · ' + esc(r.calc) : '') + '</div>' +
         (r.note ? '<div class="meta">📝 ملاحظتك: ' + esc(r.note) + '</div>' : '') +
         (r.status === "pending" ? '<div class="meta">⏳ الإدارة بتراجع التحويل، والرد هيظهرلك هنا.</div>' : '') +
         (r.status === "approved" ? '<div class="meta ok-line">' + resultLine(r) + '</div>' : '') +
@@ -4077,7 +4167,7 @@
         : "تجديد باقة الواتساب يوم " + dateAr(sv.until) + (sv.daysLeft <= 1 ? " (بكرة)" : " (بعد " + fmt(sv.daysLeft) + " يوم)")) + '</b><small>' +
       (sv.pending ? "طلب التجديد وصلنا وبيتراجع، وهنفعّله أول ما نتأكد من الدفع."
         : ended ? "المساعد مش بيرد على الواتساب ومفيش رسايل بتطلع من رقمك. جدّدها وكل حاجة ترجع زي ما كانت."
-        : "جدّدها بـ " + fmt(sv.price) + " ج.م عشان المساعد يفضل يرد على زباينك على الواتساب من غير ما يقف.") + '</small></span>' +
+        : "جدّدها بـ " + fmt(sv.monthly || sv.price) + " ج.م" + (sv.count > 1 ? " (" + fmt(sv.count) + " رقم × " + fmt(sv.unit) + ")" : "") + " عشان المساعد يفضل يرد على زباينك على الواتساب من غير ما يقف.") + '</small></span>' +
       '<a href="#plan" class="bn-cta">' + (sv.pending ? "شوف الطلب" : "🔁 جدّد باقة الواتساب") + '</a>';
     wb.hidden = false;
     wb.querySelector(".bn-cta").onclick = function (e) { e.preventDefault(); if (sv.pending) go("plan"); else openWaService(); };
@@ -4102,16 +4192,23 @@
   }
   // from anywhere: the WhatsApp-only request (it doesn't need a plan)
   function addWaService() { openWaService(); }
-  async function openWaService() {
+  // opts.add: more numbers on the running service (paid only for the days left until its renewal); opts.count: how many
+  async function openWaService(opts) {
+    opts = opts || {};
     if (current !== "plan") go("plan");
     for (var i = 0; i < 60 && !(plansData && plansData.plans && mine.methods && mine.methods.length); i++) await new Promise(function (r) { setTimeout(r, 120); });
     if (!plansData || hasPending()) return;
     var sv = waSvc();
     rq.kind = "wa"; rq.plan = null; rq.change = null; rq.base = 0; rq.months = 1;
-    $("rqTitle").textContent = "طلب"; $("rqPlanName").textContent = "خدمة الواتساب";
+    // more numbers (WaLines.cs): added to a running paid service, or bought on top of a plan with WhatsApp inside
+    rq.waAdd = !!opts.add && !!sv.paidOn;
+    rq.waMore = !!opts.add || !!sv.inPlan;
+    // renewing: as many numbers as are paid for now, and never fewer than the extra numbers already linked
+    rq.waCount = opts.count || (rq.waMore ? 1 : Math.max(sv.count || 1, (sv.lines || 1) - (sv.inPlan ? 1 : 0), 1));
+    $("rqTitle").textContent = "طلب"; $("rqPlanName").textContent = rq.waMore ? "أرقام واتساب زيادة" : "خدمة الواتساب";
     $("rqPeriods").innerHTML = ""; $("rqPeriods").hidden = true; $("rqExplain").hidden = true;
-    $("rqHint").textContent = "١) حوّل المبلغ  ·  ٢) اكتب رقم الواتساب ورقم العملية وابعت الطلب. الخدمة بتشتغل أول ما الإدارة تتأكد من الدفع" +
-      (sv.on ? "، والشهر الجديد بيتضاف بعد ميعادها الحالي." : "، لمدة شهر.");
+    $("rqHint").textContent = "١) حوّل المبلغ  ·  ٢) اكتب رقم العملية وابعت الطلب. " + (rq.waAdd ? "الأرقام الزيادة بتشتغل أول ما الإدارة تتأكد من الدفع، لحد ميعاد تجديد خدمتك."
+      : "الخدمة بتشتغل أول ما الإدارة تتأكد من الدفع" + (sv.on && !sv.inPlan ? "، والشهر الجديد بيتضاف بعد ميعادها الحالي." : "، لمدة شهر."));
     fillPayFields(); $("rqSave").textContent = "";
     $("reqForm").hidden = false; $("reqForm").scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -4150,12 +4247,20 @@
     $("waAdd").hidden = !show;
     $("waRunNote").hidden = !(running && rq.kind !== "topup");
     if (running) $("waRunNote").textContent = "📱 خدمة الواتساب شغالة عندك لحد يوم " + dateAr(sv.until) + "، وتجديدها شهري لوحده ومش بيتأثر بتجديد الباقة. هنفكّرك قبلها بيومين.";
-    if (!show) { $("waAddOn").checked = false; return; }
+    if (!show) { $("waAddOn").checked = false; $("waCntRow").hidden = $("waCntT").hidden = true; return; }
     $("waAddOn").checked = only;
     $("waAddOn").disabled = only;
-    $("waAddPrice").textContent = (only ? "" : "+") + fmt(sv.price);
+    $("waAddPrice").textContent = (only ? "" : "+") + fmt(sv.price); $("waAddPrice").nextElementSibling.textContent = "ج.م في الشهر";
     $("waAddWhen").textContent = sv.on ? "شغالة عندك لحد يوم " + dateAr(sv.until) + "، والشهر الجديد بيبدأ بعدها" : "بتشتغل من يوم ما الإدارة توافق لمدة شهر، وتجديدها شهري لوحده";
-    if (!$("waAddPhone").value) {
+    // the WhatsApp service alone: for how many numbers (WaLines.cs)
+    $("waCntRow").hidden = $("waCntT").hidden = !only;
+    $("waAddTitle").textContent = only && rq.waMore ? "📱 أرقام واتساب زيادة" : "ضيف خدمة الواتساب";
+    $("waCntLbl").textContent = only && rq.waMore ? "أرقام زيادة" : "عدد أرقام الواتساب";
+    $("waAddPhoneLbl").textContent = waPhoneOptional() ? "رقم الواتساب الجديد اللي هتربطه (اختياري)" : "رقم الواتساب اللي هتربطه بالمساعد";
+    if (only && rq.waAdd) $("waAddWhen").textContent = "بتشتغل من يوم ما الإدارة توافق لحد يوم " + dateAr(sv.paidUntil) + " (ميعاد تجديد خدمتك)، وبعدها بتتجدد مع باقي أرقامك";
+    else if (only && sv.inPlan) $("waAddWhen").textContent = "الرقم الأساسي جوه باقتك، والأرقام الزيادة بتشتغل من يوم ما الإدارة توافق لمدة شهر";
+    if (waPhoneOptional()) $("waAddPhone").value = "";   // more numbers: a new number, never the one linked now
+    else if (!$("waAddPhone").value) {
       // the phone linked now, otherwise the one from the last request
       var last = (mine.requests || []).filter(function (r) { return r.waPhone; })[0];
       $("waAddPhone").value = sv.number || (last ? last.waPhone : "");
@@ -4174,16 +4279,40 @@
   $("waAddPhone").oninput = waPhonePaint;
   function waAddOn() { return !$("waAdd").hidden && $("waAddOn").checked; }
   function waAddMonths() { return 1; }   // always one month: the service renews monthly on its own
+  // more numbers (added, or on top of a plan with WhatsApp inside): the number to link is optional, like on the server
+  function waPhoneOptional() { return rq.kind === "wa" && !!rq.waMore; }
+  // what `n` WhatsApp numbers cost, worked out the same way as the server (WaLines.Quote): one number at the single price, two or
+  // more at the "more than one" price each; add = on the running service, only the days left until its renewal date
+  function waQuote(n, add) {
+    var sv = waSvc(), one = sv.price || 300, multi = Math.min(sv.multi || one, one);
+    add = !!add && !!sv.paidOn;
+    var total = (sv.inPlan ? 1 : 0) + (add ? (sv.count || 1) : 0) + n, unit = total >= 2 ? multi : one;
+    if (add) { var days = Math.max(1, Math.ceil((new Date(sv.paidUntil) - Date.now()) / 864e5)); return { n: n, unit: unit, days: days, total: total, add: true, amount: Math.ceil(n * unit * days / (sv.days || 30)) }; }
+    return { n: n, unit: unit, days: sv.days || 30, total: total, add: false, amount: n * unit };
+  }
   // the amount = what was picked (rq.base) + the service when it's ticked
   function waAddPaint() {
     var on = waAddOn(), box = $("waAdd"), inPlan = waInPlanReq();
     box.classList.toggle("on", on); $("waAddBody").hidden = !on;
     if (box.hidden) return;
-    var add = on && !inPlan ? waSvc().price * waAddMonths() : 0;
+    var qq = rq.kind === "wa" ? waQuote(rq.waCount || 1, rq.waAdd) : waQuote(1, false);
+    var add = on && !inPlan ? qq.amount * waAddMonths() : 0;
     $("rqAmount").textContent = fmt((rq.base || 0) + add) + " ج.م";
     $("waAddSum").textContent = inPlan ? "الواتساب جوه سعر الباقة، فمش بيتضاف عليه حاجة." : on && rq.kind !== "wa" ? "المبلغ المطلوب فوق فيه " + fmt(add) + " ج.م لخدمة الواتساب" + (waAddMonths() > 1 ? " (" + monthsAr(waAddMonths()) + ")" : "") + "." : "";
+    if (rq.kind !== "wa") return;
+    // how many numbers, with the sum worked out from this store's own numbers
+    $("waAddPrice").textContent = fmt(qq.amount); $("waAddPrice").nextElementSibling.textContent = qq.add ? "ج.م دلوقتي" : "ج.م في الشهر";
+    document.querySelectorAll("#waCnt button").forEach(function (b) { var o = +b.dataset.v === qq.n; b.classList.toggle("on", o); b.setAttribute("aria-checked", o ? "true" : "false"); });
+    var sv = waSvc(), one = sv.price || 300, multi = Math.min(sv.multi || one, one), after = (sv.count || 1) + qq.n;
+    $("waCntT").textContent = qq.add
+      ? fmt(qq.n) + " رقم × " + fmt(qq.unit) + " ج.م × " + fmt(qq.days) + " يوم من " + fmt(sv.days || 30) + " = " + fmt(qq.amount) + " ج.م دلوقتي، لحد يوم " + dateAr(sv.paidUntil) + " ميعاد تجديد خدمتك. ومن التجديد: " +
+        fmt(after) + " رقم × " + fmt(qq.unit) + " = " + fmt(after * qq.unit) + " ج.م في الشهر" + (sv.inPlan ? " (غير رقم باقتك)." : ".")
+      : sv.inPlan ? "الرقم الأساسي جوه باقتك. " + fmt(qq.n) + " رقم زيادة × " + fmt(qq.unit) + " ج.م = " + fmt(qq.amount) + " ج.م في الشهر."
+      : qq.n === 1 ? "رقم واحد بـ " + fmt(one) + " ج.م في الشهر. ولو عندك أكتر من رقم، كل رقم بـ " + fmt(multi) + " بس."
+      : fmt(qq.n) + " رقم × " + fmt(qq.unit) + " ج.م = " + fmt(qq.amount) + " ج.م في الشهر (بدل " + fmt(qq.n * one) + " لو كل رقم بـ " + fmt(one) + ").";
   }
   $("waAddOn").onchange = waAddPaint;
+  document.querySelectorAll("#waCnt button").forEach(function (b) { b.onclick = function () { rq.waCount = +b.dataset.v; waAddPaint(); }; });
 
   // extra quota for the rest of this month (on a running plan)
   // ---- extra messages for the rest of this month, worked out from this store's own pace (server: Billing.TopupNeed) ----
@@ -4343,8 +4472,8 @@
   }
   $("reqForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("rqMsg", "");
-    var phN = ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length;   // in a plan with WhatsApp inside the number is optional
-    if (waAddOn() && (waInPlanReq() ? phN > 0 && phN < 8 : phN < 8)) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waPhoneBox").classList.add("bad"); $("waAddPhone").focus(); return; }
+    var phN = ($("waAddPhone").value.match(/[0-9٠-٩]/g) || []).length;   // in a plan with WhatsApp inside (and for more numbers) the number is optional
+    if (waAddOn() && (waInPlanReq() || waPhoneOptional() ? phN > 0 && phN < 8 : phN < 8)) { setMsg("rqMsg", "اكتب رقم الواتساب اللي هتربطه بالمساعد."); $("waPhoneBox").classList.add("bad"); $("waAddPhone").focus(); return; }
     var nothingToPay = rq.kind === "upgrade" && rq.change && rq.change.amount <= 0 && (!waAddOn() || waInPlanReq());   // a plan at the same price, no WhatsApp service
     if (!nothingToPay && !$("rqMethod").value) { setMsg("rqMsg", "اختار دفعت بإيه."); return; }
     var refNo = normRef($("rqRefNo").value);
@@ -4353,7 +4482,7 @@
     var b = $("rqSend"); b.disabled = true;
     try {
       // the WhatsApp service alone (kind "wa", no plan in it), extra quota, or a plan (the service may be ticked with it, below)
-      var body = rq.kind === "wa" ? { kind: "wa", method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
+      var body = rq.kind === "wa" ? { kind: "wa", count: rq.waCount || 1, mode: rq.waAdd ? "add" : "", method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
         : rq.kind === "topup" ? { kind: "topup", msgs: rq.msgs, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() }
         : { planId: rq.plan.id, months: rq.months, method: $("rqMethod").value, ref: $("rqRef").value.trim(), note: $("rqNote").value.trim() };
       if (waInPlanReq()) { if ($("waAddPhone").value.trim()) body.waPhone = $("waAddPhone").value.trim(); }   // the WhatsApp is in the plan: only the number
@@ -4798,6 +4927,7 @@
     if (oc.on && !oc.whatsapp) warn.push("⚠️ واتساب المتجر مش مربوط، فالرسايل مش هتتبعت. اربطه من صفحة الواتساب.");
     if (oc.on && !oc.canCancel) warn.push("⚠️ التطبيق ناقصه صلاحية write_orders، فلما الزبون يلغي هنعلّم الأوردر عندك بس، ومش هنقدر نلغيه في Shopify. ضيفها في Scopes واعمل Release ووافق عليها، وبعدين اربط تاني.");
     $("ocWarn").hidden = !warn.length; $("ocWarn").textContent = warn.join("\n"); $("ocWarn").style.whiteSpace = "pre-line";
+    ocFollowPaint(oc.follow, "ocFollow", "ocFollowT", "ocRate");
     var list = $("ocList"); list.textContent = "";
     var rows = oc.recent || [];
     if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = "لسه مفيش طلبات جديدة من ساعة ما فعّلته. أول طلب هيظهر هنا."; list.appendChild(e); return; }
@@ -4806,10 +4936,40 @@
       var b = document.createElement("b"); b.className = "ltr"; b.textContent = r.order;
       var who = document.createElement("span"); who.textContent = [r.customer, r.total].filter(Boolean).join(" · ");
       var st = document.createElement("span"); st.className = "oc-st " + r.status; st.textContent = OC_STATUS[r.status] || r.status;
-      var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "");
+      var sm = document.createElement("small"); sm.textContent = ago(r.at) + ocAlertNote(r) + (r.note ? " · " + r.note : "");
       row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
     });
   }
+  // ---------- an unanswered confirmation (Followup.cs): a reminder after N hours, then «📵 مردّش» and someone calls ----------
+  OC_STATUS.reminded = "🔔 اتبعتله تذكير"; OC_STATUS.silent = "📵 مردّش";
+  function hoursAr(h) { return h === 1 ? "ساعة" : h === 2 ? "ساعتين" : fmt(h) + " ساعات"; }
+  function ocAlertNote(r) { return r.status !== "silent" || !r.alertTo ? "" : r.alertTo === "انت" ? " · وصلك تنبيه تكلّمه" : " · اتبلّغ " + r.alertTo + " يكلّمه"; }
+  function ocFollowPaint(f, segId, textId, rateId) {
+    f = f || {}; var h = f.hours == null ? 3 : f.hours, team = f.team || [];
+    document.querySelectorAll("#" + segId + " button").forEach(function (b) { var on = +b.dataset.v === h; b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
+    $(textId).textContent = !h ? "مش هنبعت تذكير، والطلب هيفضل «⏳ مستني رد الزبون» لحد ما يرد."
+      : "لو مردّش بعد " + hoursAr(h) + "، بنبعتله تذكير واحد من رقم متجرك. ولو فضل مردّش " + hoursAr(h) + " كمان، بيبان هنا «📵 مردّش» و" +
+        (team.length ? "بنبلّغ فريقك بالدور (" + team.join("، ") + ") يكلّمه." : f.owner ? "بيوصلك تنبيه على رقمك تكلّمه." : "بيوصلك تنبيه تكلّمه، لو كتبت رقمك في صفحة الواتساب.") +
+        " مش بنبعت بالليل، ولو رد بـ 1 أو 2 بعد كده بيتأكد أو يتلغي لوحده.";
+    // percentages of the orders that ended one way or another (they add up to 100); the ones still waiting are a count
+    var st = f.stats || {}, n = (st.yes || 0) + (st.no || 0) + (st.silent || 0), el = $(rateId);
+    if (!n && !st.waiting) { el.innerHTML = ""; return; }
+    function pc(x) { return n ? Math.round((x || 0) * 100 / n) + "%" : "—"; }
+    el.innerHTML = [[pc(st.yes), "اتأكدوا (آخر 30 يوم)", "ok"], [pc(st.no), "الزباين لغوهم", ""], [pc(st.silent), "مردّوش", st.silent ? "bad" : ""]]
+      .concat(st.waiting ? [[fmt(st.waiting), "لسه مستنيين ردهم", ""]] : [])
+      .concat(h && st.saved ? [[fmt(st.saved), "اتأكدوا بعد التذكير", "ok"]] : [])
+      .map(function (x) { return '<div class="' + x[2] + '"><b>' + x[0] + '</b><small>' + x[1] + '</small></div>'; }).join("");
+  }
+  async function saveFollow(h) {
+    try {
+      await api("api/growth.ashx?action=follow", { method: "POST", json: { hours: h } });
+      await refreshMe(); renderOc(); if (me.easyorders) renderEoOc(me.easyorders.confirm || {});
+      toast(h ? "اتحفظ ✓ التذكير بعد " + hoursAr(h) : "التذكير اتقفل");
+    } catch (err) { toast(err.message); }
+  }
+  ["ocFollow", "eoOcFollow"].forEach(function (id) {
+    document.querySelectorAll("#" + id + " button").forEach(function (b) { b.onclick = function () { if (!b.classList.contains("on")) saveFollow(+b.dataset.v); }; });
+  });
   async function saveOc(enabled, scope, btn) {
     setMsg("shopMsg", "");
     try {
@@ -5002,6 +5162,7 @@
     if (oc.on && !oc.whatsapp) warn.push("⚠️ واتساب المتجر مش مربوط، فالرسايل مش هتتبعت. اربطه من صفحة الواتساب.");
     if (oc.on && !eoState().hookAt) warn.push("⚠️ لسه ماوصلناش أي طلب من EasyOrders. اتأكد إن الـ Webhook معمول.");
     $("eoOcWarn").hidden = !warn.length; $("eoOcWarn").textContent = warn.join("\n"); $("eoOcWarn").style.whiteSpace = "pre-line";
+    ocFollowPaint(oc.follow, "eoOcFollow", "eoOcFollowT", "eoOcRate");
     var list = $("eoOcList"); list.textContent = "";
     var rows = oc.recent || [];
     if (!rows.length) { var e = document.createElement("div"); e.className = "oc-empty"; e.textContent = "لسه مفيش طلبات جديدة من ساعة ما فعّلته. أول طلب هيظهر هنا."; list.appendChild(e); return; }
@@ -5009,8 +5170,8 @@
       var row = document.createElement("div"); row.className = "oc-row";
       var b = document.createElement("b"); b.className = "ltr"; b.textContent = r.order;
       var who = document.createElement("span"); who.textContent = [r.customer, r.total].filter(Boolean).join(" · ");
-      var stx = document.createElement("span"); stx.className = "oc-st " + r.status; stx.textContent = EO_STATUS[r.status] || r.status;
-      var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "");
+      var stx = document.createElement("span"); stx.className = "oc-st " + r.status; stx.textContent = EO_STATUS[r.status] || OC_STATUS[r.status] || r.status;
+      var sm = document.createElement("small"); sm.textContent = ago(r.at) + ocAlertNote(r) + (r.note ? " · " + r.note : "");
       row.appendChild(b); row.appendChild(who); row.appendChild(stx); row.appendChild(sm); list.appendChild(row);
     });
   }
@@ -5791,7 +5952,7 @@
 
   async function loadWa() {
     loadGrowth(); loadLocks().then(function () { if (gr) renderGrowth(); });   // the lock badges need both
-    try { wa = await api("api/whatsapp.ashx"); renderWa(); }
+    try { wa = await api("api/whatsapp.ashx"); renderWa(); loadLines(); }
     catch (e) { setMsg("waMsg", e.message); }
   }
   // ---------------- «🚀 مميزات الواتساب»: messages Sellybot sends by itself from the store's number (api/growth.ashx) ----------------
@@ -5871,7 +6032,8 @@
       var row = document.createElement("div"); row.className = "oc-row";
       var b = document.createElement("b"); b.textContent = ({ web: "🌐 الموقع", fb: "💬 المسنجر", ig: "📸 الإنستجرام", tg: "✈️ تيليجرام" })[r.channel] || "📱 واتساب";
       var who = document.createElement("span"); who.textContent = r.reason;
-      var st = document.createElement("span"); st.className = "oc-st " + (r.status === "sent" ? "confirmed" : r.status === "failed" ? "failed" : ""); st.textContent = HO_ST[r.status] || r.status;
+      var st = document.createElement("span"); st.className = "oc-st " + (r.status === "sent" ? "confirmed" : r.status === "failed" ? "failed" : "");
+      st.textContent = r.to ? (r.status === "sent" ? "✅ اتبلّغ " : "⚠️ ماوصلش لـ ") + r.to : HO_ST[r.status] || r.status;   // r.to: the team member it went to
       var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "") + " · ";
       if (r.phone) { var a = document.createElement("a"); a.href = "https://wa.me/" + r.phone; a.target = "_blank"; a.rel = "noopener"; a.className = "ltr"; a.textContent = "💬 كلّمه +" + r.phone; sm.appendChild(a); }
       row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
@@ -5890,7 +6052,26 @@
     var w = []; grBase(w);
     if (rp.on && !gr.ownerPhone) w.push("⚠️ اكتب رقمك انت على الواتساب فوق، عشان التقرير يوصلك.");
     dnWarn($("rpWarn"), w);
+    // the morning summary
+    $("rdToggle").checked = !!rp.daily; $("rdOpts").hidden = !rp.daily;
+    var dw = []; grBase(dw);
+    if (rp.daily && !gr.ownerPhone) dw.push("⚠️ اكتب رقمك انت على الواتساب فوق، عشان الملخص يوصلك.");
+    dnWarn($("rdWarn"), dw);
   }
+  $("rdToggle").onchange = function () {
+    var want = this.checked;
+    if (want && locks.report) { this.checked = false; openLock("report"); return; }
+    saveGrowth("report-daily", { enabled: want }, want ? "ملخص كل صباح اتفعّل ✅ أول واحد بكرة الساعة 9" : "ملخص كل صباح اتقفل", this);
+  };
+  $("rdNow").onclick = async function () {
+    var b = this; b.disabled = true; setMsg("grMsg", "");
+    try {
+      var r = await api("api/growth.ashx?action=report-now", { method: "POST", json: { daily: true } });
+      $("rdPreview").textContent = r.text.replace(/\*/g, ""); $("rdPreview").hidden = false;
+      toast("الملخص اتبعتلك على الواتساب ✅");
+    } catch (err) { setMsg("grMsg", err.message); }
+    b.disabled = false;
+  };
   $("rpToggle").onchange = function () {
     var want = this.checked;
     if (want && locks.report) { this.checked = false; openLock("report"); return; }
@@ -6230,6 +6411,7 @@
       if (up) { renderUpsell(up); blocked = ""; } else stopUpsell();
       $("waPlatBlocked").hidden = !blocked; $("waPlatBlocked").textContent = blocked ? "ℹ️ " + blocked : "";
       $("waLink").hidden = !!blocked || !!up;
+      $("wl").hidden = true; stopLineQr();   // «أرقام الواتساب والفريق» needs the main number first
       stopQr(); return;
     }
     stopUpsell();
@@ -6321,6 +6503,142 @@
     var r = await waCall("disconnect", {}, this, "…");
     if (r) { stopQr(); await loadWa(); setMsg("waMsg", platform ? "اتلغى الربط." : "اتلغى الربط.", true); }
   };
+
+  // ---------------- «👥 أرقام الواتساب والفريق»: more than one number, and who holds each (api/wa-lines.ashx) ----------------
+  // The main number is linked above (api/whatsapp.ashx); here every number gets its holder's name, the extra ones are added,
+  // linked by their own QR, unlinked and removed. Alerts go to the named numbers in turn (Team in WaLines.cs).
+  var wl = null, wlQrId = null, wlQrSrc = "", wlQrTimer = null;
+  async function loadLines() {
+    if (!wa || !wa.connected) { $("wl").hidden = true; return; }
+    try { wl = await api("api/wa-lines.ashx"); renderLines(); } catch (e) { setMsg("wlMsg", e.message); }
+  }
+  function wlPost(action, body, btn, okText) {
+    if (btn) btn.disabled = true; setMsg("wlMsg", "");
+    return api("api/wa-lines.ashx?action=" + action, { method: "POST", json: body || {} })
+      .then(function (r) { wl = r; renderLines(); if (r.note) setMsg("wlMsg", r.note, true); else if (okText) toast(okText); loadGrowth(); return r; })
+      .catch(function (err) { setMsg("wlMsg", err.message); return null; })
+      .finally(function () { if (btn) btn.disabled = false; });
+  }
+  function renderLines() {
+    var card = $("wl");
+    card.hidden = !wl || !wl.mainConnected || !(wa && wa.connected);
+    if (card.hidden) { stopLineQr(); return; }
+    if (wlQrId != null && !wlQrTimer && !wlQrBusy && current === "wa") setTimeout(pollLineQr, 0);   // a QR on screen keeps refreshing
+    var list = $("wlList"); list.textContent = "";
+    var lines = wl.lines || [];
+    lines.forEach(function (l) {
+      var row = document.createElement("div"); row.className = "wl-row" + (l.main ? " main" : "") + (!l.works && !l.main ? " off" : ""); row.dataset.id = l.id;
+      var pill = l.main ? (l.linked ? "✅ مربوط" : "📱 مستني الـ QR فوق") : !l.assigned ? "⏳ بنجهّزلك رقم" : !l.works ? "⚠️ مش ضمن اشتراكك" : l.linked ? "✅ مربوط" : "📱 مستني تمسح الـ QR";
+      var head = '<div class="wl-head"><span class="wl-n">' + l.index + '</span><b>' + esc(l.label) + '</b>' + (l.main ? '<span class="st-pill">⭐ الأساسي</span>' : '') +
+        '<span class="st-pill' + (l.linked && l.works ? ' answered' : '') + '">' + pill + '</span>' + (l.top ? '<span class="wl-top">🏆 أكتر رقم بيرد</span>' : '') + '</div>';
+      var st = l.stats || {};
+      var stats = '<div class="wl-stats"><span>👥 ' + fmt(st.chats) + ' زبون كلّموه</span><span>🤖 ' + fmt(st.bot) + ' رد من المساعد</span>' +
+        '<span>🙋 ' + fmt(st.staff) + ' رد من الموبايل' + (st.staffChats ? ' (لـ ' + fmt(st.staffChats) + ' زبون)' : '') + '</span>' +
+        (st.alerts ? '<span>🔔 ' + fmt(st.alerts) + ' تنبيه</span>' : '') + '<span>· آخر 30 يوم</span></div>';
+      row.innerHTML = head + stats +
+        '<div class="wl-staff"><label for="wlStaff' + l.id + '">👤 الموظف اللي ماسكه</label><input type="text" id="wlStaff' + l.id + '" maxlength="40" placeholder="اسمه (اختياري)" value="' + esc(l.staff) + '">' +
+        '<button type="button" class="btn ghost sm" data-act="staff">💾 حفظ</button></div>' +
+        (l.status ? '<div class="wl-warn">' + esc(l.status) + '</div>' : '');
+      if (!l.main && wlQrId === l.id) {
+        var q = document.createElement("div"); q.className = "wa-qr";
+        q.innerHTML = '<div class="wa-qr-img"><img alt="كود QR لربط الرقم ده"' + (wlQrSrc ? ' src="' + wlQrSrc + '"' : ' hidden') + '><div class="wa-qr-wait"' + (wlQrSrc ? ' hidden' : '') + '>⏳ بنجهّز الكود…</div></div>' +
+          '<div><h4>امسح الكود من موبايل الرقم ده</h4><ol class="wa-qr-steps"><li>افتح واتساب على الموبايل اللي عليه الرقم ده' + (l.want ? ' (<span class="ltr">' + esc(localPhone(l.want)) + '</span>)' : '') + '.</li>' +
+          '<li>الإعدادات (أو ⋮ على أندرويد) ← <b>الأجهزة المرتبطة</b> ← <b>ربط جهاز</b>.</li><li>وجّه الكاميرا على الكود ده.</li></ol>' +
+          '<p class="hint">لو فاتح الصفحة من نفس الموبايل، افتحها من كمبيوتر أو موبايل تاني وصوّر الكود. أول ما يتربط الصفحة هتتحدث لوحدها.</p></div>';
+        row.appendChild(q);
+      }
+      var acts = document.createElement("div"); acts.className = "wl-acts";
+      function act(text, cls, fn) { var b = document.createElement("button"); b.type = "button"; b.className = "btn sm " + cls; b.textContent = text; b.onclick = function () { fn(b); }; acts.appendChild(b); }
+      if (l.main) { var h = document.createElement("span"); h.className = "hint"; h.style.margin = "0"; h.textContent = "الرقم الأساسي بتربطه وتفكه من فوق، ومنه بتطلع رسايل التأكيد والعروض."; acts.appendChild(h); }
+      else {
+        if (!l.assigned) act("🔄 جرّب تاني", "ghost", function (b) { wlPost("link", { id: l.id }, b); });
+        else if (l.works && !l.linked && wlQrId !== l.id) act("📷 اعرض الـ QR", "", function () { openLineQr(l.id); });
+        if (l.linked) act("📱 اربط موبايل تاني", "ghost", function (b) {
+          if (confirm("هنفك الموبايل الحالي عن الرقم ده، وهيظهرلك QR جديد تمسحه من الموبايل التاني. نكمّل؟")) wlPost("unlink", { id: l.id }, b).then(function (r) { if (r) openLineQr(l.id); });
+        });
+        act("🗑️ شيل الرقم", "danger", function (b) {
+          if (confirm("هنفك الرقم ده ونشيله من متجرك، والمساعد هيبطّل يرد عليه. محادثاته القديمة بتفضل في الإحصائيات. نكمّل؟")) {
+            if (wlQrId === l.id) { wlQrId = null; stopLineQr(); }
+            wlPost("remove", { id: l.id }, b, "اتشال الرقم");
+          }
+        });
+      }
+      row.appendChild(acts);
+      row.querySelector('[data-act="staff"]').onclick = function () { wlPost("staff", { id: l.id, name: $("wlStaff" + l.id).value.trim() }, this, $("wlStaff" + l.id).value.trim() ? "اتحفظ اسم الموظف ✓" : "اتشال اسم الموظف"); };
+      $("wlStaff" + l.id) && ($("wlStaff" + l.id).onkeydown = function (e) { if (e.key === "Enter") row.querySelector('[data-act="staff"]').click(); });
+      list.appendChild(row);
+    });
+    // who gets the alerts that need a person
+    var linked = lines.filter(function (l) { return l.linked && l.works; }).length, team = wl.team || [];
+    $("wlTeam").innerHTML = team.length
+      ? '🔄 تنبيهات «الزبون محتاجك» والأوردرات اللي مردّش عليها بتتوزع <b>بالدور</b> على: <b>' + team.map(esc).join("، ") + '</b>' + (wl.next ? '. الدور الجاي على <b>' + esc(wl.next) + '</b>.' : '.') +
+        ' بتوصلهم على أرقامهم من رقم تاني من أرقام المتجر، ومعاها لينك يكلّموا الزبون منه.'
+      : linked >= 2 ? '💡 اكتب اسم الموظف جنب رقمه، والتنبيهات («الزبون محتاجك» والأوردرات اللي مردّش عليها) تتوزع عليهم بالدور. لحد كده بتوصلك انت' + (wl.ownerPhone ? ' على رقمك.' : '، لو كتبت رقمك في «🚀 مميزات الواتساب» تحت.')
+      : '💡 لما يبقى عندك رقمين مربوطين أو أكتر وعليهم أسماء الموظفين، التنبيهات تتوزع عليهم بالدور، وتعرف مين بيرد أكتر على الزباين.';
+    // the number the owner's reports and alerts come from
+    var rep = $("wlRep"), choices = lines.filter(function (l) { return l.linked && l.works; });
+    $("wlRepRow").hidden = choices.length < 2;
+    rep.innerHTML = choices.map(function (l) { return '<option value="' + l.id + '"' + (l.id === wl.reportLine ? ' selected' : '') + '>' + esc(l.label) + '</option>'; }).join("");
+    if (!choices.some(function (l) { return l.id === wl.reportLine; }) && choices[0]) rep.value = choices[0].id;
+    // adding a number: free while the subscription covers it, otherwise a request in «باقتي» (only the days left until its renewal)
+    var addBtn = $("wlAddBtn"), t = $("wlAddT"), full = lines.length >= wl.max;
+    addBtn.hidden = full || !wl.platform || !wl.service;
+    if (!wl.platform) t.textContent = "الأرقام الإضافية شغالة مع الربط بالـ QR بس، ورقمك الأساسي مربوط بحساب Wapilot بتاعك.";
+    else if (!wl.service) t.textContent = "فعّل خدمة الواتساب الأول من «باقتي»، وبعدين ضيف أرقامك.";
+    else if (full) t.textContent = "وصلت لأقصى عدد أرقام (" + fmt(wl.max) + ").";
+    else if (wl.canAdd) {
+      t.textContent = "اشتراكك شامل " + fmt(wl.allowed) + " رقم، ومربوط منهم " + fmt(lines.length) + ". ضيف الرقم وامسح الـ QR بتاعه من موبايل الموظف.";
+      addBtn.textContent = $("wlAddForm").hidden ? "➕ ضيف رقم واتساب" : "إلغاء";
+    } else {
+      var unit = wl.addUnit, n = (wl.paid || 1) + 1;
+      t.textContent = wl.addNow
+        ? "كل رقم زيادة بـ " + fmt(unit) + " ج.م في الشهر، ولما يبقى عندك أكتر من رقم كل أرقامك بـ " + fmt(wl.multi) + " بدل " + fmt(wl.price) + ". خدمة الواتساب بتتجدد بعد " + fmt(wl.addDays) + " يوم، فهتدفع دلوقتي " + fmt(wl.addNow) +
+          " ج.م بس عن الأيام دي (" + fmt(unit) + " × " + fmt(wl.addDays) + " ÷ " + fmt(30) + ")، ومن التجديد الجاي: " + fmt(n) + " رقم × " + fmt(unit) + " = " + fmt(n * unit) + " ج.م في الشهر."
+        : wl.inPlan ? "الرقم الأساسي جوه باقتك، وكل رقم زيادة بـ " + fmt(unit) + " ج.م في الشهر."
+        : "كل رقم زيادة بـ " + fmt(unit) + " ج.م في الشهر، ولما يبقى عندك أكتر من رقم كل أرقامك بـ " + fmt(wl.multi) + " بدل " + fmt(wl.price) + ".";
+      addBtn.textContent = "➕ ضيف رقم للاشتراك (" + fmt(wl.addNow || unit) + " ج.م)";
+      $("wlAddForm").hidden = true;
+    }
+  }
+  $("wlAddBtn").onclick = function () {
+    if (!wl) return;
+    if (!wl.canAdd) { openWaService({ add: true, count: 1 }); return; }
+    $("wlAddForm").hidden = !$("wlAddForm").hidden; renderLines();
+    if (!$("wlAddForm").hidden) $("wlAddStaff").focus();
+  };
+  $("wlAddGo").onclick = async function () {
+    var r = await wlPost("add", { staff: $("wlAddStaff").value.trim(), phone: $("wlAddPhone").value.trim() }, this);
+    if (!r) return;
+    $("wlAddStaff").value = ""; $("wlAddPhone").value = ""; $("wlAddForm").hidden = true; renderLines();
+    var added = (r.lines || []).filter(function (l) { return l.id === r.added; })[0];
+    if (added && added.assigned) { toast("اتضاف الرقم ✓ امسح الـ QR من موبايله"); openLineQr(added.id); }
+  };
+  $("wlRep").onchange = function () { wlPost("report-line", { id: +this.value }, this, "اتحفظ ✓ التقارير هتوصلك من الرقم ده"); };
+  function openLineQr(id) { stopLineQr(); wlQrId = id; wlQrSrc = ""; renderLines(); }   // renderLines starts the polling
+  function stopLineQr() { clearTimeout(wlQrTimer); wlQrTimer = null; }
+  var wlQrBusy = false;
+  async function pollLineQr() {
+    wlQrTimer = null;
+    if (wlQrId == null || current !== "wa" || wlQrBusy) return;
+    wlQrBusy = true;
+    try { await pollLineQrOnce(); } finally { wlQrBusy = false; }
+    if (wlQrId != null && current === "wa" && !wlQrTimer) wlQrTimer = setTimeout(pollLineQr, 4000);
+  }
+  async function pollLineQrOnce() {
+    if (!document.hidden) {
+      try {
+        var r = await api("api/wa-lines.ashx?action=qr", { method: "POST", json: { id: wlQrId } });
+        if (r.linked) { wlQrId = null; wlQrSrc = ""; toast("اتربط الرقم 🎉 المساعد هيرد على زباينه من دلوقتي"); await loadLines(); return; }
+        var box = document.querySelector('.wl-row[data-id="' + wlQrId + '"] .wa-qr');
+        wlQrSrc = r.qr || "";
+        if (box) {
+          var img = box.querySelector("img"), wait = box.querySelector(".wa-qr-wait");
+          if (r.qr) { img.src = r.qr; img.hidden = false; wait.hidden = true; }
+          else { img.hidden = true; wait.hidden = false; wait.textContent = r.error ? "⚠️ " + r.error : "⏳ بنجهّز الكود…"; }
+        }
+      } catch (e) { setMsg("wlMsg", e.message); }
+    }
+  }
 
   $("edContent").addEventListener("input", updateCount);
   $("edCancel").onclick = function () { $("editor").hidden = true; };

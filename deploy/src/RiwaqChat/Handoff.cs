@@ -5,6 +5,8 @@
 // for it first. When the owner answers on the store's WhatsApp themselves, the bot already steps aside for that chat
 // (WhatsAppBot.PauseHours). One alert per customer per 2 hours. Every handoff is listed in the dashboard too.
 // Plan gate "handoff" (open until the super admin picks a minimum) on top of the WhatsApp service.
+// A store with more than one WhatsApp number and employees' names on them (WaLines.cs): the alert goes to them in turn
+// (Team.Send) instead of the owner, and says which of the store's numbers the customer wrote to (Handoffs.Line / ToName / ToPhone).
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -24,7 +26,8 @@ namespace RiwaqChat
         public static bool On(SqlConnection c, StoreInfo s) { return s != null && s.HandoffOn && WaAccount.HasService(s) && PlanGate.Allows(c, s, Feature); }
 
         // channel "wa": chatKey = the customer's number; "web": chatKey = the site chat's session (the number comes in the call)
-        public static ChatHandler.ExtraTool Tool(StoreInfo s, string channel, string chatKey)
+        // line: the store's WhatsApp number the customer wrote to (0 = the main one)
+        public static ChatHandler.ExtraTool Tool(StoreInfo s, string channel, string chatKey, int line = 0)
         {
             bool web = channel != "wa";   // the site chat, Messenger (fb), Instagram (ig) and Telegram (tg): the customer's number comes in the call
             var props = new Dictionary<string, JsonElement>
@@ -46,13 +49,13 @@ namespace RiwaqChat
                     Description = "ينبّه صاحب المتجر على الواتساب إن الزبون ده محتاج يكلّمه بنفسه، ومعاه السبب وملخص طلبه" + (web ? " ورقم الزبون" : "") + ".",
                     InputSchema = new InputSchema { Properties = props, Required = required },
                 },
-                Run = tu => Alert(s.Id, channel, chatKey, ChatHandler.Arg(tu, "reason"), ChatHandler.Arg(tu, "summary"), web ? ChatHandler.Arg(tu, "phone") : null),
+                Run = tu => Alert(s.Id, channel, chatKey, ChatHandler.Arg(tu, "reason"), ChatHandler.Arg(tu, "summary"), web ? ChatHandler.Arg(tu, "phone") : null, line),
                 Prompt = "\n- لو الزبون طلب يكلّم حد من المتجر، أو عنده شكوى أو زعلان، أو عايز حاجة مهمة مش في بيانات المتجر (طلب جملة، مشكلة في أوردر، استرجاع أو استبدال): " +
                          (web ? "اطلب رقم موبايله (واتساب) لو ماقالوش، وبعدين " : "") + "استخدم أداة " + ToolName + " عشان صاحب المتجر يكلّمه بنفسه. ماتوعدش بحاجة مش في إيدك.",
             };
         }
 
-        static async Task<string> Alert(int storeId, string channel, string chatKey, string reason, string summary, string phoneArg)
+        static async Task<string> Alert(int storeId, string channel, string chatKey, string reason, string summary, string phoneArg, int line)
         {
             reason = Cut((reason ?? "").Trim(), 120); summary = Cut((summary ?? "").Trim(), 400);
             if (summary.Length == 0) return "اكتب ملخص اللي الزبون عايزه.";
@@ -69,33 +72,44 @@ namespace RiwaqChat
                         if ((int)cmd.ExecuteScalar() > 0) return "صاحب المتجر اتبلّغ خلاص من شوية. طمّن الزبون إن حد من المتجر هيكلّمه، وماتحددش ميعاد.";
 
                     long id;
-                    using (var cmd = Db.Cmd(c, "INSERT INTO dbo.Handoffs(StoreId, Channel, ChatKey, Phone, Reason, Status) OUTPUT INSERTED.Id VALUES(@s, @ch, @k, @p, @r, 'pending')",
-                        "@s", s.Id, "@ch", channel, "@k", Cut(chatKey, 100), "@p", phone, "@r", Cut((reason.Length > 0 ? reason + " — " : "") + summary, 400)))
+                    using (var cmd = Db.Cmd(c, "INSERT INTO dbo.Handoffs(StoreId, Channel, ChatKey, Phone, Reason, Status, Line) OUTPUT INSERTED.Id VALUES(@s, @ch, @k, @p, @r, 'pending', @l)",
+                        "@s", s.Id, "@ch", channel, "@k", Cut(chatKey, 100), "@p", phone, "@r", Cut((reason.Length > 0 ? reason + " — " : "") + summary, 400),
+                        "@l", channel == "wa" ? (object)line : DBNull.Value))
                         id = Convert.ToInt64(cmd.ExecuteScalar());
-                    string status, note = null;
-                    if (string.IsNullOrEmpty(s.OwnerPhone)) { status = "noalert"; note = "مفيش رقم ليك في الإعدادات، فالتنبيه ماوصلكش على الواتساب"; }
-                    else
+                    // which of the store's numbers the customer wrote to, when it has more than one
+                    string wroteTo = null;
+                    if (channel == "wa")
                     {
-                        var why = await WaNotify.ToOwner(c, s, Message(channel, reason, summary, phone), "sb-hand-" + id);
-                        status = why == null ? "sent" : "failed"; note = why;
+                        var lines = WaLines.All(c, s);
+                        int at = lines.FindIndex(l => l.Id == line);
+                        if (lines.Count > 1 && at >= 0) wroteTo = lines[at].Label(at);
                     }
-                    using (var cmd = Db.Cmd(c, "UPDATE dbo.Handoffs SET Status=@st, Note=@n WHERE Id=@id", "@st", status, "@n", (object)Cut(note, 300) ?? DBNull.Value, "@id", id)) cmd.ExecuteNonQuery();
+                    // to the team in turn (employees' numbers), or the owner's own number when there's no team
+                    var sent = await Team.Send(c, s, Message(channel, reason, summary, phone, wroteTo), "sb-hand-" + id);
+                    string status, note = sent.Error;
+                    if (sent.Name == null && string.IsNullOrEmpty(s.OwnerPhone)) { status = "noalert"; note = "مفيش رقم ليك في الإعدادات، فالتنبيه ماوصلكش على الواتساب"; }
+                    else status = sent.Error == null ? "sent" : "failed";
+                    using (var cmd = Db.Cmd(c, "UPDATE dbo.Handoffs SET Status=@st, Note=@n, ToName=@tn, ToPhone=@tp WHERE Id=@id", "@st", status, "@n", (object)Cut(note, 300) ?? DBNull.Value,
+                        "@tn", (object)Cut(sent.Name, 60) ?? DBNull.Value, "@tp", (object)sent.Phone ?? DBNull.Value, "@id", id)) cmd.ExecuteNonQuery();
+                    string person = sent.Name != null ? "حد من فريق المتجر (" + sent.Name + ")" : "صاحب المتجر";
                     return status == "sent"
-                        ? "✅ صاحب المتجر اتبلّغ وهيكلّم الزبون" + (channel == "wa" ? " هنا" : " على رقمه") + " في أقرب وقت. قول للزبون كده بجملة قصيرة ومطمّنة، وماتحددش ميعاد."
-                        : "✅ طلب الزبون اتسجّل عند صاحب المتجر وهيتواصل معاه في أقرب وقت. قول للزبون كده بجملة قصيرة، وماتحددش ميعاد.";
+                        ? "✅ " + person + " اتبلّغ وهيكلّم الزبون" + (channel == "wa" ? " هنا" : " على رقمه") + " في أقرب وقت. قول للزبون كده بجملة قصيرة ومطمّنة، وماتحددش ميعاد."
+                        : "✅ طلب الزبون اتسجّل عند المتجر وهيتواصلوا معاه في أقرب وقت. قول للزبون كده بجملة قصيرة، وماتحددش ميعاد.";
                 }
             }
             catch (Exception ex) { Log.Error(ex); return "حصلت مشكلة وإحنا بنبلّغ صاحب المتجر. اعتذر للزبون وقوله يكلّم المتجر مباشرة."; }
         }
 
-        static string Message(string channel, string reason, string summary, string phone)
+        // wroteTo: which of the store's numbers the customer wrote to (only when it has more than one)
+        static string Message(string channel, string reason, string summary, string phone, string wroteTo = null)
         {
             var sb = new StringBuilder("🙋 *زبون محتاجك*").Append(channel == "wa" ? " (على الواتساب)" : channel == "fb" ? " (على المسنجر)" : channel == "ig" ? " (على الإنستجرام)" : channel == "tg" ? " (على تيليجرام)" : " (من شات موقعك)").Append('\n');
+            if (wroteTo != null) sb.Append("📲 كتب على رقم: ").Append(wroteTo).Append('\n');
             if (reason.Length > 0) sb.Append("السبب: *").Append(reason).Append("*\n");
             sb.Append("📝 ").Append(summary).Append("\n\n");
             sb.Append("📱 رقمه: +").Append(phone).Append('\n');
             sb.Append("👈 كلّمه على الواتساب: https://wa.me/").Append(phone).Append('\n');
-            if (channel == "wa") sb.Append("\n💡 لو رديت عليه من رقم المتجر، المساعد بيسكت في المحادثة دي ساعتين.");
+            if (channel == "wa") sb.Append("\n💡 لو رديت عليه من رقم المتجر").Append(wroteTo != null ? " اللي كتب عليه" : "").Append("، المساعد بيسكت في المحادثة دي ساعتين.");
             else if (channel == "fb" || channel == "ig") sb.Append("\n💡 لو رديت عليه بنفسك من ").Append(channel == "fb" ? "رسايل الصفحة" : "رسايل الإنستجرام").Append("، المساعد بيسكت في المحادثة دي ساعتين.");
             return sb.ToString();
         }
@@ -114,12 +128,12 @@ namespace RiwaqChat
         public static List<Dictionary<string, object>> Recent(SqlConnection c, int storeId, int n = 15)
         {
             var list = new List<Dictionary<string, object>>();
-            using (var cmd = Db.Cmd(c, "SELECT TOP (@n) Channel, Phone, Reason, Status, Note, CreatedAt FROM dbo.Handoffs WHERE StoreId=@s ORDER BY Id DESC", "@n", n, "@s", storeId))
+            using (var cmd = Db.Cmd(c, "SELECT TOP (@n) Channel, Phone, Reason, Status, Note, CreatedAt, ToName FROM dbo.Handoffs WHERE StoreId=@s ORDER BY Id DESC", "@n", n, "@s", storeId))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                     list.Add(new Dictionary<string, object> {
                         { "channel", r["Channel"] as string }, { "phone", r["Phone"] as string ?? "" }, { "reason", r["Reason"] as string ?? "" },
-                        { "status", r["Status"] as string }, { "note", r["Note"] as string ?? "" },
+                        { "status", r["Status"] as string }, { "note", r["Note"] as string ?? "" }, { "to", r["ToName"] as string ?? "" },   // the team member it went to ("" = the owner)
                         { "at", DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc).ToString("o") } });
             return list;
         }

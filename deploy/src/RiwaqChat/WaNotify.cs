@@ -40,6 +40,7 @@ namespace RiwaqChat
             }
         }
 
+        // from the number the owner picked for reports when the store has more than one (WaLines.ReportSender), else the main one
         public static async Task<string> ToOwner(SqlConnection c, StoreInfo s, string text, string idem)
         {
             var why = CantSend(c, s);
@@ -47,7 +48,8 @@ namespace RiwaqChat
             if (string.IsNullOrEmpty(s.OwnerPhone)) return "مفيش رقم واتساب ليك في الإعدادات";
             try
             {
-                foreach (var part in Wapilot.Split(text)) { await Wapilot.Send(WaAccount.Token(c, s), s.WaInstance, s.OwnerPhone + "@c.us", part, idem); idem += "+"; }
+                var from = WaLines.ReportSender(c, s).Instance;
+                foreach (var part in Wapilot.Split(text)) { await Wapilot.Send(WaAccount.Token(c, s), from, s.OwnerPhone + "@c.us", part, idem); idem += "+"; }
                 return null;
             }
             catch (WaException ex) { return ex.Message; }

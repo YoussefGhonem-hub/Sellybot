@@ -556,9 +556,9 @@
   }
   // WhatsApp on each card: in the plan's price, or the monthly service added to it
   function waLine(p) {
-    var wa = data.waAddon && data.waAddon.price;
-    if (p.includesWa) return '<div class="wa-line in">📱 الواتساب جوه الباقة، من غير اشتراك زيادة</div>';
-    return wa ? '<div class="wa-line add">📱 الواتساب باشتراك لوحده: +' + fmt(wa) + ' ج.م في الشهر</div>' : "";
+    var wa = data.waAddon && data.waAddon.price, multi = data.waAddon && data.waAddon.multi;   // more than one number: each at «multi»
+    if (p.includesWa) return '<div class="wa-line in">📱 الواتساب جوه الباقة، من غير اشتراك زيادة' + (multi ? '، وكل رقم زيادة بـ ' + fmt(multi) + ' ج.م' : '') + '</div>';
+    return wa ? '<div class="wa-line add">📱 الواتساب باشتراك لوحده: +' + fmt(wa) + ' ج.م في الشهر' + (multi && multi < wa ? '، ولو أكتر من رقم كل رقم بـ ' + fmt(multi) : '') + '</div>' : "";
   }
   function render() {
     var plans = data.plans;

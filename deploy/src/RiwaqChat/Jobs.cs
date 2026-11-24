@@ -51,6 +51,8 @@ namespace RiwaqChat
                         try { await Restock.Check(c, ct); } catch (Exception ex) { Log.Error(ex); }
                         try { Restock.Expire(c); } catch (Exception ex) { Log.Error(ex); }
                         try { await WeeklyReport.SendDue(c, ct); } catch (Exception ex) { Log.Error(ex); }
+                        try { await WeeklyReport.SendDailyDue(c, ct); } catch (Exception ex) { Log.Error(ex); }   // the morning summary
+                        try { await Followup.SendDue(c, ct); } catch (Exception ex) { Log.Error(ex); }            // unanswered confirmations
                     }
                     finally { Release(c); }   // the next run may start at once; the 4 minutes only cover a run that died half way
                 }

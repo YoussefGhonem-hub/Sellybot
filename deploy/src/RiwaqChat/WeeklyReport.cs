@@ -4,6 +4,9 @@
 // counted in the store's usage), with a nudge to add those answers to «داتا المتجر». Then the month's quota and the plan's end.
 // Jobs runs SendDue; a store that slept through Saturday gets it at the next run. "ابعتلي تقرير دلوقتي" sends one at once.
 // Plan gate "report" (open until the super admin picks a minimum) on top of the WhatsApp service.
+// The morning summary (the user, 2026-11-24): the same report for the last 24 hours, every day from 9:00 Cairo (Stores.ReportDaily),
+// shorter, with the orders nobody confirmed and who was told to call them (Followup.cs). With more than one WhatsApp number
+// (WaLines.cs) both say which number they come from (the one the owner picked, Stores.ReportLine) and what each number did.
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -56,19 +59,61 @@ namespace RiwaqChat
             }
         }
 
-        // ---------- what ----------
-        public static async Task<string> Build(SqlConnection c, StoreInfo s)
+        // ---------- the morning summary: every day from 9:00 Cairo ----------
+        const int DailyHour = 9;
+        static DateTime DailySlotUtc()
         {
-            var to = DateTime.UtcNow; var from = to.AddDays(-7);
+            var zone = Zone();
+            var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
+            var slot = local.Date.AddHours(DailyHour);
+            if (slot > local) slot = slot.AddDays(-1);
+            return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(slot, DateTimeKind.Unspecified), zone);
+        }
+
+        public static async Task SendDailyDue(SqlConnection c, CancellationToken ct)
+        {
+            var slot = DailySlotUtc();
+            // a site asleep all morning sends it when it wakes, but not in the evening: yesterday's news by then
+            if (DateTime.UtcNow - slot > TimeSpan.FromHours(6)) return;
+            var ids = new List<int>();
+            using (var cmd = Db.Cmd(c, @"SELECT TOP 10 Id FROM dbo.Stores WHERE ReportDaily=1 AND OwnerPhone IS NOT NULL AND Status='active'
+                AND (ReportDayAt IS NULL OR ReportDayAt < @slot) ORDER BY Id", "@slot", slot))
+            using (var r = cmd.ExecuteReader()) while (r.Read()) ids.Add((int)r[0]);
+            foreach (var id in ids)
+            {
+                if (ct.IsCancellationRequested) return;
+                var s = Db.StoreById(c, id);
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET ReportDayAt=SYSUTCDATETIME() WHERE Id=@s", "@s", id)) cmd.ExecuteNonQuery();
+                if (s == null || !PlanGate.Allows(c, s, Feature)) continue;
+                try { var text = await Build(c, s, true); await WaNotify.ToOwner(c, s, text, "sb-daily-" + id + "-" + slot.ToString("yyyyMMdd")); }
+                catch (Exception ex) { Log.Error(ex); }
+            }
+        }
+
+        // ---------- what ----------
+        // daily: the morning summary (the last 24 hours, shorter); otherwise the week
+        public static async Task<string> Build(SqlConnection c, StoreInfo s, bool daily = false)
+        {
+            var to = DateTime.UtcNow; var from = to.AddDays(daily ? -1 : -7);
             var zone = Zone();
             string Range() => TimeZoneInfo.ConvertTimeFromUtc(from, zone).ToString("d MMMM", Ar) + " لـ " + TimeZoneInfo.ConvertTimeFromUtc(to, zone).ToString("d MMMM", Ar);
             int answers = Scalar(c, "SELECT ISNULL(SUM(Messages),0) FROM dbo.UsageDaily WHERE StoreId=@s AND Day >= CAST(@f AS DATE)", s.Id, from);
             int waChats = Scalar(c, "SELECT COUNT(DISTINCT ChatId) FROM dbo.WaMessages WHERE StoreId=@s AND FromCustomer=1 AND CreatedAt >= @f", s.Id, from);
+            var lines = WaLines.All(c, s);
 
             var sb = new StringBuilder();
-            sb.Append("📊 *تقرير الأسبوع* لـ *").Append(s.Name).Append("*\n").Append(Range()).Append("\n\n");
+            if (daily) sb.Append("☀️ *صباح الخير!* ملخص امبارح لـ *").Append(s.Name).Append("*\n").Append(TimeZoneInfo.ConvertTimeFromUtc(from, zone).ToString("dddd d MMMM", Ar)).Append("\n");
+            else sb.Append("📊 *تقرير الأسبوع* لـ *").Append(s.Name).Append("*\n").Append(Range()).Append("\n");
+            // more than one number: which one this comes from (the owner picks it in «أرقام الواتساب والفريق»)
+            if (lines.Count > 1)
+            {
+                var sender = WaLines.ReportSender(c, s);
+                int at = lines.FindIndex(l => l.Id == sender.Id);
+                sb.Append("📤 جايلك من رقم: ").Append(sender.Label(Math.Max(0, at))).Append('\n');
+            }
+            sb.Append('\n');
             if (answers == 0 && waChats == 0)
-                sb.Append("😴 المساعد مارَدّش على حد الأسبوع ده. اتأكد إن الشات ظاهر على موقعك، وإن واتساب المتجر مربوط.\n");
+                sb.Append(daily ? "😴 المساعد مارَدّش على حد امبارح.\n" : "😴 المساعد مارَدّش على حد الأسبوع ده. اتأكد إن الشات ظاهر على موقعك، وإن واتساب المتجر مربوط.\n");
             else
             {
                 sb.Append("💬 المساعد رد على *").Append(N(answers)).Append("* رسالة (الموقع والواتساب)\n");
@@ -77,9 +122,16 @@ namespace RiwaqChat
             // the features' results (only what this store uses)
             int chatOrders = Scalar(c, "SELECT COUNT(*) FROM dbo.ChatOrders WHERE StoreId=@s AND Status IN ('placed','awaiting_payment') AND CreatedAt >= @f", s.Id, from);
             if (chatOrders > 0) sb.Append("🛒 *").Append(N(chatOrders)).Append("* طلب اتعمل من الشات\n");
-            int ocYes = Scalar(c, "SELECT (SELECT COUNT(*) FROM dbo.OrderConfirms WHERE StoreId=@s AND Status='confirmed' AND CreatedAt >= @f) + (SELECT COUNT(*) FROM dbo.EoConfirms WHERE StoreId=@s AND Status='confirmed' AND CreatedAt >= @f)", s.Id, from);
-            int ocNo = Scalar(c, "SELECT (SELECT COUNT(*) FROM dbo.OrderConfirms WHERE StoreId=@s AND Status='cancelled' AND CreatedAt >= @f) + (SELECT COUNT(*) FROM dbo.EoConfirms WHERE StoreId=@s AND Status='cancelled' AND CreatedAt >= @f)", s.Id, from);
-            if (ocYes + ocNo > 0) sb.Append("📲 تأكيد الطلبات: *").Append(N(ocYes)).Append("* اتأكد · *").Append(N(ocNo)).Append("* الزبون لغاه\n");
+            // order confirmation on WhatsApp: confirmed / cancelled / no answer (Followup.cs), and what the reminder brought back
+            var oc = Followup.Stats(c, s.Id, null, from);
+            if (oc.Yes + oc.No + oc.Silent > 0)
+            {
+                sb.Append("📲 تأكيد الطلبات: *").Append(N(oc.Yes)).Append("* اتأكد · *").Append(N(oc.No)).Append("* الزبون لغاه");
+                if (oc.Silent > 0) sb.Append(" · *").Append(N(oc.Silent)).Append("* مردّش");
+                sb.Append('\n');
+                if (oc.Saved > 0) sb.Append("   🔔 التذكير رجّع *").Append(N(oc.Saved)).Append("* أوردر اتأكد بعده\n");
+            }
+            if (daily) Silent(c, s, from, sb);
             int dn = Scalar(c, "SELECT COUNT(*) FROM dbo.DeliveryNotices WHERE StoreId=@s AND Status='sent' AND CreatedAt >= @f", s.Id, from);
             if (dn > 0) sb.Append("🚚 *").Append(N(dn)).Append("* رسالة يوم توصيل\n");
             int cartSent = Scalar(c, "SELECT COUNT(*) FROM dbo.CartReminders WHERE StoreId=@s AND SentAt >= @f", s.Id, from);
@@ -94,9 +146,20 @@ namespace RiwaqChat
                 if (top != null) sb.Append("   أكتر منتج مستنيينه: ").Append(top).Append('\n');
             }
             int hand = Scalar(c, "SELECT COUNT(*) FROM dbo.Handoffs WHERE StoreId=@s AND CreatedAt >= @f", s.Id, from);
-            if (hand > 0) sb.Append("🙋 *").Append(N(hand)).Append("* زبون طلب يكلّمك بنفسك\n");
+            if (hand > 0)
+            {
+                sb.Append("🙋 *").Append(N(hand)).Append("* زبون طلب يكلّم حد من المتجر");
+                // with a team: whom the alerts went to
+                var who = new List<string>();
+                using (var cmd = Db.Cmd(c, "SELECT ToName, COUNT(*) AS N FROM dbo.Handoffs WHERE StoreId=@s AND CreatedAt >= @f AND ToName IS NOT NULL GROUP BY ToName ORDER BY COUNT(*) DESC", "@s", s.Id, "@f", from))
+                using (var r = cmd.ExecuteReader()) while (r.Read()) who.Add((string)r["ToName"] + " " + N((int)r["N"]));
+                sb.Append(who.Count > 0 ? " (" + string.Join(" · ", who) + ")" : "").Append('\n');
+            }
 
-            // what customers asked about, and what the assistant couldn't answer (from the week's WhatsApp chats)
+            // more than one number: what each did, and who answered most by hand
+            if (lines.Count > 1) Numbers(c, s, lines, from, sb);
+
+            // what customers asked about, and what the assistant couldn't answer (from the period's WhatsApp chats)
             var ins = await Insights(c, s, from);
             if (ins != null)
             {
@@ -106,17 +169,55 @@ namespace RiwaqChat
                       .Append("👈 ضيف إجاباتها في «داتا المتجر»، والمساعد هيرد عليها من دلوقتي.\n");
             }
 
-            // the month and the plan
+            // the month and the plan (the morning summary only when something needs doing soon)
             var u = Db.Usage(c, s.Id, Db.Month);
             long chars = Scalar(c, "SELECT ISNULL(SUM(CAST(LEN(Content) AS BIGINT)),0) FROM dbo.KnowledgeItems WHERE StoreId=@s", s.Id, from);
             var uj = Billing.UsageJson(c, s, u, chars);
-            sb.Append("\n📈 رصيد الشهر: استهلكت *").Append(N(Convert.ToInt32(Math.Round(Convert.ToDouble(uj["pct"]))))).Append("%*، وفاضل حوالي *").Append(N(Convert.ToInt32(uj["msgLeft"]))).Append("* رسالة\n");
-            if (s.PlanEndsAt.HasValue && !string.IsNullOrEmpty(s.PlanName))
+            double pct = Convert.ToDouble(uj["pct"]);
+            bool planSoon = s.PlanEndsAt.HasValue && !string.IsNullOrEmpty(s.PlanName) && s.PlanEndsAt.Value < DateTime.UtcNow.AddDays(3);
+            bool waSoon = s.WaUntil.HasValue && !s.IsAdmin && s.WaUntil.Value < DateTime.UtcNow.AddDays(3);
+            if (!daily || pct >= 80) sb.Append("\n📈 رصيد الشهر: استهلكت *").Append(N(Convert.ToInt32(Math.Round(pct)))).Append("%*، وفاضل حوالي *").Append(N(Convert.ToInt32(uj["msgLeft"]))).Append("* رسالة\n");
+            if (s.PlanEndsAt.HasValue && !string.IsNullOrEmpty(s.PlanName) && (!daily || planSoon))
                 sb.Append(Billing.Expired(s) ? "⛔ باقتك خلصت يوم " : "📅 باقتك بتخلص يوم ").Append(TimeZoneInfo.ConvertTimeFromUtc(s.PlanEndsAt.Value, zone).ToString("d MMMM", Ar)).Append('\n');
-            if (s.WaUntil.HasValue && !s.IsAdmin)
+            if (s.WaUntil.HasValue && !s.IsAdmin && (!daily || waSoon))
                 sb.Append("📱 خدمة الواتساب بتتجدد يوم ").Append(TimeZoneInfo.ConvertTimeFromUtc(s.WaUntil.Value, zone).ToString("d MMMM", Ar)).Append('\n');
             sb.Append("\n— Sellybot 🤖");
             return sb.ToString();
+        }
+
+        // the morning summary: yesterday's orders nobody confirmed, and who was told to call each (up to 5)
+        static void Silent(SqlConnection c, StoreInfo s, DateTime from, StringBuilder sb)
+        {
+            var rows = new List<string>();
+            foreach (var t in new[] { "OrderConfirms", "EoConfirms" })
+                using (var cmd = Db.Cmd(c, "SELECT TOP 5 OrderName, Customer, AlertTo FROM dbo." + t + " WHERE StoreId=@s AND Status='pending' AND AlertedAt >= @f ORDER BY Id DESC", "@s", s.Id, "@f", from))
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read())
+                    {
+                        string to = r["AlertTo"] as string ?? ""; int dot = to.IndexOf(" · ", StringComparison.Ordinal); if (dot >= 0) to = to.Substring(0, dot);
+                        rows.Add("• " + (r["OrderName"] as string ?? "") + (r["Customer"] is string && ((string)r["Customer"]).Trim().Length > 0 ? " · " + ((string)r["Customer"]).Trim() : "")
+                            + (to == "انت" ? " (وصلك تنبيه)" : to.Length > 0 ? " (اتبلّغ " + to + " يكلّمه)" : ""));
+                    }
+            if (rows.Count == 0) return;
+            sb.Append("📵 *أوردرات مردّوش على التأكيد:*\n").Append(string.Join("\n", rows.Take(5))).Append('\n');
+        }
+
+        // more than one WhatsApp number: per number, the customers who wrote and the replies typed on the phone; 🏆 = most by hand
+        static void Numbers(SqlConnection c, StoreInfo s, List<WaLine> lines, DateTime from, StringBuilder sb)
+        {
+            var stats = WaLines.Stats(c, s, lines, from);
+            var top = WaLines.Top(stats);
+            sb.Append("\n📱 *أرقام الواتساب:*\n");
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var st = stats[lines[i].Id];
+                sb.Append("• ").Append(lines[i].Label(i)).Append(": *").Append(N(st.Chats)).Append("* زبون");
+                if (st.Staff > 0) sb.Append(" · *").Append(N(st.Staff)).Append("* رد من الموبايل");
+                if (st.Alerts > 0) sb.Append(" · ").Append(N(st.Alerts)).Append(" تنبيه");
+                if (top.HasValue && top.Value == lines[i].Id) sb.Append(" 🏆");
+                sb.Append('\n');
+            }
+            if (top.HasValue) sb.Append("🏆 = أكتر رقم رد على الزباين بنفسه\n");
         }
 
         class Insight { public List<string> Topics = new List<string>(), Gaps = new List<string>(); }

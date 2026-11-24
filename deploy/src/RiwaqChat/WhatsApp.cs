@@ -384,7 +384,13 @@ namespace RiwaqChat
             using (var r = cmd.ExecuteReader()) if (r.Read()) { replies = Convert.ToInt32(r[0]); chats = Convert.ToInt32(r[1]); }
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.PlanRequests WHERE StoreId=@s AND Status='pending' AND WaAddon=1", "@s", s.Id)) pending = (int)cmd.ExecuteScalar() > 0;
             var until = Until(s);
+            // more than one number (WaLines.cs): how many it's paid for, each one's price, and what a month of them comes to
+            bool inPlan = !s.IsAdmin && Billing.WaInPlan(s), paidOn = s.WaUntil.HasValue && s.WaUntil.Value > now;
+            int count = Math.Max(1, s.WaCount), lines = string.IsNullOrEmpty(s.WaInstance) ? 0 : 1 + WaLines.Extra(c, s.Id);
+            decimal unit = WaLines.UnitPrice(c, count + (inPlan ? 1 : 0));
             return new Dictionary<string, object> {
+                { "count", count }, { "unit", unit }, { "monthly", count * unit }, { "multi", WaLines.MultiPrice(c) }, { "lines", lines },
+                { "allowed", WaLines.Allowed(s) }, { "paidOn", paidOn }, { "paidUntil", s.WaUntil.HasValue ? s.WaUntil.Value.ToString("o") : "" },
                 { "on", HasService(s) }, { "until", until.HasValue ? until.Value.ToString("o") : "" }, { "always", s.IsAdmin },
                 { "daysLeft", until.HasValue ? Math.Max(0, (int)Math.Ceiling((until.Value - now).TotalDays)) : 0 }, { "warnDays", WarnDays },
                 // on through a plan that includes it: it renews with the plan (no separate renewal, no reminder of its own)
@@ -423,15 +429,14 @@ namespace RiwaqChat
             var token = PlatformToken(c);
             if (token == null || AutoAssign(c) == "off") return null;
             var all = await Wapilot.Instances(token);
-            var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            using (var cmd = Db.Cmd(c, "SELECT WaInstance FROM dbo.Stores WHERE WaInstance IS NOT NULL"))
-            using (var r = cmd.ExecuteReader()) while (r.Read()) taken.Add((string)r[0]);
+            var taken = WaLines.Taken(c);   // stores' main numbers and their extra ones (WaLines.cs)
             var reserved = Reserved(c);
             foreach (var i in all.Where(x => !taken.Contains(x.Id) && !reserved.Contains(x.Id) && !Linked((x.Status ?? "").ToUpperInvariant())))
             {
                 int n;
                 using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=@i, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=1, WaLastAt=NULL
-                    WHERE Id=@s AND WaInstance IS NULL AND NOT EXISTS (SELECT 1 FROM dbo.Stores WITH (UPDLOCK, HOLDLOCK) WHERE WaInstance=@i)", "@i", i.Id, "@s", storeId))
+                    WHERE Id=@s AND WaInstance IS NULL AND NOT EXISTS (SELECT 1 FROM dbo.Stores WITH (UPDLOCK, HOLDLOCK) WHERE WaInstance=@i)
+                    AND NOT EXISTS (SELECT 1 FROM dbo.WaLines WITH (UPDLOCK, HOLDLOCK) WHERE Instance=@i)", "@i", i.Id, "@s", storeId))
                     n = cmd.ExecuteNonQuery();
                 if (n == 0) continue;   // someone else took it a moment ago
                 if (Stopped((i.Status ?? "").ToUpperInvariant())) try { await Wapilot.Start(token, i.Id); } catch (WaException ex) { Log.Error(ex); }
@@ -583,22 +588,25 @@ END", "@s", s.Id, "@sub", subject, "@b", body))
         }
 
         // Returns false when the body isn't a message we understand (logged by the caller).
-        public static bool Handle(SqlConnection c, StoreInfo s, Incoming m)
+        // line: which of the store's WhatsApp numbers it came to (0 = the main one; WaLines.cs). The reply goes out from the same one.
+        public static bool Handle(SqlConnection c, StoreInfo s, Incoming m, int line = 0)
         {
             if (m.Event.Length > 0 && !m.Event.StartsWith("message")) return true;   // other events (acks, status…): nothing to do
             if (string.IsNullOrEmpty(m.Chat)) return false;
             if (WaChat.Ignored(m.Chat)) return true;                                    // groups, status updates, channels
-            if (!string.IsNullOrEmpty(m.Instance) && !string.Equals(m.Instance, s.WaInstance, StringComparison.OrdinalIgnoreCase)) return true;
+            if (line == 0 && !string.IsNullOrEmpty(m.Instance) && !string.Equals(m.Instance, s.WaInstance, StringComparison.OrdinalIgnoreCase)) return true;
             string key = WaChat.Key(m.Chat);
-            if (!string.IsNullOrEmpty(s.WaNumber) && key == s.WaNumber) return true;     // our own number
+            if (WaLines.IsOwn(c, s, key)) return true;     // our own numbers: a team alert from one of them to another, never a customer
             string text = (m.Text ?? "").Trim();
             if (text.Length > 2000) text = text.Substring(0, 2000);
 
             if (m.FromMe)
             {
+                // the owner's report / an alert to their own number, echoed back: not a reply to a customer
+                if (!string.IsNullOrEmpty(s.OwnerPhone) && key == s.OwnerPhone) return true;
                 // our own reply echoed back (message.any) -> ignore; anything else is the owner answering by hand -> the bot steps aside for a while
-                if (text.Length > 0 && IsOurs(c, s.Id, key, text)) return true;
-                Save(c, s.Id, key, false, text.Length > 0 ? text : "[ملف/صورة من المتجر]", "owner:" + (m.Id ?? Guid.NewGuid().ToString("N")));
+                if (text.Length > 0 && IsOurs(c, s.Id, key, text, line)) return true;
+                Save(c, s.Id, key, false, text.Length > 0 ? text : "[ملف/صورة من المتجر]", "owner:" + (m.Id ?? Guid.NewGuid().ToString("N")), null, line);
                 return true;
             }
 
@@ -610,16 +618,16 @@ END", "@s", s.Id, "@sub", subject, "@b", body))
                 if (!m.HasMedia) return true;   // reactions, receipts…
                 if (!s.WaEnabled || !WaAccount.HasService(s) || !Web.Allow("wa-media:" + s.Id + ":" + key, 1, TimeSpan.FromHours(1))) return true;
                 var token = WaAccount.Token(c, s);
-                string say = WaImages.MediaReply(m.Type, m.Mime);
-                if (token != null) HostingEnvironment.QueueBackgroundWorkItem(async ct =>
+                string say = WaImages.MediaReply(m.Type, m.Mime), from = WaLines.InstanceOf(c, s, line);
+                if (token != null && from != null && WaLines.Works(c, s, line)) HostingEnvironment.QueueBackgroundWorkItem(async ct =>
                 {
-                    try { await Wapilot.Send(token, s.WaInstance, m.Chat, say, "sb-media-" + (m.Id ?? Guid.NewGuid().ToString("N"))); }
+                    try { await Wapilot.Send(token, from, m.Chat, say, "sb-media-" + (m.Id ?? Guid.NewGuid().ToString("N"))); }
                     catch (Exception ex) { Log.Error(ex); }
                 });
                 return true;
             }
 
-            long? row = Save(c, s.Id, key, true, text.Length > 0 ? text : WaImages.Placeholder, m.Id, image ? m.MediaUrl : null);
+            long? row = Save(c, s.Id, key, true, text.Length > 0 ? text : WaImages.Placeholder, m.Id, image ? m.MediaUrl : null, line);
             if (row == null) return true;                                                // duplicate delivery
             Offers.Seen(c, s.Id, key);                                                   // «ابعت عرض»: everyone who wrote to the store's number
             if (OrderConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;   // "1"/"2" answering an order confirmation (works with the bot off too)
@@ -627,24 +635,25 @@ END", "@s", s.Id, "@sub", subject, "@b", body))
             if (WaOptOut.Intercept(c, s, key, m.Chat, text)) return true;                  // «وقف» after an abandoned-cart / back-in-stock message
             if (!s.WaEnabled) return true;                                               // the bot is switched off (the message is still kept as context)
             long rowId = row.Value; int storeId = s.Id; string chat = m.Chat;
-            HostingEnvironment.QueueBackgroundWorkItem(ct => Reply(storeId, key, chat, rowId, ct));
+            HostingEnvironment.QueueBackgroundWorkItem(ct => Reply(storeId, key, chat, rowId, line, ct));
             return true;
         }
 
         // null = already have it (same message id, or the same text from the same customer in the last minute)
         // media = a picture's URL (WaImages): two pictures in a row aren't duplicates even though their text is the same
-        public static long? Save(SqlConnection c, int storeId, string chatKey, bool fromCustomer, string body, string msgId, string media = null)
+        // line = the store's number it came to / went out from (0 = the main one, WaLines.cs)
+        public static long? Save(SqlConnection c, int storeId, string chatKey, bool fromCustomer, string body, string msgId, string media = null, int line = 0)
         {
             const string sql = @"
-IF @fc = 1 AND @md IS NULL AND EXISTS (SELECT 1 FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=1 AND Body=@b AND CreatedAt > DATEADD(SECOND,-60,SYSUTCDATETIME()))
+IF @fc = 1 AND @md IS NULL AND EXISTS (SELECT 1 FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=1 AND Body=@b AND Line=@l AND CreatedAt > DATEADD(SECOND,-60,SYSUTCDATETIME()))
   SELECT CAST(NULL AS BIGINT);
 ELSE
-  INSERT INTO dbo.WaMessages(StoreId, ChatId, FromCustomer, Body, MsgId, Media) OUTPUT INSERTED.Id VALUES(@s, @c, @fc, @b, @m, @md);";
+  INSERT INTO dbo.WaMessages(StoreId, ChatId, FromCustomer, Body, MsgId, Media, Line) OUTPUT INSERTED.Id VALUES(@s, @c, @fc, @b, @m, @md, @l);";
             try
             {
                 using (var cmd = Db.Cmd(c, sql, "@s", storeId, "@c", chatKey.Length > 100 ? chatKey.Substring(0, 100) : chatKey, "@fc", fromCustomer,
                     "@b", body.Length > 4000 ? body.Substring(0, 4000) : body, "@m", msgId == null ? null : (msgId.Length > 150 ? msgId.Substring(0, 150) : msgId),
-                    "@md", media == null ? (object)DBNull.Value : (media.Length > 800 ? media.Substring(0, 800) : media)))
+                    "@md", media == null ? (object)DBNull.Value : (media.Length > 800 ? media.Substring(0, 800) : media), "@l", line))
                 {
                     var v = cmd.ExecuteScalar();
                     return v == null || v == DBNull.Value ? (long?)null : Convert.ToInt64(v);
@@ -653,16 +662,19 @@ ELSE
             catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { return null; }
         }
 
-        static bool IsOurs(SqlConnection c, int storeId, string chatKey, string text)
+        static bool IsOurs(SqlConnection c, int storeId, string chatKey, string text, int line)
         {
-            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=0 AND MsgId IS NULL
-                AND CreatedAt > DATEADD(MINUTE,-30,SYSUTCDATETIME()) AND CHARINDEX(@t, Body) > 0", "@s", storeId, "@c", chatKey, "@t", text))
+            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=0 AND MsgId IS NULL AND Line=@l
+                AND CreatedAt > DATEADD(MINUTE,-30,SYSUTCDATETIME()) AND CHARINDEX(@t, Body) > 0", "@s", storeId, "@c", chatKey, "@t", text, "@l", line))
                 return (int)cmd.ExecuteScalar() > 0;
         }
 
         class Row { public long Id; public bool Customer, Owner; public string Body, Media; public DateTime At; }
 
-        internal static async Task Reply(int storeId, string chatKey, string chat, long rowId, CancellationToken ct)
+        internal static Task Reply(int storeId, string chatKey, string chat, long rowId, CancellationToken ct) { return Reply(storeId, chatKey, chat, rowId, 0, ct); }
+
+        // line: the store's number the customer wrote to (WaLines.cs): its own conversation, answered from the same number
+        internal static async Task Reply(int storeId, string chatKey, string chat, long rowId, int line, CancellationToken ct)
         {
             try
             {
@@ -670,26 +682,30 @@ ELSE
                 // The database is used in short steps, never while waiting on the network: read -> pictures -> the reply's data ->
                 // (Claude writes) -> save -> (Wapilot sends) -> status. A reply takes seconds, and holding one connection for all of
                 // it let many chats at once empty the connection pool and stop the whole site.
-                List<Row> rows; StoreInfo s; string token, pending; List<ChatHandler.ExtraTool> extra;
+                List<Row> rows; StoreInfo s; string token, pending, from; List<ChatHandler.ExtraTool> extra;
                 using (var c = Db.Open())
                 {
                     rows = new List<Row>();
                     using (var cmd = Db.Cmd(c, @"SELECT TOP 40 Id, FromCustomer, Body, MsgId, Media, CreatedAt FROM dbo.WaMessages
-                        WHERE StoreId=@s AND ChatId=@c AND CreatedAt > DATEADD(HOUR,-24,SYSUTCDATETIME()) ORDER BY Id DESC", "@s", storeId, "@c", chatKey))
+                        WHERE StoreId=@s AND ChatId=@c AND Line=@l AND CreatedAt > DATEADD(HOUR,-24,SYSUTCDATETIME()) ORDER BY Id DESC", "@s", storeId, "@c", chatKey, "@l", line))
                     using (var r = cmd.ExecuteReader())
                         while (r.Read()) rows.Add(new Row { Id = (long)r["Id"], Customer = (bool)r["FromCustomer"], Body = (string)r["Body"], Media = r["Media"] as string,
                             Owner = (r["MsgId"] as string ?? "").StartsWith("owner:"), At = DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc) });
                     // a newer message came in (its own run answers everything), or something was already said after this one
                     if (rows.Count == 0 || rows[0].Id != rowId) return;
-                    // the owner is talking to this customer themselves
+                    // the owner (or whoever holds this number) is talking to this customer themselves
                     if (rows.Any(x => x.Owner && x.At > DateTime.UtcNow.AddHours(-PauseHours))) return;
 
                     s = Db.StoreById(c, storeId);
                     if (s == null || s.Status != "active" || !s.WaEnabled || string.IsNullOrEmpty(s.WaInstance)) return;
+                    from = WaLines.InstanceOf(c, s, line);
+                    if (string.IsNullOrEmpty(from)) return;
                     PlanGate.Apply(c, s);   // e.g. no order tracking when the plan doesn't include Shopify
                     token = WaAccount.Token(c, s);
                     if (token == null) return;
                     if (!WaAccount.HasService(s)) { SetStatus(c, s.Id, "⚠️ خدمة الواتساب خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها من «باقتي»."); return; }
+                    // an extra number past what the subscription covers: kept linked, but the assistant doesn't answer on it
+                    if (line > 0 && !WaLines.Works(c, s, line)) { WaLines.SetStatus(c, s.Id, line, "⚠️ الرقم ده مش ضمن اشتراك الواتساب دلوقتي، فالمساعد مش بيرد عليه. ضيفه للاشتراك من «باقتي»."); return; }
                     if (Billing.Expired(s)) { SetStatus(c, s.Id, "⚠️ الباقة خلصت، فالمساعد مش بيرد على الواتساب لحد ما تجدّدها."); return; }
                     if (Billing.LimitReached(c, s)) { SetStatus(c, s.Id, "⚠️ رصيد الشهر خلص، فالمساعد مش بيرد على الواتساب لحد ما تزوّد الرصيد أو يبدأ شهر جديد."); return; }
                     if (!Web.Allow("wa-chat:" + s.Id + ":" + chatKey, 30, TimeSpan.FromHours(1))) return;   // one customer can't burn the quota
@@ -700,7 +716,7 @@ ELSE
                     extra = new List<ChatHandler.ExtraTool>();
                     var custPhone = WaChat.Digits(chatKey);
                     if (custPhone != null && Restock.On(c, s)) extra.Add(Restock.Tool(s, custPhone));
-                    if (custPhone != null && Handoff.On(c, s)) extra.Add(Handoff.Tool(s, "wa", chatKey));
+                    if (custPhone != null && Handoff.On(c, s)) extra.Add(Handoff.Tool(s, "wa", chatKey, line));
                     pending = OrderConfirm.PendingNote(c, s.Id, chatKey) + EoConfirm.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey)
                         + Carts.Note(c, s.Id, chatKey) + Handoff.Note(c, s.Id, chatKey);
                 }
@@ -734,19 +750,19 @@ ELSE
                 {
                     Db.AddUsage(c, s.Id, 1, res.In, res.CacheRead, res.CacheWrite, res.Out);
                     // saved before sending: Wapilot may echo it back (message.any) before Send returns
-                    mine = Save(c, s.Id, chatKey, false, answer, null);
+                    mine = Save(c, s.Id, chatKey, false, answer, null, null, line);
                 }
                 string failed = null;
                 try
                 {
                     int i = 0;
-                    foreach (var part in Wapilot.Split(answer)) await Wapilot.Send(token, s.WaInstance, chat, part, "sb-" + rowId + "-" + (i++));
+                    foreach (var part in Wapilot.Split(answer)) await Wapilot.Send(token, from, chat, part, "sb-" + rowId + "-" + (i++));
                 }
                 catch (WaException ex) { failed = "⚠️ " + ex.Message; }
                 using (var c = Db.Open())
                 {
                     if (failed != null && mine.HasValue) using (var cmd = Db.Cmd(c, "DELETE FROM dbo.WaMessages WHERE Id=@id", "@id", mine.Value)) cmd.ExecuteNonQuery();
-                    SetStatus(c, s.Id, failed);
+                    WaLines.SetStatus(c, s.Id, line, failed);
                     if (new Random().Next(200) == 0) Cleanup(c);
                 }
             }
@@ -865,13 +881,13 @@ ELSE
                     foreach (var item in items)
                     {
                         var m = WhatsAppBot.Parse(item);
-                        var store = s;
+                        var store = s; int line = 0;
                         if (platform)
                         {
-                            store = WaAccount.StoreForInstance(c, m.Instance);
+                            store = WaLines.Route(c, m.Instance, out line);   // a store's main number, or one of its extra numbers
                             if (store == null) continue;   // a number not assigned to any store (yet)
                         }
-                        if (!WhatsAppBot.Handle(c, store, m) && DateTime.UtcNow - lastShapeLog > TimeSpan.FromMinutes(10))
+                        if (!WhatsAppBot.Handle(c, store, m, line) && DateTime.UtcNow - lastShapeLog > TimeSpan.FromMinutes(10))
                         {
                             lastShapeLog = DateTime.UtcNow;
                             Log.Error(new Exception("WhatsApp webhook not understood (store " + store.Slug + "): " + WaJson.Shape(item)));
@@ -931,6 +947,7 @@ ELSE
                                 { "id", i.Id }, { "name", i.Name }, { "number", i.Number ?? "" }, { "status", i.Status } }).ToList() } });
                             return;
                         }
+                        if (WaLines.Extra(c, s.Id) > 0) { Web.Error(res, 400, "has_lines", "عندك أرقام واتساب إضافية مربوطة على حساب Sellybot، فمينفعش تنقل الرقم الأساسي لحساب تاني."); return; }
                         if (WaAccount.IsPlatform(s))   // moving from Sellybot's number to the owner's own account: free ours
                             try { await Wapilot.Logout(WaAccount.PlatformToken(c), s.WaInstance); } catch (WaException) { }
                         string hookKey = string.IsNullOrEmpty(s.WaHookKey) ? WhatsAppBot.NewKey() : s.WaHookKey;   // same URL on reconnect
@@ -976,6 +993,13 @@ ELSE
                             d["live"] = st.Status ?? "";
                             if (WaAccount.Linked(status))
                             {
+                                // the phone already linked as one of the store's extra numbers would answer every customer twice
+                                if (!string.IsNullOrEmpty(st.Number) && st.Number != s.WaNumber && WaLines.IsOwn(c, s, st.Number))
+                                {
+                                    try { await Wapilot.Logout(token, s.WaInstance); } catch (WaException) { }
+                                    d["linked"] = false; d["error"] = "الموبايل ده مربوط خلاص كرقم إضافي على متجرك. امسح الكود من موبايل الرقم الأساسي.";
+                                    Web.Json(res, 200, d); return;
+                                }
                                 d["linked"] = true;
                                 if (!string.IsNullOrEmpty(st.Number) && st.Number != s.WaNumber)
                                     using (var cmd = Db.Cmd(c, "UPDATE dbo.Stores SET WaNumber=@n, WaStatus=NULL WHERE Id=@s", "@n", st.Number, "@s", s.Id)) cmd.ExecuteNonQuery();
@@ -1039,6 +1063,8 @@ ELSE
                     }
                     if (action == "disconnect")
                     {
+                        // the extra numbers (WaLines.cs) lean on the main one: they go first
+                        if (WaLines.Extra(c, s.Id) > 0) { Web.Error(res, 400, "has_lines", "عندك أرقام واتساب إضافية مربوطة. شيلها الأول من «أرقام الواتساب والفريق»، وبعدين الغي ربط الرقم الأساسي."); return; }
                         // on Sellybot's account the phone is logged out first, so the number goes back to the pool clean
                         if (platformMode)
                             try { await Wapilot.Logout(WaAccount.PlatformToken(c), s.WaInstance); }
@@ -1140,7 +1166,14 @@ ELSE
                     {
                         var mode = (Web.Str(b, "autoAssign", 10) ?? "").ToLowerInvariant();
                         var price = Web.Str(b, "price", 12);
-                        if (mode.Length == 0 && price == null) { Web.Error(res, 400, "bad_request"); return; }
+                        var multi = Web.Str(b, "multiPrice", 12);   // each number's month when a store has more than one (WaLines.cs)
+                        if (mode.Length == 0 && price == null && multi == null) { Web.Error(res, 400, "bad_request"); return; }
+                        if (multi != null)
+                        {
+                            decimal mp = Billing.Dec(ShopifyAdmin.ToLatinDigits(multi).Trim(), -1);
+                            if (mp < 1 || mp > 100000) { Web.Error(res, 400, "bad_price", "اكتب سعر الرقم في الشهر لما يبقى عند المتجر أكتر من رقم، رقم أكبر من صفر."); return; }
+                            Billing.Set(c, "WaMultiPrice", Math.Round(mp, 0).ToString(System.Globalization.CultureInfo.InvariantCulture));
+                        }
                         if (mode.Length > 0)
                         {
                             if (mode != "paid" && mode != "off") { Web.Error(res, 400, "bad_request"); return; }
@@ -1189,8 +1222,22 @@ ELSE
                         var i = all.FirstOrDefault(x => string.Equals(x.Id, inst, StringComparison.OrdinalIgnoreCase));
                         if (i == null) { Web.Error(res, 400, "not_found", "الرقم ده مش موجود على حساب Wapilot."); return; }
                         bool linked = WaAccount.Linked((i.Status ?? "").ToUpperInvariant());
-                        // the number leaves whichever store had it; the store leaves whatever it had (incl. its own Wapilot account)
-                        using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE WaInstance=@i AND Id<>@s;
+                        // extra: to the store's oldest extra number still waiting for one (WaLines.cs), not its main number
+                        object ex0; bool extra = b.TryGetValue("extra", out ex0) && ex0 is bool && (bool)ex0;
+                        if (extra)
+                        {
+                            int n;
+                            using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE WaInstance=@i;
+                                UPDATE dbo.WaLines SET Instance=NULL, Number=NULL, Status=NULL WHERE Instance=@i;
+                                UPDATE dbo.WaLines SET Instance=@i, Number=@n, Status=NULL WHERE Id = (SELECT TOP 1 Id FROM dbo.WaLines WHERE StoreId=@s AND Instance IS NULL ORDER BY Id);",
+                                "@i", i.Id, "@n", linked ? i.Number : null, "@s", s.Id)) n = cmd.ExecuteNonQuery();
+                            if (WaAccount.Stopped((i.Status ?? "").ToUpperInvariant())) try { await Wapilot.Start(token2, i.Id); } catch (WaException e2) { Log.Error(e2); }
+                            Web.Json(res, 200, await State(c, req));
+                            return;
+                        }
+                        // the number leaves whichever store had it (as its main number or an extra one); the store leaves whatever it had (incl. its own Wapilot account)
+                        using (var cmd = Db.Cmd(c, @"UPDATE dbo.WaLines SET Instance=NULL, Number=NULL, Status=NULL WHERE Instance=@i;
+                            UPDATE dbo.Stores SET WaInstance=NULL, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE WaInstance=@i AND Id<>@s;
                             UPDATE dbo.Stores SET WaInstance=@i, WaToken=NULL, WaHookKey=NULL, WaNumber=@n, WaStatus=NULL, WaEnabled=1 WHERE Id=@s;",
                             "@i", i.Id, "@n", linked ? i.Number : null, "@s", s.Id)) cmd.ExecuteNonQuery();
                         if (WaAccount.Stopped((i.Status ?? "").ToUpperInvariant())) try { await Wapilot.Start(token2, i.Id); } catch (WaException ex) { Log.Error(ex); }
@@ -1202,7 +1249,8 @@ ELSE
                         var inst = (Web.Str(b, "instance", 150) ?? "").Trim();
                         object lo; bool logout = b.TryGetValue("logout", out lo) && lo is bool && (bool)lo;
                         if (inst.Length == 0) { Web.Error(res, 400, "bad_request"); return; }
-                        using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE WaInstance=@i AND WaToken IS NULL", "@i", inst)) cmd.ExecuteNonQuery();
+                        using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE WaInstance=@i AND WaToken IS NULL;
+                            UPDATE dbo.WaLines SET Instance=NULL, Number=NULL, Status=NULL WHERE Instance=@i;", "@i", inst)) cmd.ExecuteNonQuery();
                         if (logout) try { await Wapilot.Logout(token2, inst); } catch (WaException ex) { if (ex.Status != 404) { Web.Error(res, 400, "wapilot", ex.Message); return; } }
                         Web.Json(res, 200, await State(c, req));
                         return;
@@ -1218,7 +1266,7 @@ ELSE
         {
             var token = WaAccount.PlatformToken(c);
             var d = new Dictionary<string, object> { { "tokenSet", token != null }, { "autoAssign", WaAccount.AutoAssign(c) },
-                { "price", WaAccount.ServicePrice(c) }, { "days", WaAccount.ServiceDays } };
+                { "price", WaAccount.ServicePrice(c) }, { "multiPrice", WaLines.MultiPrice(c) }, { "days", WaAccount.ServiceDays } };
             // every store, for the "assign to" list, with what it uses now and until when its WhatsApp service runs
             var stores = new List<Dictionary<string, object>>();
             var byInstance = new Dictionary<string, Dictionary<string, object>>(StringComparer.OrdinalIgnoreCase);
@@ -1240,16 +1288,30 @@ ELSE
                     if (r["WaInstance"] != DBNull.Value && Convert.ToInt32(r["Own"]) == 0) byInstance[(string)r["WaInstance"]] = st;
                 }
             d["stores"] = stores;
+            // a store's extra numbers (WaLines.cs): which instance is whose, and how many each store pays for
+            var lineCount = new Dictionary<int, int>();
+            using (var cmd = Db.Cmd(c, "SELECT l.Id, l.StoreId, l.Instance, s.Name FROM dbo.WaLines l JOIN dbo.Stores s ON s.Id = l.StoreId ORDER BY l.StoreId, l.Id"))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read())
+                {
+                    int sid = (int)r["StoreId"]; int k; lineCount.TryGetValue(sid, out k); lineCount[sid] = ++k;
+                    var st = stores.FirstOrDefault(x => (int)x["id"] == sid);
+                    if (st == null || r["Instance"] == DBNull.Value) continue;
+                    byInstance[(string)r["Instance"]] = new Dictionary<string, object>(st) { { "name", (string)r["Name"] + " (رقم إضافي " + (k + 1) + ")" }, { "line", (int)r["Id"] } };
+                }
+            foreach (var st in stores) { int k; lineCount.TryGetValue((int)st["id"], out k); st["extra"] = k; }
             if (token == null) return d;
             d["webhookUrl"] = WaAccount.PlatformHookUrl(req, c);
-            // tickets from owners who found no free number
-            using (var cmd = Db.Cmd(c, @"SELECT t.Id, t.StoreId, s.Name, t.CreatedAt FROM dbo.Tickets t JOIN dbo.Stores s ON s.Id=t.StoreId
-                WHERE t.Subject=@sub AND t.Status<>'closed' AND s.WaInstance IS NULL ORDER BY t.Id", "@sub", WaAccount.AskSubject))
+            // tickets from owners who found no free number (for their main number, or an extra one)
+            using (var cmd = Db.Cmd(c, @"SELECT t.Id, t.StoreId, s.Name, t.CreatedAt, t.Subject FROM dbo.Tickets t JOIN dbo.Stores s ON s.Id=t.StoreId
+                WHERE t.Status<>'closed' AND ((t.Subject=@sub AND s.WaInstance IS NULL)
+                  OR (t.Subject=@sub2 AND EXISTS (SELECT 1 FROM dbo.WaLines l WHERE l.StoreId = s.Id AND l.Instance IS NULL))) ORDER BY t.Id",
+                "@sub", WaAccount.AskSubject, "@sub2", WaLines.AskSubject))
             using (var r = cmd.ExecuteReader())
             {
                 var waiting = new List<Dictionary<string, object>>();
                 while (r.Read()) waiting.Add(new Dictionary<string, object> { { "ticketId", (int)r[0] }, { "storeId", (int)r[1] }, { "store", (string)r[2] },
-                    { "at", DateTime.SpecifyKind((DateTime)r[3], DateTimeKind.Utc).ToString("o") } });
+                    { "at", DateTime.SpecifyKind((DateTime)r[3], DateTimeKind.Utc).ToString("o") }, { "extra", (string)r[4] == WaLines.AskSubject } });
                 d["waiting"] = waiting;
             }
             try
@@ -1262,6 +1324,7 @@ ELSE
                         { "id", i.Id }, { "name", i.Name }, { "status", i.Status ?? "" }, { "number", i.Number ?? "" },
                         { "linked", WaAccount.Linked((i.Status ?? "").ToUpperInvariant()) }, { "reserved", reserved.Contains(i.Id) },
                         { "storeId", st == null ? (object)null : st["id"] }, { "store", st == null ? "" : st["name"] },
+                        { "line", st != null && st.ContainsKey("line") ? st["line"] : null },   // one of the store's extra numbers (WaLines.cs)
                         // the store's WhatsApp service: a number whose store stopped paying can go back to the pool (or not be renewed on Wapilot)
                         { "service", st == null ? (object)null : st["service"] }, { "always", st != null && (bool)st["always"] }, { "waUntil", st == null ? "" : st["waUntil"] } };
                 }).ToList();

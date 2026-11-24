@@ -28,6 +28,8 @@ namespace RiwaqChat
             public DateTime Created; public DateTime? Ends;
             public int Msgs, LastMsgs; public long Units, LastUnits, Limit, TopUnits;
             public decimal PerMonth, PaidMonth;
+            public int WaN = 1, Lines;      // WhatsApp numbers paid for, and numbers linked (main + extra, WaLines.cs)
+            public decimal WaMonth;         // what its WhatsApp numbers pay a month
         }
 
         public static Dictionary<string, object> Report(SqlConnection c)
@@ -45,6 +47,7 @@ namespace RiwaqChat
             // ---------- every store: this month and last month, what it pays a month ----------
             var rows = new List<Row>();
             using (var cmd = Db.Cmd(c, @"SELECT s.Id, s.Name, s.Slug, s.IsAdmin, s.PlanId, s.PlanName, s.PlanEndsAt, s.NextPlanId, s.CreatedAt, s.WaUntil, s.WaInstance, s.MonthlyTokenLimit,
+                  s.WaCount, (SELECT COUNT(*) FROM dbo.WaLines l WHERE l.StoreId = s.Id AND l.Instance IS NOT NULL) AS ExtraLines,
                   ISNULL(u.Messages,0) AS M, ISNULL(" + W("u") + @",0) AS U, ISNULL(l.Messages,0) AS LM, ISNULL(" + W("l") + @",0) AS LU,
                   (SELECT TOP 1 x.PaidEgp / x.Months FROM dbo.Subscriptions x WHERE x.StoreId = s.Id AND x.Kind = 'plan' AND x.Months > 0 ORDER BY x.StartsAt DESC) AS PerMonth,
                   (SELECT ISNULL(SUM(x.PaidEgp),0) FROM dbo.Subscriptions x WHERE x.StoreId = s.Id AND x.CreatedAt >= @ms) AS PaidMonth,
@@ -70,6 +73,11 @@ namespace RiwaqChat
                     x.Trial = !x.PlanId.HasValue && !x.Own;
                     x.TrialLive = x.Trial && x.Created.AddDays(freeDays) > now && x.Msgs < free;
                     x.Wa = !x.Own && r["WaUntil"] is DateTime && DateTime.SpecifyKind((DateTime)r["WaUntil"], DateTimeKind.Utc) > now;
+                    // more than one number (WaLines.cs): 300 for one, 260 each for more (a plan with WhatsApp inside already has one)
+                    x.WaN = r["WaCount"] is int ? Math.Max(1, (int)r["WaCount"]) : 1;
+                    x.Lines = (x.WaLinked ? 1 : 0) + Convert.ToInt32(r["ExtraLines"]);
+                    bool inPlanWa = x.PlanId.HasValue && plans.ContainsKey(x.PlanId.Value) && plans[x.PlanId.Value].IncludesWa && x.Ends.HasValue && x.Ends.Value >= now;
+                    x.WaMonth = x.Wa ? x.WaN * WaLines.UnitPrice(c, x.WaN + (inPlanWa ? 1 : 0)) : 0;
                     bool waiting = r["NextPlanId"] != DBNull.Value;   // a lower plan already paid for: it renews itself
                     x.Ending7 = x.Active && !waiting && x.Ends.Value < now.AddDays(7);
                     x.Ending30 = x.Active && !waiting && x.Ends.Value < now.AddDays(30);
@@ -134,10 +142,10 @@ namespace RiwaqChat
             using (var cmd = Db.Cmd(c, "SELECT Kind, ISNULL(SUM(PaidEgp),0) FROM dbo.Subscriptions WHERE CreatedAt >= @ms GROUP BY Kind", "@ms", monthStart))
             using (var r = cmd.ExecuteReader()) while (r.Read()) { var k = (string)r[0]; revByKind[revByKind.ContainsKey(k) ? k : "plan"] += Convert.ToDecimal(r[1]); }
             decimal revenue = revByKind.Values.Sum();
-            int waNumbers = rows.Count(x => x.WaLinked);
+            int waNumbers = rows.Sum(x => x.Lines);   // every linked number, a store's extra ones too: each costs at the provider
             decimal waCostMonth = waNumbers * waCost;
             decimal claudeEgp = claudeUsd * rate, claudeProjEgp = claudeProjUsd * rate;
-            decimal mrrPlans = rows.Where(x => x.Active).Sum(x => x.PerMonth), mrrWa = rows.Count(x => x.Wa) * waPrice, mrr = mrrPlans + mrrWa;
+            decimal mrrPlans = rows.Where(x => x.Active).Sum(x => x.PerMonth), mrrWa = rows.Sum(x => x.WaMonth), mrr = mrrPlans + mrrWa;
             decimal monthlyCosts = next30 * rate + waCostMonth + fixedCost;
 
             // ---------- each plan ----------
@@ -162,11 +170,12 @@ namespace RiwaqChat
             {
                 long lim = x.Active ? x.Limit + x.TopUnits : x.TrialLive ? (long)free * perMsg : x.Own ? x.Limit : 0;
                 decimal cost = Billing.UsdForUnits(x.Units) * rate, proj = Billing.UsdForUnits((long)(x.Units * (daysIn / elapsed))) * rate;
-                decimal pays = (x.Active ? x.PerMonth : 0) + (x.Wa ? waPrice : 0);
+                decimal pays = (x.Active ? x.PerMonth : 0) + x.WaMonth;
                 return new Dictionary<string, object> {
                     { "id", x.Id }, { "name", x.Name }, { "slug", x.Slug }, { "plan", x.Active ? x.Plan : null }, { "trial", x.Trial }, { "own", x.Own }, { "wa", x.Wa },
+                    { "waNumbers", x.Lines },
                     { "msgs", x.Msgs }, { "cost", R(cost) }, { "proj", R(proj) }, { "pays", R(pays) },
-                    { "margin", x.Own ? (decimal?)null : R(pays - proj - (x.WaLinked && (x.Wa || x.Active && x.PlanId.HasValue && plans.ContainsKey(x.PlanId.Value) && plans[x.PlanId.Value].IncludesWa) ? waCost : 0)) },
+                    { "margin", x.Own ? (decimal?)null : R(pays - proj - (x.WaLinked && (x.Wa || x.Active && x.PlanId.HasValue && plans.ContainsKey(x.PlanId.Value) && plans[x.PlanId.Value].IncludesWa) ? waCost * Math.Max(1, x.Lines) : 0)) },
                     { "usePct", lim > 0 ? Math.Round(x.Units * 100.0 / lim, 1) : (double?)null }, { "paidMonth", R(x.PaidMonth) } };
             }).OrderByDescending(d => (decimal)d["cost"]).ToList();
 
