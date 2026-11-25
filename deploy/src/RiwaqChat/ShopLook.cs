@@ -14,7 +14,7 @@ namespace RiwaqChat
         // ids of the templates (site/shop/t/<id>.js); the admin can close any of them (AppSettings ShopTplOff)
         public static readonly string[] Templates = { "atelier", "volt", "taza", "nada", "rokn", "shatla", "farfoush", "elba", "bareeq", "hammal" };
         public static readonly string[] Bizzes = { "clothes", "home", "beauty", "spices", "electronics", "toys", "sweets", "plants", "furniture", "jewelry", "grocery", "other" };
-        static readonly string[] Sections = { "slider", "cats", "new", "best", "sale", "pick", "text", "marquee", "hot", "ba", "budget", "faq", "trust", "banner" };
+        static readonly string[] Sections = { "slider", "cats", "new", "best", "sale", "pick", "text", "marquee", "hot", "look", "ba", "budget", "faq", "trust", "banner" };
         static readonly Regex Hex = new Regex("^#[0-9a-fA-F]{6}$");
 
         public static string TemplateFor(string biz)

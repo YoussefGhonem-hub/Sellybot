@@ -342,11 +342,11 @@ namespace RiwaqChat
             if (p.Options.Count > 0)
             {
                 r["o"] = p.Options.Select(o => new Dictionary<string, object> { { "n", Pair(o.Ar, o.En) }, { "v", o.Vals.Select(v => new[] { v.Ar, v.En ?? "", v.Hex ?? "" }).ToArray() } }).ToArray();
-                r["iv"] = p.Vars.Where(p.Can).Select(v => v.Opts).ToArray();
             }
-            // the one size a product without options has: «ضيف للسلة» from the card itself
-            if (p.Options.Count == 0 && p.Vars.Count > 0) { r["v"] = p.Vars[0].Id; if (p.Track && p.OutMode != "order") r["st"] = Math.Max(0, p.Vars[0].Stock); }
-            else if (p.Track && p.OutMode != "order") r["st"] = p.Total;
+            // every size and colour: its id, values, can it be bought, price, old price, picture, quantity (null = not counted)
+            bool count = p.Track && p.OutMode != "order";
+            r["vs"] = p.Vars.Where(v => v.Active).Select(v => { decimal? o; ShopOffer x; var u = ShopPrice.Unit(d, p, v, now, out o, out x); return new object[] { v.Id, v.Opts, p.Can(v) ? 1 : 0, u, o ?? 0, v.Image ?? "", count ? (object)Math.Max(0, v.Stock) : null }; }).ToArray();
+            if (count) r["st"] = p.Total;
             if (p.OutMode == "order") r["om"] = "order";
             if (b.Count > 0) r["b"] = b;
             if (p.MinQty > 1) r["mn"] = p.MinQty;

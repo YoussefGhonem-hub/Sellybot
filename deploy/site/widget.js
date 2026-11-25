@@ -1270,6 +1270,8 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
   applyLook();
 
   // ---------------------------------------------------------------- chat
+  // a store on SellyStore says what the customer is looking at (the open product and the cart, as ids: the server reads them itself)
+  function shopCtx() { try { return window.SellyShop && window.SellyShop.ctx ? window.SellyShop.ctx() : undefined; } catch (e) { return undefined; } }
   async function ask(q) {
     if (busy || !q) return;
     if (q.length > 600) { addErr("السؤال طويل شوية 😅 اختصره في أقل من 600 حرف."); return; }
@@ -1277,7 +1279,7 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     addMe(q); history.push({ role: "user", content: q });
     var bot = addBot(), tw = typer(bot.bubble, function () { talk(bot, true); }), act = null;
     try {
-      var r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-12), sid: SID }) });
+      var r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-12), sid: SID, shop: shopCtx() }) });
       if (!r.ok) { var e = new Error("http"); e.status = r.status; throw e; }
       if ((r.headers.get("content-type") || "").indexOf("text/event-stream") !== -1 && r.body) {
         var reader = r.body.getReader(), dec = new TextDecoder(), buf = "", evt = "";
@@ -1339,6 +1341,9 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
     var c = $(".chat"); c.classList.add("closed"); c.setAttribute("aria-hidden", "true");
     setTimeout(function () { $(".launcher").classList.remove("hide"); }, 180);
   }
+
+  // the page itself may open the chat (a store's «اسأل المساعد» button), with a question or without
+  if (MODE !== "page") window.SellybotChat = { host: host, open: function (q) { if ($(".chat").classList.contains("closed")) openChat(); if (q && typeof q === "string") setTimeout(function () { (welcomeP || Promise.resolve()).then(function () { ask(q.slice(0, 600)); }); }, 600); } };
 
   var dragEnd = 0;   // a drag ends with a click; don't let that click open the chat
   $(".launcher").addEventListener("click", function (e) { if (e.target.closest(".x")) return; if (Date.now() - dragEnd < 400) return; if (e.target.closest(".lb")) openChat(); });
