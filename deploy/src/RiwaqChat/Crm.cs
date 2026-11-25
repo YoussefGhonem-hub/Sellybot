@@ -705,11 +705,13 @@ ELSE SELECT 0;";
             var list = Filter(c, s, all, group, mark, q, sort).ToList();
             page = Math.Max(0, Math.Min(page, 5000));
             bool shop = ShopifyAdmin.For(s) != null, eo = EasyOrders.Connected(s), scope = ShopifyAdmin.Has(s.ShopifyScopes, "read_orders");
-            DateTime? shopAt; int orders, noPhone, del60, ret60;
+            DateTime? shopAt; int orders, noPhone, del60, ret60; decimal avg; string cur;
             using (var cmd = Db.Cmd(c, @"SELECT (SELECT CrmShopAt FROM dbo.Stores WHERE Id=@s), COUNT(*), ISNULL(SUM(CASE WHEN Phone IS NULL AND Gone=0 THEN 1 ELSE 0 END),0),
                 ISNULL(SUM(CASE WHEN Status='delivered' AND OrderedAt > DATEADD(DAY,-60,SYSUTCDATETIME()) THEN 1 ELSE 0 END),0),
-                ISNULL(SUM(CASE WHEN Status='returned' AND OrderedAt > DATEADD(DAY,-60,SYSUTCDATETIME()) THEN 1 ELSE 0 END),0) FROM dbo.CrmOrders WHERE StoreId=@s", "@s", s.Id))
-            using (var r = cmd.ExecuteReader()) { r.Read(); shopAt = Utc(r[0]); orders = Convert.ToInt32(r[1]); noPhone = Convert.ToInt32(r[2]); del60 = Convert.ToInt32(r[3]); ret60 = Convert.ToInt32(r[4]); }
+                ISNULL(SUM(CASE WHEN Status='returned' AND OrderedAt > DATEADD(DAY,-60,SYSUTCDATETIME()) THEN 1 ELSE 0 END),0),
+                ISNULL(AVG(CASE WHEN Status IN ('open','shipped','delivered') AND Total > 0 THEN Total END),0), MIN(ISNULL(Currency,N'ج.م')), MAX(ISNULL(Currency,N'ج.م')) FROM dbo.CrmOrders WHERE StoreId=@s", "@s", s.Id))
+            using (var r = cmd.ExecuteReader()) { r.Read(); shopAt = Utc(r[0]); orders = Convert.ToInt32(r[1]); noPhone = Convert.ToInt32(r[2]); del60 = Convert.ToInt32(r[3]); ret60 = Convert.ToInt32(r[4]);
+                cur = r[7] as string; avg = cur != null && cur == r[6] as string ? Convert.ToDecimal(r[5]) : 0; }   // orders in two currencies have no one average
             var team = Team.Members(c, s);
             return new Dictionary<string, object> {
                 { "total", list.Count }, { "page", page }, { "more", list.Count > (page + 1) * PageSize },
@@ -719,7 +721,7 @@ ELSE SELECT 0;";
                 { "marks", Marks.ToDictionary(m => m, m => (object)all.Count(p => p.Mark == m)) },
                 { "watch", returns ? (object)Watch(c, s, all) : new object[0] },
                 { "returns", new Dictionary<string, object> { { "delivered", del60 }, { "returned", ret60 } } },
-                { "orders", orders }, { "noPhone", noPhone },
+                { "orders", orders }, { "noPhone", noPhone }, { "avgOrder", Math.Round(avg) }, { "avgCurrency", cur ?? "" },   // the guide's example
                 { "shopify", shop }, { "shopifyScope", scope }, { "shopAt", Iso(shopAt) }, { "pulling", IsPulling(s.Id) || (shop && scope && shopAt == null) }, { "eo", eo },
                 { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) }, { "service", WaAccount.HasService(s) },
                 { "alert", new Dictionary<string, object> { { "on", AlertOn(c, s.Id) }, { "team", team.Select(m => m.Name).ToList() }, { "owner", s.OwnerPhone ?? "" }, { "cant", WaNotify.CantSend(c, s) ?? "" } } } };

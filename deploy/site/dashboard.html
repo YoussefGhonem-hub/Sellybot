@@ -1870,6 +1870,34 @@
   .cr-skel{height:66px;border-radius:16px;background:linear-gradient(90deg,var(--card),var(--soft),var(--card));background-size:200% 100%;animation:crSk 1.2s linear infinite}
   @keyframes crSk{to{background-position:-200% 0}}
   .cr-set,.cr-how{margin-top:14px}
+  /* the guide */
+  .cr-guide{margin-bottom:14px}
+  .cr-gd{padding:0 18px 18px}
+  .cr-gd-lead{margin:0 0 14px;font-size:15px;line-height:1.8}
+  .cr-gd-g{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0;padding:0;list-style:none}
+  .cr-gd-g li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:0 12px;padding:14px;border:1px solid var(--line);border-inline-start:4px solid var(--gc);border-radius:16px;background:var(--card)}
+  .cr-gd-g i{font-style:normal;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:color-mix(in srgb,var(--gc) 14%,var(--card))}
+  .cr-gd-g li>div{display:flex;flex-direction:column;min-width:0}
+  .cr-gd-g b{font-size:15px}
+  .cr-gd-g p{flex:1;margin:3px 0 10px;font-size:13.5px;line-height:1.75;color:var(--muted)}
+  .cr-gd-f{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .cr-gd-f span{font-size:13px;font-weight:600;color:color-mix(in srgb,var(--gc) 75%,var(--ink))}
+  .cr-gd-ex{margin-top:12px;padding:13px 16px;border-radius:16px;background:color-mix(in srgb,var(--ok) 9%,var(--card));border:1px solid color-mix(in srgb,var(--ok) 32%,var(--line));font-size:14.5px;line-height:1.85}
+  .cr-gd-ex small{display:block;color:var(--muted);font-size:12.5px}
+  .cr-gd-2{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px;margin-top:14px}
+  .cr-gd-2 h4{margin:0 0 4px;font-size:15px}
+  .cr-gd-l{margin:0;padding:0;list-style:none;font-size:13.5px;line-height:1.75}
+  .cr-gd-l li{position:relative;padding:3px 24px 3px 0;color:var(--muted)}
+  .cr-gd-l li b{color:var(--ink);font-weight:600}
+  .cr-gd-l li:before{content:"✓";position:absolute;inset-inline-start:0;top:3px;color:var(--ok);font-weight:700}
+  .cr-gd-l.no li:before{content:"✕";color:var(--err)}
+  .cr-gd-st{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);font-size:13.5px}
+  .cr-gd-st>span{display:flex;flex-wrap:wrap;gap:8px}
+  .cr-gd-st button,.cr-gd-st em{border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:13px;font-style:normal;background:var(--card)}
+  .cr-gd-st em{background:color-mix(in srgb,var(--ok) 12%,var(--card));border-color:transparent;color:color-mix(in srgb,var(--ok) 72%,var(--ink));font-weight:600}
+  .cr-gd-st button{cursor:pointer;border-style:dashed;border-color:var(--brand)}
+  .cr-gd-st button:hover{background:color-mix(in srgb,var(--brand) 10%,var(--card))}
+  #crDo,.cr-bar{scroll-margin-top:84px}
   .cr-how summary{cursor:pointer;font-weight:600}
   .cr-how ul{margin:10px 0 0;padding-inline-start:20px;font-size:13.5px;color:var(--muted)}.cr-how li{margin:5px 0}.cr-how li b{color:var(--ink)}
   /* the file */
@@ -1945,6 +1973,7 @@
   @media (max-width:640px){
     .cr-title .cr-tools{display:grid;grid-template-columns:1fr 1fr}.cr-title .cr-tools .btn{width:auto;padding:9px 8px;white-space:normal}.cr-title #crAdd{grid-column:1/-1;padding:11px}
     .cr-groups{gap:8px}
+    .cr-gd{padding:0 14px 16px}.cr-gd-g,.cr-gd-2{grid-template-columns:minmax(0,1fr)}.cr-gd-g li{grid-template-columns:38px minmax(0,1fr)}.cr-gd-g i{width:38px;height:38px;font-size:18px}
     .cr-g{grid-template-columns:30px minmax(0,1fr) auto;padding:9px 10px;gap:0 8px}.cr-g i{width:30px;height:30px;border-radius:9px;font-size:16px}.cr-g small{display:none}.cr-g b{font-size:13px}.cr-g em{font-size:17px}
     .cr-bar{flex-wrap:wrap}.cr-search{flex:1 0 100%}.cr-bar select{flex:1}
     .cr-open{grid-template-columns:40px minmax(0,1fr) auto;padding:10px}.cr-av{width:40px;height:40px;font-size:16px}.cr-open .cr-bg{grid-column:2/-1;grid-row:2}.cr-open .cr-bg:empty{display:none}
@@ -3016,6 +3045,38 @@
       <div class="cr-w-h"><b id="crWatchT"></b><small>كلّمهم وأكّد قبل ما تشحن، أو اطلب مصاريف الشحن مقدم.</small></div>
       <div id="crWatchL"></div>
     </div>
+
+    <!-- the guide: what the owner gets out of the page, in a minute, with their own numbers (crGuideDraw). Open on the first visit, one line after it -->
+    <details class="card eo-cmp cr-guide" id="crGuide">
+      <summary><span class="eo-cmp-ic" aria-hidden="true">💡</span><span class="tx"><b>إزاي تستفيد من «زبايني»؟</b><small>شرح بسيط في دقيقة، بأرقام متجرك</small></span><i class="eo-chev" aria-hidden="true"></i></summary>
+      <div class="cr-gd">
+        <p class="cr-gd-lead">زباينك اللي عندك جرّبوك وعارفينك، ومش محتاج إعلان عشان توصلهم. الصفحة دي بتقولك <b>مين تكلّمه<span data-feat="returns">، ومين تاخد بالك منه</span></b>.</p>
+        <ol class="cr-gd-g" id="crGdG">
+          <li data-feat="crmgroups" style="--gc:#5b6bd6"><i aria-hidden="true">💰</i><div><b>بيع تاني لحد اشترى منك</b><p>دوس «اشتروا واختفوا»، وبعدين «ابعتلهم عرض»، وكمّل الرسالة الجاهزة وابعت.</p><div class="cr-gd-f"><span data-crg="lost"></span><button class="btn sm" type="button" data-crgo="lost">ابدأ بيهم</button></div></div></li>
+          <li data-feat="crmgroups" style="--gc:#e8774a"><i aria-hidden="true">🛒</i><div><b>كمّل بيعة كانت هتضيع</b><p>ناس سابت السلة، أو سألت وماشترتش. اسألهم إيه اللي وقّفهم، يمكن سؤال صغير عن المقاس أو الشحن.</p><div class="cr-gd-f"><span data-crg="cart"></span><button class="btn sm" type="button" data-crgo="cart">شوفهم</button></div></div></li>
+          <li data-feat="returns" style="--gc:#e8394a"><i aria-hidden="true">↩️</i><div><b>وفّر شحنة هترجع</b><p>قبل ما تشحن، بص على المربع الأحمر اللي فوق (بيظهر بس لما يكون فيه أوردر محتاج تبص عليه). اللي بيرجّع كلّمه الأول، أو خد مصاريف الشحن مقدم. ومش عايز تشحنله تاني؟ علّم عليه «ماتشحنلوش».</p><div class="cr-gd-f"><span data-crg="back"></span><button class="btn ghost sm" type="button" data-crgo="back">شوف مين بيرجّع</button></div></div></li>
+          <li style="--gc:#1f9d55"><i aria-hidden="true">👤</i><div><b>اعرف زبونك قبل ما ترد عليه</b><p>دوّر برقمه، هتلاقي اشترى إيه ورجّع إيه وقال إيه. واكتب عنه ملاحظة تفتكرها: مقاسه، أو ميعاد التوصيل اللي يناسبه.</p><div class="cr-gd-f"><span data-crg="all"></span><button class="btn ghost sm" type="button" data-crgo="search">🔍 دوّر على زبون</button></div></div></li>
+          <li class="cr-nogroups" style="--gc:#d99a1c"><i aria-hidden="true">⭐</i><div><b>اعرف مين بيشتري منك أكتر</b><p>رتّبهم «الأعلى شراءً»، ودلّعهم: مكالمة شكر، أو هدية صغيرة مع الأوردر الجاي.</p><div class="cr-gd-f"><span></span><button class="btn ghost sm" type="button" data-crgo="spent">رتّبهم</button></div></div></li>
+        </ol>
+        <div class="cr-gd-ex" id="crGdEx" data-feat="crmgroups" hidden></div>
+        <div class="cr-gd-2">
+          <div><h4>⏱️ وقتك قليل؟ ده كفاية</h4>
+            <ul class="cr-gd-l">
+              <li data-feat="returns"><b>كل يوم قبل الشحن:</b> بص على المربع الأحمر.</li>
+              <li data-feat="crmgroups"><b>كل أسبوع:</b> مجموعة واحدة، وعرض واحد ليها.</li>
+              <li class="cr-nogroups"><b>كل أسبوع:</b> كلّم 5 من «الأقدم» واسأل عليهم.</li>
+              <li><b>لما أوردر يرجع:</b> لو حالته ماتغيّرتش لوحدها، غيّرها من ملف الزبون لـ «رجع».</li>
+            </ul></div>
+          <div><h4>🚫 بلاش</h4>
+            <ul class="cr-gd-l no">
+              <li><b>عروض كتير لنفس الناس:</b> هيبعتوا «وقف»، أو يبلّغوا عن رقمك.</li>
+              <li><b>ترفض زبون رجّع مرة:</b> يمكن المقاس كان غلط. كلّمه الأول.</li>
+              <li data-feat="returns"><b>تسيب الأوردرات من غير حالة:</b> التنبيه بيعرف من «اتسلم» و«رجع».</li>
+            </ul></div>
+        </div>
+        <div class="cr-gd-st"><b>خلّي الصفحة تتملي:</b><span id="crGdSt"></span></div>
+      </div>
+    </details>
 
     <!-- add a customer / upload old orders: one of them open at a time -->
     <form class="card cr-box" id="crAddBox" hidden>
@@ -6915,7 +6976,7 @@
     } catch (e) { if (seq === crSeq) { setMsg("crMsg", e.message); if (!cr) $("crList").innerHTML = ""; } }
   }
   function crDraw() {
-    crGroupsDraw(); crDoDraw(); crWatchDraw(); crListDraw(); crAlertDraw();
+    crGroupsDraw(); crDoDraw(); crWatchDraw(); crListDraw(); crAlertDraw(); crGuideDraw();
     $("crXls").href = "api/customers.ashx?" + crQS({ export: 1 });
     $("crXls").hidden = !cr.all; $("crUp").hidden = false;
     // Shopify's first pull: its orders come in while the page is open
@@ -6952,6 +7013,43 @@
     el.querySelectorAll("[data-open]").forEach(function (b) { b.onclick = function () { crOpen(b.dataset.open); }; });
     el.querySelectorAll("[data-ok]").forEach(function (b) { b.onclick = async function () { b.disabled = true; try { await api("api/customers.ashx?action=checked", { method: "POST", json: { id: +b.dataset.ok } }); toast("تمام ✓"); crLoad(); } catch (e) { b.disabled = false; toast(e.message); } }; });
   }
+  // ---- the guide: what to get out of the page, with the store's own numbers. Open on the first visit, one line after it ----
+  function crGuideDraw() {
+    var el = $("crGuide"), n = function (k) { return ((cr.groups || {})[k] || {}).n || 0; }, send = function (k) { return ((cr.groups || {})[k] || {}).send || 0; };
+    if (!el.dataset.set) { el.dataset.set = "1"; el.open = lsGet("sb-cr-guide") === null; lsSet("sb-cr-guide", "1"); }
+    function put(k, t) { el.querySelector('[data-crg="' + k + '"]').textContent = t; }
+    function can(k, on) { el.querySelector('[data-crgo="' + k + '"]').disabled = !on; }
+    var rt = cr.returns || {}, all = (rt.returned || 0) + (rt.delivered || 0);
+    put("lost", n("lost") ? "عندك " + crCustN(n("lost")) : "لسه محدش هنا"); can("lost", n("lost"));
+    put("cart", [n("cart") ? "سابوا السلة: " + fmt(n("cart")) : "", n("ask") ? "سألوا: " + fmt(n("ask")) : ""].filter(Boolean).join(" · ") || "لسه محدش هنا"); can("cart", n("cart") + n("ask"));
+    put("back", all ? "آخر 60 يوم رجع " + fmt(rt.returned) + " من " + fmt(all) : "لسه مفيش مرتجع متسجّل"); can("back", n("back"));
+    put("all", cr.all ? "عندك " + crCustN(cr.all) : ""); can("search", cr.all);
+    el.querySelectorAll(".cr-nogroups").forEach(function (x) { x.hidden = cr.canGroups; });
+    // what a message to one group could bring, by the store's own average order: one in twenty coming back, never less than one
+    var g = ["lost", "ask", "cart", "fresh"].filter(send)[0], ex = $("crGdEx"), avg = cr.avgOrder || 0;
+    ex.hidden = !(cr.canGroups && (g && avg || !cr.all));
+    if (g && avg) {
+      var m = send(g), b = Math.max(1, Math.round(m / 20)), who = { lost: "اشتروا واختفوا", ask: "سألوا وماشتروش", cart: "سابوا السلة", fresh: "اشتروا لأول مرة" }[g];
+      ex.innerHTML = "🧮 <b>مثال من أرقامك:</b> العرض يوصل لـ " + crCustN(m) + " " + who + "، ومتوسط الأوردر عندك " + crMoney(avg, cr.avgCurrency) + ". لو " + (b === 1 ? "واحد بس منهم اشترى" : b === 2 ? "اتنين بس منهم اشتروا" : fmt(b) + " بس منهم اشتروا") + "، ده <b>" + crMoney(avg * b, cr.avgCurrency) + "</b> من رسالة واحدة ومن غير إعلان.<small>ده حساب للتوضيح، مش وعد بنتيجة.</small>";
+    } else ex.innerHTML = "🧮 <b>مثال:</b> متجر عنده 100 زبون اشتروا واختفوا، ومتوسط أوردره 400 ج.م. لو 5 بس رجعوا يشتروا، دول 2,000 ج.م من رسالة واحدة ومن غير إعلان.".replace(/[0-9,]+/g, function (x) { return fmt(+x.replace(/,/g, "")); }) + "<small>ده حساب للتوضيح، مش وعد بنتيجة.</small>";
+    // what fills the page: done, or the button that does it
+    var st = [];
+    if (cr.shopify || cr.eo) st.push("<em>✓ متجرك مربوط</em>"); else if (hasF("shopify") || hasF("easyorders")) st.push('<button type="button" data-crst="data">🛍️ اربط متجرك</button>');
+    st.push(cr.whatsapp ? "<em>✓ الواتساب مربوط</em>" : '<button type="button" data-crst="wa">💬 اربط الواتساب</button>');
+    st.push('<button type="button" data-crst="up">⬆️ ارفع أوردراتك القديمة</button>');
+    $("crGdSt").innerHTML = st.join("");
+    $("crGdSt").querySelectorAll("[data-crst]").forEach(function (b) { b.onclick = function () { if (b.dataset.crst !== "up") { go(b.dataset.crst); return; } if ($("crUpBox").hidden) $("crUp").click(); $("crUpBox").scrollIntoView({ behavior: "smooth", block: "center" }); }; });
+  }
+  document.querySelectorAll("#crGuide [data-crgo]").forEach(function (b) {
+    b.onclick = function () {
+      var k = b.dataset.crgo, n = function (x) { return ((cr.groups || {})[x] || {}).n || 0; };
+      var bar = document.querySelector('[data-panel="customers"] .cr-bar');
+      if (k === "search") { bar.scrollIntoView({ behavior: "smooth", block: "start" }); $("crQ").focus({ preventScroll: true }); return; }
+      if (k === "spent") { $("crSort").value = "spent"; crF.sort = "spent"; crLoad().then(function () { bar.scrollIntoView({ behavior: "smooth", block: "start" }); }); return; }
+      crF = { g: k === "cart" && n("ask") > n("cart") ? "ask" : k, m: "", q: "", sort: crF.sort }; $("crQ").value = "";
+      crLoad().then(function () { $("crDo").scrollIntoView({ behavior: "smooth", block: "start" }); var s = $("crSend") || document.querySelector('#crGroups [data-g="' + crF.g + '"]'); if (s) s.focus({ preventScroll: true }); });
+    };
+  });
   function crBadges(r) {
     var out = [];
     if (r.risk) out.push('<span class="cr-bd bad">↩️ ' + esc(crAr(r.risk)) + "</span>");
