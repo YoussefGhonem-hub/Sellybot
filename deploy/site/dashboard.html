@@ -7266,7 +7266,7 @@
   }
 
   // ---------------- «متجري» (SellyStore): its own files, loaded once when the tab opens ----------------
-  var shopFiles = null, SHOP_V = "20261126a";
+  var shopFiles = null, SHOP_V = "20261126b";
   function shopLoad() {
     return shopFiles || (shopFiles = new Promise(function (ok, no) {
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/app.css?v=" + SHOP_V; document.head.appendChild(l);
