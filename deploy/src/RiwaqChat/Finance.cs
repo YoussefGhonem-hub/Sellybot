@@ -100,7 +100,7 @@ namespace RiwaqChat
             // units one reply costs: this month's when there's enough of it, else last month's, else the medium-data estimate
             long perMsg = msgsMonth >= 20 && unitsMonth > 0 ? unitsMonth / msgsMonth : msgsLast >= 20 && unitsLast > 0 ? unitsLast / msgsLast : Billing.Units(c, "UnitsMedium");
             perMsg = Math.Max(1, perMsg);
-            long councilUnits = Council.Units(c, monthStart);   // «مجلس المستشارين»: paid in its own tokens, so it isn't in UsageMonthly
+            long councilUnits = Council.Units(c, monthStart);   // «فكّر معانا»: paid in its own tokens, so it isn't in UsageMonthly
             decimal claudeUsd = Billing.UsdForUnits(unitsMonth + councilUnits);
             // what the cache saved: every cached token read would have been a full-price input token
             decimal cacheSavedUsd = Billing.UsdForUnits((long)(cr * 0.9));

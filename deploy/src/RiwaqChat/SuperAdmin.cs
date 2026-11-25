@@ -1704,7 +1704,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                             { "multi", WaLines.MultiPrice(c) } } },   // each number's month with more than one (WaLines.cs)
                         // «السعر القديم» while it's open: pay before the end of that day and the first months stay at today's price (null = off / over)
                         { "oldOffer", Billing.OldOfferJson(c) },
-                        { "council", Council.On(c) },   // «مجلس المستشارين» is open (about.html lists it then)
+                        { "council", Council.On(c) },   // «فكّر معانا» is open (about.html lists it then)
                     });
                 }
             }

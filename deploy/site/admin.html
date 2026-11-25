@@ -467,7 +467,7 @@
       <button data-go="wa"><span class="ic">💬</span>الواتساب <span class="count" id="waCount" hidden>0</span></button>
       <button data-go="meta"><span class="ic">📨</span>مسنجر وإنستجرام <span class="count" id="mtCount" hidden>0</span></button>
       <button data-go="tg"><span class="ic">✈️</span>تيليجرام</button>
-      <button data-go="council"><span class="ic">🏛️</span>المجلس <span class="count" id="cnCount" hidden>0</span></button>
+      <button data-go="council"><span class="ic">🧠</span>فكّر معانا <span class="count" id="cnCount" hidden>0</span></button>
       <button data-go="settings"><span class="ic">⚙️</span>الإعدادات</button>
     </nav>
     <div class="side-foot">
@@ -558,7 +558,7 @@
           <div class="card anim">
             <h3>📅 آخر 6 شهور</h3>
             <p class="sub">الفلوس اللي دخلت كل شهر، وتكلفة Claude فيه.</p>
-            <div class="tbl-wrap"><table style="min-width:520px"><thead><tr><th>الشهر</th><th>باقات</th><th>رسايل إضافية</th><th>واتساب</th><th>المجلس</th><th>تكلفة Claude</th><th>الفرق</th></tr></thead><tbody id="fnHist"></tbody></table></div>
+            <div class="tbl-wrap"><table style="min-width:520px"><thead><tr><th>الشهر</th><th>باقات</th><th>رسايل إضافية</th><th>واتساب</th><th>فكّر معانا</th><th>تكلفة Claude</th><th>الفرق</th></tr></thead><tbody id="fnHist"></tbody></table></div>
           </div>
           <form class="card anim" id="fnSet" autocomplete="off">
             <h3>⚙️ مصاريفك التانية</h3>
@@ -806,14 +806,14 @@
         </table></div>
       </section>
 
-      <!-- «مجلس المستشارين» (Council.cs): its own prepaid tokens, off until it's turned on here -->
+      <!-- «فكّر معانا» (Council.cs): its own prepaid tokens, off until it's turned on here -->
       <section data-page="council" hidden>
         <div class="kpis" id="cnKpis"></div>
         <div class="grid2b">
           <form class="card anim" id="cnSet" autocomplete="off">
-            <h3>إعدادات المجلس</h3>
+            <h3>إعدادات «فكّر معانا»</h3>
             <p class="sub">التاجر بيدفع الأول وبعدين يستخدم، والتوكنز مابتخلصش بوقت. السعر الجديد بيمشي على الطلبات الجديدة بس.</p>
-            <label class="switch"><input type="checkbox" id="cnOn"><span class="tg"></span><span id="cnOnT">المجلس ظاهر للتجار</span></label>
+            <label class="switch"><input type="checkbox" id="cnOn"><span class="tg"></span><span id="cnOnT">«فكّر معانا» ظاهرة للتجار</span></label>
             <div class="hint" id="cnOnH"></div>
             <div class="cols" style="margin-top:8px">
               <div><label for="cnPer">سعر الـ 1000 توكن (ج.م)</label><input type="number" id="cnPer" class="ltr" step="0.01" min="0.01"><div class="hint" id="cnPerH"></div></div>
@@ -826,7 +826,7 @@
           </form>
           <div class="card anim" style="animation-delay:.1s">
             <h3>اللي التاجر هيشوفه</h3>
-            <p class="sub">محسوب على السعر المكتوب. الفكرة الواحدة حوالي <b id="cnAvg">—</b> توكن، ورسالة بعد الحكم حوالي <b id="cnAvgQ">—</b>.</p>
+            <p class="sub">محسوب على السعر المكتوب. الفكرة الواحدة حوالي <b id="cnAvg">—</b> توكن، ورسالة في نفس الفكرة حوالي <b id="cnAvgQ">—</b>.</p>
             <div class="calc" id="cnPrev"></div>
             <h3 style="margin-top:18px">🎁 زوّد توكنز لمتجر</h3>
             <div class="cols">
@@ -999,7 +999,7 @@
   // ---------- navigation ----------
   var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], money: ["المكسب والتكلفة", "بتكسب كام، بتصرف كام، وتشحن Claude بكام"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
                  subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"],
-                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], council: ["مجلس المستشارين", "التاجر يعرض فكرته، وبيدفع بالتوكنز لوحدها"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
+                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], council: ["فكّر معانا", "التاجر يعرض فكرته، وبيدفع بالتوكنز لوحدها"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
     var on = document.querySelector("#nav button.on"); if (!on) return;
     $("navInd").style.transform = "translateY(" + (on.offsetTop) + "px)"; $("navInd").style.height = on.offsetHeight + "px";
@@ -1219,7 +1219,7 @@
     if (!confirm("شيل بوت Sellybot؟ التجار مش هيقدروا يعملوا بوت بضغطة لحد ما تحط بوت تاني. البوتات المربوطة هتفضل شغالة.")) return;
     try { renderTgAdmin(await tgApi("clear", {})); toast("اتشال ✓"); } catch (err) { toast(err.message, true); }
   };
-  // ---------- «مجلس المستشارين» (api/council-admin.ashx): the switch and prices, top-ups to approve, each store's balance ----------
+  // ---------- «فكّر معانا» (api/council-admin.ashx): the switch and prices, top-ups to approve, each store's balance ----------
   async function cnApi(action, body, qs) {
     var init = { method: body ? "POST" : "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch" } };
     if (body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
@@ -1237,11 +1237,11 @@
     kpiCards($("cnKpis"), [
       { ic: "💰", label: "شحن الشهر ده", val: st.paidMonth, f: money, hl: true, sub: "من الأول: " + money(st.paid) },
       { ic: "🤖", label: "تكلفة Claude الشهر ده", val: st.costMonth, f: egp2, sub: "من الأول: " + egp2(st.cost) + " (فيها الهدايا)" },
-      { ic: "🏛️", label: "أفكار اتعرضت", val: st.sessions, f: fmt, sub: "💬 رسايل بعد الحكم: " + fmt(st.asks) + " · " + fmt(st.tokens) + " توكن اتخصموا" },
+      { ic: "🧠", label: "أفكار اتعرضت", val: st.sessions, f: fmt, sub: "💬 رسايل في نفس الفكرة: " + fmt(st.asks) + " · " + fmt(st.tokens) + " توكن اتخصموا" },
       { ic: "🏪", label: "متاجر جرّبت", val: st.stores, f: fmt, sub: fmt(d.stores.length) + " متجر فتح الصفحة" }
     ]);
-    $("cnOn").checked = s.on; $("cnOnT").textContent = s.on ? "المجلس ظاهر للتجار" : "المجلس مقفول";
-    $("cnOnH").textContent = s.on ? "كل تاجر شايف «المجلس» في لوحته، وSellybot بيرد على أسئلته عنه." : "مش ظاهر غير لحسابات الإدارة، عشان تجرّبه. أول ما تشغّله بيظهر لكل التجار.";
+    $("cnOn").checked = s.on; $("cnOnT").textContent = s.on ? "«فكّر معانا» ظاهرة للتجار" : "«فكّر معانا» مقفولة";
+    $("cnOnH").textContent = s.on ? "كل تاجر شايف «فكّر معانا» في لوحته، وSellybot بيرد على أسئلته عنها." : "مش ظاهرة غير لحسابات الإدارة، عشان تجرّبها. أول ما تشغّلها بتظهر لكل التجار.";
     $("cnPer").value = s.per1k; $("cnFree").value = s.free; $("cnMin").value = s.minEgp; $("cnPk").value = s.packs; $("cnAvg").textContent = fmt(d.avg); $("cnAvgQ").textContent = fmt(d.avgAsk);
     cnPreview();
     var ST = { pending: '<span class="pill warn">⏳ مستني مراجعة</span>', approved: '<span class="pill ok">✅ اتضاف</span>', rejected: '<span class="pill err">❌ اترفض</span>', cancelled: '<span class="pill">التاجر لغاه</span>' };
@@ -1253,7 +1253,7 @@
     }).join("") : '<tr><td colspan="6" class="hint">لسه محدش طلب شحن.</td></tr>';
     $("cnStores").innerHTML = d.stores.length ? d.stores.map(function (x) {
       return "<tr><td><b dir=\"auto\">" + esc(x.store) + '</b> <span class="hint ltr">' + esc(x.slug) + "</span></td><td><b>" + cnNum(x.balance) + "</b>" + (x.free ? '<div class="hint">بدأ بهدية ' + cnNum(x.free) + "</div>" : "") + "</td><td>" + fmt(x.sessions) + (x.asks ? '<div class="hint">💬 ' + fmt(x.asks) + "</div>" : "") + "</td><td>" + cnNum(x.used) + "</td><td>" + money(x.paid) + "</td><td>" + (x.lastAt ? esc(ago(x.lastAt)) : "—") + "</td></tr>";
-    }).join("") : '<tr><td colspan="6" class="hint">لسه محدش فتح صفحة المجلس.</td></tr>';
+    }).join("") : '<tr><td colspan="6" class="hint">لسه محدش فتح صفحة «فكّر معانا».</td></tr>';
   }
   function cnIdeas(n) { return n === 1 ? "فكرة واحدة" : n === 2 ? "فكرتين" : n >= 3 && n <= 10 ? fmt(n) + " أفكار" : fmt(n) + " فكرة"; }
   // what owners see at the numbers typed (before saving too)
@@ -1271,7 +1271,7 @@
   $("cnReload").onclick = loadCouncil;
   $("cnSet").onsubmit = async function (e) {
     e.preventDefault(); var b = $("cnSave"), on = $("cnOn").checked; setMsg($("cnSetMsg"), "");
-    if (cnA && on && !cnA.settings.on && !confirm("المجلس هيظهر لكل التجار دلوقتي، وكل متجر هياخد " + fmt(+$("cnFree").value) + " توكن هدية أول ما يفتح الصفحة. أكمّل؟")) return;
+    if (cnA && on && !cnA.settings.on && !confirm("«فكّر معانا» هتظهر لكل التجار دلوقتي، وكل متجر هياخد " + fmt(+$("cnFree").value) + " توكن هدية أول ما يفتح الصفحة. أكمّل؟")) return;
     busy(b, true);
     try { renderCouncil(await cnApi("settings", { on: on, per1k: $("cnPer").value, free: $("cnFree").value, minEgp: $("cnMin").value, packs: $("cnPk").value })); toast("اتحفظ ✓"); }
     catch (err) { setMsg($("cnSetMsg"), err.message); }
@@ -1437,7 +1437,7 @@
   function rqBadge(n) { $("rqCount").textContent = fmt(n); $("rqCount").hidden = !n; }
   function monthsAr(m) { return m === 1 ? "شهر" : m === 12 ? "سنة" : fmt(m) + " شهور"; }
   // a payment row: a period, extra quota for one month, or the price difference of an upgrade
-  function subLen(x) { return x.kind === "council" ? "شحن المجلس" : x.kind === "topup" ? "رصيد إضافي" : x.kind === "upgrade" ? "ترقية (فرق السعر)" : x.months === 1 ? "شهر" : fmt(x.months) + " شهور"; }
+  function subLen(x) { return x.kind === "council" ? "شحن «فكّر معانا»" : x.kind === "topup" ? "رصيد إضافي" : x.kind === "upgrade" ? "ترقية (فرق السعر)" : x.months === 1 ? "شهر" : fmt(x.months) + " شهور"; }
   // the WhatsApp service on a request: its share of the amount, and the number the owner will link (to get a Wapilot number ready)
   // ---- request types: what the store asks for, in the admin's words (r.what is kept from when the request was sent) ----
   var RT = {
@@ -1589,7 +1589,7 @@
           (r.adminNote ? '<div class="meta">' + (r.status === "rejected" ? "سبب الرفض: " : "ملاحظة: ") + esc(r.adminNote) + '</div>' : '') +
           (r.calc ? '<div class="meta">📊 ' + esc(r.calc) + '</div>' : '') + '</div>';
       } else {
-        var x = it.sub, ic = x.kind === "council" ? "🏛️" : x.kind === "wa" ? "📱" : x.kind === "topup" ? "➕" : x.kind === "upgrade" ? "⬆️" : "💳";
+        var x = it.sub, ic = x.kind === "council" ? "🧠" : x.kind === "wa" ? "📱" : x.kind === "topup" ? "➕" : x.kind === "upgrade" ? "⬆️" : "💳";
         h += '<div class="it" style="--tc:#2e9d5b"><span class="dot">' + ic + '</span><div class="row" style="gap:8px;align-items:flex-start;flex-wrap:nowrap"><div class="grow" style="min-width:0">' +
           '<div class="ttl">✓ اتسجّل: ' + esc(x.plan) + (x.kind === "topup" ? "" : ' · ' + subLen(x)) + ' · ' + money(x.paid) + '</div>' +
           '<div class="meta">' + date(x.startsAt) + ' ← ' + date(x.endsAt) + ' · ' + esc(x.method || "—") + (x.notes ? " · " + esc(x.notes) : "") + '</div></div>' +
@@ -1781,7 +1781,7 @@
     var d = fn.d, n = d.now, m = d.mrr, cl = d.claude, st = d.settings;
     kpiCards($("fnKpis"), [
       { ic: "💰", label: "الإيرادات الشهر ده", val: n.revenue, f: money, hl: true,
-        sub: "باقات " + money(n.byKind.plan + n.byKind.upgrade) + " · رسايل إضافية " + money(n.byKind.topup) + " · واتساب " + money(n.byKind.wa) + (n.byKind.council ? " · المجلس " + money(n.byKind.council) : "") },
+        sub: "باقات " + money(n.byKind.plan + n.byKind.upgrade) + " · رسايل إضافية " + money(n.byKind.topup) + " · واتساب " + money(n.byKind.wa) + (n.byKind.council ? " · فكّر معانا " + money(n.byKind.council) : "") },
       { ic: "🤖", label: "تكلفة Claude الشهر ده", val: n.claudeEgp, f: egp2, sub: "≈ " + usd(n.claudeUsd) + " · آخر الشهر حوالي " + money(n.claudeProjEgp) },
       { ic: "📈", label: "صافي الربح الشهر ده", val: n.profit, f: money, sub: "الإيرادات − Claude − الواتساب − المصاريف الثابتة", cls: n.profit >= 0 ? "up" : "down" },
       { ic: "🔁", label: "الدخل الشهري الثابت", val: m.total, f: money, sub: fmt(m.stores) + " اشتراك شغال + " + fmt(m.waStores) + " واتساب، لو كله جدد" },

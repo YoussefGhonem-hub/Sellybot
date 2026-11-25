@@ -1634,7 +1634,7 @@
     .hm-rv{opacity:1;transform:none}
     .hm-lap .win,.hm-lap .wb .ch span{opacity:1;transform:none}
   }
-  /* ---------- «مجلس المستشارين» ---------- */
+  /* ---------- «فكّر معانا» ---------- */
   /* its nav button: a tab of its own, or an item of «المزيد» when the tabs don't fit (cnPlace) */
   .links>#cnTabBtn .cn-nm,.dd-menu #cnTabBtn .cn-nw{display:none}
   [data-panel="council"]>*{max-width:1080px}
@@ -1719,7 +1719,7 @@
   .cn-idea{padding:12px 15px;border-radius:14px;background:var(--soft);border:1px solid var(--line);font-size:14px;line-height:1.8;margin-bottom:14px;white-space:pre-wrap}
   .cn-idea b{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
   @media (max-width:640px){.cn-v-top{grid-template-columns:minmax(0,1fr)}.cn-conf{width:auto;display:flex;gap:14px;align-items:center;text-align:start}.cn-ring{margin:0;width:84px;height:84px}.cn-ring b{width:64px;height:64px;font-size:19px}.cn-p{padding:13px;gap:10px}.cn-av{width:36px;height:36px;font-size:18px}}
-  /* «اسأل المجلس عن الحكم ده»: the talk after the verdict */
+  /* «اسأل عن الرأي ده»: the talk after the verdict */
   .cn-talk{margin-bottom:16px}
   .cn-talk h3{margin:0;font-size:16px}
   .cn-msgs{display:grid;gap:12px;margin:14px 0}
@@ -1740,6 +1740,50 @@
   .cn-talk .hint{margin:8px 0 0}
   .cn-talk .hint button{border:0;background:none;padding:0;color:var(--brand);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
   @media (max-width:640px){.cn-m{max-width:100%}.cn-say{flex-direction:column;align-items:stretch}}
+  /* the guide: what it's good for, and how to get the most of it (.eo-cmp's fold, .ptabs' tabs) */
+  .cn-guide{margin-bottom:14px}
+  .cn-guide .eo-cmp-ic{background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 24%,var(--card)),color-mix(in srgb,#9b4fb0 18%,var(--card)))}
+  .cn-guide .ptabs{margin:0 0 16px}
+  .cn-g-lead{margin:0 0 14px;font-size:15px;line-height:1.9}
+  .cn-guide h4{margin:18px 0 10px;font-size:14.5px}
+  .cn-g3,.cn-g4,.cn-g-ask,.cn-g-read,.cn-g-way{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .cn-g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cn-g3>*,.cn-g4>*{padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft)}
+  .cn-g3 i{display:block;font-style:normal;font-size:22px;line-height:1.3;margin-bottom:4px}
+  .cn-guide b{font-weight:600}
+  .cn-g3 b,.cn-g4 b,.cn-g-ask b,.cn-g-read b{display:block;font-size:14px;line-height:1.6}
+  .cn-guide li small,.cn-guide div>small{display:block;font-size:13px;color:var(--muted);line-height:1.75}
+  .cn-guide small b{display:inline;font-size:inherit;color:var(--ink)}
+  .cn-g-ask{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .cn-g-ask li{padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.7}
+  .cn-g-ask b{color:var(--ink);font-size:13.5px}
+  .cn-g-no,.cn-g-tip{margin:14px 0 0;padding:11px 14px;border-radius:13px;font-size:13.5px;line-height:1.85}
+  .cn-g-no,.cn-g-tip{background:color-mix(in srgb,var(--c) 8%,var(--card));border:1px solid color-mix(in srgb,var(--c) 24%,var(--line));border-inline-start:4px solid var(--c)}
+  .cn-g-no{--c:var(--err)}.cn-g-tip{--c:var(--ok)}
+  .cn-g4{grid-template-columns:repeat(4,minmax(0,1fr));counter-reset:cg}
+  .cn-g4 li{counter-increment:cg}
+  .cn-g4 li:before,.cn-g-way li:before{content:counter(cg);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;margin-bottom:6px}
+  .cn-g-cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:10px;margin-top:12px;align-items:start}
+  .cn-g-cmp>div{padding:13px 15px;border-radius:14px;border:1px solid var(--line);border-top:3px solid var(--c)}
+  .cn-g-cmp .bad{--c:var(--err)}.cn-g-cmp .good{--c:var(--ok)}
+  .cn-g-cmp div>b{font-size:13.5px;color:var(--c)}
+  .cn-g-cmp p{margin:5px 0 6px;font-size:14px;line-height:1.85}
+  .cn-g-read{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cn-g-read li{display:flex;gap:11px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft)}
+  .cn-g-read i{font-style:normal;font-size:20px;line-height:1.4}
+  .cn-g-read li:last-child:nth-child(odd){grid-column:1/-1}
+  .cn-g-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .cn-g-two>div{padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--soft)}
+  .cn-g-two em{display:block;font-style:normal;font-weight:700;font-size:15px;color:var(--brand);margin:3px 0}
+  .cn-g-way{counter-reset:cg;gap:8px}
+  .cn-g-way li{counter-increment:cg;display:flex;gap:11px;align-items:flex-start;font-size:14px;line-height:1.85}
+  .cn-g-way li:before{flex:none;margin:1px 0 0}
+  .cn-g-nav{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .cn-g-nav .hint{margin:0}
+  .cn-tip{margin:8px 0 0;font-size:13px}
+  .cn-tip.ok{color:var(--ok)}
+  @media (max-width:860px){.cn-g4,.cn-g-ask{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:640px){.cn-g3,.cn-g4,.cn-g-read,.cn-g-two,.cn-g-cmp,.cn-g-ask{grid-template-columns:minmax(0,1fr)}.cn-g3>*,.cn-g4>*{display:grid;grid-template-columns:30px minmax(0,1fr);column-gap:10px}.cn-g3 i,.cn-g4 li:before{grid-row:1/3;margin:0}.cn-guide .ptabs{display:grid;grid-template-columns:1fr 1fr;overflow:visible}.cn-guide .ptabs button{white-space:normal}.cn-g-nav .btn{flex:1}}
   /* top-up */
   .cn-packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px}
   .cn-pack{position:relative;border:1.5px solid var(--line);border-radius:15px;background:var(--card);padding:14px 12px 12px;cursor:pointer;text-align:center;transition:border-color .15s,transform .15s,box-shadow .15s}
@@ -1805,7 +1849,7 @@
         </div>
       </div>
       <button data-tab="offers" data-feat="broadcast">📣 ابعت عرض</button>
-      <button data-tab="council" data-feat="council" id="cnTabBtn"><span class="cn-nw">🏛️ المجلس</span><span class="dd-ic cn-nm">🏛️</span><span class="cn-nm"><b>مجلس المستشارين</b><small>اعرض فكرتك وخد حكم</small></span></button>
+      <button data-tab="council" data-feat="council" id="cnTabBtn"><span class="cn-nw">🧠 فكّر معانا</span><span class="dd-ic cn-nm">🧠</span><span class="cn-nm"><b>فكّر معانا</b><small>اعرض فكرتك وخد رأي واضح</small></span></button>
       <button data-tab="plan">💎 باقتي <span class="nb" id="planNb" hidden title="رد جديد من الإدارة على طلبك">1</span></button>
       <div class="dd">
         <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddMore">✨ المزيد <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -3220,43 +3264,124 @@
     <p class="hint" style="max-width:880px">على تيليجرام مفيش حد 24 ساعة زي فيسبوك، بس البوت مايقدرش يبدأ الكلام: الزبون هو اللي بيفتح البوت ويدوس «Start». البوت بيرد في المحادثات الخاصة بس، مش في الجروبات.</p>
   </section>
 
-  <!-- «مجلس المستشارين» (Council.cs): an idea -> seven advisors argue -> one verdict. Its own prepaid tokens. Hidden until the admin opens it (me.hide "council"). -->
+  <!-- «فكّر معانا» (Council.cs): an idea -> seven advisors argue -> one verdict. Its own prepaid tokens. Hidden until the admin opens it (me.hide "council"). -->
   <section data-panel="council" data-feat="council" hidden>
-    <div class="page-title"><div><h2>🏛️ مجلس المستشارين <span class="new-tag">جديد</span></h2><p>اعرض فكرتك أو قرار محتار فيه: 7 مستشارين يتناقشوا قدامك ويختلفوا، وفي الآخر حكم واضح.</p></div></div>
-    <div class="cn-admin" id="cnAdminNote" hidden>👀 الصفحة دي ظاهرة لحسابات الإدارة بس دلوقتي. عشان تظهر للتجار شغّلها من لوحة الإدارة ← «المجلس».</div>
+    <div class="page-title"><div><h2>🧠 فكّر معانا <span class="new-tag">جديد</span></h2><p>محتار في قرار؟ اكتبه، و7 مستشارين بالذكاء الاصطناعي يتناقشوا فيه قدامك ويختلفوا، وتطلع برأي واضح وخطوات.</p></div></div>
+    <div class="cn-admin" id="cnAdminNote" hidden>👀 الصفحة دي ظاهرة لحسابات الإدارة بس دلوقتي. عشان تظهر للتجار شغّلها من لوحة الإدارة ← «فكّر معانا».</div>
 
     <div class="cn-wallet" id="cnWallet">
       <div class="cn-bal"><span>رصيدك</span><b id="cnBal">—</b><small>توكن</small><em id="cnBalS"></em></div>
       <ul class="cn-facts">
         <li>♾️ <span>التوكنز مابتخلصش بوقت، وكل شحنة بتزيد على الباقي.</span></li>
         <li>🧾 <span>رصيد لوحده: مالهوش علاقة برسايل باقتك.</span></li>
-        <li>💬 <span>بعد الحكم تقدر تكمّل كلام مع المجلس في نفس الفكرة.</span></li>
+        <li>💬 <span>بعد الرأي تقدر تكمّل كلام معاهم في نفس الفكرة.</span></li>
         <li id="cnFreeL">🎁 <span id="cnFreeT"></span></li>
       </ul>
       <button class="btn" id="cnTopGo" type="button">➕ اشحن توكنز</button>
     </div>
     <div class="cn-note" id="cnNote" hidden></div>
 
+    <!-- what it's good for and how to get the most of it: open until the store's first idea, then one line -->
+    <details class="card eo-cmp cn-guide" id="cnGuide">
+      <summary>
+        <span class="eo-cmp-ic" aria-hidden="true">📖</span>
+        <span class="tx"><b>بتفيدك في إيه، وتستخدمها صح إزاي؟</b><small>4 نقط سريعة، اقراهم قبل أول فكرة.</small></span>
+        <span class="eo-chev" aria-hidden="true"></span>
+      </summary>
+      <div class="eo-cmp-body">
+        <div class="ptabs" id="cnGTabs" role="tablist" aria-label="شرح «فكّر معانا»">
+          <button type="button" role="tab" id="cnG0" aria-controls="cnGp0" aria-selected="true" class="on">🎯 بتفيدك في إيه</button>
+          <button type="button" role="tab" id="cnG1" aria-controls="cnGp1" aria-selected="false" tabindex="-1">✍️ اكتبها صح</button>
+          <button type="button" role="tab" id="cnG2" aria-controls="cnGp2" aria-selected="false" tabindex="-1">⚖️ افهم الرأي</button>
+          <button type="button" role="tab" id="cnG3" aria-controls="cnGp3" aria-selected="false" tabindex="-1">💬 كمّل ووفّر</button>
+        </div>
+
+        <div id="cnGp0" role="tabpanel" aria-labelledby="cnG0">
+          <p class="cn-g-lead">عرض أو سعر غلط ممكن يخسّرك كتير، وغالبًا بتعرف بعد ما تكون صرفت. هنا بتعرض الفكرة <b>قبل ما تصرف عليها</b>: 7 مستشارين، كل واحد بيبصّلها من زاوية، يدوّروا على عيوبها ومميزاتها. وده كله بحوالي <b data-cng="ideaEgp">…</b>.</p>
+          <div class="cn-g3">
+            <div><i aria-hidden="true">🛡️</i><b>تشوف المشكلة قبل ما تحصل</b><small>أخطر 3 حاجات ممكن توقّع الفكرة، مكتوبين قدامك.</small></div>
+            <div><i aria-hidden="true">🧭</i><b>رأي واحد، مش «على حسب»</b><small>اعملها، أو ماتعملهاش، أو عدّلها كده. ومعاه نسبة الثقة وأقوى رأي ضده.</small></div>
+            <div><i aria-hidden="true">👣</i><b>تعرف تبدأ منين</b><small>5 خطوات بالترتيب، على قد متجر صغير.</small></div>
+          </div>
+          <h4>اسألهم في أي قرار زي دول</h4>
+          <ul class="cn-g-ask">
+            <li><b>🏷️ سعر أو خصم</b>أنزّل السعر، ولا أعمل «اشتري 2»؟</li>
+            <li><b>📦 منتج جديد</b>أجيب 100 قطعة، ولا أجرّب بـ 20؟</li>
+            <li><b>🚚 شحن ومرتجعات</b>أخلّي الشحن مجاني من كام؟</li>
+            <li><b>📣 إعلانات</b>أحط الـ 3000 في إعلانات ولا في تصوير؟</li>
+            <li><b>🤝 مورد أو شريك</b>المورد عايز نص المبلغ مقدم، أوافق؟</li>
+            <li><b>👥 توسّع</b>أوظّف حد يغلّف ويرد، ولا لسه بدري؟</li>
+          </ul>
+          <p class="cn-g-no"><b>مش ليها:</b> سؤال عادي أو شرح («إزاي أعمل إعلان؟») أو كتابة بوست. لو كتبت حاجة مش قرار، هتلاقي رد بكده ومش هيتخصم منك. والضرايب والقانون اسأل فيهم محاسب أو محامي.</p>
+        </div>
+
+        <div id="cnGp1" role="tabpanel" aria-labelledby="cnG1" hidden>
+          <p class="cn-g-lead">الرأي على قد اللي بتكتبه. اكتب <b>4 حاجات</b>، كل واحدة في سطر أو اتنين، وخلّي <b>قرار واحد في كل فكرة</b>:</p>
+          <ol class="cn-g4">
+            <li><b>عايز تعمل إيه؟</b><small>بالظبط، ولمدة قد إيه.</small></li>
+            <li><b>أرقامك</b><small>سعر البيع، التكلفة، الشحن، بتبيع كام، والمرتجع.</small></li>
+            <li><b>محتار في إيه؟</b><small>البدايل اللي في دماغك، وإيه اللي مخوّفك.</small></li>
+            <li><b>عايز توصل لإيه؟</b><small>مكسب؟ تصفية مخزون؟ زباين جداد؟ وإمتى.</small></li>
+          </ol>
+          <div class="cn-g-cmp">
+            <div class="bad"><b>❌ كده ناقصة</b><p>«أعمل عرض على التيشيرتات ولا لأ؟»</p><small>مفيش أرقام ولا هدف، فهيفترضوا من عندهم.</small></div>
+            <div class="good"><b>✅ كده صح</b><p>«<span id="cnGGood"></span>»</p><button type="button" class="btn ghost sm" id="cnGTry">💡 حطّ المثال ده في الفورمة وعدّل عليه</button></div>
+          </div>
+          <p class="cn-g-tip">👀 لو سايب «خلّي المستشارين يشوفوا متجرك» متعلّم عليها، بيشوفوا منتجاتك وأسعارك وسياساتك وآخر أسئلة زباينك. بس <b>مابيشوفوش مبيعاتك ولا التكلفة ولا المكسب</b>، فاكتبهم إنت.</p>
+        </div>
+
+        <div id="cnGp2" role="tabpanel" aria-labelledby="cnG2" hidden>
+          <p class="cn-g-lead">اقرا النقاش لو عندك وقت. ولو مستعجل، انزل على <b>الرأي النهائي</b> واقراه بالترتيب ده:</p>
+          <ul class="cn-g-read">
+            <li><i aria-hidden="true">⚖️</i><div><b>الرأي</b><small>جملة واحدة: اعملها، أو ماتعملهاش، أو عدّلها كده.</small></div></li>
+            <li><i aria-hidden="true">🎯</i><div><b>نسبة الثقة</b><small>ثقتهم في الرأي بالمعلومات اللي معاهم، <b>مش نسبة نجاح الفكرة</b>. جنبها مكتوب إيه اللي يرفعها: لو المعلومة دي عندك، ابعتها لهم.</small></div></li>
+            <li><i aria-hidden="true">⚠️</i><div><b>الـ 3 مخاطر</b><small>اسأل نفسك على كل واحدة: عامل حسابي فيها؟ لو لأ، اسألهم تقلّلها إزاي.</small></div></li>
+            <li><i aria-hidden="true">✅</i><div><b>الـ 5 خطوات</b><small>ابدأ بأول خطوة بس. لو طلعت كويسة كمّل، ولو لأ تبقى خسرت قليل.</small></div></li>
+            <li><i aria-hidden="true">🗣️</i><div><b>أقوى رأي مخالف</b><small>اقراه قبل ما تقرر. لو حاسس إنه صح، ناقشهم فيه.</small></div></li>
+          </ul>
+          <p class="cn-g-no"><b>خلّي بالك:</b> ده رأي من ذكاء اصطناعي وممكن يغلط. راجع الحسابات بنفسك، والرقم اللي مكتوب عليه «تقدير» جرّبه الأول بمبلغ صغير. القرار في الآخر ليك.</p>
+        </div>
+
+        <div id="cnGp3" role="tabpanel" aria-labelledby="cnG3" hidden>
+          <div class="cn-g-two">
+            <div><b>💬 رسالة في نفس الفكرة</b><em data-cng="msg">…</em><small>غيّرت رقم، أو عايز تفهم خطوة، أو مش مقتنع بحاجة.</small></div>
+            <div><b>💡 فكرة جديدة</b><em data-cng="idea">…</em><small>قرار تاني خالص، أو عايز النقاش كله من الأول.</small></div>
+          </div>
+          <h4>أحسن طريقة تمشي بيها</h4>
+          <ol class="cn-g-way">
+            <li><span>اكتب الفكرة بأرقامها <b>مرة واحدة</b>، بدل ما تبعت الناقص رسالة ورا رسالة.</span></li>
+            <li><span>اقرا الرأي، واسأل على اللي مش واضح في <b>نفس الفكرة</b>.</span></li>
+            <li><span>نفّذ <b>أول خطوة</b> أسبوع واحد.</span></li>
+            <li><span>ارجع لنفس الفكرة من «أفكارك» تحت، واكتب اللي حصل: <b>«جرّبنا أسبوع، بعنا 25 ورجع 3»</b>. يقولولك تكمّل، ولا تعدّل، ولا توقف.</span></li>
+          </ol>
+          <p class="cn-g-tip">🧮 <b>مثال:</b> <span data-cng="path">…</span></p>
+        </div>
+
+        <div class="cn-g-nav"><span class="hint" id="cnGN"></span><button type="button" class="btn" id="cnGNext">التالي</button></div>
+      </div>
+    </details>
+
     <form class="card cn-form" id="cnForm">
       <label for="cnIdea" class="cn-lab">إيه الفكرة أو القرار؟</label>
       <textarea id="cnIdea" rows="5" maxlength="3000" placeholder="احكيها زي ما بتحكيها لواحد صاحبك: عايز تعمل إيه، بكام، وليه محتار."></textarea>
+      <p class="hint cn-tip" id="cnTip"></p>
       <div class="cn-under"><div class="cn-ex" id="cnEx"></div><span class="cn-count ltr" id="cnCount">0 / 3000</span></div>
-      <label class="cn-check"><input type="checkbox" id="cnData" checked><span><b>خلّي المجلس يشوف متجرك</b><small>داتا متجرك (منتجات وأسعار وسياسات) وآخر أسئلة زباينك، من غير أرقامهم. كده الحكم يبقى على متجرك إنت، مش كلام عام.</small></span></label>
-      <div class="cn-send"><button class="btn" id="cnAsk">🏛️ اعرضها على المجلس</button><span class="hint" id="cnCost"></span></div>
+      <label class="cn-check"><input type="checkbox" id="cnData" checked><span><b>خلّي المستشارين يشوفوا متجرك</b><small>داتا متجرك (منتجات وأسعار وسياسات) وآخر أسئلة زباينك، من غير أرقامهم. كده الرأي يبقى على متجرك إنت، مش كلام عام.</small></span></label>
+      <div class="cn-send"><button class="btn" id="cnAsk">🧠 فكّروا معايا</button><span class="hint" id="cnCost"></span></div>
       <div class="msg" id="cnMsg" role="status"></div>
     </form>
 
     <!-- who sits on it, until there's an idea's debate to show -->
-    <div class="card cn-who" id="cnWho"><h3>مين في المجلس؟</h3><div class="cn-who-g" id="cnWhoG"></div></div>
+    <div class="card cn-who" id="cnWho"><h3>مين بيفكّر معاك؟</h3><div class="cn-who-g" id="cnWhoG"></div></div>
 
     <div class="cn-out" id="cnOut" hidden aria-live="polite"></div>
 
     <!-- the talk after the verdict: short replies that know the idea and the debate -->
     <form class="card cn-talk" id="cnTalk" hidden autocomplete="off">
-      <h3>💬 اسأل المجلس عن الحكم ده</h3>
+      <h3>💬 اسأل عن الرأي ده</h3>
       <div class="cn-msgs" id="cnMsgs" aria-live="polite"></div>
       <div class="cn-ex" id="cnQEx" style="margin-top:12px"></div>
-      <div class="cn-say"><textarea id="cnQ" rows="2" maxlength="1000" aria-label="رسالتك للمجلس" placeholder="مثلًا: طب لو خليتها فوق 700 بدل 500؟"></textarea><button class="btn" id="cnQSend">ابعت</button></div>
+      <div class="cn-say"><textarea id="cnQ" rows="2" maxlength="1000" aria-label="رسالتك للمستشارين" placeholder="مثلًا: طب لو خليتها فوق 700 بدل 500؟"></textarea><button class="btn" id="cnQSend">ابعت</button></div>
       <p class="hint" id="cnQCost"></p>
       <div class="msg" id="cnQMsg" role="status"></div>
     </form>
@@ -3295,7 +3420,7 @@
       <div class="card"><h3>أفكارك</h3><div class="cn-list" id="cnList"></div></div>
       <div class="card"><h3>حركة الرصيد</h3><div class="cn-list" id="cnMoves"></div></div>
     </div>
-    <p class="hint cn-credit">المجلس شغال بـ <a href="https://github.com/itshussainsprojects/Claude-Council-Skill" target="_blank" rel="noopener">Claude Council</a> (مفتوح المصدر، رخصة MIT). الحكم رأي يساعدك تفكّر، والقرار في الآخر ليك.</p>
+    <p class="hint cn-credit">«فكّر معانا» شغالة بـ <a href="https://github.com/itshussainsprojects/Claude-Council-Skill" target="_blank" rel="noopener">Claude Council</a> (مفتوح المصدر، رخصة MIT). الرأي بيساعدك تفكّر، والقرار في الآخر ليك.</p>
   </section>
 
   <!-- settings -->
@@ -4301,7 +4426,7 @@
     if (!ss.length) { el.innerHTML = '<div class="card empty">مفيش اشتراكات لسه. أول ما الإدارة تفعّل طلبك هيظهر هنا.</div>'; return; }
     el.innerHTML = ss.map(function (s, i) {
       var live = new Date(s.endsAt) > now && new Date(s.startsAt) <= now, later = new Date(s.startsAt) > now;
-      var cnl = s.kind === "council", t = cnl ? ["🏛️", "#b0762a", "مجلس المستشارين"] : RQT[s.topup ? "topup" : s.kind === "upgrade" ? "upgrade" : s.kind === "wa" ? "wa-new" : "new"];
+      var cnl = s.kind === "council", t = cnl ? ["🧠", "#b0762a", "فكّر معانا"] : RQT[s.topup ? "topup" : s.kind === "upgrade" ? "upgrade" : s.kind === "wa" ? "wa-new" : "new"];
       var title = s.topup || cnl ? esc(s.plan) : s.kind === "upgrade" ? "ترقية لباقة " + esc(s.plan) : s.kind === "wa" ? "خدمة الواتساب · " + monthsAr(s.months) : esc(s.plan) + " · " + monthsAr(s.months);
       var meta = cnl ? dateAr(s.startsAt) + " · دفعت " + fmt(s.paid) + " ج.م · مابتخلصش بوقت" : s.topup ? "لشهر " + new Date(s.startsAt).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }) + " · دفعت " + fmt(s.paid) + " ج.م"
         : "من " + dateAr(s.startsAt) + " لحد " + dateAr(s.endsAt) + " · " + (s.kind === "upgrade" ? "دفعت فرق السعر " : "دفعت ") + fmt(s.paid) + " ج.م";
@@ -6470,7 +6595,7 @@
     if (!hasF("styles")) { if (FREE_STYLES.indexOf(st) < 0) st = "bear"; if (SWATCHES.indexOf(col.toLowerCase()) < 0) col = "#e8774a"; }
     return { style: st, color: col };
   }
-  // ---------------- «مجلس المستشارين» (api/council.ashx): the owner's idea goes to the Claude Council skill, the debate streams in
+  // ---------------- «فكّر معانا» (api/council.ashx): the owner's idea goes to the Claude Council skill, the debate streams in
   // as Claude writes it (the skill's own text format, drawn here as cards), and the wallet pays for it in its own prepaid tokens.
   var CN_P = {
     ADVERSARY: { n: "المشكّك", e: "⚔️", c: "#c0392b", d: "بيدوّر على الغلطة اللي ممكن تموّت الفكرة" },
@@ -6483,9 +6608,9 @@
   };
   var CN_K = Object.keys(CN_P);
   var CN_EX = [
-    ["عرض جديد", "بفكر أعمل عرض «اشتري 2 والتالتة بنص التمن» على التيشيرتات لمدة أسبوع، عشان أخلّص المخزون قبل الموسم الجديد. خايف أخسر في الهامش بعد الشحن."],
-    ["منتج جديد", "عايز أنزّل منتج جديد سعره 600 جنيه، وأغلى حاجة عندي دلوقتي بـ 350. زبايني هيشتروه ولا أبعد عنه؟"],
-    ["شحن مجاني", "محتار أخلّي الشحن مجاني لأي أوردر فوق 500 جنيه ولا أسيبه زي ما هو وأصرف الفرق ده إعلانات."]
+    ["عرض جديد", "عندي 80 تيشيرت صيفي واقفين من شهرين، وعايز أخلّصهم قبل آخر الشهر. القطعة بتكلّفني 180 وببيعها بـ 350، والشحن 60 على الزبون. محتار بين خصم 30% و«اشتري 2 والتالتة هدية»، وخايف من المرتجع لأن أوردر من كل 5 بيرجع."],
+    ["منتج جديد", "عايز أنزّل هودي بـ 600 جنيه، وأغلى حاجة عندي دلوقتي بـ 350. المورد أقل كمية عنده 50 قطعة، القطعة بـ 320. ببيع حوالي 100 أوردر في الشهر. محتار آخد الـ 50 ولا أدوّر على مورد بكمية أقل. عايز أزوّد متوسط الأوردر من غير ما فلوسي تقف في المخزون."],
+    ["شحن مجاني", "محتار أخلّي الشحن مجاني لأي أوردر فوق 500 جنيه، ولا أسيبه 60 على الزبون وأصرف الفرق إعلانات. متوسط الأوردر عندي 420، ومكسبي فيه حوالي 130، وببيع 150 أوردر في الشهر. عايز أزوّد متوسط الأوردر في خلال شهرين."]
   ];
   var cn = null, cnAmount = 0, cnBusy = false, cnPollT = null, cnFull = "", cnDrawn = 0;   // cnDrawn: cards already on the page while the answer streams
   var cnCur = null;   // the idea on the page, once it has its verdict: {id, asks: [{q, a, status, charged}]}
@@ -6503,7 +6628,7 @@
     try { cn = await api("api/council.ashx"); } catch (e) { setMsg("cnMsg", e.message); return; }
     cnRender();
     var run = cn.sessions.filter(function (s) { return s.status === "running"; })[0];
-    if (run && !cnBusy) { cnOutWait("المجلس لسه بيتناقش في فكرتك. هنعرض الحكم أول ما يخلص…"); cnPoll(run.id); }
+    if (run && !cnBusy) { cnOutWait("المستشارين لسه بيتناقشوا في فكرتك. هنعرض الرأي أول ما يخلصوا…"); cnPoll(run.id); }
     else if (cn.asking && !cnBusy && !cnCur) { try { cnShow(await api("api/council.ashx?id=" + cn.asking)); } catch (e) { } }   // left while the council was replying
   }
   async function cnReload() { try { cn = await api("api/council.ashx"); cnRender(); } catch (e) { } }
@@ -6515,10 +6640,10 @@
     $("cnBalS").textContent = empty ? "الرصيد خلص" : "يكفي حوالي " + cnIdeas(cn.balance);
     $("cnFreeL").hidden = !cn.free;
     $("cnFreeT").textContent = cn.free ? (empty && !cn.everPaid ? "خلّصت الهدية (" + cnTok(cn.free) + "). اشحن وكمّل." : "هدية للتجربة: " + cnTok(cn.free) + ".") : "";
-    cnLock();
-    $("cnCost").textContent = empty ? "اشحن الأول عشان تعرض فكرة جديدة." : "الفكرة بتاخد حوالي " + cnTok(cn.avg) + "، ولو المجلس ماطلعش بحكم مابتتحسبش.";
-    $("cnQCost").innerHTML = empty ? 'رصيدك خلص. <button type="button" id="cnQTop">اشحن توكنز</button> وكمّل كلامك مع المجلس.'
-      : "المجلس فاكر الفكرة والحكم. الرسالة بتاخد حوالي " + cnTok(cn.avgAsk) + "، وبتزيد شوية كل ما الكلام يطول. لو عندك فكرة تانية، اكتبها فوق.";
+    cnLock(); cnGuideFill();
+    $("cnCost").textContent = empty ? "اشحن الأول عشان تعرض فكرة جديدة." : "الفكرة بتاخد حوالي " + cnTok(cn.avg) + "، ولو ماطلعوش برأي مابتتحسبش.";
+    $("cnQCost").innerHTML = empty ? 'رصيدك خلص. <button type="button" id="cnQTop">اشحن توكنز</button> وكمّل كلامك.'
+      : "المستشارين فاكرين الفكرة ورأيهم. الرسالة بتاخد حوالي " + cnTok(cn.avgAsk) + "، وبتزيد شوية كل ما الكلام يطول. لو عندك فكرة تانية، اكتبها فوق.";
     if ($("cnQTop")) $("cnQTop").onclick = function () { cnTopOpen(true); };
     // the last top-up: waiting, refused, or just added (3 days)
     var t = cn.topups[0], n = $("cnNote"), recent = t && t.decidedAt && Date.now() - new Date(t.decidedAt).getTime() < 3 * 864e5;
@@ -6540,7 +6665,7 @@
       return '<button type="button" class="cn-li" data-cn="' + s.id + '"><span><b>' + esc(s.idea) + "</b><small>" + dateAr(s.at) + (s.status === "running" ? " · ⏳ بيتناقشوا" : " · " + cnTok(s.total) + (s.asks ? " · 💬 " + cnMsgsN(s.asks) : "")) + '</small></span><em aria-hidden="true">‹</em></button>';
     }).join("") : '<div class="hint">لسه ماعرضتش أي فكرة.</div>';
     $("cnList").querySelectorAll("[data-cn]").forEach(function (b) { b.onclick = function () { cnOpen(+b.dataset.cn); }; });
-    var KIND = { free: "🎁 هدية للتجربة", topup: "➕ شحن", session: "🏛️ فكرة", follow: "💬 رسالة بعد الحكم", gift: "🎁 من إدارة Sellybot" };
+    var KIND = { free: "🎁 هدية للتجربة", topup: "➕ شحن", session: "🧠 فكرة", follow: "💬 رسالة في نفس الفكرة", gift: "🎁 من إدارة Sellybot" };
     $("cnMoves").innerHTML = cn.ledger.length ? cn.ledger.map(function (m) {
       var k = m.kind === "gift" && m.tokens < 0 ? "✏️ تعديل من الإدارة" : KIND[m.kind] || m.kind;
       return '<div class="cn-li"><span><b>' + k + "</b><small>" + dateAr(m.at) + (m.note ? " · " + esc(m.note) : "") + '</small></span><em class="' + (m.tokens > 0 ? "in" : "") + '"><bdi dir="ltr">' + (m.tokens > 0 ? "+" : "−") + fmt(Math.abs(m.tokens)) + "</bdi></em></div>";
@@ -6549,11 +6674,57 @@
   }
   (function () {
     $("cnWhoG").innerHTML = CN_K.map(function (k) { var p = CN_P[k]; return '<div class="cn-w" style="--pc:' + p.c + '"><span class="cn-av" aria-hidden="true">' + p.e + "</span><div><b>" + p.n + "</b><small>" + p.d + "</small></div></div>"; }).join("");
-    $("cnEx").innerHTML = CN_EX.map(function (x, i) { return '<button type="button" data-ex="' + i + '">💡 ' + x[0] + "</button>"; }).join("");
-    $("cnEx").onclick = function (e) { var b = e.target.closest("[data-ex]"); if (!b) return; $("cnIdea").value = CN_EX[+b.dataset.ex][1]; $("cnIdea").oninput(); $("cnIdea").focus(); };
-    $("cnIdea").oninput = function () { $("cnCount").textContent = this.value.length + " / 3000"; };
+    $("cnEx").innerHTML = CN_EX.map(function (x, i) { return '<button type="button" data-ex="' + i + '">💡 ' + x[0] + "</button>"; }).join("") + '<button type="button" data-ex="form">✍️ نموذج فاضي</button>';
+    $("cnEx").onclick = function (e) { var b = e.target.closest("[data-ex]"); if (!b) return; if (b.dataset.ex !== "form") { cnPut(CN_EX[+b.dataset.ex][1]); return; }
+      // the form takes in what's already written, as its first line
+      var el = $("cnIdea"), was = el.value.trim(); if (CN_EX.some(function (x) { return x[1] === was; })) was = "";
+      if (was.indexOf(CN_TPL[1]) < 0) cnPut(CN_TPL[0] + " " + was + "\n" + CN_TPL.slice(1).join(" \n") + " ");
+      else el.focus();
+      var at = was ? el.value.indexOf(CN_TPL[1]) + CN_TPL[1].length + 1 : CN_TPL[0].length + 1; el.setSelectionRange(at, at);
+    };
+    $("cnIdea").oninput = function () { $("cnCount").textContent = this.value.length + " / 3000"; cnTipSet(); };
     $("cnQEx").innerHTML = CN_Q.map(function (x, i) { return '<button type="button" data-ex="' + i + '">' + x + "</button>"; }).join("");
     $("cnQEx").onclick = function (e) { var b = e.target.closest("[data-ex]"); if (!b) return; $("cnQ").value = CN_Q[+b.dataset.ex]; $("cnQ").focus(); };
+  })();
+  function cnPut(text) { $("cnIdea").value = text; $("cnIdea").oninput(); $("cnIdea").focus(); }
+  // ---- the guide: open until the store's first idea (or until it's closed), with the store's own prices in it ----
+  var cnGAt = 0, CN_GN = 4;
+  function cnGuideGo(i, focus) {
+    cnGAt = i;
+    for (var k = 0; k < CN_GN; k++) {
+      var b = $("cnG" + k), on = k === i; b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1; $("cnGp" + k).hidden = !on;
+      if (on && focus) b.focus();
+    }
+    $("cnGN").textContent = fmt(i + 1) + " من " + fmt(CN_GN); $("cnGNext").textContent = i < CN_GN - 1 ? "التالي ←" : "💡 اكتب فكرتك";
+  }
+  function cnGuideFill() {
+    var g = $("cnGuide"), egp = function (t) { return money2(Math.round(t * cn.per1k / 10) / 100) + " جنيه"; }, b = cn.balance, n = Math.floor(b / cn.avg), m = Math.floor((b - cn.avg) / cn.avgAsk), p = cn.avg + 3 * cn.avgAsk;
+    var put = function (k, t) { g.querySelector('[data-cng="' + k + '"]').textContent = t; };
+    put("ideaEgp", egp(cn.avg)); put("idea", "حوالي " + cnTok(cn.avg) + " (" + egp(cn.avg) + ")"); put("msg", "حوالي " + cnTok(cn.avgAsk) + " (" + egp(cn.avgAsk) + ")");
+    put("path", "فكرة + 3 رسايل = حوالي " + cnTok(p) + "، يعني " + egp(p) + ". " + (b <= 0 ? "رصيدك خلص، اشحن وابدأ."
+      : "رصيدك (" + cnTok(b) + ") يكفي حوالي " + cnIdeas(b) + (n >= 2 && m > 0 ? "، أو فكرة واحدة و" + cnMsgsN(m) : n === 1 && m > 0 ? " و" + cnMsgsN(m) : "") + "."));
+    if (!g.dataset.set) { g.dataset.set = "1"; g.open = !cn.sessions.length && lsGet("sb-cn-guide") !== "0"; g.addEventListener("toggle", function () { lsSet("sb-cn-guide", g.open ? "1" : "0"); }); }
+  }
+  // ---- writing the idea: an empty form to fill, and a word on what's missing ----
+  var CN_TPL = ["عايز أعمل:", "أرقامي (سعر البيع، التكلفة، الشحن، ببيع كام):", "محتار في:", "عايز أوصل لـ:"];
+  function cnBare(t) { CN_TPL.forEach(function (x) { t = t.split(x).join(" "); }); return t.replace(/\s+/g, " ").trim(); }   // what the owner wrote, without the form's labels
+  function cnFilled(t) { return t.split("\n").filter(function (l) { return CN_TPL.indexOf(l.trim()) < 0; }).join("\n").trim(); }   // a line of the form left empty isn't sent
+  function cnTipSet() {
+    var t = cnBare($("cnIdea").value), el = $("cnTip"), num = /[\d٠-٩]|جنيه/.test(t), ok = num && t.length >= 100;
+    el.classList.toggle("ok", ok);
+    el.textContent = !t ? "اكتب 4 حاجات: عايز تعمل إيه، وأرقامك، ومحتار في إيه، وعايز توصل لإيه." : !num ? "💡 ضيف أرقامك (السعر، التكلفة، الشحن، بتبيع كام): الرأي بيتبني عليها."
+      : !ok ? "💡 كويس. زوّد محتار في إيه، وعايز توصل لإيه." : "✅ تمام، فيها أرقام وتفاصيل.";
+  }
+  (function () {
+    for (var i = 0; i < CN_GN; i++) $("cnG" + i).onclick = (function (k) { return function () { cnGuideGo(k); }; })(i);
+    $("cnGTabs").onkeydown = function (e) { var d = e.key === "ArrowLeft" ? 1 : e.key === "ArrowRight" ? -1 : 0; if (d) { e.preventDefault(); cnGuideGo((cnGAt + d + CN_GN) % CN_GN, true); } };
+    $("cnGNext").onclick = function () {
+      if (cnGAt < CN_GN - 1) { cnGuideGo(cnGAt + 1); $("cnGuide").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); $("cnIdea").focus({ preventScroll: true });
+    };
+    $("cnGGood").textContent = CN_EX[0][1];
+    $("cnGTry").onclick = function () { cnPut(CN_EX[0][1]); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); };
+    cnGuideGo(0); cnTipSet();
   })();
   // one thing at a time: an idea being argued about, or a message being answered
   function cnLock() { var off = cnBusy || !cn || cn.balance <= 0; $("cnAsk").disabled = off; $("cnQSend").disabled = off; }
@@ -6579,8 +6750,8 @@
       var line = raw.trim(), plain = line.replace(/[*#_`]/g, "").trim(), m;
       if (/^[═─=—–\-\s]{4,}$/.test(line) || /^`{3}/.test(line)) return;
       if (!plain) { if (cur && mode === "deb" && cur.t) cur.t += "\n"; return; }
-      if (/^(THE COUNCIL|المجلس|مجلس المستشارين)$/i.test(plain)) { mode = "q"; return; }
-      if (/^(THE VERDICT|الحكم|حكم المجلس)$/i.test(plain)) { mode = "v"; sec = ""; cur = null; o.v = { pos: "", pct: null, why: "", risks: [], steps: [], mk: "", min: "" }; return; }
+      if (/^(THE COUNCIL|المجلس|مجلس المستشارين|المستشارين)$/i.test(plain)) { mode = "q"; return; }
+      if (/^(THE VERDICT|الحكم|حكم المجلس|الرأي النهائي|رأي المستشارين)$/i.test(plain)) { mode = "v"; sec = ""; cur = null; o.v = { pos: "", pct: null, why: "", risks: [], steps: [], mk: "", min: "" }; return; }
       if (mode !== "v") {
         m = /^[^A-Za-z؀-ۿ]*THE\s+([A-Z]+)\s*[::]?\s*(.*)$/i.exec(plain);
         if (m && CN_P[m[1].toUpperCase()]) { mode = "deb"; cur = { k: m[1].toUpperCase(), t: m[2] || "" }; o.deb.push(cur); return; }
@@ -6633,20 +6804,20 @@
     var o = cnParse(text, live), h = "", v = o.v;
     if (meta && meta.idea) h += '<div class="cn-idea"><b>فكرتك</b>' + esc(meta.idea) + "</div>";
     h += cnStage(o, live);
-    if (live && !o.deb.length) h += '<p class="cn-wait">المجلس بيقرا فكرتك… بياخد لحد دقيقة.</p>';
-    if (o.q) h += '<div class="cn-q"><small>السؤال اللي قدام المجلس</small><b>' + cnText(o.q) + "</b></div>";
+    if (live && !o.deb.length) h += '<p class="cn-wait">المستشارين بيقروا فكرتك… بياخدوا لحد دقيقة.</p>';
+    if (o.q) h += '<div class="cn-q"><small>السؤال اللي بيتناقشوا فيه</small><b>' + cnText(o.q) + "</b></div>";
     h += '<div class="cn-deb">' + o.deb.map(function (d, i) {
       var p = cnPersona(d.k), now = live && !v && i === o.deb.length - 1;
       return '<article class="cn-p' + (now ? " now" : "") + (i >= cnDrawn ? " new" : "") + '" style="--pc:' + p.c + '"><span class="cn-av" aria-hidden="true">' + p.e + "</span><div><h4>" + p.n + " <small>" + p.d + "</small></h4><p>" + cnText(d.t) + "</p></div></article>";
     }).join("") + "</div>";
     if (v && v.pos) {
-      h += '<div class="cn-v' + (cnDrawn < 100 ? " new" : "") + '"><div class="cn-v-top"><div><h3>⚖️ حكم المجلس</h3><p class="cn-pos">' + cnText(v.pos) + "</p></div>" +
-        (v.pct !== null ? '<div class="cn-conf"><div class="cn-ring" style="--p:' + v.pct + '"><b>' + fmt(v.pct) + "٪</b></div><small>ثقة المجلس في الحكم</small></div>" : "") + "</div>" +
+      h += '<div class="cn-v' + (cnDrawn < 100 ? " new" : "") + '"><div class="cn-v-top"><div><h3>⚖️ الرأي النهائي</h3><p class="cn-pos">' + cnText(v.pos) + "</p></div>" +
+        (v.pct !== null ? '<div class="cn-conf"><div class="cn-ring" style="--p:' + v.pct + '"><b>' + fmt(v.pct) + "٪</b></div><small>ثقتهم في الرأي ده</small></div>" : "") + "</div>" +
         (v.why ? '<p class="cn-why">' + cnText(v.why) + "</p>" : "");
       if (v.risks.length) h += "<h5>⚠️ 3 حاجات ممكن توقّع الفكرة</h5><div class=\"cn-risks\">" + v.risks.map(function (r) { return "<div>" + (r.n ? "<b>" + cnText(r.n) + "</b>" : "") + cnText(r.t) + "</div>"; }).join("") + "</div>";
       if (v.steps.length) h += "<h5>✅ اعمل إيه من بكرة</h5><ol class=\"cn-steps\">" + v.steps.map(function (s) { return "<li><span>" + cnText(s.t) + "</span></li>"; }).join("") + "</ol>";
       if (v.min) { var mp = cnPersona(v.mk); h += '<div class="cn-min" style="--pc:' + mp.c + '"><span class="cn-av" aria-hidden="true">' + mp.e + "</span><div><b>أقوى رأي مخالف" + (mp.n ? " · " + mp.n : "") + "</b><p>" + cnText(v.min) + "</p></div></div>"; }
-      if (!live) h += '<div class="cn-acts"><button class="btn ghost sm" type="button" id="cnCopy">📋 انسخ الحكم</button><button class="btn ghost sm" type="button" id="cnAgain">💡 اعرض فكرة تانية</button>' +
+      if (!live) h += '<div class="cn-acts"><button class="btn ghost sm" type="button" id="cnCopy">📋 انسخ الرأي</button><button class="btn ghost sm" type="button" id="cnAgain">💡 اعرض فكرة تانية</button>' +
         (meta && meta.charged !== undefined ? '<span class="hint">الفكرة دي: ' + cnTok(meta.charged) + "</span>" : "") + "</div>";
       h += "</div>";
     } else if (!live && !o.deb.length && text) h += '<div class="card cn-raw">' + esc(text) + "</div>";
@@ -6654,24 +6825,24 @@
     cnDrawn = live ? (v && v.pos ? 100 : o.deb.length) : 0;
     if ($("cnCopy")) $("cnCopy").onclick = function () { cnCopy(o, meta); };
     if (!live) cnTalkSet(meta && meta.id ? meta : null);
-    if ($("cnAgain")) $("cnAgain").onclick = function () { if (cnBusy) { toast("استنى المجلس يرد عليك الأول."); return; } cnOutClose(); $("cnIdea").value = ""; $("cnIdea").oninput(); $("cnIdea").focus(); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); };
+    if ($("cnAgain")) $("cnAgain").onclick = function () { if (cnBusy) { toast("استنى المستشارين يردّوا عليك الأول."); return; } cnOutClose(); $("cnIdea").value = ""; $("cnIdea").oninput(); $("cnIdea").focus(); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); };
   }
   function cnCopy(o, meta) {
     var v = o.v, cl = function (s) { return String(s || "").replace(/\*\*/g, "").trim(); };
-    var t = "🏛️ حكم مجلس المستشارين\n" + (meta && meta.idea ? "الفكرة: " + meta.idea.trim() + "\n" : "") + "\n⚖️ " + cl(v.pos) + (v.pct !== null ? "\nالثقة: " + v.pct + "%" : "") + (v.why ? " — " + cl(v.why) : "") +
+    var t = "🧠 رأي المستشارين («فكّر معانا»)\n" + (meta && meta.idea ? "الفكرة: " + meta.idea.trim() + "\n" : "") + "\n⚖️ " + cl(v.pos) + (v.pct !== null ? "\nالثقة: " + v.pct + "%" : "") + (v.why ? " — " + cl(v.why) : "") +
       "\n\n⚠️ المخاطر:\n" + v.risks.map(function (r, i) { return (i + 1) + ". " + (r.n ? cl(r.n) + ": " : "") + cl(r.t); }).join("\n") + "\n\n✅ الخطوات:\n" + v.steps.map(function (s, i) { return (i + 1) + ". " + cl(s.t); }).join("\n") +
       (v.min ? "\n\nأقوى رأي مخالف (" + cnPersona(v.mk).n + "): " + cl(v.min) : "");
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast("اتنسخ ✓"); }, function () { toast("المتصفح مانسخش. حدّد الكلام وانسخه."); });
   }
   async function cnOpen(id) {
-    if (cnBusy) { toast("استنى المجلس يخلص الأول."); return; }
+    if (cnBusy) { toast("استنى المستشارين يخلصوا الأول."); return; }
     try {
       cnShow(await api("api/council.ashx?id=" + id));
       $("cnOut").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (e) { toast(e.message); }
   }
   function cnShow(s) {
-    if (s.status === "running") { cnOutWait("المجلس لسه بيتناقش في فكرتك…"); cnPoll(s.id); return; }
+    if (s.status === "running") { cnOutWait("المستشارين لسه بيتناقشوا في فكرتك…"); cnPoll(s.id); return; }
     cnDraw(s.answer, false, s);
     if (s.asks.some(function (a) { return a.status === "running"; })) { cnBusy = true; cnLock(); cnTalkPoll(s.id); }
   }
@@ -6690,8 +6861,8 @@
   }
   // no verdict: nothing was charged, and the idea stays in the box
   function cnEnd(status, answer) {
-    if (status === "no") setMsg("cnMsg", (String(answer || "").split("\n").slice(1).join(" ").trim() || "المجلس للأفكار والقرارات.") + " (ماتخصمش منك حاجة)");
-    else setMsg("cnMsg", "المجلس ماقدرش يطلع بحكم المرة دي، وماتخصمش منك حاجة. جرّب تاني، أو اكتب الفكرة بطريقة تانية.");
+    if (status === "no") setMsg("cnMsg", (String(answer || "").split("\n").slice(1).join(" ").trim() || "«فكّر معانا» للأفكار والقرارات.") + " (ماتخصمش منك حاجة)");
+    else setMsg("cnMsg", "المستشارين ماطلعوش برأي المرة دي، وماتخصمش منك حاجة. جرّب تاني، أو اكتب الفكرة بطريقة تانية.");
   }
   // posts, and hands over the answer as Claude writes it: {id, end, err} (end stays null when the connection dropped on the way)
   async function cnStream(action, body, onText) {
@@ -6714,22 +6885,22 @@
   }
   $("cnForm").onsubmit = async function (e) {
     e.preventDefault(); if (cnBusy || !cn) return;
-    var idea = $("cnIdea").value.trim(); setMsg("cnMsg", "");
-    if (idea.length < cn.minIdea) { setMsg("cnMsg", "اكتب فكرتك بتفاصيل أكتر شوية، عشان المجلس يفهمها."); $("cnIdea").focus(); return; }
+    var idea = cnFilled($("cnIdea").value); setMsg("cnMsg", "");
+    if (cnBare(idea).length < cn.minIdea) { setMsg("cnMsg", "اكتب فكرتك بتفاصيل أكتر شوية، عشان المستشارين يفهموها."); $("cnIdea").focus(); return; }
     cnBusy = true; cnLock(); cnFull = ""; cnDrawn = 0; var drawT = 0;
-    cnOutWait("المجلس بيقرا فكرتك… بياخد لحد دقيقة."); $("cnOut").scrollIntoView({ behavior: "smooth", block: "start" });
+    cnOutWait("المستشارين بيقروا فكرتك… بياخدوا لحد دقيقة."); $("cnOut").scrollIntoView({ behavior: "smooth", block: "start" });
     var draw = function () { drawT = 0; if (!/^NOT A/i.test(cnFull.trim()) && cnFull.trim().length > 8) cnDraw(cnFull, true); };
     var s = await cnStream("ask", { idea: idea, useData: $("cnData").checked }, function (t) { cnFull += t; if (!drawT) drawT = setTimeout(draw, 140); });
     clearTimeout(drawT);
     if (s.err) { cnBusy = false; cnOutClose(); setMsg("cnMsg", s.err); loadCouncil(); return; }
-    if (!s.end) { cnOutWait("الاتصال قطع، بس المجلس مكمّل عندنا. هنعرض الحكم أول ما يخلص…"); cnPoll(s.id); return; }
+    if (!s.end) { cnOutWait("الاتصال قطع، بس المستشارين مكمّلين عندنا. هنعرض الرأي أول ما يخلصوا…"); cnPoll(s.id); return; }
     cnBusy = false;
     if (s.end.status === "done") { cnDraw(cnFull, false, { id: s.id, idea: idea, charged: s.end.charged, asks: [] }); $("cnIdea").value = ""; $("cnIdea").oninput(); }
     else { cnOutClose(); cnEnd(s.end.status, cnFull); $("cnForm").scrollIntoView({ behavior: "smooth", block: "center" }); }
     cnReload();
   };
 
-  // ---- «اسأل المجلس عن الحكم ده»: short replies about the idea on the page ----
+  // ---- «اسأل عن الرأي ده»: short replies about the idea on the page ----
   function cnTalkSet(s) {
     var other = !cnCur || !s || cnCur.id !== s.id;
     cnCur = s ? { id: s.id, asks: s.asks || [] } : null;
@@ -6739,8 +6910,8 @@
   function cnTalkDraw() {
     $("cnMsgs").innerHTML = !cnCur ? "" : cnCur.asks.map(function (m) {
       var off = /^NOT A/i.test(m.a.trim()), text = off ? m.a.trim().replace(/^NOT A[A-Z ]*[^؀-ۿ]*/i, "") : m.a.trim(), wait = m.status === "running";
-      return '<div class="cn-m me"><div><div class="cn-b">' + esc(m.q) + '</div></div></div><div class="cn-m"><span class="cn-av" aria-hidden="true">🏛️</span><div><div class="cn-b">' +
-        (wait && (off || text.length < 9) ? '<span class="cn-dots" role="img" aria-label="المجلس بيرد"><i></i><i></i><i></i></span>' : cnText(text || "ده مش عن الفكرة دي. لو عندك فكرة جديدة، اكتبها فوق.")) + "</div>" +
+      return '<div class="cn-m me"><div><div class="cn-b">' + esc(m.q) + '</div></div></div><div class="cn-m"><span class="cn-av" aria-hidden="true">🧠</span><div><div class="cn-b">' +
+        (wait && (off || text.length < 9) ? '<span class="cn-dots" role="img" aria-label="المستشارين بيردّوا"><i></i><i></i><i></i></span>' : cnText(text || "ده مش عن الفكرة دي. لو عندك فكرة جديدة، اكتبها فوق.")) + "</div>" +
         (wait ? "" : "<small>" + (m.status === "no" ? "ماتخصمش منك حاجة" : cnTok(m.charged)) + "</small>") + "</div></div>";
     }).join("");
     $("cnQEx").hidden = !cnCur || cnCur.asks.length > 0;   // the examples are for the first message
@@ -6749,7 +6920,7 @@
     if (cnCur !== cur) return;
     cur.asks = cur.asks.filter(function (m) { return m.status !== "running"; }); cnTalkDraw();
     if (q && !$("cnQ").value) $("cnQ").value = q;
-    setMsg("cnQMsg", "المجلس ماقدرش يرد المرة دي، وماتخصمش منك حاجة. جرّب تاني.");
+    setMsg("cnQMsg", "المستشارين ماردّوش المرة دي، وماتخصمش منك حاجة. جرّب تاني.");
   }
   // the page was closed or the connection dropped while the council was replying: the reply is on the server
   function cnTalkPoll(id, n) {
@@ -6769,7 +6940,7 @@
   $("cnTalk").onsubmit = async function (e) {
     e.preventDefault(); if (cnBusy || !cn || !cnCur) return;
     var q = $("cnQ").value.trim(), cur = cnCur; setMsg("cnQMsg", "");
-    if (q.length < 2) { setMsg("cnQMsg", "اكتب سؤالك للمجلس."); $("cnQ").focus(); return; }
+    if (q.length < 2) { setMsg("cnQMsg", "اكتب سؤالك للمستشارين."); $("cnQ").focus(); return; }
     var m = { q: q, a: "", status: "running", charged: 0 }, drawT = 0;
     cnBusy = true; cnLock(); cur.asks.push(m); $("cnQ").value = ""; cnTalkDraw(); $("cnQ").scrollIntoView({ behavior: "smooth", block: "nearest" });
     var s = await cnStream("follow", { id: cur.id, q: q }, function (t) { m.a += t; if (!drawT) drawT = setTimeout(function () { drawT = 0; cnTalkDraw(); }, 120); });

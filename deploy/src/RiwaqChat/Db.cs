@@ -1002,7 +1002,7 @@ IF COL_LENGTH('dbo.OrderConfirms', 'RemindedAt') IS NULL ALTER TABLE dbo.OrderCo
 IF COL_LENGTH('dbo.EoConfirms', 'RemindedAt') IS NULL ALTER TABLE dbo.EoConfirms ADD RemindedAt DATETIME2 NULL, AlertedAt DATETIME2 NULL, AlertTo NVARCHAR(80) NULL;
 -- ---------- the morning summary on WhatsApp (WeeklyReport.cs): every day at 9, next to the weekly report ----------
 IF COL_LENGTH('dbo.Stores', 'ReportDaily') IS NULL ALTER TABLE dbo.Stores ADD ReportDaily BIT NOT NULL CONSTRAINT DF_Stores_ReportDaily DEFAULT 0, ReportDayAt DATETIME2 NULL;
--- ---------- «مجلس المستشارين» (Council.cs, 2026-11-24, the user): its own prepaid tokens, apart from the plan ----------
+-- ---------- «فكّر معانا» (Council.cs, 2026-11-24, the user): its own prepaid tokens, apart from the plan ----------
 -- CouncilWallets: what's left (Balance, never below 0, no expiry) and the free tokens it started with · CouncilLedger: every change
 -- (free / topup / session / follow / gift) · CouncilSessions: an idea and the council's answer, or (ParentId) a follow-up on one and
 -- its reply; Tokens = what Claude used, Charged = what the wallet paid (0 without an answer), Units = Claude's cost the way Finance counts it · CouncilTopups: paid by transfer, approved by the
