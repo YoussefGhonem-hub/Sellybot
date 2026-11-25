@@ -289,7 +289,7 @@ namespace RiwaqChat
             return null;
         }
 
-        static string Return(SqlConnection c, SqlTransaction tx, ShopOrder o, int sign, string reason)
+        internal static string Return(SqlConnection c, SqlTransaction tx, ShopOrder o, int sign, string reason)
         {
             foreach (var g in o.Items.GroupBy(i => i.VariantId).OrderBy(g => g.Key))
             {

@@ -51,7 +51,7 @@ namespace RiwaqChat
                 case "print": Print(c, s, sh, req, res); return true;
                 case "backup": Backup(c, sh, res); return true;
             }
-            return false;
+            return Carriers.Get(c, s, sh, a, req, res);
         }
 
         public static bool Post(SqlConnection c, StoreInfo s, Shop sh, string a, Dictionary<string, object> b, HttpResponse res, out Func<Task> later)
@@ -71,7 +71,7 @@ namespace RiwaqChat
                 case "sheet-try": later = ShopPay.Try(c, sh, b, res); return true;
                 case "ai-desc": later = ShopTranslate.Describe(c, s, sh, b, res); return true;
             }
-            return false;
+            return Carriers.Post(c, s, sh, a, b, res, out later);
         }
 
         // ---------- an order taken by phone ----------

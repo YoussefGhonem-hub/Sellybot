@@ -486,6 +486,7 @@ namespace RiwaqChat
                     Crm.SetStatus(c, storeId, "shop", id.ToString(CultureInfo.InvariantCulture), CrmStatus(to));
                     // the owner moved it on: stop waiting for the customer's answer
                     if (who != "customer") using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Status=@st, Note=@n WHERE StoreId=@s AND OrderId=@o AND Status='pending'", "@st", to == "confirmed" ? "confirmed" : to == "cancelled" ? "cancelled" : "skipped", "@n", "غيّرت حالته لـ «" + ShopOrders.StatusText(to) + "»", "@s", storeId, "@o", id)) if (to != "noreply") cmd.ExecuteNonQuery();
+                    if (to == "cancelled" && who != "carrier") Carriers.OnCancelled(storeId, id);
                     if (to == "out") await Delivery.OnShop(c, s, o);
                     if (to == "shipped") { var sh = Shops.ByStore(c, storeId); if (sh != null) await ShopPay.Shipped(c, s, sh, o); }
                 }
