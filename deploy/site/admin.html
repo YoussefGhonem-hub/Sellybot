@@ -463,6 +463,7 @@
       <button data-go="home"><span class="ic">📊</span>الرئيسية</button>
       <button data-go="money"><span class="ic">💰</span>المكسب والتكلفة</button>
       <button data-go="stores"><span class="ic">🏪</span>المتاجر والمستخدمين</button>
+      <button data-go="shops"><span class="ic">🛍️</span>المتاجر المؤجرة <span class="count" id="spCount" hidden>0</span></button>
       <button data-go="plans"><span class="ic">💎</span>الباقات والخصومات</button>
       <button data-go="reqs"><span class="ic">📥</span>طلبات الاشتراك <span class="count" id="rqCount" hidden>0</span></button>
       <button data-go="subs"><span class="ic">🧾</span>الاشتراكات والإيرادات</button>
@@ -855,6 +856,9 @@
         </table></div>
       </section>
 
+      <!-- SellyStore: the rented stores (shop-admin/super.js) -->
+      <section data-page="shops" hidden><div id="shopsRoot"></div></section>
+
       <!-- settings -->
       <section data-page="settings" hidden>
         <div class="grid2b">
@@ -995,10 +999,11 @@
     $("pwWarn").hidden = !defaultPw;
     $("meName").textContent = name; $("meAv").textContent = initial(name);
     var want = (location.hash || "#home").slice(1);
-    go(["home", "money", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "tg", "council", "settings"].indexOf(want) >= 0 ? want : "home");
+    go(["home", "money", "stores", "plans", "reqs", "subs", "support", "wa", "meta", "tg", "council", "shops", "settings"].indexOf(want) >= 0 ? want : "home");
     api("requests", null, "&status=pending").then(function (d) { rqBadge(d.pending); }).catch(function () {});
     metaApi().then(function (d) { mtBadge(d.asksWaiting); }).catch(function () {});
     cnApi(null, null, "?count=1").then(function (d) { cnBadge(d.waiting); }).catch(function () {});
+    fetch("api/shop-admin.ashx?count=1", { credentials: "same-origin", headers: { "X-Requested-With": "fetch" } }).then(function (r) { return r.json(); }).then(function (d) { spBadge(d.waiting); }).catch(function () {});
   }
   $("pwEye").onclick = function () { var i = $("lPass"); i.type = i.type === "password" ? "text" : "password"; i.focus(); };
   $("loginForm").onsubmit = async function (e) {
@@ -1012,7 +1017,7 @@
   // ---------- navigation ----------
   var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], money: ["المكسب والتكلفة", "بتكسب كام، بتصرف كام، وتشحن Claude بكام"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
                  subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"],
-                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], council: ["فكّر معانا", "التاجر يعرض فكرته، وبيدفع بالتوكنز لوحدها"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
+                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], council: ["فكّر معانا", "التاجر يعرض فكرته، وبيدفع بالتوكنز لوحدها"], shops: ["المتاجر المؤجرة", "SellyStore: متجر باسم التاجر ولينكه"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
     var on = document.querySelector("#nav button.on"); if (!on) return;
     $("navInd").style.transform = "translateY(" + (on.offsetTop) + "px)"; $("navInd").style.height = on.offsetHeight + "px";
@@ -1025,7 +1030,18 @@
     moveInd(); closeSide();
     if (history.replaceState) history.replaceState(null, "", "#" + page);
     window.scrollTo(0, 0);
-    ({ home: loadHome, money: loadMoney, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, tg: loadTg, council: loadCouncil, settings: loadSettings })[page]();
+    ({ home: loadHome, money: loadMoney, stores: loadStores, plans: loadPlans, reqs: loadReqs, subs: loadSubs, support: loadTickets, wa: loadWa, meta: loadMeta, tg: loadTg, council: loadCouncil, shops: loadShops, settings: loadSettings })[page]();
+  }
+
+  // ---------- SellyStore: the rented stores, in their own file ----------
+  function spBadge(n) { $("spCount").textContent = fmt(n || 0); $("spCount").hidden = !n; }
+  var spFile = null;
+  function loadShops() {
+    spFile = spFile || new Promise(function (ok, no) {
+      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/super.css?v=1"; document.head.appendChild(l);
+      var s = document.createElement("script"); s.src = "shop-admin/super.js?v=1"; s.onload = ok; s.onerror = function () { spFile = null; no(new Error("الصفحة ماحمّلتش. جرّب تاني.")); }; document.body.appendChild(s);
+    });
+    spFile.then(function () { SbShops.open($("shopsRoot"), { toast: toast, count: spBadge }); }).catch(function (e) { toast(e.message, true); });
   }
 
   // ---------- Messenger + Instagram: one Meta app for every store ----------
@@ -1461,6 +1477,8 @@
     "wa-new":    { ic: "📱", t: "إضافة باقة الواتساب", c: "#1fae55" },
     "wa-renew":  { ic: "📱", t: "تجديد باقة الواتساب", c: "#1a8a47" },
     "wa-add":    { ic: "📱", t: "أرقام واتساب زيادة", c: "#1fae55" },
+    "shop-new":  { ic: "🛍️", t: "إيجار متجر", c: "#7a4e2f" },
+    "shop-renew": { ic: "🛍️", t: "تجديد إيجار متجر", c: "#7a4e2f" },
     "topup":     { ic: "➕", t: "رسايل إضافية للشهر", c: "#c0392b" }
   };
   // the chips above the list: the groups the admin thinks in, with how many of each
@@ -1469,11 +1487,12 @@
     { k: "renew", t: "تجديد", ic: "🔁", c: "#e8774a", f: function (r) { return r.what === "renew"; } },
     { k: "new", t: "اشتراك جديد", ic: "✨", c: "#3b7dd8", f: function (r) { return r.what === "new"; } },
     { k: "wa", t: "واتساب", ic: "📱", c: "#1fae55", f: function (r) { return r.what === "wa-new" || r.what === "wa-renew" || r.what === "wa-add" || r.wa; } },
+    { k: "shop", t: "إيجار متجر", ic: "🛍️", c: "#7a4e2f", f: function (r) { return r.kind === "shop"; } },
     { k: "topup", t: "رسايل إضافية", ic: "➕", c: "#c0392b", f: function (r) { return r.what === "topup"; } },
     { k: "change", t: "ترقية ونزول", ic: "↕️", c: "#8e5bd8", f: function (r) { return r.what === "upgrade" || r.what === "downgrade"; } }
   ];
   state.rqType = "all";
-  function rqType(r) { return RT[r.what] || RT[r.kind === "topup" ? "topup" : r.kind === "wa" ? "wa-new" : r.kind === "upgrade" ? "upgrade" : "new"]; }
+  function rqType(r) { return RT[r.what] || RT[r.kind === "topup" ? "topup" : r.kind === "shop" ? "shop-new" : r.kind === "wa" ? "wa-new" : r.kind === "upgrade" ? "upgrade" : "new"]; }
   function rqTitle(r) { var t = rqType(r); return t.ic + " " + t.t + (r.wa && r.kind !== "wa" ? " + 📱 باقة الواتساب" : r.waInPlan ? " · 📱 الواتساب جوه الباقة" : ""); }
   // the WhatsApp service for more than one number (WaLines.cs)
   function waN(r) { return r.waCount > 1 ? "، لـ <b>" + fmt(r.waCount) + " رقم واتساب</b>" : ""; }
@@ -1485,6 +1504,8 @@
       case "upgrade": return s + "عايز يرقّي " + (r.currentPlan ? "من " + esc(r.currentPlan) + " " : "") + "لباقة " + pl + " من دلوقتي، ويدفع فرق السعر للأيام الباقية" + wa + ".";
       case "downgrade": return s + "عايز ينزل لباقة " + pl + " بعد ما باقته الحالية تخلص" + wa + ".";
       case "wa-new": return s + (r.plan ? "عنده باقة " + pl + " وعايز يضيف عليها <b>باقة الواتساب</b>" : "عايز <b>باقة الواتساب</b> لوحدها، من غير باقة") + waN(r) + ".";
+      case "shop-new": return s + "عايز يفعّل <b>إيجار متجره</b> على SellyStore لمدة شهر.";
+      case "shop-renew": return s + "عايز يجدد <b>إيجار متجره</b> شهر كمان.";
       case "wa-renew": return s + "عايز يجدد <b>باقة الواتساب</b> شهر كمان" + waN(r) + ".";
       case "wa-add": return s + "عايز يضيف <b>" + fmt(r.waCount || 1) + " رقم واتساب</b> على خدمته الشغالة، لحد ميعاد تجديدها (" + esc(r.calc || "") + ").";
       case "topup": return s + "رسايل الشهر " + (n.usagePct >= 100 ? "خلصت عنده" : "قربت تخلص عنده") + "، وعايز " + (r.msgs ? "<b>" + fmt(r.msgs) + " رسالة</b>" : "رصيد") + " زيادة يكمّل بيهم الشهر.";
@@ -1495,7 +1516,8 @@
   function rqBill(r) {
     var ln = function (a, b, cls) { return '<div class="ln' + (cls ? " " + cls : "") + '"><span>' + a + '</span><b>' + b + '</b></div>'; };
     var h = "";
-    if (r.kind === "wa") h += ln(r.what === "wa-add" ? "📱 " + fmt(r.waCount || 1) + " رقم زيادة · لحد التجديد" : "📱 باقة الواتساب · شهر" + (r.waCount > 1 ? " · " + fmt(r.waCount) + " رقم" : ""), money(r.amount));
+    if (r.kind === "shop") h += ln("🛍️ إيجار المتجر · " + monthsAr(r.months), money(r.amount));
+    else if (r.kind === "wa") h += ln(r.what === "wa-add" ? "📱 " + fmt(r.waCount || 1) + " رقم زيادة · لحد التجديد" : "📱 باقة الواتساب · شهر" + (r.waCount > 1 ? " · " + fmt(r.waCount) + " رقم" : ""), money(r.amount));
     else if (r.kind === "topup") h += ln("➕ " + (r.msgs ? fmt(r.msgs) + " رسالة" : fmt(r.units / 1e6, 1) + " مليون وحدة"), money(r.amount));
     else {
       h += ln("💎 " + esc(r.plan) + (r.kind === "upgrade" ? " · فرق السعر" : " · " + monthsAr(r.months)), money(r.price - r.waAmount));
@@ -1522,6 +1544,7 @@
     if (n.planEnds && !n.planExpired && (r.kind === "plan" || r.kind === "upgrade")) add("cur", "", "الحالية", null, n.planEnds);
     if (o.planStarts) add("", rqType(r).c, "💎 " + r.plan, o.planStarts, o.planEnds);
     if (o.waStarts) add("", "#1fae55", o.waInPlan ? "📱 واتساب (جوه الباقة)" : "📱 واتساب", o.waStarts, o.waEnds);
+    if (o.shopStarts) add("", "#7a4e2f", "🛍️ المتجر", o.shopStarts, o.shopEnds);
     if (o.topupUntil) add("", "#c0392b", "➕ " + (r.msgs ? fmt(r.msgs) + " رسالة" : "رصيد"), null, o.topupUntil);
     if (!bars.length) return "";
     var span = Math.max.apply(null, ends) - now;
@@ -1532,6 +1555,7 @@
     var soon = function (iso) { return new Date(iso).getTime() > now + 6e4; }, lines = [];
     if (o.planStarts) lines.push("💎 " + (soon(o.planStarts) ? "بتبدأ " + date(o.planStarts) : "من النهارده") + " لحد " + date(o.planEnds));
     if (o.waStarts) lines.push("📱 الواتساب " + (o.waInPlan ? "مع الباقة " : "") + (soon(o.waStarts) ? "من " + date(o.waStarts) : "من النهارده") + " لحد " + date(o.waEnds));
+    if (o.shopStarts) lines.push("🛍️ المتجر " + (soon(o.shopStarts) ? "من " + date(o.shopStarts) : "من النهارده") + " لحد " + date(o.shopEnds));
     if (o.waKeptUntil) lines.push("📱 الواتساب اللي كان جوه باقته الحالية بيكمّل لحد " + date(o.waKeptUntil) + "، وبعدها باشتراك لوحده");
     if (o.topupUntil) lines.push("➕ الرسايل للشهر ده بس، لحد " + date(o.topupUntil));
     return '<div class="rq-box rq-tlbox"><h5>📅 لو وافقت</h5><div class="rq-tl">' + rows +

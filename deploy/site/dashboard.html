@@ -2009,6 +2009,8 @@
     <nav class="links" id="navLinks" hidden>
       <div class="side-head"><b>القائمة</b><button type="button" id="navClose" aria-label="اقفل القائمة">✕</button></div>
       <button data-tab="home" class="on">🏠 الرئيسية</button>
+      <!-- «متجري» (SellyStore): its files are shop-admin/*.js, loaded when it opens; hidden until the admin opens it to this store (me.shop) -->
+      <button data-tab="shop" id="shopTabBtn" hidden>🏪 متجري <span class="nb" id="shopNb" hidden></span></button>
       <button data-tab="customers" data-feat="crm">👥 زبايني</button>
       <button data-tab="data">📚 داتا المتجر</button>
       <div class="dd">
@@ -3031,6 +3033,8 @@
   </section>
 
   <!-- «👥 زبايني» (Crm.cs, api/customers.ashx): a file per customer, ready-made groups, and who to be careful with before shipping -->
+  <section data-panel="shop" hidden><div id="shopRoot"></div></section>
+
   <section data-panel="customers" data-feat="crm" hidden>
     <div class="page-title cr-title"><div><h2>👥 زبايني</h2><p>كل زبون في ملف واحد: أوردراته وكلامه<span data-feat="crmgroups">، ومين تبيعله تاني</span><span data-feat="returns">، ومين تاخد بالك منه قبل ما تشحن</span>.</p></div>
       <div class="cr-tools">
@@ -4180,6 +4184,7 @@
     if (tab === "social") loadSocial();
     if (tab === "offers") loadOffers();
     if (tab === "customers") loadCust();
+    if (tab === "shop") openShop();
     if (tab === "council") loadCouncil();
     if (tab === "telegram") loadTg(); else tgStopPoll();
     if (tab === "data" || tab === "look" || tab === "install") loadLocks();   // which features this store's plan doesn't include
@@ -4233,7 +4238,7 @@
     unmountHelpChat(); render(); loadItems(); mountLiveChat();
     var want = fresh && !/^#customers\/\d{8,15}$/.test(location.hash) ? "" : (location.hash || "").replace("#", ""), file = /^customers\/(\d{8,15})$/.exec(want);   // #customers/2010… = that customer's file
     if (file) want = "customers";
-    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) || (want === "customers" && hasF("crm")) || (want === "council" && hasF("council")) ? want : "home");
+    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) || (want === "customers" && hasF("crm")) || (want === "council" && hasF("council")) || (want === "shop" && me.shop) ? want : "home");
     if (file && current === "customers") crOpen(file[1]);
     setTimeout(showNews, 1200);   // what's new since this browser last looked
   }
@@ -4650,7 +4655,7 @@
   var REQ_ST = { pending: ['open', "⏳ بيتراجع"], approved: ['answered', "✅ اتفعّلت"], rejected: ['bad', "✕ اترفض"], cancelled: ['', "اتلغى"] };
   function monthsAr(m) { return m === 1 ? "شهر" : m === 12 ? "سنة" : fmt(m) + " شهور"; }
   function reqTitle(r) {
-    return (r.kind === "wa" ? "📱 خدمة الواتساب · " + monthsAr(r.months) : r.kind === "topup" ? (r.msgs ? fmt(r.msgs) + " رسالة إضافية للشهر" : "رصيد إضافي لباقة " + esc(r.plan)) : r.kind === "upgrade" ? "ترقية لباقة " + esc(r.plan) : "باقة " + esc(r.plan) + " · " + monthsAr(r.months)) +
+    return (r.kind === "shop" ? "🏪 إيجار المتجر · " + monthsAr(r.months) : r.kind === "wa" ? "📱 خدمة الواتساب · " + monthsAr(r.months) : r.kind === "topup" ? (r.msgs ? fmt(r.msgs) + " رسالة إضافية للشهر" : "رصيد إضافي لباقة " + esc(r.plan)) : r.kind === "upgrade" ? "ترقية لباقة " + esc(r.plan) : "باقة " + esc(r.plan) + " · " + monthsAr(r.months)) +
       (r.wa && r.kind !== "wa" ? " + 📱 خدمة الواتساب" : "");
   }
   async function loadMine() {
@@ -4661,8 +4666,8 @@
   }
   // a request's type when it was sent: icon, colour, name (the same types the admin sees)
   var RQT = { "new": ["💎", "#e8774a", "باقة جديدة"], renew: ["🔁", "#3b82f6", "تجديد الباقة"], upgrade: ["⬆️", "#7c5cff", "ترقية"], downgrade: ["⬇️", "#64748b", "نزول لباقة أقل"],
-              "wa-new": ["📱", "#1fae55", "خدمة الواتساب"], "wa-renew": ["📱", "#1fae55", "تجديد الواتساب"], "wa-add": ["📱", "#1fae55", "أرقام واتساب زيادة"], topup: ["➕", "#0ea5a4", "رسايل إضافية"] };
-  function rqType(r) { return RQT[r.what] || RQT[r.kind === "wa" ? "wa-new" : r.kind === "topup" ? "topup" : r.kind === "upgrade" ? "upgrade" : "new"]; }
+              "wa-new": ["📱", "#1fae55", "خدمة الواتساب"], "wa-renew": ["📱", "#1fae55", "تجديد الواتساب"], "wa-add": ["📱", "#1fae55", "أرقام واتساب زيادة"], "shop-new": ["🏪", "#7a4e2f", "إيجار المتجر"], "shop-renew": ["🏪", "#7a4e2f", "تجديد إيجار المتجر"], topup: ["➕", "#0ea5a4", "رسايل إضافية"] };
+  function rqType(r) { return RQT[r.what] || RQT[r.kind === "shop" ? "shop-new" : r.kind === "wa" ? "wa-new" : r.kind === "topup" ? "topup" : r.kind === "upgrade" ? "upgrade" : "new"]; }
   function pendingReq() { return (mine.requests || []).filter(function (r) { return r.status === "pending"; })[0] || null; }
   function subOf(r) { return r.subscriptionId ? (mine.subscriptions || []).filter(function (s) { return s.id === r.subscriptionId; })[0] || null : null; }
   // what an approval did, in one line
@@ -4670,6 +4675,7 @@
     var s = subOf(r), sv = waSvc(), later = s && new Date(s.startsAt) > new Date();
     var wa = r.wa || r.kind === "wa" ? (sv.on && sv.until ? "📱 خدمة الواتساب شغالة لحد يوم " + dateAr(sv.until) : "📱 خدمة الواتساب اتفعّلت") : "";
     if (r.kind === "wa") return "✅ " + wa + ".";
+    if (r.kind === "shop") return "✅ متجرك اتفعّل" + (s ? " لحد يوم " + dateAr(s.endsAt) : "") + ". كمّل تجهيزه من «متجري».";
     if (r.kind === "topup") return "✅ " + (r.msgs ? fmt(r.msgs) + " رسالة" : "الرصيد الإضافي") + " اتضافت لرصيد الشهر ده.";
     var plan = s ? (later ? "⏭️ باقة " + esc(s.plan) + " هتبدأ يوم " + dateAr(s.startsAt) + " لحد يوم " + dateAr(s.endsAt)
                           : "✅ باقة " + esc(s.plan) + " شغالة من " + dateAr(s.startsAt) + " لحد يوم " + dateAr(s.endsAt))
@@ -4694,7 +4700,7 @@
     var r = liveReq(), el = $("reqPending");
     if (!r) { el.innerHTML = ""; return; }
     var t = rqType(r), ok = r.status === "approved", bad = r.status === "rejected", pend = r.status === "pending", top = r.kind === "topup";
-    var shot = pend ? waLink("أهلاً 👋 بعت طلب " + (r.kind === "wa" ? "خدمة الواتساب" : r.kind === "upgrade" ? "ترقية لباقة " + r.plan : top ? "رسايل إضافية لباقة " + r.plan : "باقة " + r.plan + " (" + monthsAr(r.months) + ")") +
+    var shot = pend ? waLink("أهلاً 👋 بعت طلب " + (r.kind === "shop" ? "إيجار المتجر" : r.kind === "wa" ? "خدمة الواتساب" : r.kind === "upgrade" ? "ترقية لباقة " + r.plan : top ? "رسايل إضافية لباقة " + r.plan : "باقة " + r.plan + " (" + monthsAr(r.months) + ")") +
       " لمتجر " + me.name + " (" + me.slug + ")" + (r.refNo ? "، والرقم المرجعي " + r.refNo : "") + "، ودي صورة التحويل:") : "";
     el.innerHTML = '<div class="rl' + (ok ? " ok" : bad ? " bad" : "") + '">' +
       '<div class="rl-head"><span class="rl-ic" style="--c:' + t[1] + '" aria-hidden="true">' + t[0] + '</span><div class="grow">' +
@@ -4712,7 +4718,7 @@
       (ok ? '<div class="rl-res">' + resultLine(r) + '</div>' : '') +
       '<div class="rl-acts">' +
         (pend ? '<a class="btn wa-btn sm" target="_blank" rel="noopener" href="' + esc(shot) + '">ابعت صورة التحويل</a><button type="button" class="btn ghost sm" id="rqCancel">إلغاء الطلب</button>' +
-                '<span class="hint">' + (r.kind === "wa" ? "الإدارة هتفعّل خدمة الواتساب أول ما تتأكد من الدفع." : top ? "الإدارة هتضيف الرسايل أول ما تتأكد من الدفع." : "الإدارة هتفعّل الباقة أول ما تتأكد من الدفع.") + '</span>'
+                '<span class="hint">' + (r.kind === "shop" ? "الإدارة هتفعّل متجرك أول ما تتأكد من الدفع." : r.kind === "wa" ? "الإدارة هتفعّل خدمة الواتساب أول ما تتأكد من الدفع." : top ? "الإدارة هتضيف الرسايل أول ما تتأكد من الدفع." : "الإدارة هتفعّل الباقة أول ما تتأكد من الدفع.") + '</span>'
           : bad ? '<button type="button" class="btn" id="rlAgain">✏️ عدّل وابعت الطلب تاني</button><a class="btn ghost" target="_blank" rel="noopener" href="' +
                   esc(waLink("أهلاً 👋 طلب " + reqTitle(r).replace(/<[^>]+>/g, "") + " لمتجر " + me.name + " (" + me.slug + ") اترفض، وعندي سؤال عن السبب:")) + '">💬 اسألنا على واتساب</a>'
           : '<button type="button" class="btn ghost sm" id="rlOk">تمام 👍</button>') +
@@ -4726,6 +4732,7 @@
   }
   // a rejected request again: the same choice in the form, ready to fix and send
   async function resendReq(r) {
+    if (r.kind === "shop") { go("shop"); await shopLoad(); for (var i = 0; i < 50 && !(SbShop.state && SbShop.state()); i++) await new Promise(function (f) { setTimeout(f, 100); }); SbShop.acts.rent(); return; }
     if (r.kind === "wa") await openWaService();
     else if (r.kind === "topup") openTopup();
     else {
@@ -4776,8 +4783,8 @@
     if (!ss.length) { el.innerHTML = '<div class="card empty">مفيش اشتراكات لسه. أول ما الإدارة تفعّل طلبك هيظهر هنا.</div>'; return; }
     el.innerHTML = ss.map(function (s, i) {
       var live = new Date(s.endsAt) > now && new Date(s.startsAt) <= now, later = new Date(s.startsAt) > now;
-      var cnl = s.kind === "council", t = cnl ? ["🧠", "#b0762a", "فكّر معانا"] : RQT[s.topup ? "topup" : s.kind === "upgrade" ? "upgrade" : s.kind === "wa" ? "wa-new" : "new"];
-      var title = s.topup || cnl ? esc(s.plan) : s.kind === "upgrade" ? "ترقية لباقة " + esc(s.plan) : s.kind === "wa" ? "خدمة الواتساب · " + monthsAr(s.months) : esc(s.plan) + " · " + monthsAr(s.months);
+      var cnl = s.kind === "council", t = cnl ? ["🧠", "#b0762a", "فكّر معانا"] : RQT[s.topup ? "topup" : s.kind === "upgrade" ? "upgrade" : s.kind === "wa" ? "wa-new" : s.kind === "shop" ? "shop-new" : "new"];
+      var title = s.topup || cnl ? esc(s.plan) : s.kind === "upgrade" ? "ترقية لباقة " + esc(s.plan) : s.kind === "wa" ? "خدمة الواتساب · " + monthsAr(s.months) : s.kind === "shop" ? "إيجار المتجر · " + monthsAr(s.months) : esc(s.plan) + " · " + monthsAr(s.months);
       var meta = cnl ? dateAr(s.startsAt) + " · دفعت " + fmt(s.paid) + " ج.م · مابتخلصش بوقت" : s.topup ? "لشهر " + new Date(s.startsAt).toLocaleDateString("ar-EG", { month: "long", year: "numeric" }) + " · دفعت " + fmt(s.paid) + " ج.م"
         : "من " + dateAr(s.startsAt) + " لحد " + dateAr(s.endsAt) + " · " + (s.kind === "upgrade" ? "دفعت فرق السعر " : "دفعت ") + fmt(s.paid) + " ج.م";
       var pill = s.topup || cnl ? "" : live ? '<span class="st-pill answered">شغالة دلوقتي</span>' : later ? '<span class="st-pill open">هتبدأ ' + dateAr(s.startsAt) + '</span>' : '<span class="st-pill">خلصت</span>';
@@ -7258,6 +7265,25 @@
     el.querySelectorAll("[data-cg]").forEach(function (b) { b.onclick = function () { crF = { g: b.dataset.cg, m: "", q: "", sort: "recent" }; $("crQ").value = ""; go("customers"); }; });
   }
 
+  // ---------------- «متجري» (SellyStore): its own files, loaded once when the tab opens ----------------
+  var shopFiles = null, SHOP_V = "20261125a";
+  function shopLoad() {
+    return shopFiles || (shopFiles = new Promise(function (ok, no) {
+      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/app.css?v=" + SHOP_V; document.head.appendChild(l);
+      var list = ["app", "catalog", "sell", "look"];
+      (function next() {
+        var n = list.shift(); if (!n) return ok();
+        var s = document.createElement("script"); s.src = "shop-admin/" + n + ".js?v=" + SHOP_V; s.onload = next;
+        s.onerror = function () { shopFiles = null; no(new Error("ماقدرناش نفتح «متجري». اتأكد من النت وجرّب تاني.")); };
+        document.body.appendChild(s);
+      })();
+    }));
+  }
+  async function openShop(view) {
+    try { await shopLoad(); if (current === "shop") SbShop.open($("shopRoot"), { toast: toast, me: me, go: go, view: view }); }
+    catch (e) { toast(e.message); }
+  }
+
   // ---------------- what this store's plan includes ----------------
   // The user's rule (2026-11-23): each store sees only its own plan's features. me.hide (PlanGate.Hidden) lists the ones its plan
   // doesn't include: none on the free trial, its own plan's on an ended plan (the renew card shows there), and what every plan has
@@ -7279,6 +7305,7 @@
     var allStyles = hasF("styles");   // the chat's look: the shapes the plan has
     document.querySelectorAll(".sty").forEach(function (c) { c.classList.toggle("pv-off", !allStyles && FREE_STYLES.indexOf(c.dataset.style) < 0); });
     $("socialTabBtn").hidden = !me.meta || !anyF("messenger instagram");
+    $("shopTabBtn").hidden = !me.shop; $("shopNb").hidden = !me.shop || !me.shop.n; $("shopNb").textContent = me.shop ? fmt(me.shop.n) : "";
     navFit();
   }
   // the shape and color the customers see now: one the plan doesn't have shows as the default (PlanGate.Apply), and comes back on upgrade

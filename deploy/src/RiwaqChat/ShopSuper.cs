@@ -38,6 +38,8 @@ namespace RiwaqChat
         {
             int id; int.TryParse(req.QueryString["id"], out id);
             if (id > 0) { Web.Json(res, 200, One(c, id)); return; }
+            // what waits for the admin: stores to look at before they open, changes, reports
+            if (req.QueryString["count"] == "1") { using (var cmd = Db.Cmd(c, "SELECT (SELECT COUNT(*) FROM dbo.Shops WHERE Status='review' OR (Status='live' AND ReviewChange=1)) + (SELECT COUNT(*) FROM dbo.ShopReports WHERE Status='new')")) Web.Json(res, 200, new Dictionary<string, object> { { "waiting", (int)cmd.ExecuteScalar() } }); return; }
             Web.Json(res, 200, All(c));
         }
         static string Iso(DateTime? t) { return t.HasValue ? t.Value.ToString("o") : ""; }

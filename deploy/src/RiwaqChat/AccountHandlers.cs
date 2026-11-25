@@ -21,6 +21,7 @@ namespace RiwaqChat
             return new Dictionary<string, object>
             {
                 { "id", s.Id }, { "slug", s.Slug }, { "name", s.Name }, { "email", s.OwnerEmail }, { "isAdmin", s.IsAdmin },
+                { "shop", Shops.MeJson(c, s) },   // show «متجري» (SellyStore, Shop.cs): null = not open to this store
                 { "meta", MetaApp.Visible(c, s) },   // show the «مسنجر وإنستجرام» tab (Meta.cs)
                 { "hide", Council.Hide(c, s, PlanGate.Hidden(c, s)) },   // the features this store's plan doesn't include: the dashboard doesn't draw them
                 { "status", s.Status }, { "botName", s.BotName }, { "welcome", s.Welcome ?? "" }, { "instructions", s.Instructions ?? "" },

@@ -75,6 +75,7 @@ namespace RiwaqChat
                 case "state": Web.Json(res, 200, State(c, s, sh)); return;
                 case "products": Web.Json(res, 200, Products(c, sh, req)); return;
                 case "product": { var p = Product(c, sh, id); if (p == null) Web.Error(res, 404, "not_found", "المنتج ده مش موجود."); else Web.Json(res, 200, p); return; }
+                case "cat": { var k = CatRows(c, sh, id); if (k == null) Web.Error(res, 404, "not_found", "القسم ده مش موجود."); else Web.Json(res, 200, k); return; }
                 case "orders": Web.Json(res, 200, Orders(c, sh, req)); return;
                 case "order": { var o = Order(c, s, sh, id); if (o == null) Web.Error(res, 404, "not_found", "الأوردر ده مش موجود."); else Web.Json(res, 200, o); return; }
                 case "home": Web.Json(res, 200, Home(c, s, sh)); return;
@@ -138,12 +139,23 @@ namespace RiwaqChat
             var d = ShopCache.Get(c, sh); var now = DateTime.UtcNow;
             string q = (req.QueryString["q"] ?? "").Trim(), st = req.QueryString["st"] ?? "", sort = req.QueryString["sort"] ?? ""; int cat; int.TryParse(req.QueryString["cat"], out cat); int page; int.TryParse(req.QueryString["page"], out page); page = Math.Max(0, page);
             IEnumerable<ShopProd> l = d.Products;
+            // the names and pictures of these products (an offer's, a section's)
+            string ids = req.QueryString["ids"] ?? "";
+            if (ids.Length > 0) { var want = new HashSet<int>(ids.Split(',').Take(500).Select(x => ShopJson.Int(x))); return new Dictionary<string, object> { { "list", l.Where(p => want.Contains(p.Id)).Select(p => ProdRow(d, p, now)).ToArray() } }; }
             if (q.Length > 0) { var f = d.Find(q.Length > 80 ? q.Substring(0, 80) : q, 300, true); var sku = d.Products.Where(p => string.Equals(p.Sku, q, StringComparison.OrdinalIgnoreCase) || p.Vars.Any(v => string.Equals(v.Sku, q, StringComparison.OrdinalIgnoreCase))); l = sku.Concat(f).Distinct(); }
             if (cat > 0) { var under = d.Under(cat); l = l.Where(p => p.Cats.Any(under.Contains)); } else if (cat == -1) l = l.Where(p => p.Cats.Count == 0);
             if (st == "hidden") l = l.Where(p => p.Status != "active"); else if (st == "out") l = l.Where(p => p.Status == "active" && !p.Available); else if (st == "low") l = l.Where(p => p.Track && p.Available && p.Total <= 3); else if (st == "nopic") l = l.Where(p => p.Pics.Count == 0); else if (st == "active") l = l.Where(p => p.Status == "active");
             if (sort == "price") l = l.OrderBy(p => p.Price); else if (sort == "-price") l = l.OrderByDescending(p => p.Price); else if (sort == "sold") l = l.OrderByDescending(p => p.Sold); else if (sort == "stock") l = l.OrderBy(p => p.Total); else if (sort == "name") l = l.OrderBy(p => p.Name);
             var all = l.ToList();
             return new Dictionary<string, object> { { "total", all.Count }, { "page", page }, { "size", 50 }, { "list", all.Skip(page * 50).Take(50).Select(p => ProdRow(d, p, now)).ToArray() } };
+        }
+        // a category's products in the owner's order, and which are pinned first
+        static Dictionary<string, object> CatRows(SqlConnection c, Shop sh, int id)
+        {
+            var d = ShopCache.Get(c, sh); if (!d.CatById.ContainsKey(id)) return null;
+            var pins = new HashSet<int>(); using (var cmd = Db.Cmd(c, "SELECT ProductId FROM dbo.ShopProductCategories WHERE StoreId=@s AND CategoryId=@i AND Pinned=1", "@s", sh.StoreId, "@i", id)) using (var r = cmd.ExecuteReader()) while (r.Read()) pins.Add((int)r[0]);
+            List<int> order; if (!d.CatOrder.TryGetValue(id, out order)) order = new List<int>();
+            return new Dictionary<string, object> { { "list", order.Where(x => d.ById.ContainsKey(x)).Select(x => d.ById[x]).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "img", p.Pics.Count > 0 ? ShopImages.Url(p.Pics[0].Path, true) : "" }, { "pin", pins.Contains(p.Id) }, { "status", p.Status } }).ToArray() } };
         }
         static Dictionary<string, object> ProdRow(ShopData d, ShopProd p, DateTime now)
         {

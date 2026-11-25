@@ -23,7 +23,7 @@ namespace RiwaqChat
         public override bool IsReusable { get { return true; } }
 
         // the store a request is for (the chat inside the store reads it)
-        public class Ctx { public StoreInfo Store; public Shop Row; public ShopData Data; public string Ip, Path, Lang, Prefix; public bool Preview; public DateTime Now = DateTime.UtcNow; public Dictionary<string, object> Look; }
+        public class Ctx { public StoreInfo Store; public Shop Row; public ShopData Data; public string Ip, Path, Lang, Prefix, Pv; public bool Preview; public DateTime Now = DateTime.UtcNow; public Dictionary<string, object> Look; }
 
         public override async Task ProcessRequestAsync(HttpContext ctx)
         {
@@ -78,8 +78,10 @@ namespace RiwaqChat
                     res.StatusCode = 404; ShopPages.Message(res, "مفيش متجر بالاسم ده", "اتأكد من اللينك واكتبه تاني."); return;
                 }
                 x.Store = Db.StoreById(c, x.Row.StoreId);
-                string token = req.Cookies["sbpv"] == null ? null : req.Cookies["sbpv"].Value;
-                if (path.StartsWith("/_preview/", StringComparison.Ordinal)) { ShopPages.StartPreview(c, x, path.Substring(10), res); return; }
+                // the owner's preview: a cookie, or (inside the dashboard, where some browsers keep no cookie for a frame) the token in the address
+                var pv = Regex.Match(req.Headers["X-Shop-Query"] ?? "", "[?&]_pv=([a-f0-9]{32})(&|$)"); x.Pv = pv.Success ? pv.Groups[1].Value : null;
+                string token = x.Pv ?? (req.Cookies["sbpv"] == null ? null : req.Cookies["sbpv"].Value);
+                if (path.StartsWith("/_preview/", StringComparison.Ordinal)) { ShopPages.StartPreview(c, x, path.Substring(10), res, Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]f=1(&|$)")); return; }
                 if (path == "/_preview-off") { ShopPages.Cookie(res, "", DateTime.UtcNow.AddDays(-1)); res.Redirect("/", false); return; }
                 x.Preview = token != null && ShopPages.PreviewOk(c, x.Row.StoreId, token);
                 open = Shops.Open(c, x.Store, x.Row);
@@ -245,13 +247,13 @@ namespace RiwaqChat
             bool https = Shops.Scheme == "https";
             res.AddHeader("Set-Cookie", "sbpv=" + v + "; Path=/; HttpOnly; Expires=" + until.ToString("R") + (https ? "; Secure; SameSite=None; Partitioned" : "; SameSite=Lax"));
         }
-        public static void StartPreview(SqlConnection c, ShopFrontHandler.Ctx x, string token, HttpResponse res)
+        public static void StartPreview(SqlConnection c, ShopFrontHandler.Ctx x, string token, HttpResponse res, bool frame = false)
         {
             string to = "/"; int q = token.IndexOf('/'); if (q > 0) { to = token.Substring(q); token = token.Substring(0, q); }
             if (!PreviewOk(c, x.Row.StoreId, token)) { res.StatusCode = 410; Message(res, "لينك المعاينة خلص", "اطلب من صاحب المتجر لينك جديد."); return; }
             Cookie(res, token, DateTime.UtcNow.AddHours(24));
             res.Cache.SetCacheability(HttpCacheability.NoCache);
-            res.StatusCode = 302; res.AddHeader("Location", to.StartsWith("/") && !to.StartsWith("//") ? to : "/");
+            res.StatusCode = 302; res.AddHeader("Location", (to.StartsWith("/") && !to.StartsWith("//") ? to : "/") + (frame ? "?_pv=" + token : ""));
         }
 
         // ---------- pages ----------
@@ -403,7 +405,7 @@ namespace RiwaqChat
             if (p.Prod != null) { page["id"] = p.Prod.Id; page["d"] = ShopView.Detail(d, p.Prod, now); }
             if (p.Page != null) page["pg"] = new Dictionary<string, object> { { "s", p.Page.Slug }, { "k", p.Page.Kind }, { "t", ShopView.Pair(p.Page.Title, p.Page.TitleEn) }, { "b", ShopView.Pair(p.Page.Body, p.Page.BodyEn) } };
             if (p.Token != null) page["token"] = p.Token;
-            var boot = new Dictionary<string, object> { { "shop", shop }, { "look", x.Look }, { "lang", lang }, { "pre", x.Prefix }, { "ver", ver }, { "page", page }, { "now", ShopView.Unix(now) }, { "preview", x.Preview },
+            var boot = new Dictionary<string, object> { { "shop", shop }, { "look", x.Look }, { "lang", lang }, { "pre", x.Prefix }, { "ver", ver }, { "page", page }, { "now", ShopView.Unix(now) }, { "preview", x.Preview }, { "dash", x.Preview ? Dash() : "" }, { "pv", x.Preview ? x.Pv ?? "" : "" },
                 { "a", new Dictionary<string, object> { { "core", Ver("core.js") }, { "geo", "1" } } } };
 
             var h = new StringBuilder(16000);
@@ -420,7 +422,7 @@ namespace RiwaqChat
             if (ogImg.Length > 0) h.Append("<meta property=\"og:image\" content=\"").Append(H(ogImg)).Append("\"><meta name=\"twitter:card\" content=\"summary_large_image\">");
             if (color.Length > 0) h.Append("<meta name=\"theme-color\" content=\"").Append(H(color)).Append("\">");
             h.Append("<link rel=\"icon\" href=\"/favicon.ico\"><link rel=\"apple-touch-icon\" href=\"/apple-touch-icon.png\">");
-            h.Append("<link rel=\"preconnect\" href=\"").Append(H(Img().TrimEnd('/'))).Append("\"><link rel=\"preload\" as=\"fetch\" crossorigin=\"anonymous\" href=\"/_d/c-").Append(ver).Append(".json\">");
+            h.Append("<link rel=\"preconnect\" href=\"").Append(H(Img().TrimEnd('/'))).Append("\">"); if (x.Pv == null) h.Append("<link rel=\"preload\" as=\"fetch\" crossorigin=\"anonymous\" href=\"/_d/c-").Append(ver).Append(".json\">");
             h.Append("<link rel=\"stylesheet\" href=\"/_s/core.css?v=").Append(Ver("core.css")).Append("\"><link rel=\"stylesheet\" href=\"/_s/t/").Append(tpl).Append(".css?v=").Append(Ver("t/" + tpl + ".css")).Append("\">");
             h.Append("<style>.ssr{max-width:1080px;margin:0 auto;padding:24px 16px;font:16px/1.7 system-ui,Tahoma,sans-serif;opacity:0;animation:ssr 0s 3s forwards}.ssr img{max-width:100%;height:auto}@keyframes ssr{to{opacity:1}}</style><noscript><style>.ssr{opacity:1}</style></noscript>");
             JsonLd(h, x, p, canonical, shopName, ogImg);
@@ -449,12 +451,14 @@ namespace RiwaqChat
             res.Cache.SetCacheability(HttpCacheability.Public); res.Cache.SetMaxAge(TimeSpan.Zero); res.AddHeader("X-Shop-Keep", sec.ToString(CultureInfo.InvariantCulture));
         }
 
+        // the dashboard, the only place a preview may be framed in and take messages from
+        static string Dash() { return "https://" + (Web.Setting("CanonicalHost", "").Length > 0 ? Web.Setting("CanonicalHost") : "sellybot.online"); }
         static void Secure(HttpResponse res, bool preview)
         {
             string img = Img().TrimEnd('/');
             if (preview) res.AddHeader("X-Robots-Tag", "noindex");
             res.AddHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data: blob: " + img + " https://www.facebook.com; script-src 'self' https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://www.facebook.com https://connect.facebook.net; media-src 'self' " + img
-                + "; object-src 'none'; base-uri 'none'; form-action 'self' https://wa.me; frame-ancestors " + (preview ? "https://" + (Web.Setting("CanonicalHost", "") .Length > 0 ? Web.Setting("CanonicalHost") : "sellybot.online") + (Shops.Scheme == "http" ? " http://localhost:*" : "") : "'none'"));
+                + "; object-src 'none'; base-uri 'none'; form-action 'self' https://wa.me; frame-ancestors " + (preview ? Dash() + (Shops.Scheme == "http" ? " http://localhost:*" : "") : "'none'"));
         }
         // JSON inside a script tag: nothing in a product's text can close it
         static string Safe(string json) { return json.Replace("<", "\\u003c").Replace(">", "\\u003e").Replace("&", "\\u0026").Replace("\u2028", "\\u2028").Replace("\u2029", "\\u2029"); }

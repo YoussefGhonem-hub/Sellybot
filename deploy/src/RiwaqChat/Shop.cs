@@ -122,6 +122,12 @@ namespace RiwaqChat
         {
             return s != null && (Billing.Get(c, "ShopTesters") ?? "").Split(new[] { ',', ' ', '\n', '،' }, StringSplitOptions.RemoveEmptyEntries).Contains(s.Slug, StringComparer.OrdinalIgnoreCase);
         }
+        // for the dashboard: null = not shown to this store; n = orders waiting for the owner
+        public static object MeJson(SqlConnection c, StoreInfo s)
+        {
+            if (!Visible(c, s)) return null;
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.ShopOrders WHERE StoreId=@s AND Status IN ('new','noreply')", "@s", s.Id)) return new Dictionary<string, object> { { "n", (int)cmd.ExecuteScalar() } };
+        }
         public static bool Visible(SqlConnection c, StoreInfo s) { return Ready && s != null && (On(c) || Tester(c, s) || (s.IsAdmin && Billing.Get(c, "ShopAdmin") == "1")); }
 
         // The rent: its own monthly subscription on any plan, like WhatsApp's, never part of the free trial (it has its own end date).
