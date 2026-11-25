@@ -53,6 +53,8 @@ namespace RiwaqChat
             // «ابعت عرض»: offers go out slowly, a message every half a minute or so, for up to ~4 minutes a run. Outside the lease (it
             // claims each slot and each number in the database itself) and without holding a connection while it waits.
             new Lane { Name = "offers", Work = (src, ct) => Offers.SendDue(ct) },
+            // shipping companies: the parcels that don't tell by themselves, their areas, the rescue messages that waited for the morning (claimed in the database)
+            new Lane { Name = "ship", Work = (src, ct) => Carriers.Run(ct) },
         };
 
         public static void Start()

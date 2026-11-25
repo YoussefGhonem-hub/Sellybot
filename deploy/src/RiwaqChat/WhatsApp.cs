@@ -629,6 +629,7 @@ END", "@s", s.Id, "@sub", subject, "@b", body))
 
             long? row = Save(c, s.Id, key, true, text.Length > 0 ? text : WaImages.Placeholder, m.Id, image ? m.MediaUrl : null, line);
             if (row == null) return true;                                                // duplicate delivery
+            Carriers.Answered(c, s, key, m.Chat, text);                                  // the answer to «إنقاذ الأوردر»: the owner hears of it
             Offers.Seen(c, s.Id, key);                                                   // «ابعت عرض»: everyone who wrote to the store's number
             if (OrderConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;   // "1"/"2" answering an order confirmation (works with the bot off too)
             if (EoConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;      // the same for EasyOrders orders
@@ -718,7 +719,7 @@ ELSE
                     var custPhone = WaChat.Digits(chatKey);
                     if (custPhone != null && Restock.On(c, s)) extra.Add(Restock.Tool(s, custPhone));
                     if (custPhone != null && Handoff.On(c, s)) extra.Add(Handoff.Tool(s, "wa", chatKey, line));
-                    pending = OrderConfirm.PendingNote(c, s.Id, chatKey) + EoConfirm.PendingNote(c, s.Id, chatKey) + ShopHooks.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey)
+                    pending = OrderConfirm.PendingNote(c, s.Id, chatKey) + EoConfirm.PendingNote(c, s.Id, chatKey) + ShopHooks.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey) + Carriers.Note(c, s.Id, chatKey)
                         + Carts.Note(c, s.Id, chatKey) + Handoff.Note(c, s.Id, chatKey);
                 }
 

@@ -123,7 +123,7 @@ namespace RiwaqChat
             if (s == null || s.Status != "active") return;
             string id = o.Id.ToString(CultureInfo.InvariantCulture);
             if (Exists(c, s.Id, "shop", id)) return;
-            await Send(c, s, new Notice { Source = "shop", OrderId = id, Name = o.NoText, First = FirstName(o.Name), Phone = o.Phone, Due = o.Lang == "en" ? "EGP " + o.Total.ToString("#,0.##", CultureInfo.InvariantCulture) : ShopOrders.Money(o.Total), Paid = false, Today = true, En = o.Lang == "en" }, null, Feature);
+            await Send(c, s, new Notice { Source = "shop", OrderId = id, Name = o.NoText, First = FirstName(o.Name), Phone = o.Phone, Due = o.Due <= 0 ? null : o.Lang == "en" ? "EGP " + o.Due.ToString("#,0.##", CultureInfo.InvariantCulture) : ShopOrders.Money(o.Due), Paid = o.Due <= 0, Today = true, En = o.Lang == "en" }, null, Feature);
         }
 
         // ---------- the message ----------
