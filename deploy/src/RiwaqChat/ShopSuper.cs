@@ -67,7 +67,7 @@ namespace RiwaqChat
             return new Dictionary<string, object>
             {
                 { "shops", list }, { "reports", rep }, { "fails", fails }, { "domain", Shops.Domain },
-                { "settings", new Dictionary<string, object> { { "on", Billing.Get(c, "ShopOn") == "1" }, { "admin", Billing.Get(c, "ShopAdmin") == "1" }, { "testers", Billing.Get(c, "ShopTesters") ?? "" }, { "price", ShopRent.Price(c) }, { "key", !string.IsNullOrEmpty(Billing.Get(c, "ShopKey")) }, { "img", Billing.Get(c, "ShopImgMode") ?? "disk" }, { "tplOff", Billing.Get(c, "ShopTplOff") ?? "" }, { "templates", ShopLook.Templates.Select(t => new Dictionary<string, object> { { "id", t }, { "there", ShopPages.Has("t/" + t + ".js") }, { "open", ShopTemplates.IsOpen(c, t) } }).ToArray() } } },
+                { "settings", new Dictionary<string, object> { { "on", Billing.Get(c, "ShopOn") == "1" }, { "admin", Billing.Get(c, "ShopAdmin") == "1" }, { "testers", Billing.Get(c, "ShopTesters") ?? "" }, { "price", ShopRent.Price(c) }, { "key", !string.IsNullOrEmpty(Billing.Get(c, "ShopKey")) }, { "img", Billing.Get(c, "ShopImgMode") ?? "disk" }, { "tplOff", Billing.Get(c, "ShopTplOff") ?? "" }, { "templates", ShopLook.Templates.Select(t => new Dictionary<string, object> { { "id", t }, { "name", (ShopTemplates.Cards().FirstOrDefault(x => x.Id == t) ?? new ShopTemplates.Card { Name = new[] { t, t } }).Name[0] }, { "there", ShopPages.Has("t/" + t + ".js") }, { "open", ShopTemplates.IsOpen(c, t) } }).ToArray() } } },
                 { "images", new Dictionary<string, object> { { "disk", disk }, { "r2", r2 }, { "mb", Math.Round(bytes / 1048576.0, 1) } } }
             };
         }
@@ -94,6 +94,12 @@ namespace RiwaqChat
                     if (b.ContainsKey("admin")) Billing.Set(c, "ShopAdmin", ShopJson.Bool(b["admin"]) ? "1" : "0");
                     if (b.ContainsKey("testers")) Billing.Set(c, "ShopTesters", ShopJson.Str(b["testers"], 1000).ToLowerInvariant());
                     if (b.ContainsKey("price")) Billing.Set(c, "ShopPrice", Math.Max(0, Math.Min(100000, ShopJson.Dec(b["price"]))).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+                    if (b.ContainsKey("tpl"))   // one template, open or not
+                    {
+                        string t = ShopJson.Str(b["tpl"], 20); bool open = ShopJson.Bool(ShopJson.At(b, "open")); var card = ShopTemplates.Cards().FirstOrDefault(x => x.Id == t); if (card == null) throw new ShopException("tpl", "القالب ده مش موجود.");
+                        string key = card.Hold ? "ShopTplOn" : "ShopTplOff"; var set = new HashSet<string>((Billing.Get(c, key) ?? "").Split(',').Where(x => x.Length > 0)); if (open == card.Hold) set.Add(t); else set.Remove(t);
+                        Billing.Set(c, key, string.Join(",", set));
+                    }
                     if (b.ContainsKey("tplOff")) Billing.Set(c, "ShopTplOff", string.Join(",", ShopJson.Str(b["tplOff"], 400).Split(',').Where(t => ShopLook.Templates.Contains(t))));
                     Web.Json(res, 200, All(c)); return;
                 case "key": { var k = ShopJson.Bool(ShopJson.At(b, "fresh")) ? Shops.NewKey(c) : Shops.Key(c, true); Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "key", k } }); return; }

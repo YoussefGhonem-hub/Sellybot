@@ -12,7 +12,7 @@ namespace RiwaqChat
     public static class ShopLook
     {
         // ids of the templates (site/shop/t/<id>.js); the admin can close any of them (AppSettings ShopTplOff)
-        public static readonly string[] Templates = { "atelier", "volt", "taza", "nada", "rokn", "shatla", "farfoush", "elba", "bareeq", "hammal" };
+        public static string[] Templates { get { return ShopTemplates.All(); } }   // the templates are files: site/shop/t
         public static readonly string[] Bizzes = { "clothes", "home", "beauty", "spices", "electronics", "toys", "sweets", "plants", "furniture", "jewelry", "grocery", "other" };
         static readonly string[] Sections = { "slider", "cats", "new", "best", "sale", "pick", "text", "marquee", "hot", "look", "ba", "budget", "faq", "trust", "banner" };
         static readonly Regex Hex = new Regex("^#[0-9a-fA-F]{6}$");
@@ -38,7 +38,7 @@ namespace RiwaqChat
         public static Dictionary<string, object> Start(StoreInfo s)
         {
             string color = s != null && Hex.IsMatch(s.BrandColor ?? "") && !string.Equals(s.BrandColor, "#e8774a", StringComparison.OrdinalIgnoreCase) ? s.BrandColor : "";
-            return D("template", "atelier", "langs", "ar", "first", "ar", "mode", "auto", "modeBtn", true, "color", color, "font", "", "motion", "mid",
+            return D("template", Templates[0], "langs", "ar", "first", "ar", "mode", "auto", "modeBtn", true, "color", color, "font", "", "motion", "mid",
                 "ann", D("on", true, "text", P("الدفع عند الاستلام لكل المحافظات", "Cash on delivery all over Egypt"), "link", ""),
                 "hero", D("img", "", "imgM", "", "title", P("", ""), "text", P("", ""), "btn", P("اتفرّج على المنتجات", "Shop now"), "link", ""),
                 "sections", new object[] { D("t", "cats", "on", true), D("t", "new", "on", true), D("t", "best", "on", true), D("t", "sale", "on", true), D("t", "trust", "on", true) },
@@ -120,7 +120,7 @@ namespace RiwaqChat
         public static Dictionary<string, object> Clean(Dictionary<string, object> x, int storeId, ICollection<string> closedTemplates = null)
         {
             Func<string, object> g = k => ShopJson.At(x, k);
-            var tpl = One(g("template"), "atelier", Templates);
+            var tpl = One(g("template"), Templates[0], Templates);
             var footer = ShopJson.Sub(x, "footer"); var parts = ShopJson.Sub(footer, "parts"); var hero = ShopJson.Sub(x, "hero"); var ann = ShopJson.Sub(x, "ann"); var bad = ShopJson.Sub(x, "badges");
             var opts = new Dictionary<string, object>();
             foreach (var kv in ShopJson.Sub(x, "opts").Take(60))

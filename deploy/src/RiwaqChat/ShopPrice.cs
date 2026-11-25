@@ -84,7 +84,7 @@ namespace RiwaqChat
             var set = d.Row.Settings;
             bool stack = ShopJson.Bool(ShopJson.At(set, "stack"));
             int maxQty = Math.Max(1, ShopJson.Int(ShopJson.At(ShopJson.Sub(set, "order"), "maxQty"), 20));
-            foreach (var g in lines.Where(l => l.Qty > 0).GroupBy(l => l.VariantId + "|" + (l.Extra ?? "")).Take(40))
+            foreach (var g in lines.Where(l => l.Qty > 0).GroupBy(l => l.VariantId + "|" + (l.Extra ?? "")).Take(Shops.MaxLines))
             {
                 var l = g.First(); l.Qty = Math.Min(999, g.Sum(x => x.Qty)); l.Disc = 0; l.Err = null;
                 ShopVar v; if (!d.Vars.TryGetValue(l.VariantId, out v)) { l.Err = "gone"; q.Lines.Add(l); continue; }

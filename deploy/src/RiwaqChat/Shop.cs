@@ -319,6 +319,7 @@ namespace RiwaqChat
         }
 
         // Limits per store (the plan: limits with a warning before they're reached)
+        public const int MaxLines = 100;   // different lines in one order (a grocery's list, a box built piece by piece); the page stops at the same number
         public const int MaxProducts = 1000, MaxVariants = 100, MaxImages = 8, MaxCategories = 120, MaxOffers = 60, MaxCoupons = 200, MaxPages = 30;
 
         const string Schema = @"

@@ -755,10 +755,37 @@ namespace RiwaqChat
         }
     }
 
-    // which templates a store may choose: the ones whose files are on the site and the admin hasn't closed
+    // which templates a store may choose: the ones whose files are on the site (site/shop/t/<id>.js, .css, .meta.json) and the admin hasn't closed.
+    // A new template is only its files: nothing here names them.
     public static class ShopTemplates
     {
-        public static bool IsOpen(SqlConnection c, string t) { return !(Billing.Get(c, "ShopTplOff") ?? "").Split(',').Contains(t) && ShopPages.Has("t/" + t + ".js"); }
+        public class Card { public string Id; public string[] Name; public string For; public int Sort; public bool Hold; }   // Hold: waits until the admin ticks it
+        static Card[] cards; static DateTime until;
+        public static Card[] Cards()
+        {
+            var now = DateTime.UtcNow; var c = cards; if (c != null && until > now) return c;
+            var l = new List<Card>();
+            try
+            {
+                var dir = System.Web.Hosting.HostingEnvironment.MapPath("~/shop/t");
+                if (dir != null && System.IO.Directory.Exists(dir))
+                    foreach (var f in System.IO.Directory.GetFiles(dir, "*.js"))
+                    {
+                        var id = System.IO.Path.GetFileNameWithoutExtension(f); if (!Regex.IsMatch(id, "^[a-z]{3,16}$") || !System.IO.File.Exists(System.IO.Path.ChangeExtension(f, ".css"))) continue;
+                        var meta = System.IO.Path.Combine(dir, id + ".meta.json"); var m = System.IO.File.Exists(meta) ? ShopJson.Obj(System.IO.File.ReadAllText(meta, System.Text.Encoding.UTF8)) : new Dictionary<string, object>(); var n = ShopJson.List(ShopJson.At(m, "n"));
+                        l.Add(new Card { Id = id, Name = new[] { n.Count > 0 ? ShopJson.Str(n[0], 40) : id, n.Count > 1 ? ShopJson.Str(n[1], 40) : id }, For = ShopJson.Str(ShopJson.At(m, "for"), 200), Sort = ShopJson.Int(ShopJson.At(m, "sort"), 100), Hold = ShopJson.Bool(ShopJson.At(m, "hold")) });
+                    }
+            }
+            catch (Exception ex) { Log.Error(ex); if (c != null) return c; }
+            c = l.OrderBy(x => x.Sort).ThenBy(x => x.Id, StringComparer.Ordinal).ToArray(); cards = c; until = now.AddSeconds(60); return c;
+        }
+        public static string[] All() { var l = Cards().Select(x => x.Id).ToArray(); return l.Length == 0 ? new[] { "atelier" } : l; }
+        public static string First(SqlConnection c) { return List(c).FirstOrDefault() ?? All()[0]; }
+        public static bool IsOpen(SqlConnection c, string t)
+        {
+            var k = Cards().FirstOrDefault(x => x.Id == t); if (k == null) return false;
+            return k.Hold ? (Billing.Get(c, "ShopTplOn") ?? "").Split(',').Contains(t) : !(Billing.Get(c, "ShopTplOff") ?? "").Split(',').Contains(t);
+        }
         public static string[] List(SqlConnection c) { return ShopLook.Templates.Where(t => IsOpen(c, t)).ToArray(); }
     }
 }

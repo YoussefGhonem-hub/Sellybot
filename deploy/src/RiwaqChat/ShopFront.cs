@@ -44,9 +44,9 @@ namespace RiwaqChat
             try
             {
                 if (name == "img") { ShopImages.Serve(path.TrimStart('/'), res, req.HttpMethod == "HEAD"); return; }
-                if (name.Length == 0) { ShopPages.Root(path, res); return; }
-                // the same files for every store
+                // the same files for every store (and the pictures of the domain's own page)
                 if (path.StartsWith("/_s/", StringComparison.Ordinal)) { ShopPages.Asset(path.Substring(4), req, res); return; }
+                if (name.Length == 0) { ShopPages.Root(path, res); return; }
                 if (path == "/widget.js") { ShopPages.SiteFile("~/widget.js", "text/javascript; charset=utf-8", req, res); return; }
                 if (path == "/api/logo.ashx") { new LogoHandler().ProcessRequest(ctx); return; }
                 await Store(ctx, name, path);
@@ -143,7 +143,7 @@ namespace RiwaqChat
         public static List<ShopLine> Lines(Dictionary<string, object> b)
         {
             var list = new List<ShopLine>();
-            foreach (var i in ShopJson.List(ShopJson.At(b, "l")).Take(60))
+            foreach (var i in ShopJson.List(ShopJson.At(b, "l")).Take(Shops.MaxLines))
             {
                 var d = i as Dictionary<string, object>; var l = d == null ? ShopJson.List(i) : null;
                 int v = d != null ? ShopJson.Int(ShopJson.At(d, "v")) : l.Count > 0 ? ShopJson.Int(l[0]) : 0, q = d != null ? ShopJson.Int(ShopJson.At(d, "q")) : l.Count > 1 ? ShopJson.Int(l[1]) : 0;
@@ -365,14 +365,14 @@ namespace RiwaqChat
         public static Dictionary<string, object> ShopJsonFor(SqlConnection c, ShopFrontHandler.Ctx x)
         {
             var set = x.Row.Settings; var d = x.Data; var order = ShopJson.Sub(set, "order"); var ship = ShopJson.Sub(set, "ship");
-            string tpl = ShopJson.Str(ShopJson.At(x.Look, "template")); if (!Has("t/" + tpl + ".js")) tpl = "atelier";
+            string tpl = ShopJson.Str(ShopJson.At(x.Look, "template")); if (!Has("t/" + tpl + ".js")) tpl = ShopTemplates.First(c);   // its template is gone: the first one that is there
             return new Dictionary<string, object>
             {
                 { "name", ShopView.Pair(x.Row.Name, x.Row.NameEn) }, { "slug", x.Row.Slug }, { "url", x.Row.Url }, { "img", Img() }, { "tpl", tpl }, { "biz", x.Row.Biz ?? "" },
                 { "contact", ShopJson.Sub(set, "contact") }, { "social", ShopJson.Sub(set, "social") }, { "legal", ShopJson.Sub(set, "legal") },
                 { "ship", new Dictionary<string, object> { { "fee", ShopJson.Dec(ShopJson.At(ship, "fee")) }, { "over", ShopPrice.FreeOver(d, 0, x.Now) }, { "days", ShopJson.Str(ShopJson.At(ship, "days")) }, { "note", ShopJson.List(ShopJson.At(ship, "note")) },
                     { "zones", d.Zones.Values.Select(z => new Dictionary<string, object> { { "g", z.Gov }, { "f", z.Fee ?? ShopJson.Dec(ShopJson.At(ship, "fee")) }, { "d", z.Days ?? "" }, { "off", z.Off } }).ToArray() }, { "mode", ShopJson.Str(ShopJson.At(ship, "mode")) } } },
-                { "order", new Dictionary<string, object> { { "min", ShopJson.Dec(ShopJson.At(order, "min")) }, { "phone2", ShopJson.Bool(ShopJson.At(order, "phone2"), true) }, { "area", ShopJson.Bool(ShopJson.At(order, "area"), true) }, { "waBtn", ShopJson.Bool(ShopJson.At(order, "waBtn"), true) } } },
+                { "order", new Dictionary<string, object> { { "maxQty", ShopJson.Int(ShopJson.At(order, "maxQty"), 20) }, { "min", ShopJson.Dec(ShopJson.At(order, "min")) }, { "phone2", ShopJson.Bool(ShopJson.At(order, "phone2"), true) }, { "area", ShopJson.Bool(ShopJson.At(order, "area"), true) }, { "waBtn", ShopJson.Bool(ShopJson.At(order, "waBtn"), true) } } },
                 { "returns", ShopJson.Int(ShopJson.At(set, "returnsDays"), 14) }, { "vacation", ShopPrice.Vacation(d, x.Now) ? ShopJson.Sub(set, "vacation") : null },
                 { "pixel", x.Preview ? "" : ShopJson.Str(ShopJson.At(ShopJson.Sub(set, "pixel"), "meta")) },
                 { "pages", d.Pages.Where(p => !p.Hidden).Select(p => new Dictionary<string, object> { { "s", p.Slug }, { "k", p.Kind }, { "t", ShopView.Pair(p.Title, p.TitleEn) }, { "m", p.InMenu }, { "f", p.InFooter } }).ToArray() },
@@ -559,9 +559,13 @@ namespace RiwaqChat
         {
             if (path == "/robots.txt") { res.ContentType = "text/plain"; res.Write("User-agent: *\nAllow: /\n"); return; }
             if (path != "/") { res.StatusCode = 404; Message(res, "الصفحة دي مش موجودة", "ارجع لـ sellystore.online"); return; }
-            var f = Load("~/shop/root.html");
-            res.ContentType = "text/html; charset=utf-8"; Keep(res, 300);
-            if (f != null) res.BinaryWrite(f.Data); else Message(res, "SellyStore", "متاجر جاهزة للإيجار من Sellybot.");
+            // the page about the stores shows once they are open to every merchant
+            string on = null; try { using (var c = Db.Open()) on = Billing.Get(c, "ShopOn"); } catch (Exception ex) { Log.Error(ex); }
+            var f = on == "1" ? Load("~/shop/root.html") : null;
+            if (f == null) { Message(res, "SellyStore", "متاجر جاهزة باسمك من Sellybot. قريب."); return; }
+            string tpls; using (var c = Db.Open()) { var open = new HashSet<string>(ShopTemplates.List(c)); tpls = Web.Js.Serialize(ShopTemplates.Cards().Where(x => open.Contains(x.Id)).Select(x => new[] { x.Id, x.Name[0], x.For }).ToArray()); }
+            res.ContentType = "text/html; charset=utf-8"; Keep(res, 60);
+            res.Write(Encoding.UTF8.GetString(f.Data).TrimStart('\uFEFF').Replace("/*TPL*/[]", Safe(tpls)));
         }
     }
 }

@@ -121,7 +121,7 @@ svg.i{width:1.35em;height:1.35em;flex:none;fill:none;stroke:currentColor;stroke-
 .pgk{max-width:760px;padding-block:30px 80px;display:grid;gap:13px;font-size:16.5px;line-height:1.85}
 .pgk h1{font-size:clamp(27px,5cqw,40px);line-height:1.3}.st .pgk h2{font-size:21px;margin-top:14px}
 .st .pgk ul,.st .dek ul{list-style:disc;padding-inline-start:22px}
-.crk{padding-block:12px;font-size:13.5px;color:var(--mut)}.crk a{padding:6px 0}.crk i{font-style:normal;opacity:.6}
+.crk{padding-block:12px;font-size:13.5px;color:var(--mut)}.crk a{padding:6px 0}.crk i{font-style:normal}
 .sk{padding-block:clamp(24px,4cqw,46px)}
 .sech{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:16px}
 .sech h2{font-size:clamp(21px,3.4cqw,30px);line-height:1.3}
@@ -195,3 +195,6 @@ svg.i{width:1.35em;height:1.35em;flex:none;fill:none;stroke:currentColor;stroke-
 .st[data-mo=calm] .mqk div{animation-duration:60s}.st[data-mo=calm] .cdk:hover .ph>img{transform:none}
 .st[data-mo=strong] .cdk{transition:transform .35s}
 @media(hover:hover){.st[data-mo=strong] .cdk:hover{transform:translateY(-6px)}}
+.lokw{display:grid;gap:18px}.loki img{width:100%;border-radius:var(--rl,16px);aspect-ratio:4/3;object-fit:cover}.lokw ul{list-style:none;margin:0;padding:0}.lokw li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.lokw li>a{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-decoration:none;color:inherit}.lokw li img,.lokw li .noim{width:60px;height:60px;object-fit:cover;border-radius:var(--r,10px);flex:none}.lokw li span{min-width:0}.lokw li b{display:block}@container st (min-width:820px){.lokw{grid-template-columns:1fr 1fr;align-items:center;gap:34px}}
+.cdk{position:relative}.cdk .hk{position:absolute;top:8px;inset-inline-end:8px;width:40px;height:40px;border-radius:50%;background:var(--bg);color:var(--fg);display:grid;place-items:center;z-index:2;opacity:.94}.cdk .hk[aria-pressed=true]{color:#c8202a}.cdk .hk[aria-pressed=true] svg{fill:currentColor}.sres .chips a{display:inline-flex;width:auto;border-bottom:1px solid var(--line2,var(--line));padding:8px 14px}.catk a{max-width:260px}.hoi{aspect-ratio:auto!important}.hoi>img{width:100%;height:auto;display:block}
+.st .gho.sm{min-height:40px}

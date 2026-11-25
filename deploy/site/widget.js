@@ -722,7 +722,7 @@ button{font:inherit;cursor:pointer;color:inherit}
 @keyframes lgTalk{to{transform:scale(1.06)}}
 
 /* ----- launcher (bubble mode) ----- */
-.launcher{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));z-index:2147483000;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}
+.launcher{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:calc(max(20px,env(safe-area-inset-bottom)) + var(--sb-lift,0px));z-index:2147483000;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}
 .launcher.hide{transform:scale(0) rotate(-20deg);opacity:0;pointer-events:none}
 .bubbleBtn{position:relative;display:block;width:68px;height:68px;border:0;background:none;padding:0;
   animation:popIn .9s cubic-bezier(.34,1.56,.64,1) both,float 3.2s ease-in-out 1s infinite}
