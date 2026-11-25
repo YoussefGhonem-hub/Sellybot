@@ -109,7 +109,7 @@ namespace RiwaqChat
             bool okMove = (from == "new" && (to == "approved" || to == "rejected" || to == "received")) || (from == "approved" && (to == "received" || to == "rejected")) || (from == "received" && to == "done") || (from == "rejected" && to == "approved");
             if (!okMove) throw new ShopException("move", "الطلب ده «" + StatusText(from) + "»، ماينفعش يتحوّل لـ«" + StatusText(to) + "».");
             if (to == "rejected" && note.Length < 3) throw new ShopException("note", "اكتب سبب الرفض، الزبون هيشوفه.");
-            var items = ShopJson.List(r["items"]).OfType<Dictionary<string, object>>().ToList(); bool restock = ShopJson.Bool(ShopJson.At(b, "restock"), true); decimal refund = ShopJson.DecN(ShopJson.At(b, "refund")) ?? items.Sum(i => ShopJson.Dec(ShopJson.At(i, "t")));
+            var items = ShopJson.List(r["items"]).OfType<Dictionary<string, object>>().ToList(); bool restock = ShopJson.Bool(ShopJson.At(b, "restock"), true); decimal refund = Math.Max(0, Math.Min(Math.Max(0, o.Total - o.Refund), ShopJson.DecN(ShopJson.At(b, "refund")) ?? items.Sum(i => ShopJson.Dec(ShopJson.At(i, "t")))));
             using (var tx = c.BeginTransaction())
             {
                 try
@@ -121,8 +121,9 @@ namespace RiwaqChat
                         foreach (var i in items)
                         {
                             int q = ShopJson.Int(ShopJson.At(i, "q")), vid = ShopJson.Int(ShopJson.At(i, "v")), pid = ShopJson.Int(ShopJson.At(i, "p"));
-                            Exec(c, tx, "UPDATE dbo.ShopOrderItems SET Returned=CASE WHEN Returned+@q>Qty THEN Qty ELSE Returned+@q END WHERE Id=@i AND OrderId=@o", "@q", q, "@i", ShopJson.Int(ShopJson.At(i, "i")), "@o", oid);
-                            if (!restock) continue;
+                            // a piece comes back once, however many requests hold it
+                            using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopOrderItems SET Returned=CASE WHEN Returned+@q>Qty THEN Qty ELSE Returned+@q END OUTPUT INSERTED.Returned-DELETED.Returned WHERE Id=@i AND OrderId=@o", "@q", q, "@i", ShopJson.Int(ShopJson.At(i, "i")), "@o", oid)) { cmd.Transaction = tx; var got = cmd.ExecuteScalar(); q = got == null ? 0 : (int)got; }
+                            if (!restock || q <= 0) continue;
                             using (var cmd = Db.Cmd(c, "UPDATE v SET Stock=v.Stock+@q OUTPUT INSERTED.Stock FROM dbo.ShopVariants v JOIN dbo.ShopProducts p ON p.Id=v.ProductId WHERE v.Id=@v AND v.StoreId=@s AND p.Track=1", "@q", q, "@v", vid, "@s", sh.StoreId)) { cmd.Transaction = tx; var left = cmd.ExecuteScalar(); if (left != null) ShopOrders.Stock(c, tx, sh.StoreId, pid, vid, q, (int)left, "return", oid, "مرتجع"); }
                             Exec(c, tx, "UPDATE dbo.ShopProducts SET Sold=CASE WHEN Sold-@q>0 THEN Sold-@q ELSE 0 END WHERE Id=@p AND StoreId=@s", "@q", q, "@p", pid, "@s", sh.StoreId);
                         }
@@ -175,7 +176,7 @@ namespace RiwaqChat
         public static void Add(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, ShopOrder o, HttpResponse res)
         {
             if (!ShopAccount.ReviewsOn(x.Row)) throw new ShopException("off", T(x, "التقييمات مقفولة.", "Reviews are off."));
-            if (o.Status != "delivered" && o.Status != "returned") throw new ShopException("early", T(x, "تقدر تقيّم بعد ما الطلب يوصلك.", "You can rate it once it's delivered."));
+            if (o.Status != "delivered" && !(o.Status == "returned" && o.DeliveredAt.HasValue)) throw new ShopException("early", T(x, "تقدر تقيّم بعد ما الطلب يوصلك.", "You can rate it once it's delivered."));
             if (!Web.Allow("shop-rev:" + x.Ip, 30, TimeSpan.FromHours(1))) throw new ShopException("too_many", T(x, "محاولات كتير. استنى شوية.", "Too many tries. Please wait a while."));
             int pid = ShopJson.Int(ShopJson.At(b, "p")), stars = ShopJson.Int(ShopJson.At(b, "r")); var it = o.Items.FirstOrDefault(i => i.ProductId == pid);
             if (it == null) throw new ShopException("not_yours", T(x, "المنتج ده مش في الطلب.", "This product isn't in the order."));

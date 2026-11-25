@@ -106,15 +106,19 @@ namespace RiwaqChat
             if (x.Phone != y.Phone) throw new ShopException("phone", "الأوردرين لازم يكونوا لنفس رقم الموبايل.");
             if (!early(x) || !early(y)) throw new ShopException("late", "ينفع ندمج الأوردرات اللي لسه ماخرجتش للشحن بس.");
             if (x.Pay != y.Pay || x.Extras.ContainsKey("branch") != y.Extras.ContainsKey("branch")) throw new ShopException("pay", "طريقة الدفع أو الاستلام مختلفة في الأوردرين.");
-            decimal ship = Math.Max(x.Ship, y.Ship), total = x.Subtotal + y.Subtotal - x.Discount - y.Discount + ship + x.Fees + y.Fees;
+            // one parcel: one delivery, and each kind of fee once (the bigger one)
+            var fees = ShopJson.Arr(x.FeesJson).Concat(ShopJson.Arr(y.FeesJson)).Select(ShopJson.List).Where(f => f.Count > 2).GroupBy(f => ShopJson.Str(f[0])).Select(g => g.OrderByDescending(f => ShopJson.Dec(f[2])).First()).ToList(); decimal feeSum = fees.Count > 0 ? fees.Sum(f => ShopJson.Dec(f[2])) : x.Fees + y.Fees;
+            decimal ship = Math.Max(x.Ship, y.Ship), total = x.Subtotal + y.Subtotal - x.Discount - y.Discount + ship + feeSum;
             using (var tx = c.BeginTransaction())
             {
                 try
                 {
                     Action<string, object[]> ex = (sql, a) => { using (var cmd = Db.Cmd(c, sql, a)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); } };
+                    // both as they were read, or nothing moves (pressed twice, shipped a moment ago)
+                    using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.ShopOrders WITH (UPDLOCK, HOLDLOCK) WHERE StoreId=@s AND ((Id=@x AND Total=@xt) OR (Id=@y AND Total=@yt)) AND Status IN ('new','noreply','confirmed')", "@s", sh.StoreId, "@x", x.Id, "@xt", x.Total, "@y", y.Id, "@yt", y.Total)) { cmd.Transaction = tx; if ((int)cmd.ExecuteScalar() != 2) throw new ShopException("busy", "الأوردر اتغيّر حالًا. حدّث الصفحة."); }
                     ex("UPDATE dbo.ShopOrderItems SET OrderId=@x WHERE OrderId=@y AND StoreId=@s", new object[] { "@x", x.Id, "@y", y.Id, "@s", sh.StoreId });
-                    ex("UPDATE dbo.ShopOrders SET Subtotal=@sub, Discount=@d, Ship=@sh, Fees=@f, Total=@t, Paid=Paid+@pd, Deposit=Deposit+@dp, Note=@n WHERE Id=@i AND StoreId=@s", new object[] { "@sub", x.Subtotal + y.Subtotal, "@d", x.Discount + y.Discount, "@sh", ship, "@f", x.Fees + y.Fees, "@t", total, "@pd", y.Paid, "@dp", y.Deposit, "@n", Nz(string.Join(" · ", new[] { x.Note, y.Note }.Where(n => !string.IsNullOrWhiteSpace(n)))), "@i", x.Id, "@s", sh.StoreId });
-                    ex("UPDATE dbo.ShopOrders SET Coupon=NULL, Subtotal=0, Discount=0, Ship=0, Fees=0, Total=0, Paid=0, Deposit=0 WHERE Id=@i AND StoreId=@s", new object[] { "@i", y.Id, "@s", sh.StoreId });
+                    ex("UPDATE dbo.ShopOrders SET Subtotal=@sub, Discount=@d, Ship=@sh, Fees=@f, FeesJson=@fj, Total=@t, Paid=Paid+@pd, Deposit=Deposit+@dp, Note=@n WHERE Id=@i AND StoreId=@s", new object[] { "@sub", x.Subtotal + y.Subtotal, "@d", x.Discount + y.Discount, "@sh", ship, "@f", feeSum, "@fj", fees.Count == 0 ? null : ShopJson.Write(fees), "@t", total, "@pd", y.Paid, "@dp", y.Deposit, "@n", Nz(string.Join(" · ", new[] { x.Note, y.Note }.Where(n => !string.IsNullOrWhiteSpace(n)))), "@i", x.Id, "@s", sh.StoreId });
+                    ex("UPDATE dbo.ShopOrders SET Coupon=NULL, Subtotal=0, Discount=0, Ship=0, Fees=0, FeesJson=NULL, Total=0, Paid=0, Deposit=0 WHERE Id=@i AND StoreId=@s", new object[] { "@i", y.Id, "@s", sh.StoreId });
                     ShopOrders.Log_(c, tx, sh.StoreId, x.Id, "owner", "اتدمج معاه أوردر " + y.NoText + " (الإجمالي بقى " + ShopOrders.Money(total) + ")");
                     tx.Commit();
                 }
@@ -129,9 +133,10 @@ namespace RiwaqChat
         {
             var o = ShopOrders.ById(c, sh.StoreId, Int(b, "id")); if (o == null) throw new ShopException("gone", "الأوردر ده مش موجود.");
             if (o.Status != "shipped" && o.Status != "out" && o.Status != "confirmed") throw new ShopException("st", "التسليم الجزئي لأوردر خرج للشحن بس.");
-            var took = ShopJson.List(ShopJson.At(b, "items")).OfType<Dictionary<string, object>>().ToDictionary(x => ShopJson.Int(ShopJson.At(x, "v")), x => ShopJson.Int(ShopJson.At(x, "q")));
+            // by the order's own line (the same size may be there twice with other words on it)
+            var took = ShopJson.List(ShopJson.At(b, "items")).OfType<Dictionary<string, object>>().GroupBy(x => (long)ShopJson.Int(ShopJson.At(x, "i"))).ToDictionary(g => g.Key, g => ShopJson.Int(ShopJson.At(g.First(), "q")));
             var keep = new List<object>(); bool less = false;
-            foreach (var i in o.Items) { int q; if (!took.TryGetValue(i.VariantId, out q)) q = i.Qty; q = Math.Max(0, Math.Min(i.Qty, q)); if (q < i.Qty) less = true; if (q > 0) keep.Add(D("v", i.VariantId, "q", q, "x", i.Extra ?? "")); }
+            foreach (var i in o.Items) { int q; if (!took.TryGetValue(i.Id, out q)) q = i.Qty; q = Math.Max(0, Math.Min(i.Qty, q)); if (q < i.Qty) less = true; if (q > 0) keep.Add(D("v", i.VariantId, "q", q, "x", i.Extra ?? "")); }
             if (!less) throw new ShopException("none", "اختار القطع اللي الزبون رجّعها للمندوب."); if (keep.Count == 0) throw new ShopException("all", "لو رجّع كل حاجة، غيّر حالة الأوردر لـ«رجع».");
             var e = ShopOrders.Edit(c, sh, o.Id, new Dictionary<string, object> { { "name", o.Name }, { "phone", o.Phone }, { "phone2", o.Phone2 ?? "" }, { "gov", o.Gov }, { "city", o.City ?? "" }, { "area", o.Area ?? "" }, { "address", o.Address }, { "landmark", o.Landmark ?? "" }, { "note", o.Note ?? "" }, { "items", keep }, { "ship", o.Ship } });
             if (e != null) throw new ShopException("edit", e);

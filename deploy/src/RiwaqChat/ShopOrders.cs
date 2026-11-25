@@ -144,7 +144,10 @@ namespace RiwaqChat
                             }
                         }
                         if (q.CouponId > 0 && q.CouponUsed)
-                            using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopCoupons SET Uses=Uses+1 WHERE Id=@id AND StoreId=@s AND (MaxUses IS NULL OR Uses<MaxUses)", "@id", q.CouponId, "@s", row.StoreId))
+                            // the store's row is held, so two orders at once can't both be a number's first
+                            using (var cmd = Db.Cmd(c, @"UPDATE dbo.ShopCoupons SET Uses=Uses+1 WHERE Id=@id AND StoreId=@s AND (MaxUses IS NULL OR Uses<MaxUses)
+                                AND (PerPhone IS NULL OR PerPhone>(SELECT COUNT(*) FROM dbo.ShopOrders o WHERE o.StoreId=@s AND o.Phone=@p AND o.Coupon=ShopCoupons.Code AND o.Status<>'cancelled' AND o.Test=0))
+                                AND (FirstOnly=0 OR NOT EXISTS (SELECT 1 FROM dbo.ShopOrders o WHERE o.StoreId=@s AND o.Phone=@p AND o.Status<>'cancelled' AND o.Test=0))", "@id", q.CouponId, "@s", row.StoreId, "@p", phone))
                             { cmd.Transaction = tx; if (cmd.ExecuteNonQuery() == 0) { tx.Rollback(); done = true; throw new ShopException("coupon", "الكود ده خلص، اتستخدم العدد المسموح."); } }
 
                         bool dup = false;
@@ -294,7 +297,8 @@ namespace RiwaqChat
         {
             foreach (var g in o.Items.GroupBy(i => i.VariantId).OrderBy(g => g.Key))
             {
-                int n = g.Sum(i => i.Qty);
+                // what came back by a return request is already counted
+                int n = g.Sum(i => Math.Max(0, i.Qty - i.Returned)); if (n == 0) continue;
                 using (var cmd = Db.Cmd(c, @"UPDATE v SET Stock=v.Stock+@d OUTPUT INSERTED.Stock FROM dbo.ShopVariants v JOIN dbo.ShopProducts p ON p.Id=v.ProductId
                     WHERE v.Id=@v AND v.StoreId=@s AND p.Track=1 AND (@d>0 OR v.Stock+@d>=0 OR p.OutMode='order')", "@d", sign * n, "@v", g.Key, "@s", o.StoreId))
                 {
@@ -352,10 +356,10 @@ namespace RiwaqChat
                             using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopProducts SET Sold=CASE WHEN Sold+@n>0 THEN Sold+@n ELSE 0 END WHERE Id=@p AND StoreId=@s", "@n", more, "@p", p.Id, "@s", row.StoreId)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
                         }
                         using (var cmd = Db.Cmd(c, "DELETE FROM dbo.ShopOrderItems WHERE OrderId=@o AND StoreId=@s", "@o", id, "@s", row.StoreId)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
-                        sub = 0; disc = 0;
+                        sub = 0; disc = 0; var pool = o.Items.ToList();   // the same size twice with other words on it: each line keeps its own
                         foreach (var l in lines)
                         {
-                            var had = o.Items.FirstOrDefault(i => i.VariantId == l.VariantId); ShopVar v; d.Vars.TryGetValue(l.VariantId, out v); var p = v == null ? null : d.ById[v.ProductId];
+                            var had = pool.FirstOrDefault(i => i.VariantId == l.VariantId && (i.Extra ?? "") == (l.Extra ?? "")) ?? pool.FirstOrDefault(i => i.VariantId == l.VariantId); if (had != null) pool.Remove(had); ShopVar v; d.Vars.TryGetValue(l.VariantId, out v); var p = v == null ? null : d.ById[v.ProductId];
                             if (had == null && p == null) { tx.Rollback(); return "فيه منتج مش موجود في المتجر."; }
                             decimal? old; ShopOffer of; decimal price = had != null ? had.Price : ShopPrice.Unit(d, p, v, now, out old, out of), full = had != null ? had.Full : p.PriceOf(v);
                             decimal off1 = had != null && had.Qty > 0 ? Math.Round(had.Discount / had.Qty * Math.Min(l.Qty, had.Qty), 2) : 0;

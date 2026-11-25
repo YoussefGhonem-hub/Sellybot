@@ -101,7 +101,9 @@ namespace RiwaqChat
                     if (coupon.Length > 0 && !q0.CouponUsed) return "الكود: " + (q0.CouponErr ?? "مش شغال.");
                     if (miss.Count > 0) return "ناقص من الزبون: " + string.Join("، ", miss) + ". المنتجات بـ " + ShopOrders.Money(q0.Sub - q0.Discount) + (g != null ? "، والشحن لـ" + g.Ar + " " + (q0.Ship > 0 ? ShopOrders.Money(q0.Ship) : "مجاني") : "") + ".";
 
-                    string what = string.Join(";", q0.Lines.Select(l => l.VariantId + "x" + l.Qty)) + "|" + name + "|" + phone + "|" + g.Id + "|" + city + "|" + address + "|" + q0.Coupon + "|" + q0.Total.ToString(CultureInfo.InvariantCulture), token = Sign(storeId, what), given = S(tu, "confirm_token", 60).Trim();
+                    string what = string.Join(";", q0.Lines.Select(l => l.VariantId + "x" + l.Qty)) + "|" + name + "|" + phone + "|" + g.Id + "|" + city + "|" + address + "|" + q0.Coupon + "|" + q0.Total.ToString(CultureInfo.InvariantCulture), given = S(tu, "confirm_token", 60).Trim();
+                    // of today (Cairo); a summary from just before midnight still counts. The same order on another day is another order.
+                    var day = now.AddHours(2).Date; string token = Sign(storeId, what + "|" + day.ToString("yyyyMMdd")), late = now.AddHours(2).Hour < 3 ? Sign(storeId, what + "|" + day.AddDays(-1).ToString("yyyyMMdd")) : null; if (late != null && given == late) token = late;
                     if (given != token || mine.Contains(token))
                     {
                         mine.Add(token);
@@ -123,6 +125,7 @@ namespace RiwaqChat
                     }
                     if (preview) return "تجربة تمام: الطلب كان هيتسجّل بإجمالي " + ShopOrders.Money(placed.Order.Total) + ". المعاينة مابتسجّلش طلبات.";
                     bool proved = own != null && ShopOrders.Mobile(own) == phone;
+                    if (placed.Again) return "الطلب ده نفسه متسجّل قبل كده النهارده برقم " + placed.Order.NoText + "، وماتسجّلش مرة تانية. قول للزبون كده. لو عايز كمية زيادة عدّل الكمية واعرض ملخص جديد. لينك المتابعة: " + sh.Url + "/thanks/" + placed.Order.Token;
                     if (!placed.Again) { if (proved && placed.Order.Status == "new" && placed.Order.Deposit <= 0) ShopOrders.SetStatus(c, storeId, placed.Order.Id, "confirmed", "bot", "أكّده في شات الواتساب"); ShopHooks.OnPlaced(s, placed.Order.Id, proved); }
                     return "الطلب اتسجّل: رقمه " + placed.Order.NoText + "، وإجماليه " + ShopOrders.Money(placed.Order.Total) + ". لينك المتابعة: " + sh.Url + "/thanks/" + placed.Order.Token + (placed.Order.Deposit > 0 ? "\nبيانات التحويل وإرسال صورته: " + sh.Url + "/pay/" + placed.Order.Token : "") + "\nقول للزبون الرقم واللينك، واشكره.";
                 }

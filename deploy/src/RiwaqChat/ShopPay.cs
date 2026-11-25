@@ -32,9 +32,10 @@ namespace RiwaqChat
             if (x.Preview) throw new ShopException("preview", T(x, "المعاينة مابتحفظش حاجة.", "The preview saves nothing."));
             var o = ShopOrders.ByToken(c, x.Row.StoreId, Regex.Replace(Str(b, "tok", 40), "[^a-f0-9]", ""));
             if (o == null || o.Deposit <= 0 || o.PayState == "paid" || o.Status == "cancelled" || o.Status == "returned") throw new ShopException("no_order", T(x, "الطلب ده مش محتاج تحويل.", "This order doesn't need a transfer."));
-            if (!Web.Allow("shop-proof:" + x.Ip, 10, TimeSpan.FromHours(1))) throw new ShopException("too_many", T(x, "محاولات كتير. استنى شوية.", "Too many tries. Please wait a while."));
+            if (!Web.Allow("shop-proof:" + x.Ip, 10, TimeSpan.FromHours(1)) || !Web.Allow("shop-prf:" + o.Id, 8, TimeSpan.FromHours(24))) throw new ShopException("too_many", T(x, "محاولات كتير. استنى شوية.", "Too many tries. Please wait a while."));
             string path = ShopAccount.Upload(c, x, b); Exec(c, "UPDATE dbo.ShopImages SET Used=1 WHERE StoreId=@s AND Path=@p", "@s", x.Row.StoreId, "@p", path);
             Exec(c, "UPDATE dbo.ShopOrders SET Proof=@p, PayState='sent', Seen=0 WHERE Id=@i AND StoreId=@s AND ISNULL(PayState,'')<>'paid'", "@p", path, "@i", o.Id, "@s", x.Row.StoreId);
+            if (o.Proof != null && o.Proof != path) try { ShopImages.Delete(c, x.Row.StoreId, new[] { o.Proof }); } catch (Exception ex) { Log.Error(ex); }
             ShopOrders.Log_(c, null, x.Row.StoreId, o.Id, "customer", "بعت صورة التحويل (" + ShopOrders.Money(o.Deposit) + ")");
             ShopHooks.Tell(x.Row.StoreId, "pay", "💸 *صورة تحويل وصلت* لأوردر " + o.NoText + "\n" + o.Name + " · " + ShopOrders.Local(o.Phone) + " · " + ShopOrders.Money(o.Deposit) + "\n\nراجعها من «متجري» ثم «الطلبات».", "sb-shop-pr-" + o.Id + "-" + DateTime.UtcNow.Ticks);
             Ok(res, "ps", "sent");
@@ -52,6 +53,7 @@ namespace RiwaqChat
         static Dictionary<string, object> Abandon(Shop sh) { return ShopJson.Sub(sh.Settings, "abandon"); }
         public static bool CartOn(Shop sh) { return sh != null && ShopJson.Bool(ShopJson.At(Abandon(sh), "on"), true); }
         public static string CartCoupon(Shop sh) { return ShopJson.Str(ShopJson.At(Abandon(sh), "coupon"), 30); }
+        static int Known(SqlConnection c, int storeId, string phone) { using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.ShopCarts WHERE StoreId=@s AND Phone=@p AND At>DATEADD(DAY,-1,SYSUTCDATETIME())", "@s", storeId, "@p", phone)) return (int)cmd.ExecuteScalar(); }
         public static void Cart(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, HttpResponse res)
         {
             string tok = Str(b, "tok", 40);
@@ -64,7 +66,7 @@ namespace RiwaqChat
             var phone = ShopOrders.Mobile(Str(b, "phone", 24)); var l = ShopActions.Lines(b);
             if (phone == null || l.Count == 0 || x.Preview || !CartOn(x.Row) || !Web.Allow("shop-cart:" + x.Ip, 30, TimeSpan.FromMinutes(10))) { Ok(res); return; }
             // a reminder is a message from the merchant's own number: one place can't make it write to many strangers
-            if (Web.Allow("shop-cartn:" + x.Row.StoreId + ":" + phone, 1, TimeSpan.FromHours(24)) && (!Web.Allow("shop-cartip:" + x.Row.StoreId + ":" + x.Ip, 6, TimeSpan.FromHours(24)) || !Web.Allow("shop-cartd:" + x.Row.StoreId, 150, TimeSpan.FromHours(24)))) { Ok(res); return; }
+            if (Known(c, x.Row.StoreId, phone) == 0 && (!Web.Allow("shop-cartip:" + x.Row.StoreId + ":" + x.Ip, 6, TimeSpan.FromHours(24)) || !Web.Allow("shop-cartd:" + x.Row.StoreId, 150, TimeSpan.FromHours(24)))) { Ok(res); return; }
             var q = ShopPrice.Quote(c, x.Data, l, null, ShopJson.Int(ShopJson.At(b, "gov")), phone, x.Now, false); if (q.Items == 0) { Ok(res); return; }
             string name = Regex.Replace(Str(b, "name", 80), @"[\u0000-\u001F]", ""), token = Shops.Token(12), json = ShopJson.Write(l.Select(y => new object[] { y.VariantId, y.Qty, y.Extra ?? "" }));
             using (var cmd = Db.Cmd(c, @"UPDATE dbo.ShopCarts SET Lines=@l, Total=@t, Name=ISNULL(@n, Name), Lang=@g, Token=CASE WHEN SentAt IS NOT NULL OR DoneAt IS NOT NULL THEN @k ELSE Token END, SentAt=NULL, DoneAt=NULL, At=SYSUTCDATETIME() OUTPUT INSERTED.Token WHERE StoreId=@s AND Phone=@p", "@l", json, "@t", q.Total, "@n", Nz(name), "@g", x.Lang, "@k", token, "@s", x.Row.StoreId, "@p", phone))
@@ -95,7 +97,7 @@ namespace RiwaqChat
             bool ok = ShopJson.Bool(ShopJson.At(b, "ok")); decimal amount = ShopJson.DecN(ShopJson.At(b, "amount")) ?? (o.Deposit > 0 ? o.Deposit : o.Total); string note = Str(b, "note", 200);
             if (ok && (amount <= 0 || amount > o.Total)) throw new ShopException("amount", "اكتب المبلغ اللي وصلك، من غير ما يزيد عن إجمالي الأوردر.");
             if (!ok && note.Length < 3) throw new ShopException("note", "اكتب للزبون المشكلة في التحويل.");
-            if (ok) Exec(c, "UPDATE dbo.ShopOrders SET PayState='paid', Paid=@a, Seen=1 WHERE Id=@i AND StoreId=@s", "@a", amount, "@i", o.Id, "@s", sh.StoreId); else Exec(c, "UPDATE dbo.ShopOrders SET PayState='bad', Paid=0, Seen=1 WHERE Id=@i AND StoreId=@s", "@i", o.Id, "@s", sh.StoreId);
+            if (ok) Exec(c, "UPDATE dbo.ShopOrders SET PayState='paid', Paid=@a, Seen=1, SheetAt=NULL WHERE Id=@i AND StoreId=@s", "@a", amount, "@i", o.Id, "@s", sh.StoreId); else Exec(c, "UPDATE dbo.ShopOrders SET PayState='bad', Paid=0, Seen=1 WHERE Id=@i AND StoreId=@s", "@i", o.Id, "@s", sh.StoreId);
             ShopOrders.Log_(c, null, sh.StoreId, o.Id, "owner", ok ? "التحويل وصل: " + ShopOrders.Money(amount) : "التحويل مش مظبوط: " + note);
             if (ok && o.Status == "new" && ShopJson.Bool(ShopJson.At(b, "confirm"), true)) ShopOrders.SetStatus(c, sh.StoreId, o.Id, "confirmed", "owner");
             string msg = o.Lang == "en" ? (ok ? "We received your transfer of EGP " + amount.ToString("#,0.##", CultureInfo.InvariantCulture) + " for order " + o.NoText + " ✅" + (o.Total > amount ? "\nLeft on delivery: EGP " + (o.Total - amount).ToString("#,0.##", CultureInfo.InvariantCulture) : "") : "About your transfer for order " + o.NoText + ": " + note + "\n" + sh.Url + "/pay/" + o.Token)

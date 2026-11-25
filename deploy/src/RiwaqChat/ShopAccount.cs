@@ -73,9 +73,10 @@ namespace RiwaqChat
             using (var cmd = Db.Cmd(c, "SELECT TOP 1 Id, Hash, Tries FROM dbo.ShopCodes WHERE StoreId=@s AND Phone=@p AND Kind=@k AND UsedAt IS NULL AND ExpiresAt>SYSUTCDATETIME() ORDER BY Id DESC", "@s", storeId, "@p", phone, "@k", kind))
             using (var r = cmd.ExecuteReader()) { if (!r.Read()) return false; id = (int)r[0]; hash = (string)r[1]; tries = (int)r[2]; }
             if (tries >= MaxTries) return false;
-            bool ok = Shops.SameKey(hash, Sha(storeId + ":" + phone + ":" + code));
-            // one use, and a few tries: counted in the same statement, so two requests at once don't get one more try
-            using (var cmd = Db.Cmd(c, ok ? "UPDATE dbo.ShopCodes SET UsedAt=SYSUTCDATETIME() WHERE Id=@i AND UsedAt IS NULL" : "UPDATE dbo.ShopCodes SET Tries=Tries+1 WHERE Id=@i", "@i", id)) { int n = cmd.ExecuteNonQuery(); return ok && n == 1; }
+            // the try is taken before the code is compared, in one statement: many requests at once don't get more tries
+            using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopCodes SET Tries=Tries+1 WHERE Id=@i AND Tries<@m AND UsedAt IS NULL", "@i", id, "@m", MaxTries)) if (cmd.ExecuteNonQuery() == 0) return false;
+            if (!Shops.SameKey(hash, Sha(storeId + ":" + phone + ":" + code))) return false;
+            using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopCodes SET UsedAt=SYSUTCDATETIME() WHERE Id=@i AND UsedAt IS NULL", "@i", id)) return cmd.ExecuteNonQuery() == 1;
         }
 
         // ---------- the code before an order (the owner turns it on) ----------
@@ -96,7 +97,7 @@ namespace RiwaqChat
 
         // the assistant's own order: a number WhatsApp proves is enough, any other gets the code
         public static void Trust(SqlConnection c, int storeId, string phone) { Prove(c, storeId, phone); }
-        public static string ChatCode(SqlConnection c, StoreInfo s, Shop sh, string phone, string ip) { return SendCode(c, new ShopFrontHandler.Ctx { Store = s, Row = sh, Ip = ip ?? "chat", Lang = "ar" }, phone, "order"); }
+        public static string ChatCode(SqlConnection c, StoreInfo s, Shop sh, string phone, string ip) { return SendCode(c, new ShopFrontHandler.Ctx { Store = s, Row = sh, Ip = ip ?? "chat" + sh.StoreId, Lang = "ar" }, phone, "order"); }
 
         // ---------- who is asking ----------
         static string Who(SqlConnection c, int storeId, string token)
@@ -284,7 +285,7 @@ namespace RiwaqChat
                 // the delivery of the new place, worked out on the same items; what was free by a code or an offer stays free
                 var q = ShopPrice.Quote(c, x.Data, o.Items.Select(i => new ShopLine { VariantId = i.VariantId, Qty = i.Qty }).ToList(), null, gov, o.Phone, x.Now, false);
                 if (q.Stop == "nodelivery") throw new ShopException("nodelivery", T(x, "للأسف مابنوصّلش لمحافظة " + ShopGeo.Name(gov) + " دلوقتي.", "Sorry, we don't deliver there right now."));
-                if (o.Ship > 0) ship = q.Ship;
+                if (!o.Extras.ContainsKey("branch") && (o.Ship > 0 || ShopPrice.Quote(c, x.Data, o.Items.Select(i => new ShopLine { VariantId = i.VariantId, Qty = i.Qty }).ToList(), null, o.Gov, o.Phone, x.Now, false).Ship == 0)) ship = q.Ship;
             }
             decimal total = o.Subtotal - o.Discount + ship + o.Fees; bool more = Math.Abs(total - o.Total) >= 1;
             if (more && !ShopJson.Bool(ShopJson.At(b, "ok"))) { Ok(res, "confirm", true, "ship", ship, "total", total); return; }   // the new total is shown first
@@ -338,11 +339,16 @@ namespace RiwaqChat
         public static string WipeNow(SqlConnection c, int storeId, string phone)
         {
             if (Num(c, "SELECT COUNT(*) FROM dbo.ShopOrders WHERE StoreId=@s AND Phone=@p AND Status IN ('new','noreply','confirmed','shipped','out')", "@s", storeId, "@p", phone) > 0) return "الزبون ده عنده طلب لسه ماخلصش.";
-            Exec(c, @"UPDATE dbo.ShopOrders SET Name=N'زبون اتمسحت بياناته', Phone='', Phone2=NULL, City=NULL, Area=NULL, Address=N'—', Landmark=NULL, Note=NULL, StaffNote=NULL, Ip=NULL, Device=NULL WHERE StoreId=@s AND Phone=@p;
+            // what they wrote or sent with a product, their transfers and their pictures go too
+            var pics = new List<string>(); using (var cmd = Db.Cmd(c, "SELECT Pics FROM dbo.ShopReturns WHERE StoreId=@s AND Phone=@p AND Pics IS NOT NULL UNION ALL SELECT Pics FROM dbo.ShopReviews WHERE StoreId=@s AND Phone=@p AND Pics IS NOT NULL UNION ALL SELECT Proof FROM dbo.ShopOrders WHERE StoreId=@s AND Phone=@p AND Proof IS NOT NULL", "@s", storeId, "@p", phone)) using (var r = cmd.ExecuteReader()) while (r.Read()) pics.AddRange(((string)r[0]).Split(','));
+            using (var cmd = Db.Cmd(c, "SELECT i.Extra FROM dbo.ShopOrderItems i JOIN dbo.ShopOrders o ON o.Id=i.OrderId WHERE o.StoreId=@s AND o.Phone=@p AND i.Extra LIKE @l", "@s", storeId, "@p", phone, "@l", "%" + storeId + "/%")) using (var r = cmd.ExecuteReader()) while (r.Read()) foreach (Match m in Regex.Matches((string)r[0], "(?<![0-9])" + storeId + "/[a-z0-9/_-]+\\.(?:webp|jpg|jpeg|png)")) pics.Add(m.Value);
+            Exec(c, "UPDATE i SET Extra=NULL FROM dbo.ShopOrderItems i JOIN dbo.ShopOrders o ON o.Id=i.OrderId WHERE o.StoreId=@s AND o.Phone=@p; UPDATE dbo.ShopReviews SET Pics=NULL WHERE StoreId=@s AND Phone=@p", "@s", storeId, "@p", phone);
+            Exec(c, @"UPDATE dbo.ShopOrders SET Name=N'زبون اتمسحت بياناته', Phone='', Phone2=NULL, City=NULL, Area=NULL, Address=N'—', Landmark=NULL, Note=NULL, StaffNote=NULL, Ip=NULL, Device=NULL, Extras=NULL, Proof=NULL, CancelReason=NULL, Token=CONVERT(NVARCHAR(40), LOWER(REPLACE(NEWID(), '-', ''))) WHERE StoreId=@s AND Phone=@p;
                 UPDATE dbo.ShopReviews SET Name=N'زبون', Phone='' WHERE StoreId=@s AND Phone=@p;
                 DELETE FROM dbo.ShopReturns WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopSessions WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopCodes WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopConfirms WHERE StoreId=@s AND Phone=@p;
                 DELETE FROM dbo.ShopLeads WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopCustomers WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopCarts WHERE StoreId=@s AND Phone=@p", "@s", storeId, "@p", phone);
             try { Crm.Erase(c, storeId, phone); } catch (Exception ex) { Log.Error(ex); }
+            try { ShopImages.Delete(c, storeId, pics.Distinct().Where(k => Num(c, "SELECT COUNT(*) FROM dbo.ShopImages WHERE StoreId=@s AND Path=@p AND Alt='customer'", "@s", storeId, "@p", k) > 0).ToList()); } catch (Exception ex) { Log.Error(ex); }
             return null;
         }
 

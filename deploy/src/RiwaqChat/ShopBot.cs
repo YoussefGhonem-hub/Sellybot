@@ -510,7 +510,7 @@ namespace RiwaqChat
                 {
                     var s = Db.StoreById(c, storeId); var o = ShopOrders.ById(c, storeId, id); if (s == null || o == null) return Task.CompletedTask;
                     Crm.FromShop(c, s, new Crm.OrderIn { Source = "shop", Id = o.Id.ToString(CultureInfo.InvariantCulture), Name = o.NoText, Phone = o.Phone, Customer = o.Name, City = ShopGeo.Name(o.Gov), Currency = "ج.م", Items = Cut(string.Join("، ", o.Items.Select(i => i.Name + (i.Qty > 1 ? " × " + i.Qty : ""))), 300), Status = CrmStatus(o.Status), Total = o.Total, At = o.CreatedAt });
-                    using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Phone=@p, Customer=@cu, Total=@t WHERE StoreId=@s AND OrderId=@o", "@p", o.Phone, "@cu", Cut(o.Name, 100), "@t", ShopOrders.Money(o.Total), "@s", storeId, "@o", id)) cmd.ExecuteNonQuery();
+                    using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopOrders SET SheetAt=NULL WHERE StoreId=@s AND Id=@o; UPDATE dbo.ShopConfirms SET Phone=@p, Customer=@cu, Total=@t WHERE StoreId=@s AND OrderId=@o", "@p", o.Phone, "@cu", Cut(o.Name, 100), "@t", ShopOrders.Money(o.Total), "@s", storeId, "@o", id)) cmd.ExecuteNonQuery();
                 }
             }
             catch (Exception ex) { Log.Error(ex); }
