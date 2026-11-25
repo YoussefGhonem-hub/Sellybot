@@ -183,10 +183,11 @@
   }
 
   // the payment part of a request: total, where to pay, then method / reference / the number paid from / note
-  async function pay(h, stop, total, extraWhat) {
+  async function pay(h, stop, total, extraWhat, lines) {
     var pub = (await h.api("api/plans.ashx")).data || {};
     var num = en(pub.payNumber || "").replace(/\D/g, "") || "01229391155";
     var box = h.html("💳 <b>المطلوب تحوّله: " + fmt(total) + " ج.م</b>" + (extraWhat ? "<br><small>" + h.esc(extraWhat) + "</small>" : "") +
+      (lines || []).map(function (x) { return "<br><small>" + h.esc(x) + "</small>"; }).join("") +
       "<br>حوّل على <b>InstaPay</b> أو <b>أورانج كاش</b> للرقم: <b dir=\"ltr\">" + num + "</b> <button type=\"button\" class=\"copy\">نسخ</button>" +
       (pub.payQr ? "<img class=\"qr\" alt=\"InstaPay QR\" src=\"" + h.base + "api/plans.ashx?payqr=1&v=" + encodeURIComponent(pub.payQr) + "\">" : "") +
       (pub.paymentInfo ? "<div>" + h.md(String(pub.paymentInfo)) + "</div>" : ""));
@@ -233,6 +234,26 @@
     return false;
   }
 
+  // what a request comes to, from the server (the same sum that will be recorded): the old price, «دعوة تاجر» months, the WhatsApp numbers
+  async function quote(h, body) {
+    h.busy(true);
+    var r = await h.api("api/plans.ashx?action=request", Object.assign({ dry: true }, body));
+    h.busy(false);
+    if (r.ok && r.data && r.data.dry) return r.data;
+    await h.say("⚠️ " + msgOf(r, "مقدرناش نحسب المبلغ دلوقتي. جرّب تاني، أو ابعت الطلب من «باقتي» في لوحة التحكم."));
+    return null;
+  }
+  function numbersAr(n) { return n === 1 ? "رقم واحد" : n === 2 ? "رقمين" : fmt(n) + (n <= 10 ? " أرقام" : " رقم"); }
+  // the lines under the amount: why it's this much
+  function why(q) {
+    var l = [];
+    if (q.oldPrice != null && q.regular > q.oldPrice) l.push("🔒 بسعرك القديم " + fmt(q.oldPrice) + " ج.م بدل " + fmt(q.regular));
+    if (q.refAmount > 0) l.push("🎁 خصم دعوة تاجر " + fmt(q.refPct) + "%: −" + fmt(q.refAmount) + " ج.م");
+    if (q.waAmount > 0) l.push("📱 الواتساب: " + (q.waAdd ? numbersAr(q.waCount) + " × " + fmt(q.waUnit) + " ج.م × " + fmt(q.waDays) + " يوم من 30 = " + fmt(q.waAmount) + " ج.م"
+      : q.waCount > 1 || q.waTotal > 1 ? numbersAr(q.waCount) + " × " + fmt(q.waUnit) + " = " + fmt(q.waAmount) + " ج.م في الشهر" : fmt(q.waAmount) + " ج.م في الشهر"));
+    return l;
+  }
+
   async function askPhone(h) {
     return mobile(await h.ask({ type: "tel", placeholder: "01001234567", max: 20, check: function (v) { return mobile(v) ? null : "اكتب رقم موبايل مصري صح، مثلًا 01001234567."; } }));
   }
@@ -256,12 +277,12 @@
     if (!plans.length) { await h.say("مفيش باقات متاحة دلوقتي 🙏 كلّمنا: " + SUPPORT); return { done: false }; }
     function price(p) { return p.finalPrice != null ? p.finalPrice : p.priceEgp; }
     function sub(p) {
-      var c = changes[p.id] || {};
+      var c = changes[p.id] || {}, mineP = c.newPrice != null ? c.newPrice : price(p), wa = p.includesWa ? " · الواتساب جواها" : "";   // mineP: with the store's old price, if it has one
       if (c.blocked) return "مش متاحة دلوقتي";
-      if (c.kind === "upgrade") return "ترقية · تدفع " + fmt(c.amount) + " ج.م بس";
-      if (c.kind === "renew") return "تجديد · " + fmt(price(p)) + " ج.م";
-      if (c.kind === "downgrade") return "تبدأ بعد باقتك · " + fmt(price(p)) + " ج.م";
-      return fmt(price(p)) + " ج.م في الشهر";
+      if (c.kind === "upgrade") return "ترقية · تدفع " + fmt(c.amount) + " ج.م بس" + wa;
+      if (c.kind === "renew") return "تجديد · " + fmt(mineP) + " ج.م" + wa;
+      if (c.kind === "downgrade") return "تبدأ بعد باقتك · " + fmt(mineP) + " ج.م" + wa;
+      return fmt(mineP) + " ج.م في الشهر" + wa;
     }
     var chosen = null, want = String((a && a.plan) || "").replace(/\s/g, "");
     if (want) chosen = plans.filter(function (p) { var n = String(p.name).replace(/\s/g, ""); return n === want || n.indexOf(want) >= 0 || want.indexOf(n) >= 0; })[0] || null;
@@ -276,26 +297,36 @@
     if (ch.kind === "upgrade") await h.say("⬆️ الترقية بتشتغل أول ما نأكد الدفع، وبتدفع **فرق السعر عن الـ " + fmt(ch.days) + " يوم اللي فاضلين** بس: " + fmt(ch.amount) + " ج.م. وميعاد التجديد بيفضل زي ما هو.");
     else if (ch.kind === "downgrade") await h.say("⬇️ هتفضل على باقة " + (ch.curName || "الحالية") + " لحد آخر يوم فيها، وباقة " + chosen.name + " تبدأ لوحدها يوم " + dateAr(ch.startsAt) + ".");
     else if (ch.kind === "renew") await h.say("🔁 التجديد بيبدأ بعد ما مدتك الحالية تخلص، فمش هتخسر ولا يوم.");
-    var total = ch.kind === "upgrade" ? (ch.amount || 0) : price(chosen), body = { planId: chosen.id, months: 1 };
-    // the WhatsApp service with it (its own monthly price), unless it already runs
+    var body = { planId: chosen.id, months: 1 };
+    // the WhatsApp service with it (its own monthly price), unless it already runs. A plan that includes it («الاقتصادية») has nothing to add:
+    // the number is only so we know it.
     var wa = me.waService || {}, waPrice = (pub.waAddon && pub.waAddon.price) || 300;
-    if (!wa.on && !wa.always) {
+    if (chosen.includesWa) {
+      await h.say("📱 **الواتساب جوه الباقة**، من غير أي زيادة: بيتفعّل لوحده أول ما الإدارة توافق ويتجدد معاها. تحب تكتب رقم الواتساب اللي هتربطه؟ (اختياري)");
+      var wn = await h.choose([{ label: "📲 أكتب الرقم", v: "yes" }, { label: "بعدين", v: "no" }]);
+      if (wn.v === "yes") { await h.say("اكتب **رقم الواتساب** اللي هتربطه بالمساعد:"); body.waPhone = await askPhone(h); }
+    } else if (wa.inPlan) {
+      await h.say("📱 الواتساب جوه باقتك «" + (wa.planName || "الحالية") + "»" + (wa.until ? " لحد يوم " + dateAr(wa.until) : "") + ". باقة " + chosen.name + " مش فيها الواتساب، فبعد التاريخ ده بيبقى باشتراك شهري لوحده بـ " + fmt(waPrice) + " ج.م، وهنفكّرك قبلها.");
+    } else if (!wa.on && !wa.always) {
       await h.say("تحب تضيف **خدمة الواتساب** معاها؟ المساعد يرد على زباينك على رقم واتساب متجرك (" + fmt(waPrice) + " ج.م في الشهر).");
       var w = await h.choose([{ label: "📲 أيوه، ضيفها", v: "yes" }, { label: "لأ، الباقة بس", v: "no" }]);
       if (w.v === "yes") {
         await h.say("اكتب **رقم الواتساب** اللي هتربطه بالمساعد:");
-        body.wa = true; body.waPhone = await askPhone(h); total += waPrice;
+        body.wa = true; body.waPhone = await askPhone(h);
       }
     }
     if (stop()) return { cancelled: true, silent: true };
+    var q = await quote(h, body);
+    if (!q) return { done: false };
     var payInfo = { method: "—", ref: "—", refNo: "", note: "" };
-    if (total > 0) {
-      var pi = await pay(h, stop, total, "باقة " + chosen.name + (body.wa ? " + خدمة الواتساب" : ""));
+    if (q.total > 0) {
+      var pi = await pay(h, stop, q.total, "باقة " + chosen.name + (chosen.includesWa ? " (الواتساب جواها)" : body.wa ? " + خدمة الواتساب" : ""), why(q));
       if (!pi) return { done: true };
       payInfo = pi;
     }
     var ok = await sendRequest(h, stop, body, payInfo,
-      "✅ **اتبعت طلبك!** " + (ch.kind === "downgrade" ? "باقة " + chosen.name + " هتبدأ بعد ما باقتك الحالية تخلص." : "هنفعّل باقة " + chosen.name + (body.wa ? " وخدمة الواتساب" : "") + " أول ما نتأكد من التحويل، وعادةً في نفس اليوم.") +
+      "✅ **اتبعت طلبك!** " + (ch.kind === "downgrade" ? "باقة " + chosen.name + " هتبدأ بعد ما باقتك الحالية تخلص." : "هنفعّل باقة " + chosen.name + (body.wa || chosen.includesWa ? " والواتساب" : "") + " أول ما نتأكد من التحويل، وعادةً في نفس اليوم.") +
+      (chosen.includesWa ? " وبعدها تربط رقمك من «🔗 ربط بحساباتك» ← «💬 واتساب»." : "") +
       "\nهتلاقي حالة الطلب ورد الإدارة في «باقتي»، وتقدر تسألني عنه هنا في أي وقت.");
     if (ok) h.note("الزائر بعت من الشات طلب اشتراك في باقة " + chosen.name + (body.wa ? " مع خدمة الواتساب" : "") + "، والطلب مستني مراجعة الإدارة");
     return { done: ok };
@@ -310,17 +341,63 @@
     if (await pendingStop(h, mine)) return { done: true };
     var wa = me.waService || {}, price = (pub.waAddon && pub.waAddon.price) || 300;
     if (wa.always) { await h.say("الواتساب شغال عندك على طول ✅ مش محتاج اشتراك."); return { done: true }; }
-    await h.say(wa.on && wa.until
-      ? "خدمة الواتساب شغالة عندك لحد يوم " + dateAr(wa.until) + " ✅ التجديد بيتضاف شهر بعدها، بـ " + fmt(price) + " ج.م."
-      : "📲 خدمة الواتساب: المساعد يرد على زباينك على **رقم واتساب متجرك** 24 ساعة، بـ " + fmt(price) + " ج.م في الشهر (مع أي باقة أو من غيرها).");
-    await h.say("اكتب **رقم الواتساب** اللي هتربطه بالمساعد:");
-    var phone = await askPhone(h);
+    // one number, or several for the team: 300 for one, 260 each for more (WaLines.cs); a plan with WhatsApp inside has its first number
+    var multi = Math.min(wa.multi || (pub.waAddon && pub.waAddon.multi) || price, price), have = Math.max(wa.count || 1, wa.lines || 1, 1), free = Math.max(0, 10 - Math.max(wa.lines || 0, wa.paidOn || wa.inPlan ? (wa.allowed || 0) : 0));
+    var mode = "new", body = { kind: "wa" };
+    if (wa.inPlan) {
+      await h.say("📱 الواتساب **جوه باقتك «" + (wa.planName || "الحالية") + "»**" + (wa.until ? " لحد يوم " + dateAr(wa.until) : "") + "، وبيتجدد معاها، فمش محتاج اشتراك لوحده ✅\nلو عندك موظفين على أرقام تانية، كل **رقم زيادة** بـ " + fmt(multi) + " ج.م في الشهر.");
+      var extra = Math.max(wa.count || 1, (wa.lines || 1) - 1, 1), oA = [];   // the paid numbers on top of the plan's own
+      if (wa.paidOn) oA.push({ label: "🔁 جدّد أرقامك الزيادة", sub: numbersAr(extra) + " × " + fmt(multi) + " = " + fmt(extra * multi) + " ج.م، شغالة لحد يوم " + dateAr(wa.paidUntil), v: "renew" });
+      if (free > 0) oA.push({ label: "➕ ضيف رقم زيادة", sub: wa.paidOn ? "بتدفع الأيام الباقية بس لحد ميعاد تجديدها" : "", v: "add" });
+      if (!oA.length) return { done: true };
+      var pA = await h.choose(oA.concat([{ label: "تمام كده 👍", v: "ok" }]));
+      if (pA.v === "ok") { await h.say("تمام 🙌 رقمك بتربطه من «🔗 ربط بحساباتك» ← «💬 واتساب»."); return { done: true }; }
+      mode = pA.v; have = extra;
+    } else if (wa.paidOn) {
+      await h.say("خدمة الواتساب شغالة عندك لحد يوم " + dateAr(wa.paidUntil || wa.until) + " ✅ (" + numbersAr(have) + ")");
+      var opts = [{ label: "🔁 جدّد الخدمة", sub: (have > 1 ? numbersAr(have) + " × " + fmt(multi) + " = " : "") + fmt(have > 1 ? have * multi : price) + " ج.م، والشهر الجديد بيتضاف بعد آخر يوم", v: "renew" }];
+      if (free > 0) opts.push({ label: "➕ ضيف رقم زيادة", sub: "بتدفع الأيام الباقية بس لحد ميعاد تجديدك", v: "add" });
+      opts.push({ label: "لأ، شكرًا", v: "no" });
+      var pB = await h.choose(opts);
+      if (pB.v === "no") { await h.say("تمام 👍 هنفكّرك قبل ميعاد التجديد."); return { done: true }; }
+      mode = pB.v;
+    } else await h.say("📲 خدمة الواتساب: المساعد يرد على زباينك على **رقم واتساب متجرك** 24 ساعة، بـ " + fmt(price) + " ج.م في الشهر (مع أي باقة أو من غيرها)." + (wa.until ? " آخر اشتراك خلص يوم " + dateAr(wa.until) + "." : ""));
     if (stop()) return { cancelled: true, silent: true };
-    var pi = await pay(h, stop, price, "اشتراك الواتساب شهر");
+    var n = mode === "renew" ? have : 1;
+    if (mode !== "renew") {
+      var most = mode === "add" ? Math.min(free, 10) : 10, cs = [];
+      await h.say(mode === "add" ? "كام رقم زيادة؟" : "كام رقم واتساب هتربط؟ رقم واحد بـ " + fmt(price) + "، ولو أكتر من رقم **كل الأرقام بـ " + fmt(multi) + " للرقم**.");
+      for (var i = 1; i <= Math.min(3, most); i++) cs.push({ label: numbersAr(i), sub: mode === "add" ? "" : fmt(i > 1 ? i * multi : price) + " ج.م في الشهر", v: i });
+      if (mode === "new" && have > 3) cs.unshift({ label: "زي ما كانوا: " + numbersAr(have), sub: fmt(have * multi) + " ج.م في الشهر", v: have });
+      if (most > 3) cs.push({ label: "أكتر", v: 0 });
+      n = (await h.choose(cs)).v;
+      if (!n) {
+        await h.say("اكتب **عدد الأرقام** (من 4 لـ " + fmt(most) + "):");
+        n = +en(await h.ask({ type: "number", placeholder: "مثلًا 5", max: 2, check: function (v) { var x = +en(v); return x >= 1 && x <= most && x === Math.floor(x) ? null : "اكتب رقم من 1 لـ " + fmt(most) + "."; } }));
+      }
+    }
+    body.count = n; if (mode === "add" && wa.paidOn) body.mode = "add";
+    // the number to link: known already on a renewal; more numbers may be linked later
+    var known = wa.number || ((mine.requests || []).filter(function (r) { return r.waPhone; })[0] || {}).waPhone || "";
+    if (mode === "renew" && known) body.waPhone = known;
+    else if (mode === "add") {
+      await h.say("تحب تكتب الرقم الجديد اللي هتربطه؟ (اختياري، وتقدر تربطه بعدين من «👥 أرقام الواتساب والفريق»)");
+      var pn = await h.choose([{ label: "📲 أكتب الرقم", v: "yes" }, { label: "بعدين", v: "no" }]);
+      if (pn.v === "yes") { await h.say("اكتب **رقم الواتساب** الجديد:"); body.waPhone = await askPhone(h); }
+    } else {
+      await h.say(n > 1 ? "اكتب **رقم الواتساب الأساسي** اللي هتربطه بالمساعد (والباقي تربطهم بعدين):" : "اكتب **رقم الواتساب** اللي هتربطه بالمساعد:");
+      body.waPhone = await askPhone(h);
+    }
+    if (stop()) return { cancelled: true, silent: true };
+    var q = await quote(h, body);
+    if (!q) return { done: false };
+    var what = mode === "add" ? "أرقام واتساب زيادة" : mode === "renew" ? "تجديد خدمة الواتساب شهر" : "اشتراك الواتساب شهر", pi = await pay(h, stop, q.total, what + " (" + numbersAr(q.waCount) + ")", why(q));
     if (!pi) return { done: true };
-    var ok = await sendRequest(h, stop, { kind: "wa", waPhone: phone }, pi,
-      "✅ **اتبعت طلب الواتساب!** هنفعّله أول ما نتأكد من التحويل، وبعدها تربط رقمك من تاب «واتساب» في لوحة التحكم.");
-    if (ok) h.note("الزائر بعت من الشات طلب اشتراك في خدمة الواتساب، والطلب مستني مراجعة الإدارة");
+    var ok = await sendRequest(h, stop, body, pi,
+      mode === "add" ? "✅ **اتبعت طلبك!** الأرقام الزيادة بتشتغل أول ما نتأكد من التحويل، وبعدها تربطها من «💬 واتساب» ← «👥 أرقام الواتساب والفريق»."
+      : mode === "renew" ? "✅ **اتبعت طلب التجديد!** الشهر الجديد هيتضاف بعد آخر يوم أول ما نتأكد من التحويل."
+      : "✅ **اتبعت طلب الواتساب!** هنفعّله أول ما نتأكد من التحويل، وبعدها تربط رقمك من تاب «واتساب» في لوحة التحكم.");
+    if (ok) h.note("الزائر بعت من الشات طلب " + what + " (" + numbersAr(q.waCount) + ")، والطلب مستني مراجعة الإدارة");
     return { done: ok };
   }
 

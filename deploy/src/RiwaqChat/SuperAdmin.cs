@@ -1768,13 +1768,17 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             }
             if (action != "request") { Web.Error(res, 404, "unknown_action"); return; }
 
-            if (!Web.Allow("planreq:" + s.Id, 6, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "بعت طلبات كتير، استنى شوية."); return; }
+            // dry: only what it comes to (Sellybot's own chat says it before the owner transfers, sitebot-flows.js); nothing is saved
+            object dryAsk; bool dry = b.TryGetValue("dry", out dryAsk) && dryAsk is bool && (bool)dryAsk;
+            if (!Web.Allow((dry ? "planquote:" : "planreq:") + s.Id, dry ? 40 : 6, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "بعت طلبات كتير، استنى شوية."); return; }
             bool topup = (Web.Str(b, "kind", 10) ?? "") == "topup";
             PlanInfo p; int months; Billing.Quote q; long units = 0; string kind = topup ? "topup" : "plan";
             bool waOnly = (Web.Str(b, "kind", 10) ?? "") == "wa";
             // the WhatsApp service for how many numbers (WaLines.cs): count, and "add" = more numbers on the running service (paid for the days left)
-            int waCount = Math.Max(1, Math.Min(WaLines.Max, Web.Int(b, "count") ?? 1));
             bool waAdd = waOnly && (Web.Str(b, "mode", 10) ?? "") == "add";
+            // a renewal that doesn't say how many: all the numbers the store has now (a lower number would cut the others off)
+            int waNow = waOnly && !waAdd && !Billing.WaInPlan(s) && s.WaUntil.HasValue ? Math.Max(s.WaCount, string.IsNullOrEmpty(s.WaInstance) ? 1 : 1 + WaLines.Extra(c, s.Id)) : 1;
+            int waCount = Math.Max(1, Math.Min(WaLines.Max, Web.Int(b, "count") ?? waNow));
             WaLines.WaQuote waQ = null;
             int topupMsgs = 0; string topupCalc = null;   // extra messages: how many, and how the suggestion was worked out
             Billing.OldInfo old = null;                  // «السعر القديم»: what this plan request gets at the store's old price (kept for the admin)
@@ -1855,7 +1859,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             {
                 wantWa = false;
                 var ph = Web.Str(b, "waPhone", 40);
-                if (!string.IsNullOrWhiteSpace(ph)) { waPhone = WaChat.Phone(ph); if (waPhone == null) { Web.Error(res, 400, "bad_wa_phone", "رقم الواتساب ده مش مظبوط، اكتبه كده مثلًا 01001234567."); return; } }
+                if (!dry && !string.IsNullOrWhiteSpace(ph)) { waPhone = WaChat.Phone(ph); if (waPhone == null) { Web.Error(res, 400, "bad_wa_phone", "رقم الواتساب ده مش مظبوط، اكتبه كده مثلًا 01001234567."); return; } }
             }
             // renewing the plan never renews the service: while it runs, it's renewed alone (kind "wa") on its own date
             if (wantWa && !waOnly && WaAccount.HasService(s) && s.WaUntil.HasValue)
@@ -1866,12 +1870,20 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 var rawPhone = Web.Str(b, "waPhone", 40);
                 bool phoneOptional = waOnly && (waAdd || Billing.WaInPlan(s));
                 waPhone = WaChat.Phone(rawPhone);
-                if (waPhone == null && !(phoneOptional && string.IsNullOrWhiteSpace(rawPhone))) { Web.Error(res, 400, "bad_wa_phone", "اكتب رقم الواتساب اللي هتربطه بالمساعد، مثلًا 01001234567."); return; }
+                if (!dry && waPhone == null && !(phoneOptional && string.IsNullOrWhiteSpace(rawPhone))) { Web.Error(res, 400, "bad_wa_phone", "اكتب رقم الواتساب اللي هتربطه بالمساعد، مثلًا 01001234567."); return; }
                 // one month of the numbers, whatever the plan's period (the service renews monthly on its own): 300 for one, 260 each for
                 // more; added numbers pay only the days left until the service's renewal date. With a plan: one number.
                 waQ = WaLines.Quote(c, s, waOnly ? waCount : 1, waAdd);
                 waEgp = waQ.Amount;
                 q.Price += waEgp; q.Total += waEgp;
+            }
+            if (dry)
+            {
+                bool pl = kind == "plan" || kind == "upgrade";
+                Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "dry", true }, { "kind", kind }, { "total", q.Total }, { "planName", pl ? p.Name : "" }, { "includesWa", pl && p.IncludesWa },
+                    { "regular", pl ? (object)Billing.FinalPrice(p) : null }, { "oldPrice", pl && old != null ? (object)old.Price : null }, { "refAmount", refEgp }, { "refPct", refK > 0 ? Referral.Pct(c) : 0 },
+                    { "waAmount", waEgp }, { "waCount", waQ != null ? waQ.Count : 0 }, { "waUnit", waQ != null ? waQ.Unit : 0 }, { "waDays", waQ != null ? waQ.Days : 0 }, { "waTotal", waQ != null ? waQ.Total : 0 }, { "waAdd", waQ != null && waQ.Add } });
+                return;
             }
             // nothing to pay (a plan at the same price): no transfer to check
             bool free = q.Total <= 0;

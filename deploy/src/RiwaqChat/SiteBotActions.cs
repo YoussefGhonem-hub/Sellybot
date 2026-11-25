@@ -45,9 +45,9 @@ namespace RiwaqChat
                 ["form"] = JsonSerializer.SerializeToElement(new
                 {
                     type = "string", @enum = Forms,
-                    description = "signup = حساب جديد وتجربة مجانية، login = تسجيل دخول، plan = اشتراك أو تجديد أو ترقية باقة، whatsapp = اشتراك خدمة الواتساب لوحدها، ticket = تذكرة دعم لمشكلة في حسابه."
+                    description = "signup = حساب جديد وتجربة مجانية، login = تسجيل دخول، plan = اشتراك أو تجديد أو ترقية باقة، whatsapp = خدمة الواتساب لوحدها: اشتراك أو تجديد أو أرقام واتساب زيادة (مش محتاجة مع باقة «الاقتصادية»، الواتساب جواها)، ticket = تذكرة دعم لمشكلة في حسابه."
                 }),
-                ["plan"] = JsonSerializer.SerializeToElement(new { type = "string", description = "مع form=plan بس: اسم الباقة لو الزائر حددها (الأساسية / المتقدمة / الاحترافية)." }),
+                ["plan"] = JsonSerializer.SerializeToElement(new { type = "string", description = "مع form=plan بس: اسم الباقة لو الزائر حددها (الاقتصادية / الأساسية / المتقدمة / الاحترافية)." }),
             };
             t.Tools.Add(new ChatHandler.ExtraTool
             {
