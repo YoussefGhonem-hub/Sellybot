@@ -864,6 +864,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                     {
                         case "me": Web.Json(res, 200, new Dictionary<string, object> { { "username", adminName }, { "defaultPassword", defaultPassword } }); return;
                         case "overview": Web.Json(res, 200, Overview(c)); return;
+                        case "jobs": Web.Json(res, 200, Jobs.Stats(c)); return;   // «⏱️ الشغل التلقائي» (Jobs.cs)
                         case "money": Web.Json(res, 200, Finance.Report(c)); return;   // «💰 المكسب والتكلفة» (Finance.cs)
                         case "money-settings": if (!post) break; Finance.Save(c, b, res); return;
                         case "plans": Web.Json(res, 200, new Dictionary<string, object> { { "plans", Billing.Plans(c, true).Select(p => Billing.PlanJson(c, p, true)).ToList() }, { "usdRate", Billing.UsdRate(c) } }); return;
@@ -973,7 +974,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                 { "revenueMonth", revMonth }, { "revenueTotal", revTotal }, { "openTickets", openTickets },
                 { "messagesMonth", thisMonth.Messages }, { "costUsdMonth", Math.Round(costUsd, 4) }, { "costEgpMonth", Math.Round(costUsd * rate, 2) },
                 { "profitMonth", Math.Round(revMonth - costUsd * rate, 2) },
-                { "series", series }, { "topStores", top }, { "recentSubs", subs }, { "recentTickets", Tickets(c, "active", 5)["tickets"] },
+                { "series", series }, { "topStores", top }, { "recentSubs", subs }, { "recentTickets", Tickets(c, "active", 5)["tickets"] }, { "jobs", Jobs.Stats(c) },
             };
         }
 

@@ -187,6 +187,9 @@
   .calc .r.good b{color:var(--ok)} .calc .r.bad b{color:var(--err)}
   .calc .r small{color:var(--muted);font-weight:400}
   .calc .r > span{min-width:0}
+  /* «⏱️ الشغل التلقائي» next to the settings form */
+  .stack{display:grid;gap:14px;align-content:start;min-width:0}
+  #jbRows .r{gap:12px;padding:6px 0} #jbRows .r + .r{border-top:1px dashed var(--line)} #jbRows .r b{text-align:end}
   .fn-tag{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--muted);margin-inline-start:4px;white-space:nowrap}
   .fn-bar{height:6px;border-radius:6px;background:var(--soft);overflow:hidden;min-width:70px}
   .fn-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand2),var(--brand))}
@@ -488,6 +491,8 @@
 
     <div class="content">
       <div class="warn-bar" id="pwWarn" hidden>🔐 <b>انت داخل بالباسورد الافتراضي.</b> أي حد يعرفه يقدر يدخل لوحة الإدارة، غيّره دلوقتي بباسورد قوي. <button class="btn sm" data-go="settings">غيّر الباسورد</button></div>
+      <!-- the background jobs stood still (Jobs.cs): loadHome -->
+      <div class="warn-bar" id="jbWarn" hidden>⏱️ <span id="jbWarnT"></span> <button class="btn sm" data-go="settings">التفاصيل</button></div>
       <!-- home -->
       <section data-page="home">
         <div class="kpis" id="kpis"></div>
@@ -901,6 +906,13 @@
             <div class="msg" id="sMsg"></div>
             <div class="row" style="margin-top:14px"><button class="btn" id="sBtn">حفظ</button></div>
           </form>
+          <div class="stack">
+          <div class="card anim" id="jbCard" style="animation-delay:.06s">
+            <div class="row"><h3>⏱️ الشغل التلقائي</h3><span class="space"></span><span class="pill" id="jbPill">…</span></div>
+            <p class="sub">تذكيرات السلة، ومتابعة تأكيد الأوردرات، وتنبيه المرتجع، والعروض، والتقارير: بتشتغل لوحدها كل 5 دقايق، حتى لو محدش فاتح الموقع.</p>
+            <div class="calc" id="jbRows"></div>
+            <div class="row" style="margin-top:12px"><button class="btn ghost sm" type="button" id="jbAgain">حدّث</button></div>
+          </div>
           <form class="card anim" id="pwForm" style="animation-delay:.1s">
             <h3>باسورد الإدارة</h3>
             <p class="sub">غيّر الباسورد الافتراضي بباسورد قوي محدش يعرفه.</p>
@@ -910,6 +922,7 @@
             <div class="msg" id="pMsg"></div>
             <div class="row" style="margin-top:14px"><button class="btn" id="pBtn">تغيير الباسورد</button></div>
           </form>
+          </div>
         </div>
       </section>
     </div>
@@ -1705,7 +1718,7 @@
     var o;
     try { o = await api("overview"); } catch (e) { toast(e.message, true); return; }
     state.ov = o; state.usdRate = o.usdRate;
-    badge(o.openTickets);
+    badge(o.openTickets); jbWarn(o.jobs);
     var K = [
       { ic: "💰", label: "إيرادات الشهر", val: o.revenueMonth, f: money, sub: "إجمالي كل الوقت: " + money(o.revenueTotal), hl: true },
       { ic: "🤖", label: "تكلفة Claude الشهر ده", val: o.costEgpMonth, f: function (v) { return fmt(v, 2) + " ج.م"; }, sub: "≈ " + fmt(o.costUsdMonth, 3) + "$ · الدولار بـ " + fmt(o.usdRate, 2) },
@@ -2350,8 +2363,39 @@
     };
   }
 
+  // ---------- «⏱️ الشغل التلقائي» (Jobs.cs) ----------
+  function jbMin(m) {
+    m = Math.round(m); if (m < 1) return "أقل من دقيقة";
+    var h = Math.floor(m / 60), d = Math.floor(h / 24), w = function (n, one, two, few, many) { return n === 1 ? one : n === 2 ? two : fmt(n) + " " + (n <= 10 ? few : many); };
+    if (d) return w(d, "يوم", "يومين", "أيام", "يوم") + (h % 24 ? " و" + w(h % 24, "ساعة", "ساعتين", "ساعات", "ساعة") : "");
+    return (h ? w(h, "ساعة", "ساعتين", "ساعات", "ساعة") : "") + (m % 60 ? (h ? " و" : "") + w(m % 60, "دقيقة", "دقيقتين", "دقايق", "دقيقة") : "");
+  }
+  function jbAt(iso) { return iso ? new Date(iso).toLocaleString("ar-EG", { weekday: "long", hour: "numeric", minute: "2-digit" }) : ""; }
+  // nothing for 20 minutes = it has stopped; an hour or more in the last day = it stood still and nobody knew
+  function jbStopped(j) { return j.lastMin == null || j.lastMin > 20; }
+  function jbWarn(j) {
+    var t = !j || j.last == null ? "" : jbStopped(j) ? "<b>الشغل التلقائي واقف من " + jbMin(j.lastMin) + ".</b> التذكيرات والتنبيهات والعروض مش بتتبعت." : j.gap24 >= 60 ? "<b>الشغل التلقائي وقف " + jbMin(j.gap24) + "</b> في آخر 24 ساعة (من " + esc(jbAt(j.gap24At)) + ")، ودلوقتي شغال." : "";
+    $("jbWarn").hidden = !t; $("jbWarnT").innerHTML = t;
+  }
+  async function loadJobs() {
+    var j; try { j = await api("jobs"); } catch (e) { $("jbPill").textContent = "—"; return; }
+    var stop = jbStopped(j), slow = j.gap24 >= 20, row = function (k, v, cls) { return '<div class="r' + (cls ? " " + cls : "") + '"><span>' + k + '</span><b>' + v + '</b></div>'; };
+    $("jbPill").className = "pill " + (stop ? "err" : slow ? "warn" : "ok");
+    $("jbPill").textContent = j.last == null ? "لسه ماشتغلش" : stop ? "واقف من " + jbMin(j.lastMin) : slow ? "شغال، بس وقف شوية" : "شغال في ميعاده ✓";
+    var SRC = { timer: "من جوه الموقع", health: "UptimeRobot", cron: "GitHub", now: "عرض بدأ أو منتج رجع" }, by = Object.keys(SRC).filter(function (k) { return j.by[k]; }).map(function (k) { return SRC[k] + " " + fmt(j.by[k]); }).join(" · ");
+    var young = j.since && Date.now() - new Date(j.since).getTime() < 86400000;
+    $("jbRows").innerHTML = j.last == null ? row("آخر مرة اشتغل", "—") :
+      row("آخر مرة اشتغل", j.lastMin < 1 ? "دلوقتي" : "من " + jbMin(j.lastMin), stop ? "bad" : "good") +
+      row(young ? 'اشتغل كام مرة <small>(بنسجّل من ' + esc(jbAt(j.since)) + ')</small>' : "اشتغل كام مرة آخر 24 ساعة", fmt(j.runs24) + (by ? ' <small>' + by + '</small>' : "")) +
+      row("أطول وقفة آخر 24 ساعة", jbMin(j.gap24) + (j.gap24 >= 20 ? ' <small>من ' + esc(jbAt(j.gap24At)) + '</small>' : ""), slow ? "bad" : "good") +
+      row("أطول وقفة آخر 7 أيام", jbMin(j.gap7) + (j.gap7 >= 20 ? ' <small>من ' + esc(jbAt(j.gap7At)) + '</small>' : "")) +
+      row("الموقع بيصحّي نفسه كل دقيقتين", j.ping === "ok" ? "شغال ✓" : j.ping === "failed" ? "مش بيوصل" : "لسه بيبدأ", j.ping === "failed" ? "bad" : "");
+  }
+  $("jbAgain").onclick = async function () { busy(this, true); await loadJobs(); busy(this, false); };
+
   // ---------- settings ----------
   async function loadSettings() {
+    loadJobs();
     try {
       var s = await api("settings");
       $("sRate").value = s.usdRate; $("sWa").value = s.whatsapp; $("sUs").value = s.unitsSmall; $("sUm").value = s.unitsMedium; $("sUl").value = s.unitsLarge;

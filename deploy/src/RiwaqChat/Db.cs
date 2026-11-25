@@ -152,7 +152,7 @@ namespace RiwaqChat
             {
                 lock (Lock)
                 {
-                    if (!ensured) { using (var cmd = new SqlCommand(Schema, c)) cmd.ExecuteNonQuery(); ensured = true; PlanGate.Seed(c); Billing.EnsurePriceLocks(c); SiteBot.Ensure(c); Jobs.Start(); }
+                    if (!ensured) { using (var cmd = new SqlCommand(Schema, c)) cmd.ExecuteNonQuery(); ensured = true; try { PlanGate.Seed(c); Billing.EnsurePriceLocks(c); SiteBot.Ensure(c); } finally { Jobs.Start(); } }
                 }
             }
             return c;
@@ -1046,6 +1046,12 @@ BEGIN
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), DecidedAt DATETIME2 NULL);
   CREATE INDEX IX_CouncilTopups_Store ON dbo.CouncilTopups(StoreId, Id);
   EXEC sp_executesql N'CREATE UNIQUE INDEX UX_CouncilTopups_RefNo ON dbo.CouncilTopups(RefNo) WHERE Status IN (''pending'', ''approved'');';
+END
+-- Every run of the background jobs (Jobs.cs), kept 8 days: when it started, what started it (timer / health / cron / now), how long it took
+IF OBJECT_ID('dbo.JobRuns') IS NULL
+BEGIN
+  CREATE TABLE dbo.JobRuns(Id BIGINT IDENTITY(1,1) PRIMARY KEY, At DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), Src NVARCHAR(10) NOT NULL, Ms INT NULL);
+  CREATE INDEX IX_JobRuns_At ON dbo.JobRuns(At) INCLUDE (Src, Ms);
 END
 -- ---------- «زبايني» (Crm.cs, 2026-11-25, the user): a file per customer, ready-made groups, the returns alert ----------
 -- CrmOrders: the store's orders (shopify / eo / excel / hand), one row each. Status: open / shipped / delivered / returned / cancelled.

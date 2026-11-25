@@ -1,12 +1,14 @@
 name: Background jobs
 
-# Wakes the site every 15 minutes so its background work runs on time even when nobody is visiting it:
-# abandoned-cart reminders on WhatsApp once they're due, and the weekly report to store owners.
-# The site runs the same work on its own timer while it's awake; a lease in the database stops two runs overlapping.
+# The last resort for the site's background work (reminders, alerts, offers, reports). The site does it by itself every 5 minutes and
+# keeps itself awake, and the uptime monitor's calls to api/health.ashx start a run when one was missed (Jobs.cs).
+# GitHub runs a schedule only when it has room: this one asks for every 15 minutes and got 2-4 runs a day (Nov 2026), so nothing may
+# count on it. The minutes are off the hour on purpose, the hour itself being GitHub's busiest time.
+# It prints how the work has been doing (runs and the longest gap in 24 hours; nothing about any store), so a problem shows here too.
 # The key is derived from AUTH_SECRET exactly like Jobs.CronKey() (HMAC-SHA256 of "sellybot-cron", first 32 hex characters).
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -21,4 +23,5 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: |
           key=$(printf '%s' "sellybot-cron" | openssl dgst -sha256 -hmac "$AUTH_SECRET" -hex | sed 's/^.*= //' | cut -c1-32)
-          curl -fsS -m 90 -o /dev/null -w "cron: %{http_code}\n" "https://sellybot.online/api/cron.ashx?key=$key"
+          echo "::add-mask::$key"
+          curl -fsS -m 90 --retry 3 --retry-all-errors --retry-delay 20 -w "\ncron: %{http_code}\n" "https://sellybot.online/api/cron.ashx?key=$key"

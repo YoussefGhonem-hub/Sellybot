@@ -29,6 +29,7 @@ namespace RiwaqChat
                 finally { Monitor.Exit(Lock); }
             }
             else ok = lastOk;   // a check is running right now: the last answer
+            if (ok) Jobs.Nudge();   // the monitor calls this every 5 minutes: a run of the background jobs if the timer missed its turn
             res.StatusCode = ok ? 200 : 503;
             res.ContentType = "text/plain";
             res.Write(ok ? "ok" : "down");

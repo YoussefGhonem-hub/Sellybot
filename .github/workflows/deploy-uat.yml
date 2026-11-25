@@ -50,3 +50,17 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           ADMIN_SIGNUP_CODE: ${{ secrets.ADMIN_SIGNUP_CODE }}
         run: ./deploy/ci-deploy.ps1
+
+      # The upload restarts the site. One visit brings it back, so the background jobs (reminders, alerts, offers) go on right away.
+      - name: Wake the site
+        shell: pwsh
+        run: |
+          foreach ($i in 1..8) {
+            try {
+              $r = Invoke-WebRequest "https://sellybot.online/api/health.ashx" -TimeoutSec 60
+              if ("$($r.Content)" -match '^ok') { "The site is up."; exit 0 }
+            } catch { "Try ${i}: $($_.Exception.Message)" }
+            Start-Sleep -Seconds 15
+          }
+          Write-Host "::error::The upload finished, but the site's health check isn't answering ok."
+          exit 1
