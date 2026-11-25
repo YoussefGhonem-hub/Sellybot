@@ -6,10 +6,12 @@
 //   wa30     the same, in the last 30 days only
 //   restock  customers who asked «بلّغني لما يرجع» (RestockWaits)
 //   orders   customers whose orders went through Sellybot: order confirmation (Shopify / EasyOrders), the delivery-day message,
-//            orders made in the chat, abandoned carts that were bought in the end
+//            orders made in the chat, abandoned carts that were bought in the end, and the store's orders in «زبايني» (Crm.cs)
 //   list     the owner's own list (BcContacts.Added): numbers typed or uploaded from Excel / CSV (the owner confirms these people
 //            agreed to hear from the store), and Messenger / Instagram customers who gave their number when the assistant asked
 //            (Stores.BcAsk: once per customer, «تحب يوصلك جديدنا وعروضنا على الواتساب؟» with Meta's phone-number button)
+//   c-…      a group from «زبايني» (Crm.cs): first order, best customers, bought and gone, left a cart, asked and didn't buy, waiting
+//            for a product. Only who they are is decided there; the rest is the same (never the ones who keep returning orders)
 //   tg       (2026-11-23) everyone who wrote to the store's Telegram bot or pressed Start (TgContacts), sent from the bot itself:
 //            first in the offer, about one a second (no WhatsApp number to protect there), no daily cap; «وقف» or /stop ends
 //            them, and a customer who blocked the bot is skipped until they write to it again
@@ -47,7 +49,9 @@ namespace RiwaqChat
         public const int MaxText = 900;            // + the «وقف» line stays under WhatsApp's 1024-character picture caption
         public const int MaxImage = 1500 * 1024;   // the dashboard shrinks the picture to 1600px first
         public const int MaxPerOffer = 20000, MaxList = 50000, MaxImportRows = 20000;
-        public static readonly string[] Audiences = { "wa", "wa30", "restock", "orders", "list", "tg" };
+        // c-…: a group from «زبايني» (Crm.Groups, plan gate "crmgroups")
+        public static readonly string[] Audiences = { "wa", "wa30", "restock", "orders", "list", "tg", "c-fresh", "c-vip", "c-lost", "c-cart", "c-ask", "c-wait" };
+        public static bool IsGroup(string a) { return a != null && a.StartsWith("c-"); }
         public const string Footer = "لو مش عايز توصلك رسايلنا، ابعت «وقف».";
 
         public static int DailyCap(SqlConnection c) { int v; return int.TryParse(Billing.Get(c, "BcDailyCap"), out v) && v > 0 ? v : 250; }
@@ -116,8 +120,9 @@ SELECT Phone, Customer FROM dbo.OrderConfirms WHERE StoreId=@s AND Phone IS NOT 
 UNION ALL SELECT Phone, Customer FROM dbo.EoConfirms WHERE StoreId=@s AND Phone IS NOT NULL
 UNION ALL SELECT Phone, Customer FROM dbo.DeliveryNotices WHERE StoreId=@s AND Phone IS NOT NULL
 UNION ALL SELECT Phone, Name FROM dbo.ChatOrders WHERE StoreId=@s AND Status='placed' AND Phone IS NOT NULL
-UNION ALL SELECT Phone, Customer FROM dbo.CartReminders WHERE StoreId=@s AND Status IN ('ordered','recovered') AND Phone IS NOT NULL", storeId);
-                default: return new List<Who>();
+UNION ALL SELECT Phone, Customer FROM dbo.CartReminders WHERE StoreId=@s AND Status IN ('ordered','recovered') AND Phone IS NOT NULL
+UNION ALL SELECT Phone, Customer FROM dbo.CrmOrders WHERE StoreId=@s AND Status <> 'cancelled' AND Phone IS NOT NULL", storeId);
+                default: return IsGroup(a) ? Crm.Who(c, storeId, a.Substring(2)) : new List<Who>();
             }
         }
 
@@ -218,7 +223,8 @@ UNION ALL SELECT Phone, Customer FROM dbo.CartReminders WHERE StoreId=@s AND Sta
         static Dictionary<string, object> Counts(SqlConnection c, StoreInfo s)
         {
             var d = new Dictionary<string, object>();
-            foreach (var a in Audiences) d[a] = Pick(c, s, new[] { a }).Count;
+            bool groups = Crm.Shown(c, s, Crm.GroupsFeature);
+            foreach (var a in Audiences) d[a] = IsGroup(a) && !groups ? 0 : Pick(c, s, new[] { a }).Count;
             return d;
         }
 
@@ -1085,6 +1091,7 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
         static string Needs(SqlConnection c, StoreInfo s, List<string> aud = null)
         {
             if (!PlanGate.Allows(c, s, Offers.Feature)) return "plan";
+            if (aud != null && aud.Any(Offers.IsGroup) && !PlanGate.Allows(c, s, Crm.GroupsFeature)) return "groups";
             bool tg = aud != null && aud.Contains(Tg.Ch), wa = aud == null || aud.Any(a => a != Tg.Ch);
             if (tg) { var bot = Tg.Link(c, s.Id); if (bot == null || bot.Token == null) return "telegram"; }
             if (wa && !WaAccount.HasService(s)) return "service";
@@ -1095,6 +1102,7 @@ SELECT @already, @stopped;", "@s", storeId, "@src", source))
         static void Deny(HttpResponse res, SqlConnection c, StoreInfo s, string stop)
         {
             if (stop == "plan") { PlanGate.Deny(res, c, s, Offers.Feature); return; }
+            if (stop == "groups") { PlanGate.Deny(res, c, s, Crm.GroupsFeature); return; }
             if (stop == "telegram") { Web.Error(res, 400, "no_telegram", "اربط بوت التيليجرام بتاع متجرك الأول من صفحة «تيليجرام»، أو شيل «تيليجرام» من اللي العرض رايح لهم."); return; }
             if (stop == "service") { Web.Error(res, 400, "no_service", "العروض بتتبعت من رقم واتساب متجرك. فعّل خدمة الواتساب أو جدّدها من «باقتي» الأول."); return; }
             Web.Error(res, 400, "no_whatsapp", "اربط واتساب المتجر الأول من صفحة «واتساب»، عشان العروض تتبعت من رقمك.");

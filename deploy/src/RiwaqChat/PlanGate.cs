@@ -19,6 +19,8 @@
 //   broadcast: «ابعت عرض», an offer from the store's WhatsApp number to its customers (Offers.cs). Needs the WhatsApp service; open to every
 //              plan («الاقتصادية» too, the user 2026-11-23) until the super admin picks a minimum
 //   telegram: the assistant answering on the store's own Telegram bot (Telegram.cs); open to every plan until set
+//   crm: «زبايني», a file per customer (Crm.cs); open to every plan · crmgroups / returns: the ready-made groups and the returns alert,
+//        from «المتقدمة» (the crm migration set it; the super admin can change it)
 // The dashboard hides what the store's plan doesn't include (Hidden(), sent as "hide" in the store's data), and asks
 // api/locks.ashx which features are locked right now (an ended plan: the renew card).
 using System;
@@ -32,7 +34,7 @@ namespace RiwaqChat
 {
     public static class PlanGate
     {
-        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "tracking", "bothstores", "delivery", "carts", "waimages", "restock", "report", "handoff", "messenger", "instagram", "broadcast", "telegram" };
+        public static readonly string[] Features = { "shopify", "files", "styles", "chatorders", "easyorders", "tracking", "bothstores", "delivery", "carts", "waimages", "restock", "report", "handoff", "messenger", "instagram", "broadcast", "telegram", "crm", "crmgroups", "returns" };
         public static readonly HashSet<string> FreeStyles = new HashSet<string> { "classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear" };
         public static readonly HashSet<string> FreeColors = new HashSet<string> { "#e8774a", "#e8a33d", "#d64545", "#e84a8a", "#9b5de5", "#5b5bd6", "#1a73e8", "#0ea5a4", "#2f8f5b", "#6b8e23", "#1f3a5f", "#222222" };
         public static readonly HashSet<string> LockedFileTypes = new HashSet<string> { "pdf", "docx", "xlsx" };
@@ -44,7 +46,8 @@ namespace RiwaqChat
             { "bothstores", "ربط Shopify و EasyOrders مع بعض" }, { "delivery", "رسالة يوم التوصيل على واتساب" },
             { "carts", "استرجاع السلة المتروكة على واتساب" }, { "waimages", "المساعد يفهم الصور على واتساب" }, { "restock", "«بلّغني لما يرجع»" },
             { "report", "التقرير الأسبوعي على واتساب" }, { "handoff", "التحويل ليك لما الزبون يحتاجك" },
-            { "messenger", "المساعد على المسنجر" }, { "instagram", "المساعد على الإنستجرام" }, { "broadcast", "«ابعت عرض» على الواتساب" }, { "telegram", "المساعد على تيليجرام" } };
+            { "messenger", "المساعد على المسنجر" }, { "instagram", "المساعد على الإنستجرام" }, { "broadcast", "«ابعت عرض» على الواتساب" }, { "telegram", "المساعد على تيليجرام" },
+            { "crm", "«زبايني»" }, { "crmgroups", "مجموعات الزباين الجاهزة" }, { "returns", "تنبيه المرتجع" } };
 
         public static int MinPlanId(SqlConnection c, string feature)
         {
@@ -247,7 +250,8 @@ namespace RiwaqChat
             var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify" }, { "tracking", "📦 تتبع الأوردرات في الشات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة ولوجو متجرك والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتأكيد طلباته" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" },
                 { "carts", "🛒 استرجاع السلة المتروكة على واتساب" }, { "waimages", "📷 المساعد يفهم الصور على واتساب" }, { "restock", "🔔 «بلّغني لما يرجع»" },
                 { "report", "📊 التقرير الأسبوعي على واتساب" }, { "handoff", "🙋 التحويل لصاحب المتجر" },
-                { "messenger", "💬 المساعد على المسنجر" }, { "instagram", "📸 المساعد على الإنستجرام" }, { "broadcast", "📣 «ابعت عرض» على الواتساب" }, { "telegram", "✈️ المساعد على تيليجرام" } };
+                { "messenger", "💬 المساعد على المسنجر" }, { "instagram", "📸 المساعد على الإنستجرام" }, { "broadcast", "📣 «ابعت عرض» على الواتساب" }, { "telegram", "✈️ المساعد على تيليجرام" },
+                { "crm", "👥 «زبايني»: ملف لكل زبون" }, { "crmgroups", "🎯 مجموعات الزباين الجاهزة" }, { "returns", "↩️ تنبيه المرتجع" } };
             return new Dictionary<string, object> {
                 { "features", PlanGate.Features.Select(f => new Dictionary<string, object> { { "key", f }, { "name", names[f] }, { "minPlan", PlanGate.MinPlanId(c, f) } }).ToList() },
                 { "plans", Billing.Plans(c, false).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } }).ToList() } };

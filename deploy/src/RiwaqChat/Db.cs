@@ -1046,6 +1046,63 @@ BEGIN
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), DecidedAt DATETIME2 NULL);
   CREATE INDEX IX_CouncilTopups_Store ON dbo.CouncilTopups(StoreId, Id);
   EXEC sp_executesql N'CREATE UNIQUE INDEX UX_CouncilTopups_RefNo ON dbo.CouncilTopups(RefNo) WHERE Status IN (''pending'', ''approved'');';
+END
+-- ---------- «زبايني» (Crm.cs, 2026-11-25, the user): a file per customer, ready-made groups, the returns alert ----------
+-- CrmOrders: the store's orders (shopify / eo / excel / hand), one row each. Status: open / shipped / delivered / returned / cancelled.
+-- ByHand = the owner set the status (the store's system doesn't change it any more) · Gone = the customer was erased (no name or
+-- number is kept, nor brought back) · Alert: due / shown / sent / failed / late (the returns alert), ok = the owner checked it.
+IF OBJECT_ID('dbo.CrmOrders') IS NULL
+BEGIN
+  CREATE TABLE dbo.CrmOrders(
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Source NVARCHAR(10) NOT NULL, OrderId NVARCHAR(64) NOT NULL,
+    OrderName NVARCHAR(40) NULL, Phone NVARCHAR(20) NULL, Customer NVARCHAR(100) NULL, City NVARCHAR(80) NULL,
+    Total DECIMAL(12,2) NULL, Currency NVARCHAR(8) NULL, Items NVARCHAR(300) NULL,
+    Status NVARCHAR(10) NOT NULL DEFAULT 'open', ByHand BIT NOT NULL DEFAULT 0, Gone BIT NOT NULL DEFAULT 0,
+    Alert NVARCHAR(10) NULL, AlertNote NVARCHAR(200) NULL,
+    OrderedAt DATETIME2 NOT NULL, StatusAt DATETIME2 NULL, CheckedAt DATETIME2 NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE UNIQUE INDEX UX_CrmOrders_Order ON dbo.CrmOrders(StoreId, Source, OrderId);   -- a webhook may come twice, and the pull sees it again
+  CREATE INDEX IX_CrmOrders_Phone ON dbo.CrmOrders(StoreId, Phone) INCLUDE (Status, Total, OrderedAt);
+  CREATE INDEX IX_CrmOrders_Alert ON dbo.CrmOrders(Alert) WHERE Alert IS NOT NULL;
+END
+-- what the owner wrote about a customer. Mark: star (مهم) / follow (محتاج متابعة) / whole (جملة) / block (ماتشحنلوش)
+IF OBJECT_ID('dbo.CrmNotes') IS NULL
+  CREATE TABLE dbo.CrmNotes(
+    StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Phone NVARCHAR(20) NOT NULL,
+    Name NVARCHAR(100) NULL, Note NVARCHAR(1000) NULL, Mark NVARCHAR(10) NULL,
+    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), PRIMARY KEY (StoreId, Phone));
+-- CrmAlert: the returns alert on WhatsApp · CrmShopAt: Shopify's orders are known up to here · CrmTryAt: the last pull started ·
+-- CrmHooked: new Shopify orders come by webhook. WaOptOuts.ByOwner: the owner stopped this number's messages, not the customer («وقف»)
+IF COL_LENGTH('dbo.Stores', 'CrmAlert') IS NULL ALTER TABLE dbo.Stores ADD CrmAlert BIT NOT NULL CONSTRAINT DF_Stores_CrmAlert DEFAULT 1,
+  CrmShopAt DATETIME2 NULL, CrmTryAt DATETIME2 NULL, CrmHooked BIT NOT NULL CONSTRAINT DF_Stores_CrmHooked DEFAULT 0;
+IF COL_LENGTH('dbo.WaOptOuts', 'ByOwner') IS NULL ALTER TABLE dbo.WaOptOuts ADD ByOwner BIT NOT NULL CONSTRAINT DF_WaOptOuts_ByOwner DEFAULT 0;
+-- once: the orders the confirmation messages know already, and the plans (the file: every plan; the groups and the returns alert: from «المتقدمة»)
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'crm')
+BEGIN
+  BEGIN TRY   -- best effort: the site starts either way
+  INSERT INTO dbo.CrmOrders(StoreId, Source, OrderId, OrderName, Phone, Customer, Total, Currency, Status, OrderedAt, StatusAt)
+    SELECT o.StoreId, 'shopify', CAST(o.OrderId AS NVARCHAR(64)), o.OrderName, CASE WHEN LEN(o.Phone)=10 AND o.Phone LIKE '1%' THEN '20' + o.Phone ELSE o.Phone END, o.Customer,
+      CASE WHEN v.N LIKE '[0-9]%' AND v.N NOT LIKE '%[^0-9.]%' AND LEN(v.N) < 11 THEN CAST(v.N AS DECIMAL(12,2)) END, CASE WHEN o.Total LIKE N'% EGP' THEN N'ج.م' ELSE NULLIF(LEFT(LTRIM(SUBSTRING(o.Total, CHARINDEX(' ', o.Total + ' '), 20)), 8), '') END, CASE WHEN o.Status='cancelled' THEN 'cancelled' ELSE 'open' END, o.CreatedAt, o.AnsweredAt
+    FROM dbo.OrderConfirms o CROSS APPLY (SELECT REPLACE(LEFT(o.Total, CHARINDEX(' ', o.Total + ' ') - 1), ',', '') AS N) v
+    WHERE NOT EXISTS (SELECT 1 FROM dbo.CrmOrders x WHERE x.StoreId=o.StoreId AND x.Source='shopify' AND x.OrderId=CAST(o.OrderId AS NVARCHAR(64)));
+  INSERT INTO dbo.CrmOrders(StoreId, Source, OrderId, OrderName, Phone, Customer, Total, Status, OrderedAt, StatusAt)
+    SELECT o.StoreId, 'eo', o.OrderId, o.OrderName, CASE WHEN LEN(o.Phone)=10 AND o.Phone LIKE '1%' THEN '20' + o.Phone ELSE o.Phone END, o.Customer,
+      CASE WHEN v.N LIKE '[0-9]%' AND v.N NOT LIKE '%[^0-9.]%' AND LEN(v.N) < 11 THEN CAST(v.N AS DECIMAL(12,2)) END, CASE WHEN o.Status='cancelled' THEN 'cancelled' ELSE 'open' END, o.CreatedAt, o.AnsweredAt
+    FROM dbo.EoConfirms o CROSS APPLY (SELECT REPLACE(LEFT(o.Total, CHARINDEX(' ', o.Total + ' ') - 1), ',', '') AS N) v
+    WHERE NOT EXISTS (SELECT 1 FROM dbo.CrmOrders x WHERE x.StoreId=o.StoreId AND x.Source='eo' AND x.OrderId=o.OrderId);
+  END TRY BEGIN CATCH END CATCH
+  DECLARE @advPlan INT = (SELECT TOP 1 Id FROM dbo.Plans WHERE Name = N'المتقدمة' AND IsDeleted = 0 ORDER BY Id);
+  IF @advPlan IS NOT NULL
+    MERGE dbo.AppSettings AS t USING (VALUES (N'MinPlan_crmgroups'), (N'MinPlan_returns')) AS x([Key]) ON t.[Key] = x.[Key]
+      WHEN NOT MATCHED THEN INSERT ([Key], [Value]) VALUES (x.[Key], CAST(@advPlan AS NVARCHAR(20)));
+  UPDATE dbo.Plans SET Features = ISNULL(Features + NCHAR(10), N'') + N'«زبايني»: ملف لكل زبون بأوردراته'
+    WHERE IsDeleted = 0 AND (Features IS NULL OR (Features NOT LIKE N'%«زبايني»%' AND Features NOT LIKE N'%كل مميزات%'));
+  UPDATE p SET Features = p.Features + NCHAR(10) + N'مجموعات زباين جاهزة وتنبيه المرتجع'
+    FROM dbo.Plans p WHERE p.IsDeleted = 0 AND p.IncludesWa = 0 AND p.Features NOT LIKE N'%تنبيه المرتجع%' AND p.Features NOT LIKE N'%كل مميزات المتقدمة%'
+      AND (@advPlan IS NULL OR p.SortOrder >= (SELECT SortOrder FROM dbo.Plans WHERE Id = @advPlan));
+  INSERT INTO dbo.Migrations(Name) VALUES ('crm');
 END";
     }
 }

@@ -609,7 +609,7 @@ namespace RiwaqChat
                     byte[] got; try { got = Convert.FromBase64String(header); } catch { got = null; }
                     if (!Secrets.Same(expect, got)) { res.StatusCode = 401; return; }
                     string topic = (req.Headers["X-Shopify-Topic"] ?? "").ToLowerInvariant();
-                    if (topic == "orders/create") { OrderConfirm.OnOrder(c, s, body); Carts.OnShopifyOrder(c, s, body); }
+                    if (topic == "orders/create") { OrderConfirm.OnOrder(c, s, body); Carts.OnShopifyOrder(c, s, body); Crm.OnShopifyOrder(c, s, body); }
                     else if (topic == "checkouts/create" || topic == "checkouts/update") Carts.OnShopifyCheckout(c, s, body);
                     else if (topic == "fulfillment_events/create") Delivery.OnShopifyEvent(s, body);
                     else { ShopifyAdmin.QueueResync(s.Id); if (topic == "inventory_levels/update" || topic == "products/update") Restock.StockChanged(c, s); }

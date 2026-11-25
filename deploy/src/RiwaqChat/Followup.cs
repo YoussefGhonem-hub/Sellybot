@@ -96,10 +96,11 @@ namespace RiwaqChat
         {
             if (Busy(c, s.Id, d.Phone)) return;
             if (!Claim(c, d, "AlertedAt")) return;
+            var risk = Crm.RiskLine(c, s, d.Phone);   // «زبايني»: they return orders
             var text = new StringBuilder("📵 *أوردر مردّش على التأكيد*\n")
                 .Append("🧾 طلب ").Append(d.Name).Append(string.IsNullOrWhiteSpace(d.Customer) ? "" : " · " + d.Customer.Trim())
                 .Append(string.IsNullOrEmpty(d.Total) ? "" : " · " + d.Total).Append(" (").Append(d.Source).Append(")\n")
-                .Append("بعتناله رسالة التأكيد وتذكير بعدها، ولسه مارَدّش.\n\n")
+                .Append("بعتناله رسالة التأكيد وتذكير بعدها، ولسه مارَدّش.\n").Append(risk.Length > 0 ? "↩️ وخد بالك: " + risk + ".\n" : "").Append('\n')
                 .Append("📱 رقمه: +").Append(d.Phone).Append('\n')
                 .Append("👈 كلّمه واتساب: https://wa.me/").Append(d.Phone).Append('\n')
                 .Append("📞 أو اتصل بيه وأكّد معاه الطلب.\n\n")

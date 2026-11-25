@@ -219,6 +219,7 @@ namespace RiwaqChat
                         if (err == null)
                         {
                             await ShopifyAdmin.AddTags(creds, gid, TagCancelled);
+                            Crm.SetStatus(c, storeId, "shopify", orderId.ToString(CultureInfo.InvariantCulture), "cancelled");   // «زبايني»: known now, not at the next pull
                             reply = "تم إلغاء طلبك " + name + " ❌\nلو غيّرت رأيك أو محتاج أي حاجة، ابعتلنا هنا في أي وقت.";
                         }
                         else
@@ -278,21 +279,22 @@ namespace RiwaqChat
         }
 
         // ---------- dashboard ----------
-        public static List<Dictionary<string, object>> Recent(SqlConnection c, int storeId, int n = 15)
+        public static List<Dictionary<string, object>> Recent(SqlConnection c, int storeId, StoreInfo s = null, int n = 15)
         {
             var list = new List<Dictionary<string, object>>();
-            using (var cmd = Db.Cmd(c, "SELECT TOP (@n) OrderName, Customer, Total, Status, Note, CreatedAt, AnsweredAt, RemindedAt, AlertedAt, AlertTo FROM dbo.OrderConfirms WHERE StoreId=@s ORDER BY Id DESC", "@n", n, "@s", storeId))
+            using (var cmd = Db.Cmd(c, "SELECT TOP (@n) OrderName, Customer, Phone, Total, Status, Note, CreatedAt, AnsweredAt, RemindedAt, AlertedAt, AlertTo FROM dbo.OrderConfirms WHERE StoreId=@s ORDER BY Id DESC", "@n", n, "@s", storeId))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                 {
                     var row = new Dictionary<string, object> {
-                        { "order", r["OrderName"] as string }, { "customer", r["Customer"] as string ?? "" }, { "total", r["Total"] as string ?? "" },
+                        { "order", r["OrderName"] as string }, { "customer", r["Customer"] as string ?? "" }, { "phone", r["Phone"] as string ?? "" }, { "total", r["Total"] as string ?? "" },
                         { "status", r["Status"] as string }, { "note", r["Note"] as string ?? "" },
                         { "at", DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc).ToString("o") },
                         { "answeredAt", r["AnsweredAt"] == DBNull.Value ? "" : DateTime.SpecifyKind((DateTime)r["AnsweredAt"], DateTimeKind.Utc).ToString("o") } };
                     Followup.Decorate(row, r);   // pending: a reminder went, or nobody answered and someone was told to call
                     list.Add(row);
                 }
+            if (s != null) Crm.Decorate(c, s, list);   // a customer who returns orders
             return list;
         }
 

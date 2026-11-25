@@ -1,5 +1,5 @@
-// Work that happens later, not in answer to a request: abandoned-cart reminders once they're due, the weekly report, and the
-// store's offers («ابعت عرض», Offers.cs) a number at a time.
+// Work that happens later, not in answer to a request: abandoned-cart reminders once they're due, the weekly report, the customers'
+// orders and returns alerts («زبايني», Crm.cs), and the store's offers («ابعت عرض», Offers.cs) a number at a time.
 // Two things start a run:
 //   - a timer inside the site (every 5 minutes, started on the first database use), while the site is awake;
 //   - api/cron.ashx?key=..., which the "Background jobs" GitHub Actions schedule calls every 15 minutes, so the site
@@ -56,6 +56,9 @@ namespace RiwaqChat
                     }
                     finally { Release(c); }   // the next run may start at once; the 4 minutes only cover a run that died half way
                 }
+                // «زبايني»: the returns alerts that waited for the morning, and what changed in the stores' orders. Outside the lease (each
+                // alert and each store's pull is claimed in the database) and without holding a connection while it waits for Shopify.
+                try { await Crm.Run(ct); } catch (Exception ex) { Log.Error(ex); }
                 // «ابعت عرض»: offers go out slowly, a message every half a minute or so, for up to ~4 minutes a run. Outside the lease (it
                 // claims each slot and each number in the database itself) and without holding a connection while it waits.
                 try { await Offers.SendDue(ct); } catch (Exception ex) { Log.Error(ex); }

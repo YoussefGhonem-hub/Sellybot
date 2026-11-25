@@ -56,10 +56,11 @@
   .theme-btn{flex:none;margin-inline-start:auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;overflow:hidden;transition:border-color .2s,transform .2s}
   .theme-btn:hover{border-color:var(--brand);transform:rotate(-12deg)}
   @media (min-width:1440px){.nav-in{gap:24px}.links{gap:6px}.links button{padding:0 14px;font-size:14.5px}}
-  @media (min-width:761px) and (max-width:1150px){.links button{padding:0 9px}}
+  @media (min-width:761px) and (max-width:1240px){.links button{padding:0 9px}}
   @media (min-width:761px) and (max-width:1100px){.links button{padding:0 6px;font-size:13.5px}.logo small{display:none}.nav-in{gap:10px}}
-  @media (min-width:761px) and (max-width:960px){.acct .acct-txt{display:none}.acct .acct-btn{padding:4px 8px 4px 4px}}   /* just the picture, so every tab fits */
+  @media (min-width:761px) and (max-width:1060px){.acct .acct-txt{display:none}.acct .acct-btn{padding:4px 8px 4px 4px}}   /* just the picture, so every tab fits */
   @media (min-width:761px) and (max-width:840px){.logo > span{display:none}}   /* and just the logo's mark */
+  @media (min-width:761px) and (max-width:900px){.links{gap:0}.links button{padding:0 5px;font-size:13px}.nav-in{gap:8px;padding:0 12px}.theme-btn{width:34px;height:34px}}
   /* dropdowns in the navbar (الشات · المزيد): the menu hangs from the header (.nav), so the tabs' scroll box doesn't cut it off; JS lines it up under its button */
   .dd{display:flex;height:100%;flex:none}
   .links .dd-btn{display:flex;align-items:center;gap:4px}
@@ -1635,8 +1636,8 @@
     .hm-lap .win,.hm-lap .wb .ch span{opacity:1;transform:none}
   }
   /* ---------- «فكّر معانا» ---------- */
-  /* its nav button: a tab of its own, or an item of «المزيد» when the tabs don't fit (cnPlace) */
-  .links>#cnTabBtn .cn-nm,.dd-menu #cnTabBtn .cn-nw{display:none}
+  /* «ابعت عرض» and «فكّر معانا» in the nav: a tab of their own, or an item of «المزيد» when the tabs don't fit (navFit) */
+  .links>.nav2 .cn-nm,.dd-menu .nav2 .cn-nw{display:none}
   [data-panel="council"]>*{max-width:1080px}
   .cn-admin{padding:9px 14px;border-radius:12px;background:#e5efff;color:#1f4f99;font-size:13.5px;margin-bottom:12px}
   [data-theme=dark] .cn-admin{background:#162a47;color:#9cc3ff}
@@ -1804,6 +1805,155 @@
   .cn-li em{font-style:normal;font-weight:700;flex:none;font-variant-numeric:tabular-nums}.cn-li em.in{color:var(--ok)}
   .cn-credit{margin-top:14px}
   @media (prefers-reduced-motion:reduce){.cn-p.new,.cn-v.new,.cn-stage.think .cn-av,.cn-p.now p:after,.cn-dots i{animation:none}}
+  /* ---------- «👥 زبايني» ---------- */
+  .cr-tools{display:flex;gap:8px;flex-wrap:wrap}
+  .cr-tools .btn{text-decoration:none}
+  .cr-watch{margin:0 0 14px;padding:14px 16px 6px;border:1px solid color-mix(in srgb,#e8394a 32%,var(--line));border-inline-start:5px solid #e8394a;border-radius:16px;background:color-mix(in srgb,#e8394a 5%,var(--card));box-shadow:var(--shadow)}
+  .cr-w-h b{font-size:16px}.cr-w-h small{display:block;color:var(--muted);font-size:13px}
+  .cr-w{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;padding:10px 0;border-top:1px solid color-mix(in srgb,#e8394a 18%,var(--line))}
+  .cr-w:first-child{margin-top:8px}
+  .cr-w b{font-weight:600}.cr-w small{display:block;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+  .cr-w em{font-style:normal;color:var(--err);font-weight:600}
+  .cr-w-b{display:flex;gap:6px;flex-wrap:wrap}
+  .cr-box{margin:0 0 14px}
+  .cr-box .row{margin-top:14px}
+  .cr-form{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+  .cr-form label{margin:0;font-size:13px;color:var(--muted)}
+  .cr-form label input,.cr-form label select{margin-top:4px;color:var(--ink)}
+  .cr-form .wide{grid-column:1/-1}
+  .cr-cols{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;padding:0;list-style:none}
+  .cr-cols li{padding:3px 11px;border-radius:999px;font-size:12.5px;background:var(--soft);border:1px solid var(--line)}
+  .cr-cols .must{background:color-mix(in srgb,var(--brand) 14%,var(--card));border-color:color-mix(in srgb,var(--brand) 45%,var(--line));font-weight:600}
+  /* the groups */
+  .cr-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 12px}
+  .cr-groups:empty{display:none}
+  .cr-g{--gc:var(--brand);display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:0 10px;align-items:center;text-align:start;padding:11px 13px;border:1.5px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--shadow);cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s}
+  .cr-g:hover{border-color:var(--gc);transform:translateY(-2px)}
+  .cr-g:focus-visible,.cr-open:focus-visible,.cr-x:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 55%,transparent);outline-offset:2px}
+  .cr-g i{font-style:normal;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,var(--gc) 15%,var(--card))}
+  .cr-g b{display:block;font-size:14px;line-height:1.45}
+  .cr-g small{display:block;font-size:11.5px;line-height:1.5;color:var(--muted)}
+  .cr-g em{font-style:normal;font-weight:700;font-size:21px;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--gc) 72%,var(--ink))}
+  .cr-g.zero em{color:var(--muted);font-weight:500}.cr-g.zero i{filter:grayscale(.7);opacity:.75}
+  .cr-g.on{border-color:var(--gc);box-shadow:0 0 0 3px color-mix(in srgb,var(--gc) 22%,transparent);background:color-mix(in srgb,var(--gc) 6%,var(--card))}
+  .cr-do{--gc:var(--brand);display:flex;gap:10px 16px;align-items:center;flex-wrap:wrap;margin:0 0 12px;padding:13px 16px;border-radius:16px;border:1px solid color-mix(in srgb,var(--gc) 38%,var(--line));background:color-mix(in srgb,var(--gc) 7%,var(--card))}
+  .cr-do p{flex:1 1 280px;margin:0;font-size:14px}.cr-do p b{display:block}.cr-do p small{display:block;color:var(--muted);font-size:12.5px}
+  .cr-do .btn{text-decoration:none}
+  /* search */
+  .cr-bar{display:flex;gap:8px;margin:0 0 6px}
+  .cr-search{position:relative;margin:0;flex:1;min-width:0}
+  .cr-search span{position:absolute;inset-inline-start:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
+  .cr-search input{width:100%;height:46px;border:1px solid var(--line);border-radius:14px;padding:0 42px 0 14px;background:var(--card);outline:none;font-size:15px}
+  .cr-search input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(232,119,74,.15)}
+  .cr-bar select{width:auto;height:46px;border-radius:14px;background:var(--card)}
+  .cr-count{min-height:22px;margin:0 4px 6px;color:var(--muted);font-size:13px}
+  /* the list */
+  .cr-list{display:grid;gap:8px}
+  .cr-row{display:grid;grid-template-columns:minmax(0,1fr) 46px;align-items:stretch;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+  .cr-row:hover{border-color:var(--brand);box-shadow:var(--shadow)}
+  .cr-row.risk{border-inline-start:4px solid #e8394a}
+  .cr-open{display:grid;grid-template-columns:44px minmax(0,1.6fr) minmax(0,1fr) minmax(88px,auto);gap:4px 12px;align-items:center;width:100%;padding:10px 12px;border:0;background:none;text-align:start;cursor:pointer}
+  .cr-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:18px;color:#fff;background:hsl(var(--h,20) 45% 48%)}
+  .cr-who b{display:block;font-size:15px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cr-who small{color:var(--muted);font-size:12.5px;unicode-bidi:plaintext}
+  .cr-bg{display:flex;flex-wrap:wrap;gap:4px}
+  .cr-bd{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11.5px;line-height:1.8;white-space:nowrap;background:var(--soft);border:1px solid var(--line)}
+  .cr-bd.bad{background:#fde8e8;color:#a12a2a;border-color:transparent;font-weight:600}.cr-bd.mark{background:#fff1d6;color:#7a4a00;border-color:transparent}
+  [data-theme=dark] .cr-bd.bad{background:#3a1d1b;color:#ffb4ab}[data-theme=dark] .cr-bd.mark{background:#3d2c10;color:#f3c26b}
+  .cr-sum{text-align:end;line-height:1.5}.cr-sum b{display:block;font-size:14px;white-space:nowrap}.cr-sum small{color:var(--muted);font-size:12px;white-space:nowrap}
+  .cr-go{display:grid;place-items:center;border-inline-start:1px solid var(--line);font-size:19px;text-decoration:none;background:color-mix(in srgb,#25d366 8%,var(--card))}
+  .cr-go:hover{background:color-mix(in srgb,#25d366 22%,var(--card))}
+  .cr-more{display:block;margin:12px auto 0}
+  .cr-empty{padding:26px 18px;text-align:center;border:1.5px dashed var(--line);border-radius:18px;background:var(--card)}
+  .cr-empty .e{font-size:38px;line-height:1.2}.cr-empty b{display:block;font-size:17px;margin:6px 0 2px}.cr-empty p{margin:0 auto;max-width:520px;color:var(--muted);font-size:14px}
+  .cr-empty .row{justify-content:center;margin-top:14px}
+  .cr-skel{height:66px;border-radius:16px;background:linear-gradient(90deg,var(--card),var(--soft),var(--card));background-size:200% 100%;animation:crSk 1.2s linear infinite}
+  @keyframes crSk{to{background-position:-200% 0}}
+  .cr-set,.cr-how{margin-top:14px}
+  .cr-how summary{cursor:pointer;font-weight:600}
+  .cr-how ul{margin:10px 0 0;padding-inline-start:20px;font-size:13.5px;color:var(--muted)}.cr-how li{margin:5px 0}.cr-how li b{color:var(--ink)}
+  /* the file */
+  .cr-file{position:fixed;inset:0;z-index:60;display:flex;justify-content:flex-end;background:rgba(30,15,5,.45);backdrop-filter:blur(3px);animation:crFade .18s ease-out}
+  @keyframes crFade{from{opacity:0}}
+  .cr-sheet{width:min(560px,100%);height:100%;display:flex;flex-direction:column;background:var(--bg);box-shadow:0 0 60px rgba(0,0,0,.3);outline:none;animation:crIn .25s cubic-bezier(.2,.8,.2,1)}
+  @keyframes crIn{from{transform:translateX(-40px);opacity:.3}}
+  .cr-f-top{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+  .cr-f-top .cr-av{width:50px;height:50px;font-size:21px;flex:none}
+  .cr-f-who{flex:1;min-width:0}
+  .cr-f-name{display:flex;align-items:center;gap:6px;margin:0;color:var(--ink)}
+  .cr-f-name input{flex:1;min-width:0;border:1px solid transparent;border-radius:9px;padding:2px 8px;margin-inline-start:-8px;background:none;font-size:18px;font-weight:700;outline:none}
+  .cr-f-name input:hover{border-color:var(--line)}.cr-f-name input:focus{border-color:var(--brand);background:var(--bg);box-shadow:none}
+  .cr-f-name i{font-style:normal;font-size:13px;opacity:.6}
+  .cr-f-who small{color:var(--muted);font-size:13px}
+  .cr-x{flex:none;width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:17px;cursor:pointer}
+  .cr-x:hover{border-color:var(--brand)}
+  .cr-f-body{flex:1;overflow-y:auto;padding:14px 16px 26px;overscroll-behavior:contain}
+  .cr-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .cr-acts .btn{text-align:center;text-decoration:none;padding:10px 6px;font-size:14px}
+  .btn.cr-wa{background:#1f9d55;color:#fff}
+  .cr-risk{margin-top:12px;padding:11px 14px;border-radius:14px;background:#fde8e8;color:#8f1f1f;font-weight:600;font-size:14.5px}.cr-risk small{display:block;font-weight:400;font-size:13px}
+  [data-theme=dark] .cr-risk{background:#3a1d1b;color:#ffc4bd}
+  .cr-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .cr-nums div{padding:10px 6px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:center}
+  .cr-nums b{display:block;font-size:18px;line-height:1.35;font-variant-numeric:tabular-nums}.cr-nums small{color:var(--muted);font-size:12px}
+  .cr-nums .bad b{color:var(--err)}.cr-nums .ok b{color:var(--ok)}
+  .cr-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}.cr-tags:empty{display:none}
+  .cr-marks{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .cr-marks button{border:1.5px solid var(--line);border-radius:999px;background:var(--card);padding:6px 13px;font-size:13.5px;cursor:pointer}
+  .cr-marks button:hover{border-color:var(--brand)}
+  .cr-marks button[aria-pressed=true]{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--card));font-weight:600}
+  .cr-marks button[data-m=block][aria-pressed=true]{border-color:#e8394a;background:#fde8e8;color:#8f1f1f}
+  .cr-note{display:block;margin:14px 0 0;font-size:13.5px;font-weight:600}
+  .cr-note span{color:var(--ok);font-weight:400;font-size:12.5px}
+  .cr-note textarea{min-height:68px;margin-top:5px;background:var(--card);font-weight:400}
+  .cr-tabs{margin:16px 0 10px}
+  .cr-o{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:11px 13px;border:1px solid var(--line);border-radius:14px;background:var(--card);margin-bottom:8px}
+  .cr-o b{font-size:14.5px}.cr-o small{display:block;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+  .cr-o select{width:auto;padding:6px 10px;border-radius:999px;font-size:13px;font-weight:600;background:var(--soft)}
+  .cr-o select.delivered{background:#e6f6ec;color:#1f7a45}.cr-o select.returned{background:#fde8e8;color:#a12a2a}.cr-o select.shipped{background:#eef2ff;color:#3b4cca}
+  [data-theme=dark] .cr-o select.delivered{background:#173726;color:#8be0ad}[data-theme=dark] .cr-o select.returned{background:#3a1d1b;color:#ffb4ab}[data-theme=dark] .cr-o select.shipped{background:#23284a;color:#a9b4ff}
+  .cr-o .x{border:0;background:none;color:var(--muted);font-size:12.5px;cursor:pointer;padding:0;text-decoration:underline}
+  .cr-log{border:1px dashed var(--line);border-radius:14px;padding:11px 13px;background:var(--card)}
+  .cr-log summary{cursor:pointer;font-weight:600;font-size:14px}
+  .cr-log .cr-form{margin-top:12px}.cr-log .btn{grid-column:1/-1}
+  .cr-ev{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .cr-ev:last-child{border-bottom:0}
+  .cr-ev i{font-style:normal;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--soft);font-size:16px}
+  .cr-ev b{display:block;font-size:14px;font-weight:600}.cr-ev small{display:block;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+  .cr-chat{display:flex;flex-direction:column;gap:6px}
+  .cr-chat div{max-width:86%;padding:8px 12px;border-radius:14px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--card);border:1px solid var(--line);align-self:flex-start}
+  .cr-chat .me{align-self:flex-end;background:color-mix(in srgb,#25d366 13%,var(--card))}
+  .cr-chat small{display:block;margin-top:2px;font-size:11px;color:var(--muted)}
+  .cr-none{padding:16px;text-align:center;color:var(--muted);font-size:13.5px}
+  .cr-foot{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
+  .cr-foot .toggle{margin:0;flex:1 1 260px}
+  /* elsewhere: a customer's name that opens the file, the groups in «ابعت عرض», the home page's line */
+  .cr-link{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:start;text-decoration:underline dotted;text-underline-offset:3px}
+  .cr-link:hover{color:var(--brand)}
+  .oc-row .cr-bd{grid-column:1/-1;justify-self:start;white-space:normal}
+  .bc-grp{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin-top:4px;padding-top:10px;border-top:1px dashed var(--line)}
+  .bc-grp>b{font-size:14px;grid-column:1/-1}
+  .bc-grp label{margin:0}
+  #bcNew{scroll-margin-top:84px}
+  .hm-cust{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;padding:12px 16px;border-radius:18px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow)}
+  .hm-cust>b{margin-inline-end:4px}
+  .hm-cust button{border:1px solid var(--line);border-radius:999px;background:var(--soft);padding:6px 14px;font-size:13.5px;cursor:pointer}
+  .hm-cust button:hover{border-color:var(--brand)}
+  .hm-cust button.bad{background:#fde8e8;color:#8f1f1f;border-color:transparent;font-weight:600}
+  [data-theme=dark] .hm-cust button.bad{background:#3a1d1b;color:#ffc4bd}
+  @media (max-width:1000px){.cr-groups{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:640px){
+    .cr-title .cr-tools{display:grid;grid-template-columns:1fr 1fr}.cr-title .cr-tools .btn{width:auto;padding:9px 8px;white-space:normal}.cr-title #crAdd{grid-column:1/-1;padding:11px}
+    .cr-groups{gap:8px}
+    .cr-g{grid-template-columns:30px minmax(0,1fr) auto;padding:9px 10px;gap:0 8px}.cr-g i{width:30px;height:30px;border-radius:9px;font-size:16px}.cr-g small{display:none}.cr-g b{font-size:13px}.cr-g em{font-size:17px}
+    .cr-bar{flex-wrap:wrap}.cr-search{flex:1 0 100%}.cr-bar select{flex:1}
+    .cr-open{grid-template-columns:40px minmax(0,1fr) auto;padding:10px}.cr-av{width:40px;height:40px;font-size:16px}.cr-open .cr-bg{grid-column:2/-1;grid-row:2}.cr-open .cr-bg:empty{display:none}
+    .cr-w{grid-template-columns:minmax(0,1fr)}.cr-do .btn{flex:1}
+    .cr-form{grid-template-columns:1fr}.cr-log .cr-form{grid-template-columns:1fr 1fr}
+    .cr-nums b{font-size:16px}
+    .cr-search input,.cr-bar select,.cr-note textarea,.cr-form input,.cr-form select{font-size:16px}   /* no zoom on an iPhone */
+  }
+  @media (prefers-reduced-motion:reduce){.cr-file,.cr-sheet,.cr-skel{animation:none}.cr-g:hover{transform:none}}
 </style>
 <!-- Meta Pixel: quiet here (no page views of the dashboard), only a new account is reported (see pixel.js) -->
 <script src="pixel.js" data-quiet></script>
@@ -1830,6 +1980,7 @@
     <nav class="links" id="navLinks" hidden>
       <div class="side-head"><b>القائمة</b><button type="button" id="navClose" aria-label="اقفل القائمة">✕</button></div>
       <button data-tab="home" class="on">🏠 الرئيسية</button>
+      <button data-tab="customers" data-feat="crm">👥 زبايني</button>
       <button data-tab="data">📚 داتا المتجر</button>
       <div class="dd">
         <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddChat">🤖 الشات <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -1848,8 +1999,8 @@
           <button data-tab="telegram" data-feat="telegram" role="menuitem"><span class="dd-ic">✈️</span><span><b>تيليجرام</b><small>المساعد يرد على بوت متجرك</small></span></button>
         </div>
       </div>
-      <button data-tab="offers" data-feat="broadcast">📣 ابعت عرض</button>
-      <button data-tab="council" data-feat="council" id="cnTabBtn"><span class="cn-nw">🧠 فكّر معانا</span><span class="dd-ic cn-nm">🧠</span><span class="cn-nm"><b>فكّر معانا</b><small>اعرض فكرتك وخد رأي واضح</small></span></button>
+      <button data-tab="offers" data-feat="broadcast" id="bcTabBtn" class="nav2"><span class="cn-nw">📣 ابعت عرض</span><span class="dd-ic cn-nm">📣</span><span class="cn-nm"><b>ابعت عرض</b><small>عرضك يوصل لزباينك</small></span></button>
+      <button data-tab="council" data-feat="council" id="cnTabBtn" class="nav2"><span class="cn-nw">🧠 فكّر معانا</span><span class="dd-ic cn-nm">🧠</span><span class="cn-nm"><b>فكّر معانا</b><small>اعرض فكرتك وخد رأي واضح</small></span></button>
       <button data-tab="plan">💎 باقتي <span class="nb" id="planNb" hidden title="رد جديد من الإدارة على طلبك">1</span></button>
       <div class="dd">
         <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddMore">✨ المزيد <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -2027,6 +2178,9 @@
       <div class="hm-stat hm-rv" style="--d:.16s"><div class="ic">📚</div><b id="hmData">—</b><small id="hmDataS">داتا متجرك</small></div>
       <div class="hm-stat hm-rv" style="--d:.24s"><div class="ic">💎</div><b id="hmPlan">—</b><small id="hmPlanS"></small></div>
     </div>
+
+    <!-- «زبايني»: the customers worth a look today (crHome) -->
+    <div class="hm-cust" id="hmCust" hidden></div>
 
     <div class="hm-card hm-rv">
       <div class="hm-h"><span class="tg">⚙️ إزاي بيشتغل</span><h2>من داتا متجرك لرد في ثانية</h2><p>انت بتديله الداتا مرة واحدة، وهو بيرد على كل زبون بيها.</p></div>
@@ -2847,6 +3001,77 @@
     </div>
   </section>
 
+  <!-- «👥 زبايني» (Crm.cs, api/customers.ashx): a file per customer, ready-made groups, and who to be careful with before shipping -->
+  <section data-panel="customers" data-feat="crm" hidden>
+    <div class="page-title cr-title"><div><h2>👥 زبايني</h2><p>كل زبون في ملف واحد: أوردراته وكلامه<span data-feat="crmgroups">، ومين تبيعله تاني</span><span data-feat="returns">، ومين تاخد بالك منه قبل ما تشحن</span>.</p></div>
+      <div class="cr-tools">
+        <button class="btn sm" id="crAdd" type="button">➕ ضيف زبون</button>
+        <button class="btn ghost sm" id="crUp" type="button">⬆️ ارفع أوردرات قديمة</button>
+        <a class="btn ghost sm" id="crXls" href="api/customers.ashx?export=1">📥 نزّل Excel</a>
+      </div>
+    </div>
+
+    <!-- new orders from people who return (or «ماتشحنلوش») -->
+    <div class="cr-watch" id="crWatch" data-feat="returns" hidden>
+      <div class="cr-w-h"><b id="crWatchT"></b><small>كلّمهم وأكّد قبل ما تشحن، أو اطلب مصاريف الشحن مقدم.</small></div>
+      <div id="crWatchL"></div>
+    </div>
+
+    <!-- add a customer / upload old orders: one of them open at a time -->
+    <form class="card cr-box" id="crAddBox" hidden>
+      <h3>➕ ضيف زبون</h3>
+      <div class="cr-form">
+        <label>رقم الموبايل<input type="tel" id="crAddP" class="ltr" maxlength="25" placeholder="01001234567" required></label>
+        <label>الاسم<input type="text" id="crAddN" maxlength="80" placeholder="اختياري"></label>
+        <label class="wide">ملاحظة<input type="text" id="crAddT" maxlength="300" placeholder="اختياري، مثلًا: عميل جملة من المنصورة"></label>
+      </div>
+      <div class="row"><button class="btn" type="submit" id="crAddGo">ضيف وافتح ملفه</button><button class="btn ghost" type="button" data-cr-close>إلغاء</button></div>
+      <div class="msg" id="crAddMsg" role="alert"></div>
+    </form>
+    <div class="card cr-box" id="crUpBox" hidden>
+      <h3>⬆️ ارفع أوردراتك القديمة</h3>
+      <p class="sub">ملف Excel أو CSV نزّلته من متجرك أو من شركة الشحن. بيه «زبايني» تعرف تاريخ كل زبون من أول يوم، ومين بيرجّع.</p>
+      <ul class="cr-cols"><li class="must">رقم الموبايل</li><li class="must">التاريخ</li><li>الاسم</li><li>رقم الطلب</li><li>الإجمالي</li><li>الحالة (اتسلم / مرتجع / ملغي)</li><li>المنتج</li><li>المدينة</li></ul>
+      <p class="hint" style="margin-top:0">البرتقاني لازم يكون موجود، والباقي لو عندك. ترتيب الأعمدة مش مهم، المهم إن أول صف فيه أساميها. ولو رفعت نفس الملف تاني مش هيتكرر.</p>
+      <label class="bc-drop" for="crFileIn"><b id="crFileN">📄 اختار ملف Excel (.xlsx) أو CSV</b><small>لحد 5 ميجا و 20 ألف أوردر</small></label>
+      <input type="file" id="crFileIn" accept=".xlsx,.csv,.txt" hidden>
+      <label class="bc-consent"><input type="checkbox" id="crUpOk"><span>دي أوردرات متجري أنا.</span></label>
+      <div class="row"><button class="btn" type="button" id="crUpGo">ارفع الملف</button><button class="btn ghost" type="button" data-cr-close>إلغاء</button></div>
+      <div class="msg" id="crUpMsg" role="alert"></div>
+    </div>
+
+    <!-- the groups: each is a filter, and (but the last) an offer one tap away -->
+    <div class="cr-groups" id="crGroups" role="group" aria-label="مجموعات زباينك"></div>
+    <div class="cr-do" id="crDo" hidden></div>
+
+    <div class="cr-bar">
+      <label class="cr-search"><span aria-hidden="true">🔍</span><input type="search" id="crQ" autocomplete="off" placeholder="اسم أو رقم موبايل أو رقم أوردر" aria-label="دوّر في زباينك"></label>
+      <select id="crMark" aria-label="العلامة"></select>
+      <select id="crSort" aria-label="الترتيب"><option value="recent">الأحدث</option><option value="spent">الأعلى شراءً</option><option value="orders">الأكتر أوردرات</option><option value="returns" data-feat="returns">الأكتر مرتجع</option><option value="old">الأقدم</option></select>
+    </div>
+    <div class="cr-count" id="crCount" aria-live="polite"></div>
+    <div class="cr-list" id="crList"></div>
+    <button class="btn ghost cr-more" id="crMore" type="button" hidden>اعرض كمان</button>
+    <div class="msg" id="crMsg" role="alert"></div>
+
+    <!-- the returns alert -->
+    <div class="card cr-set" data-feat="returns">
+      <label class="toggle"><input type="checkbox" id="crAlert"><span class="tg" aria-hidden="true"></span>
+        <span><b>⚠️ نبّهني لما زبون بيرجّع يطلب تاني</b><small id="crAlertT"></small></span></label>
+      <div class="oc-warn" id="crAlertW" hidden></div>
+    </div>
+    <details class="card cr-how">
+      <summary>💡 البيانات دي بتيجي منين؟</summary>
+      <ul>
+        <li><b>الأوردرات:</b> من Shopify (آخر 60 يوم، وبعدها كل جديد) ومن EasyOrders (من يوم الربط)، ومن أي ملف ترفعه أو أوردر تسجّله بإيدك.</li>
+        <li><b>اتسلم ولا رجع:</b> زي ما متجرك أو شركة الشحن بتبلّغ. ولو مابلّغوش، غيّر الحالة إنت من ملف الزبون، وهتفضل زي ما كتبتها.</li>
+        <li><b>باقي الملف:</b> كلامه على الواتساب (آخر 60 يوم)، والسلات اللي سابها، و«بلّغني لما يرجع»، والعروض اللي بعتهاله.</li>
+        <li><b>اللي كلّمك على المسنجر أو الإنستجرام أو تيليجرام أو شات موقعك</b> بيظهر هنا لما يسيب رقمه.</li>
+        <li><b>زباينك ليك إنت بس:</b> محدش من التجار التانيين بيشوفهم، وتقدر تمسح بيانات أي زبون من ملفه.</li>
+      </ul>
+    </details>
+  </section>
+
   <!-- «📣 ابعت عرض» (Offers.cs, api/offers.ashx): an offer from the store's WhatsApp number to its customers, one number at a time -->
   <section data-panel="offers" data-feat="broadcast" hidden>
     <div class="page-title"><div><h2>📣 ابعت عرض</h2><p>ابعت عرض أو خبر جديد لزباينك على الواتساب من رقم متجرك، وعلى التيليجرام من بوت متجرك، ومعاه صورة لو تحب.</p></div></div>
@@ -2892,6 +3117,15 @@
         <label><input type="checkbox" value="list"><span><b>قايمتك</b><small id="bcN-list"></small></span></label>
         <!-- Telegram (Offers.cs «tg»): from the store's bot to everyone who wrote to it or pressed Start -->
         <label><input type="checkbox" value="tg"><span><b>✈️ اللي كلّموا بوت التيليجرام بتاعك</b><small id="bcN-tg"></small></span></label>
+        <!-- the groups of «زبايني» (Crm.cs) -->
+        <div class="bc-grp" data-feat="crmgroups"><b>🎯 مجموعات من «زبايني»</b>
+          <label><input type="checkbox" value="c-lost"><span><b>😴 اشتروا واختفوا</b><small id="bcN-c-lost"></small></span></label>
+          <label><input type="checkbox" value="c-cart"><span><b>🛒 سابوا السلة</b><small id="bcN-c-cart"></small></span></label>
+          <label><input type="checkbox" value="c-ask"><span><b>💬 سألوا وماشتروش</b><small id="bcN-c-ask"></small></span></label>
+          <label><input type="checkbox" value="c-fresh"><span><b>🌱 أول أوردر ليهم</b><small id="bcN-c-fresh"></small></span></label>
+          <label><input type="checkbox" value="c-vip"><span><b>⭐ أحسن زباينك</b><small id="bcN-c-vip"></small></span></label>
+          <label><input type="checkbox" value="c-wait"><span><b>🔔 مستنيين منتج</b><small id="bcN-c-wait"></small></span></label>
+        </div>
       </div>
       <p class="hint" id="bcAudHint" hidden></p>
       <div class="bc-total" id="bcTotal" hidden></div>
@@ -3585,6 +3819,51 @@
   </section>
 </div>
 
+<!-- «زبايني»: one customer's file, over the page (a sheet from the side; the whole screen on a phone). Filled by crFileDraw. -->
+<div class="cr-file" id="crFile" hidden>
+  <div class="cr-sheet" id="crSheet" role="dialog" aria-modal="true" aria-labelledby="crfName" tabindex="-1">
+    <header class="cr-f-top">
+      <span class="cr-av" id="crfAv" aria-hidden="true"></span>
+      <div class="cr-f-who">
+        <label class="cr-f-name"><input type="text" id="crfName" maxlength="80" aria-label="اسم الزبون" placeholder="اكتب اسمه"><i aria-hidden="true">✏️</i></label>
+        <small id="crfSub"></small>
+      </div>
+      <button class="cr-x" type="button" id="crfX" aria-label="اقفل الملف">✕</button>
+    </header>
+    <div class="cr-f-body" id="crfBody">
+      <div class="cr-acts"><a class="btn sm cr-wa" id="crfWa" target="_blank" rel="noopener">💬 واتساب</a><a class="btn ghost sm" id="crfTel">📞 اتصل</a><button class="btn ghost sm" type="button" id="crfCopy">📋 انسخ الرقم</button></div>
+      <div class="cr-risk" id="crfRisk" hidden></div>
+      <div class="cr-nums" id="crfNums"></div>
+      <div class="cr-tags" id="crfTags"></div>
+      <div class="cr-marks" id="crfMarks" role="group" aria-label="علامة على الزبون"></div>
+      <label class="cr-note">📝 ملاحظتك <span id="crfSaved" aria-live="polite"></span><textarea id="crfNote" maxlength="1000" placeholder="أي حاجة تفتكرها عنه: مقاسه، ميعاد مناسب للتوصيل…"></textarea></label>
+      <div class="ptabs cr-tabs" role="tablist" aria-label="ملف الزبون">
+        <button type="button" role="tab" id="crfT0" aria-controls="crfP0"></button><button type="button" role="tab" id="crfT1" aria-controls="crfP1"></button><button type="button" role="tab" id="crfT2" aria-controls="crfP2"></button>
+      </div>
+      <div role="tabpanel" id="crfP0" aria-labelledby="crfT0">
+        <div id="crfOrders"></div>
+        <details class="cr-log" id="crfLog">
+          <summary>➕ سجّل أوردر بإيدك</summary>
+          <form id="crfLogF" class="cr-form">
+            <label>المبلغ<input type="text" inputmode="decimal" id="crfLT" class="ltr" maxlength="12" placeholder="450"></label>
+            <label>التاريخ<input type="date" id="crfLD"></label>
+            <label>المنتج<input type="text" id="crfLI" maxlength="200" placeholder="مثلًا: هودي أسود L"></label>
+            <label>الحالة<select id="crfLS"></select></label>
+            <button class="btn sm" type="submit">سجّله</button>
+          </form>
+        </details>
+      </div>
+      <div role="tabpanel" id="crfP1" aria-labelledby="crfT1" hidden></div>
+      <div role="tabpanel" id="crfP2" aria-labelledby="crfT2" hidden></div>
+      <div class="msg" id="crfMsg" role="alert"></div>
+      <div class="cr-foot">
+        <label class="toggle"><input type="checkbox" id="crfStop"><span class="tg" aria-hidden="true"></span><span><b>ماتبعتلوش عروض ولا تذكيرات</b><small id="crfStopT"></small></span></label>
+        <button class="btn danger sm" type="button" id="crfErase">🗑️ امسح بياناته</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- editor modal -->
 <div class="modal" id="editor" hidden>
   <form class="card" id="editorForm">
@@ -3826,6 +4105,7 @@
   var current = "home";
   function go(tab) {
     current = tab;
+    if (!$("crFile").hidden) crClose(true);   // a customer's file open over the page
     if (tab === "home") homeShow(); else homeStop();
     document.querySelectorAll("[data-tab]").forEach(function (x) { x.classList.toggle("on", x.dataset.tab === tab); });
     document.querySelectorAll(".dd").forEach(function (d) { d.querySelector(".dd-btn").classList.toggle("on", !!d.querySelector('.dd-menu [data-tab="' + tab + '"]')); });
@@ -3838,6 +4118,7 @@
     if (tab === "wa") loadWa();
     if (tab === "social") loadSocial();
     if (tab === "offers") loadOffers();
+    if (tab === "customers") loadCust();
     if (tab === "council") loadCouncil();
     if (tab === "telegram") loadTg(); else tgStopPoll();
     if (tab === "data" || tab === "look" || tab === "install") loadLocks();   // which features this store's plan doesn't include
@@ -3889,8 +4170,10 @@
     $("adminTabBtn").hidden = !me.isAdmin;
     // Messenger + Instagram: hidden until it opens to everyone (MetaApp.Visible), and when the plan has neither (applyPlanView)
     unmountHelpChat(); render(); loadItems(); mountLiveChat();
-    var want = fresh ? "" : (location.hash || "").replace("#", "");
-    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) || (want === "council" && hasF("council")) ? want : "home");
+    var want = fresh && !/^#customers\/\d{8,15}$/.test(location.hash) ? "" : (location.hash || "").replace("#", ""), file = /^customers\/(\d{8,15})$/.exec(want);   // #customers/2010… = that customer's file
+    if (file) want = "customers";
+    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) || (want === "customers" && hasF("crm")) || (want === "council" && hasF("council")) ? want : "home");
+    if (file && current === "customers") crOpen(file[1]);
     setTimeout(showNews, 1200);   // what's new since this browser last looked
   }
 
@@ -3902,19 +4185,22 @@
   var STORE_LIVE = true, STORE_URL = "https://apps.microsoft.com/detail/9PF6W2MNNRK8?mode=full";
   var HM_ROT = ["في ثانية ⚡", "24 ساعة في اليوم 🌙", "على موقعك 🌐", "وعلى واتساب 💬"];
   var HM_TILES = [
+    ["customers", "👥", "زبايني", "ملف لكل زبون، ومين تبيعله تاني ومين تاخد بالك منه", "crm"],
+    ["offers", "📣", "ابعت عرض", "عرضك يوصل لزباينك على الواتساب والتيليجرام", "broadcast"],
     ["data", "📚", "داتا المتجر", "ارفع ملفاتك أو اربط متجرك، والمساعد يتعلّم منها"],
     ["look", "🎨", "شكل الشات", "أكتر من 30 شكل للفقاعة وأي لون يناسب براندك"],
     ["install", "🛍️", "ضيفه لمتجرك", "سطر كود واحد في Shopify أو EasyOrders أو أي موقع"],
     ["wa", "💬", "واتساب", "المساعد يرد على واتساب متجرك بنفس الداتا"],
     ["settings", "⚙️", "المساعد", "اسمه وأسلوب كلامه وتعليماتك ليه"],
-    ["plan", "💎", "باقتي", "استهلاكك وباقتك والتجديد"]
-  ];
+    ["plan", "💎", "باقتي", "استهلاكك وباقتك والتجديد"],
+    ["council", "🧠", "فكّر معانا", "اعرض فكرتك على 7 مستشارين وخد رأي واضح", "council"]
+  ];   // [tab, icon, name, what it is, the plan feature it needs]
   var homeRun = 0, homeIO = null, homeBuilt = false, homeVer = false;
   function homeWin() { return /Windows NT/.test(navigator.userAgent) && !/Windows Phone/.test(navigator.userAgent); }
 
   function homeBuild() {   // the parts that don't change with the store's data: built once
     homeBuilt = true;
-    $("hmTiles").innerHTML = HM_TILES.map(function (t, k) {
+    $("hmTiles").innerHTML = HM_TILES.filter(function (t) { return !t[4] || hasF(t[4]); }).map(function (t, k) {
       return '<button type="button" class="hm-tile hm-rv" style="--d:' + (k % 3) * 0.08 + 's" data-home-tab="' + t[0] + '"><span class="ic">' + t[1] + '</span><b>' + esc(t[2]) + '</b><p>' + esc(t[3]) + '</p>' +
         '<span class="chip" id="hmChip-' + t[0] + '"></span><span class="arr" aria-hidden="true">←</span></button>';
     }).join("");
@@ -3990,6 +4276,9 @@
     var waSv = me.waService || {};   // WhatsApp is a service added to the plan
     chip("wa", wa && waSv.on ? "ok" : "", wa && waSv.on ? "✓ مربوط" : wa ? "⏳ الخدمة خلصت، جدّدها" : waSv.on ? "اربطه" : me.waComing ? "⏳ جاي مع «" + me.waComing + "»" : "📱 ضيفه لباقتك");
     chip("settings", "", me.botName ? "🤖 " + me.botName : "سمّيه");
+    if ($("hmChip-offers")) chip("offers", "", "📣 ابعت عرضك");
+    if ($("hmChip-council")) chip("council", "", "💡 اعرض فكرة");
+    if ($("hmChip-customers") && !$("hmChip-customers").textContent) chip("customers", "", "👥 شوف زباينك");
     chip("plan", pl.name && !pl.expired ? "ok" : "", pl.name ? (pl.expired ? "⛔ جدّدها" : "✓ " + pl.name) : "تجربة مجانية");
     var next = !hasData ? "data" : !origins ? "install" : null;
     document.querySelectorAll("#hmTiles .hm-tile").forEach(function (t) { t.classList.toggle("next", t.dataset.homeTab === next); });
@@ -3999,7 +4288,7 @@
   }
 
   function homeShow() {
-    renderHome();
+    renderHome(); crHome();
     var run = ++homeRun;
     // cards slide in as they come into view
     var els = document.querySelectorAll('[data-panel="home"] .hm-rv:not(.in)');
@@ -5268,7 +5557,7 @@
       var who = document.createElement("span"); who.textContent = [r.customer, r.total].filter(Boolean).join(" · ");
       var st = document.createElement("span"); st.className = "oc-st " + r.status; st.textContent = OC_STATUS[r.status] || r.status;
       var sm = document.createElement("small"); sm.textContent = ago(r.at) + ocAlertNote(r) + (r.note ? " · " + r.note : "");
-      row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
+      row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row); crMarkRow(row, who, r);
     });
   }
   // ---------- an unanswered confirmation (Followup.cs): a reminder after N hours, then «📵 مردّش» and someone calls ----------
@@ -5503,7 +5792,7 @@
       var who = document.createElement("span"); who.textContent = [r.customer, r.total].filter(Boolean).join(" · ");
       var stx = document.createElement("span"); stx.className = "oc-st " + r.status; stx.textContent = EO_STATUS[r.status] || OC_STATUS[r.status] || r.status;
       var sm = document.createElement("small"); sm.textContent = ago(r.at) + ocAlertNote(r) + (r.note ? " · " + r.note : "");
-      row.appendChild(b); row.appendChild(who); row.appendChild(stx); row.appendChild(sm); list.appendChild(row);
+      row.appendChild(b); row.appendChild(who); row.appendChild(stx); row.appendChild(sm); list.appendChild(row); crMarkRow(row, who, r);
     });
   }
   async function eoCall(action, body, btn, busyText) {
@@ -6000,11 +6289,22 @@
   // ---------------- «📣 ابعت عرض»: an offer from the store's WhatsApp number to its customers (api/offers.ashx) ----------------
   var bc = null, bcImage = null, bcPollT = null, bcCountT = null, bcLastCount = null;
   var BC_ST = { sending: "📤 بيتبعت", paused: "⏸️ متوقف", done: "✅ خلص", stopped: "⛔ اتلغى الباقي" };
-  var BC_AUD = { wa: "كل اللي كلّموك على الواتساب", wa30: "الواتساب آخر 30 يوم", orders: "اللي عملوا أوردرات", restock: "«بلّغني لما يرجع»", list: "قايمتك", tg: "التيليجرام" };
+  var BC_AUD = { wa: "كل اللي كلّموك على الواتساب", wa30: "الواتساب آخر 30 يوم", orders: "اللي عملوا أوردرات", restock: "«بلّغني لما يرجع»", list: "قايمتك", tg: "التيليجرام",
+    "c-lost": "اشتروا واختفوا", "c-cart": "سابوا السلة", "c-ask": "سألوا وماشتروش", "c-fresh": "أول أوردر ليهم", "c-vip": "أحسن زباينك", "c-wait": "مستنيين منتج" };
+  var bcPreset = null, bcPresetText = "";   // «ابعتلهم عرض» from a group of «زبايني»: {aud, text}
   var bcLastSplit = null;   // {wa, tg}: where the ticked audiences go
   var BC_SRC = { manual: "✍️ كتبته", excel: "📄 من Excel", messenger: "💬 المسنجر", instagram: "📸 الإنستجرام" };
   async function loadOffers() {
     try { bc = await api("api/offers.ashx"); } catch (e) { setMsg("bcMsg", e.message); return; }
+    if (bcPreset) {
+      var p = bcPreset; bcPreset = null;
+      document.querySelectorAll("#bcAud input").forEach(function (x) { x.checked = x.value === p.aud; });
+      var ta = $("bcText"); if (!ta.value.trim() || ta.value === bcPresetText) { ta.value = p.text; bcPresetText = p.text; }
+      renderOffers(); bcCount();
+      $("bcNew").scrollIntoView({ behavior: "smooth", block: "start" }); ta.focus({ preventScroll: true });
+      var at = ta.value.indexOf("["), to = ta.value.indexOf("]"); if (at >= 0 && to > at) ta.setSelectionRange(at, to + 1);
+      return;
+    }
     renderOffers(); bcCount();
   }
   // while an offer is going out and the tab is open, its numbers move every 15 seconds
@@ -6215,6 +6515,7 @@
   $("bcSend").onclick = async function () {
     var text = $("bcText").value.trim(), aud = bcAudiences(), b = this;
     if (!text) { setMsg("bcMsg", "اكتب رسالة العرض الأول."); $("bcText").focus(); return; }
+    if (/\[اكتب[^\]]*\]/.test(text)) { setMsg("bcMsg", "كمّل الجزء اللي بين القوسين [ ] في رسالتك، أو امسحه."); $("bcText").focus(); return; }
     if (!aud.length) { setMsg("bcMsg", "اختار العرض يروح لمين."); return; }
     var sp = bcLastSplit || { wa: bcLastCount || 0, tg: 0 }, say = [];
     if (sp.wa) say.push("على الواتساب من رقم متجرك لـ " + bcNums(sp.wa) + "، " + bcEta(sp.wa));
@@ -6366,7 +6667,8 @@
       var st = document.createElement("span"); st.className = "oc-st " + (r.status === "sent" ? "confirmed" : r.status === "failed" ? "failed" : "");
       st.textContent = r.to ? (r.status === "sent" ? "✅ اتبلّغ " : "⚠️ ماوصلش لـ ") + r.to : HO_ST[r.status] || r.status;   // r.to: the team member it went to
       var sm = document.createElement("small"); sm.textContent = ago(r.at) + (r.note ? " · " + r.note : "") + " · ";
-      if (r.phone) { var a = document.createElement("a"); a.href = "https://wa.me/" + r.phone; a.target = "_blank"; a.rel = "noopener"; a.className = "ltr"; a.textContent = "💬 كلّمه +" + r.phone; sm.appendChild(a); }
+      if (r.phone) { var a = document.createElement("a"); a.href = "https://wa.me/" + r.phone; a.target = "_blank"; a.rel = "noopener"; a.className = "ltr"; a.textContent = "💬 كلّمه +" + r.phone; sm.appendChild(a);
+        if (hasF("crm")) { sm.appendChild(document.createTextNode(" · ")); var fb = document.createElement("button"); fb.type = "button"; fb.className = "cr-link"; fb.textContent = "👤 ملفه"; fb.onclick = function () { crOpen(r.phone); }; sm.appendChild(fb); } }
       row.appendChild(b); row.appendChild(who); row.appendChild(st); row.appendChild(sm); list.appendChild(row);
     });
   }
@@ -6567,6 +6869,297 @@
       list: [["🎨", "أي لون بكود لون البراند بتاعك"], ["🐱", "أشكال مضحكة وأشكال لكل نوع متجر"], ["✨", "حركات بتشد الزبون يدوس ويسأل"]],
       chips: ["🐱 قطة", "🐼 باندا", "🎨 أي لون"] }
   };
+  // ---------------- «👥 زبايني» (api/customers.ashx): a file per customer, ready-made groups, the returns alert ----------------
+  var cr = null, crF = { g: "", m: "", q: "", sort: "recent" }, crPage = 0, crRows = [], crSeq = 0, crQT = null, crPollT = null, crPolls = 0;
+  var crCur = null, crFrom = null, crTab = 0, crSumAt = 0;
+  // the groups: what it is, what to do, and the first lines of an offer to it (the owner finishes the part in [ ])
+  var CR_G = {
+    fresh: { i: "🌱", n: "أول أوردر ليهم", c: "#2e8b57", h: "اشتروا لأول مرة آخر 30 يوم", d: "اشكرهم، واعرض عليهم حاجة تكمّل اللي اشتروه.", m: "أهلًا {الاسم} 👋\nشكرًا إنك جرّبت متجرنا 🧡 يارب يكون طلبك عجبك.\nوعشان أوردرك الجاي: [اكتب العرض هنا]" },
+    vip: { i: "⭐", n: "أحسن زباينك", c: "#d99a1c", h: "3 أوردرات أو أكتر", d: "اديهم العرض قبل أي حد، وخليهم يحسّوا إنهم مميزين.", m: "أهلًا {الاسم} ⭐\nإنت من أحسن زباينّا، فحبينا العرض ده يوصلك قبل أي حد:\n[اكتب العرض هنا]" },
+    lost: { i: "😴", n: "اشتروا واختفوا", c: "#5b6bd6", h: "آخر أوردر من أكتر من شهرين", d: "ناس جرّبتك وعارفاك. رسالة واحدة ممكن ترجّعهم.", m: "أهلًا {الاسم}، وحشتنا 🧡\nمن آخر طلب ليك نزلت عندنا حاجات جديدة:\n[اكتب الجديد أو العرض هنا]" },
+    cart: { i: "🛒", n: "سابوا السلة", c: "#e8774a", h: "ماكمّلوش آخر 30 يوم", d: "كانوا على بعد خطوة. اسألهم إيه اللي وقّفهم.", m: "أهلًا {الاسم} 👋\nالحاجة اللي اخترتها لسه موجودة 🛒\nلو عندك سؤال عن المقاس أو الشحن، ابعتلنا هنا ونرد عليك على طول." },
+    ask: { i: "💬", n: "سألوا وماشتروش", c: "#1f9d55", h: "كلّموك على الواتساب آخر 30 يوم", d: "كانوا مهتمين. فكّرهم بيك.", m: "أهلًا {الاسم} 👋\nلسه بتفكّر في اللي سألت عليه؟ لو محتاج مساعدة في الاختيار ابعتلنا هنا.\n[اكتب العرض هنا، أو امسح السطر ده]" },
+    wait: { i: "🔔", n: "مستنيين منتج", c: "#8b5cf6", h: "طلبوا «بلّغني لما يرجع»", d: "هيتبلّغوا لوحدهم لما يرجع. ولو عندك بديل، اعرضه عليهم.", m: "أهلًا {الاسم} 👋\nالمنتج اللي مستنيه لسه مارجعش، وأول ما يرجع هنبلّغك.\nولحد ما يرجع، عندنا بديل قريب منه: [اكتب البديل هنا]" },
+    back: { i: "↩️", n: "بيرجّعوا أوردرات", c: "#e8394a", h: "خد بالك قبل الشحن", d: "أكّد معاهم بمكالمة قبل ما تشحن، أو اطلب مصاريف الشحن مقدم." }
+  };
+  var CR_M = { star: "⭐ مهم", follow: "🔁 محتاج متابعة", whole: "📦 جملة", block: "⛔ ماتشحنلوش" };
+  var CR_S = { open: "⏳ لسه", shipped: "🚚 اتشحن", delivered: "✅ اتسلم", returned: "↩️ رجع", cancelled: "❌ اتلغى" };
+  var CR_SRC = { shopify: "Shopify", eo: "EasyOrders", excel: "من ملف", hand: "سجّلته بإيدك" };
+  var CR_CH = { wa: "💬", fb: "📘", ig: "📸", tg: "✈️", web: "🌐" };
+  var CR_EV = { cart: "🛒", wait: "🔔", hand: "🙋", offer: "📣", confirm: "📲", stop: "🚫" };
+  function crCustN(n) { return bcPlural(n, "زبون واحد", "زبونين", "زباين", "زبون"); }
+  function crOrdN(n) { return n ? bcPlural(n, "أوردر واحد", "أوردرين", "أوردرات", "أوردر") : "من غير أوردرات"; }
+  function crMoney(n, cur) { return money2(Math.round(n)) + " " + (cur || "ج.م"); }
+  // what the server wrote in 0-9 (totals, "رجّع 2 من 3") in the page's own digits
+  function crAr(t) { return String(t || "").replace(/[0-9]/g, function (d) { return fmt(+d); }); }
+  function crWhen(iso) { if (!iso) return ""; return Date.now() - new Date(iso).getTime() > 60 * 864e5 ? dateAr(iso) : ago(iso); }
+  function crTel(p) { return '<bdi class="ltr" dir="ltr">' + esc(localPhone(p)) + "</bdi>"; }
+  function crHue(p) { var h = 0; for (var i = 0; i < p.length; i++) h = (h * 31 + p.charCodeAt(i)) % 360; return h; }
+  function crFirst(r) { var t = (r.name || "").trim(); return t ? t.charAt(0) : "؟"; }
+  function crQS(extra) { var p = new URLSearchParams(); ["g", "m", "q"].forEach(function (k) { if (crF[k]) p.set(k, crF[k]); }); if (crF.sort !== "recent") p.set("sort", crF.sort); Object.keys(extra || {}).forEach(function (k) { p.set(k, extra[k]); }); return p.toString(); }
+
+  async function loadCust() {
+    if (!hasF("crm")) return;
+    if (!cr) $("crList").innerHTML = '<div class="cr-skel"></div><div class="cr-skel"></div><div class="cr-skel"></div>';
+    await crLoad();
+  }
+  // page 0 again, or the next one after it
+  async function crLoad(next) {
+    var seq = ++crSeq; if (!next) crPage = 0; setMsg("crMsg", "");
+    try {
+      var r = await api("api/customers.ashx?" + crQS({ page: next ? crPage + 1 : 0 }));
+      if (seq !== crSeq) return;   // a newer search is on its way
+      cr = r; if (next) { crPage++; crRows = crRows.concat(r.rows); } else crRows = r.rows;
+      if (crF.g !== r.group) crF.g = r.group;
+      crDraw();
+    } catch (e) { if (seq === crSeq) { setMsg("crMsg", e.message); if (!cr) $("crList").innerHTML = ""; } }
+  }
+  function crDraw() {
+    crGroupsDraw(); crDoDraw(); crWatchDraw(); crListDraw(); crAlertDraw();
+    $("crXls").href = "api/customers.ashx?" + crQS({ export: 1 });
+    $("crXls").hidden = !cr.all; $("crUp").hidden = false;
+    // Shopify's first pull: its orders come in while the page is open
+    clearTimeout(crPollT);
+    if (cr.pulling && current === "customers" && crPolls < 60) { crPolls++; crPollT = setTimeout(function () { if (current === "customers" && $("crFile").hidden && !document.hidden) crLoad(); }, 6000); }
+    if (!cr.pulling) crPolls = 0;
+  }
+  function crGroupsDraw() {
+    var box = $("crGroups"), keys = ["fresh", "vip", "lost", "cart", "ask", "wait"].filter(function () { return cr.canGroups; }); if (cr.canReturns) keys.push("back");
+    if (!cr.all || !keys.length) { box.innerHTML = ""; return; }
+    box.innerHTML = [["", { i: "👥", n: "كل زباينك", c: "var(--brand)", h: "من كل القنوات" }, cr.all]].concat(keys.map(function (k) { return [k, CR_G[k], (cr.groups[k] || {}).n || 0]; })).map(function (x) {
+      return '<button type="button" class="cr-g' + (crF.g === x[0] ? " on" : "") + (x[2] ? "" : " zero") + '" data-g="' + x[0] + '" aria-pressed="' + (crF.g === x[0]) + '" style="--gc:' + x[1].c + '"><i aria-hidden="true">' + x[1].i + "</i><span><b>" + x[1].n + "</b><small>" + x[1].h + "</small></span><em>" + fmt(x[2]) + "</em></button>";
+    }).join("");
+    box.querySelectorAll("[data-g]").forEach(function (b) { b.onclick = function () { var g = b.dataset.g; crF.g = crF.g === g ? "" : g; crLoad().then(function () { var n = box.querySelector('[data-g="' + g + '"]'); if (n) n.focus({ preventScroll: true }); }); }; });
+  }
+  function crDoDraw() {
+    var el = $("crDo"), g = CR_G[crF.g]; el.hidden = !g; if (!g) return;
+    var n = (cr.groups[crF.g] || {}).n || 0, send = (cr.groups[crF.g] || {}).send || 0, rt = cr.returns || {}, all = (rt.returned || 0) + (rt.delivered || 0);
+    el.style.setProperty("--gc", g.c);
+    var line = crF.g === "back"
+      ? (all ? "آخر 60 يوم: رجع <b style=\"display:inline\">" + fmt(rt.returned) + "</b> من " + fmt(all) + " أوردر وصلوا لنهايتهم (" + fmt(Math.round(rt.returned * 100 / all)) + "%)." : "لسه مفيش أوردرات حالتها معروفة آخر 60 يوم.")
+      : !n ? "مفيش حد هنا دلوقتي." : send === n ? "العرض يوصل للـ " + fmt(n) + " كلهم." : send ? "العرض يوصل لـ " + crCustN(send) + ". الباقي بعتوا «وقف» أو بيرجّعوا أوردرات." : "مفيش حد نقدر نبعتله: بعتوا «وقف» أو بيرجّعوا أوردرات.";
+    el.innerHTML = "<p><b>" + g.i + " " + g.n + "</b>" + g.d + "<small>" + line + "</small></p>" + (crF.g !== "back" && hasF("broadcast") ? '<button class="btn" type="button" id="crSend"' + (send ? "" : " disabled") + ">📣 ابعتلهم عرض</button>" : "") +
+      (n ? '<a class="btn ghost" href="api/customers.ashx?' + crQS({ export: 1 }) + '">📥 نزّلهم Excel</a>' : "");
+    if ($("crSend")) $("crSend").onclick = function () { bcPreset = { aud: "c-" + crF.g, text: g.m }; go("offers"); };
+  }
+  function crWatchDraw() {
+    var w = cr.watch || [], el = $("crWatch"); el.hidden = !w.length; if (!w.length) return;
+    $("crWatchT").textContent = "⚠️ " + bcPlural(w.length, "أوردر جديد", "أوردرين جداد", "أوردرات جديدة", "أوردر جديد") + (w.length === 1 ? " محتاج" : " محتاجين") + " تبص " + (w.length === 1 ? "عليه" : "عليهم") + " قبل الشحن";
+    $("crWatchL").innerHTML = w.map(function (o) {
+      return '<div class="cr-w"><div><b>' + esc(o.name || localPhone(o.phone)) + '</b> · <bdi dir="ltr">' + esc(o.order) + "</bdi>" + (o.total ? " · " + esc(crAr(o.total)) : "") + "<small><em>" + esc(crAr(o.risk)) + "</em> · " + crWhen(o.at) + (o.items ? " · " + esc(o.items) : "") + (o.told ? " · " + esc(o.told) : "") + "</small></div>" +
+        '<div class="cr-w-b"><a class="btn sm cr-wa" href="https://wa.me/' + esc(o.phone) + '" target="_blank" rel="noopener" style="text-decoration:none">💬 كلّمه</a><button class="btn ghost sm" type="button" data-open="' + esc(o.phone) + '">👤 ملفه</button><button class="btn ghost sm" type="button" data-ok="' + o.id + '">✓ اتأكدت</button></div></div>';
+    }).join("");
+    el.querySelectorAll("[data-open]").forEach(function (b) { b.onclick = function () { crOpen(b.dataset.open); }; });
+    el.querySelectorAll("[data-ok]").forEach(function (b) { b.onclick = async function () { b.disabled = true; try { await api("api/customers.ashx?action=checked", { method: "POST", json: { id: +b.dataset.ok } }); toast("تمام ✓"); crLoad(); } catch (e) { b.disabled = false; toast(e.message); } }; });
+  }
+  function crBadges(r) {
+    var out = [];
+    if (r.risk) out.push('<span class="cr-bd bad">↩️ ' + esc(crAr(r.risk)) + "</span>");
+    if (r.mark && !(r.mark === "block" && r.risk)) out.push('<span class="cr-bd mark">' + CR_M[r.mark] + "</span>");
+    (r.groups || []).forEach(function (g) { if (g !== crF.g) out.push('<span class="cr-bd">' + CR_G[g].i + " " + CR_G[g].n + "</span>"); });
+    if (r.stopped) out.push('<span class="cr-bd">🚫 وقف</span>');
+    return out;
+  }
+  function crListDraw() {
+    var el = $("crList"), f = crF.g || crF.m || crF.q;
+    $("crCount").textContent = !cr.all ? "" : (f ? (cr.total ? crCustN(cr.total) : "") : crCustN(cr.total)) + (cr.pulling ? " · 🔄 بنسحب أوردرات آخر 60 يوم من Shopify…" : "");
+    var ms = $("crMark"), any = Object.keys(CR_M).some(function (k) { return (cr.marks || {})[k]; });
+    ms.hidden = !any && !crF.m;
+    ms.innerHTML = '<option value="">كل العلامات</option>' + Object.keys(CR_M).map(function (k) { return '<option value="' + k + '"' + (crF.m === k ? " selected" : "") + ">" + CR_M[k] + " (" + fmt((cr.marks || {})[k] || 0) + ")</option>"; }).join("");
+    $("crMore").hidden = !cr.more;
+    document.querySelector('[data-panel="customers"] .cr-bar').hidden = !cr.all;
+    var warn = "";
+    if (cr.shopify && !cr.shopifyScope) warn = "⚠️ تطبيق Shopify ناقصه صلاحية read_orders، فمش هنقدر نجيب أوردراتك. ضيفها في Scopes واعمل Release ووافق عليها، وبعدين اربط تاني من «داتا المتجر».";
+    else if (cr.noPhone >= 5 && cr.noPhone * 2 > cr.orders) warn = "ℹ️ " + fmt(cr.noPhone) + " أوردر من غير رقم موبايل. لو ده في كل أوردرات Shopify، غالبًا باقتك على Shopify مخبّية أرقام الزباين عن التطبيقات. تقدر ترفع أوردراتك من ملف بدل كده.";
+    if (!cr.all) {
+      el.innerHTML = cr.pulling ? '<div class="cr-empty"><div class="e">🔄</div><b>بنسحب أوردراتك من Shopify</b><p>أول مرة بتاخد دقيقة أو اتنين. زباينك هيظهروا هنا لوحدهم.</p></div>'
+        : '<div class="cr-empty"><div class="e">👥</div><b>زباينك هيظهروا هنا لوحدهم</b><p>أول ما زبون يكلّمك على الواتساب أو يعمل أوردر، هتلاقيله ملف هنا. ابدأ بأي واحدة من دول:</p><div class="row">' +
+          (cr.shopify || cr.eo || !hasF("shopify") ? "" : '<button class="btn" type="button" data-go="data">🛍️ اربط متجرك</button>') + (cr.whatsapp ? "" : '<button class="btn ghost" type="button" data-go="wa">💬 اربط الواتساب</button>') +
+          '<button class="btn ghost" type="button" data-do="crUp">⬆️ ارفع أوردرات قديمة</button><button class="btn ghost" type="button" data-do="crAdd">➕ ضيف زبون</button></div></div>';
+      el.querySelectorAll("[data-go]").forEach(function (b) { b.onclick = function () { go(b.dataset.go); }; });
+      el.querySelectorAll("[data-do]").forEach(function (b) { b.onclick = function () { $(b.dataset.do).click(); }; });
+    } else if (!crRows.length) {
+      el.innerHTML = '<div class="cr-empty"><div class="e">🔍</div><b>' + (crF.q ? "مفيش زبون بالبحث ده" : "مفيش حد هنا دلوقتي") + "</b><p>" + (crF.q ? "جرّب جزء من الاسم، أو آخر كام رقم من الموبايل." : "أول ما حد يبقى مناسب للمجموعة دي هيظهر لوحده.") + '</p><div class="row"><button class="btn ghost" type="button" id="crClear">اعرض كل زباينك</button></div></div>';
+      $("crClear").onclick = function () { crF = { g: "", m: "", q: "", sort: crF.sort }; $("crQ").value = ""; crLoad(); };
+    } else {
+      el.innerHTML = crRows.map(function (r) {
+        var b = crBadges(r), ch = (r.ch || []).map(function (k) { return CR_CH[k] || ""; }).join("");
+        return '<div class="cr-row' + (r.risk ? " risk" : "") + '"><button type="button" class="cr-open" data-p="' + esc(r.phone) + '" aria-label="افتح ملف ' + esc(r.name || localPhone(r.phone)) + '"><span class="cr-av" style="--h:' + crHue(r.phone) + '" aria-hidden="true">' + esc(crFirst(r)) + '</span>' +
+          '<span class="cr-who"><b>' + (esc(r.name) || crTel(r.phone)) + "</b><small>" + (r.name ? crTel(r.phone) : "من غير اسم") + (r.city ? " · " + esc(r.city) : "") + (ch ? " · " + ch : "") + (r.note ? " · 📝" : "") + "</small></span>" +
+          '<span class="cr-bg">' + b.slice(0, 3).join("") + (b.length > 3 ? '<span class="cr-bd">+' + fmt(b.length - 3) + "</span>" : "") + "</span>" +
+          '<span class="cr-sum"><b>' + (r.kept ? crMoney(r.spent, r.currency) : crOrdN(r.orders)) + "</b><small>" + (r.kept ? crOrdN(r.orders) + " · " : "") + crWhen(r.lastAt) + "</small></span></button>" +
+          '<a class="cr-go" href="https://wa.me/' + esc(r.phone) + '" target="_blank" rel="noopener" aria-label="كلّم ' + esc(r.name || localPhone(r.phone)) + ' على الواتساب" title="كلّمه على الواتساب">💬</a></div>';
+      }).join("");
+      el.querySelectorAll("[data-p]").forEach(function (b) { b.onclick = function () { crOpen(b.dataset.p); }; });
+    }
+    if (warn) { var d = document.createElement("div"); d.className = "oc-warn"; d.style.marginBottom = "8px"; d.textContent = warn; el.insertBefore(d, el.firstChild); }
+  }
+  function crAlertDraw() {
+    var a = cr.alert || {}, w = [];
+    $("crAlert").checked = !!a.on;
+    $("crAlertT").textContent = "أول ما زبون رجّع قبل كده (أو علّمت عليه «ماتشحنلوش») يعمل أوردر جديد، يوصل تنبيه على الواتساب " + ((a.team || []).length ? "لفريقك بالدور (" + a.team.join("، ") + ")" : "على رقمك") + " قبل ما تشحن، ويبان هنا فوق وجنب الأوردر في تأكيد الطلبات.";
+    if (a.on && !cr.shopify && !cr.eo) w.push("ℹ️ التنبيه محتاج متجرك مربوط (Shopify ربط كامل أو EasyOrders)، عشان نعرف بالأوردر أول ما يتعمل.");
+    if (a.on && a.cant) w.push("ℹ️ " + a.cant + "، فالتنبيه هيظهر هنا بس ومش هيتبعت على الواتساب.");
+    else if (a.on && !(a.team || []).length && !a.owner) w.push("ℹ️ اكتب رقمك في صفحة «واتساب» (مميزات الواتساب) عشان التنبيه يوصلك.");
+    dnWarn($("crAlertW"), w);
+  }
+  $("crAlert").onchange = async function () {
+    var t = this, want = t.checked; t.disabled = true;
+    try { await api("api/customers.ashx?action=alert", { method: "POST", json: { enabled: want } }); if (cr) { cr.alert.on = want; crAlertDraw(); } toast(want ? "هنبّهك قبل الشحن ✅" : "التنبيه اتقفل"); }
+    catch (e) { t.checked = !want; toast(e.message); }
+    t.disabled = false;
+  };
+  $("crQ").oninput = function () { var v = this.value.trim(); clearTimeout(crQT); crQT = setTimeout(function () { if (v === crF.q) return; crF.q = v; crLoad(); }, 300); };
+  $("crMark").onchange = function () { crF.m = this.value; crLoad(); };
+  $("crSort").onchange = function () { crF.sort = this.value; crLoad(); };
+  $("crMore").onclick = function () { var b = this; b.disabled = true; crLoad(true).then(function () { b.disabled = false; }); };
+  // the two boxes at the top: one at a time
+  function crBox(id) { ["crAddBox", "crUpBox"].forEach(function (k) { $(k).hidden = k !== id || !$(k).hidden; }); var el = id && $(id); if (el && !el.hidden) { el.scrollIntoView({ behavior: "smooth", block: "nearest" }); var i = el.querySelector("input:not([type=file]):not([type=checkbox])"); if (i) i.focus({ preventScroll: true }); } }
+  $("crAdd").onclick = function () { crBox("crAddBox"); }; $("crUp").onclick = function () { crBox("crUpBox"); };
+  document.querySelectorAll("[data-cr-close]").forEach(function (b) { b.onclick = function () { crBox(null); }; });
+  $("crAddBox").onsubmit = async function (e) {
+    e.preventDefault(); var b = $("crAddGo"); b.disabled = true; setMsg("crAddMsg", "");
+    try {
+      var d = { phone: $("crAddP").value.trim() }, n = $("crAddN").value.trim(), t = $("crAddT").value.trim(); if (n) d.name = n; if (t) d.note = t;
+      var r = await api("api/customers.ashx?action=add", { method: "POST", json: d });
+      this.reset(); crBox(null); crLoad(); crShow(r);
+    } catch (err) { setMsg("crAddMsg", err.message); }
+    b.disabled = false;
+  };
+  $("crFileIn").onchange = function () { var f = this.files && this.files[0]; $("crFileN").textContent = f ? "📄 " + f.name : "📄 اختار ملف Excel (.xlsx) أو CSV"; };
+  $("crUpGo").onclick = async function () {
+    var b = this, f = $("crFileIn").files && $("crFileIn").files[0];
+    if (!f) { setMsg("crUpMsg", "اختار الملف الأول."); return; }
+    if (!$("crUpOk").checked) { setMsg("crUpMsg", "علّم على «دي أوردرات متجري أنا» الأول."); return; }
+    b.disabled = true; b.textContent = "⏳ بنقرا الملف…"; setMsg("crUpMsg", "");
+    try {
+      var fd = new FormData(); fd.append("file", f); fd.append("consent", "1");
+      var r = await api("api/customers.ashx?action=import", { method: "POST", form: fd });
+      var t = (r.added ? "✅ اتضاف " + crOrdN(r.added) + "." : "✅ مفيش أوردرات جديدة.") + (r.updated ? " واتحدّث " + crOrdN(r.updated) + "." : "");
+      if (r.noPhone) t += " " + bcPlural(r.noPhone, "صف واحد", "صفين", "صفوف", "صف") + " من غير رقم موبايل صح اتسابوا.";
+      if (r.noDate) t += " " + bcPlural(r.noDate, "صف واحد", "صفين", "صفوف", "صف") + " تاريخهم مش مفهوم اتسابوا.";
+      $("crFileIn").value = ""; $("crFileIn").onchange(); $("crUpOk").checked = false; setMsg("crUpMsg", t, true); crLoad();
+    } catch (err) { setMsg("crUpMsg", err.message); }
+    b.disabled = false; b.textContent = "ارفع الملف";
+  };
+
+  // ---- one customer's file ----
+  async function crOpen(phone, noPush) {
+    try { crShow(await api("api/customers.ashx?phone=" + encodeURIComponent(phone)), noPush); }
+    catch (e) { toast(e.message); if (noPush && history.replaceState) history.replaceState(null, "", "#customers"); }
+  }
+  function crShow(d, noPush) {
+    var first = $("crFile").hidden; crCur = d; crTab = first ? 0 : crTab;
+    if (first) { crFrom = document.activeElement; $("crFile").hidden = false; document.body.style.overflow = "hidden"; showLiveChat(false); $("crfLogF").reset(); $("crfLog").open = false; setMsg("crfMsg", ""); $("crfSaved").textContent = ""; $("crfBody").scrollTop = 0; }
+    crFileDraw();
+    if (first) {
+      $("crSheet").focus({ preventScroll: true });
+      if (!noPush && history.pushState) history.pushState({ cr: 1 }, "", "#customers/" + d.phone);
+    }
+  }
+  function crClose(fromBack) {
+    if ($("crFile").hidden) return;
+    $("crFile").hidden = true; document.body.style.overflow = ""; showLiveChat(current !== "look"); crCur = null;
+    if (!fromBack && history.state && history.state.cr) history.back(); else if (!fromBack && history.replaceState) history.replaceState(null, "", "#" + current);
+    if (crFrom && document.contains(crFrom)) crFrom.focus({ preventScroll: true });
+    if (current === "customers") crLoad();
+  }
+  addEventListener("popstate", function () {
+    var m = /^#customers\/(\d+)$/.exec(location.hash);
+    if (m && me && hasF("crm")) crOpen(m[1], true); else crClose(true);
+  });
+  $("crfX").onclick = function () { crClose(); };
+  $("crFile").addEventListener("mousedown", function (e) { if (e.target === this) crClose(); });
+  document.addEventListener("keydown", function (e) {
+    if ($("crFile").hidden) return;
+    if (e.key === "Escape") { e.preventDefault(); crClose(); return; }
+    if (e.key !== "Tab") return;   // keeps the keyboard inside the file
+    var all = [].slice.call($("crSheet").querySelectorAll("a[href],button,input,select,textarea,summary")).filter(function (x) { return !x.disabled && x.offsetParent !== null; });
+    if (!all.length) return;
+    var a = document.activeElement, i = all.indexOf(a);
+    if (e.shiftKey && (i <= 0)) { e.preventDefault(); all[all.length - 1].focus(); }
+    else if (!e.shiftKey && i === all.length - 1) { e.preventDefault(); all[0].focus(); }
+  });
+  function crFileDraw() {
+    var d = crCur, act = document.activeElement;
+    $("crfAv").textContent = crFirst(d); $("crfAv").style.setProperty("--h", crHue(d.phone));
+    if (act !== $("crfName")) $("crfName").value = d.name || "";
+    $("crfSub").innerHTML = crTel(d.phone) + (d.city ? " · " + esc(d.city) : "") + (d.firstOrder ? " · زبونك من " + dateAr(d.firstOrder) : "") + ((d.ch || []).length ? " · " + d.ch.map(function (k) { return CR_CH[k] || ""; }).join("") : "");
+    $("crfWa").href = "https://wa.me/" + d.phone; $("crfTel").href = "tel:+" + d.phone;
+    $("crfRisk").hidden = !d.risk; $("crfRisk").innerHTML = d.risk ? "⚠️ " + esc(crAr(d.risk)) + "<small>أكّد معاه بمكالمة قبل ما تشحن، أو اطلب مصاريف الشحن مقدم.</small>" : "";
+    $("crfNums").innerHTML = [["", fmt(d.orders), d.orders === 1 ? "أوردر" : "أوردرات"], ["", money2(Math.round(d.spent)), "اشترى بـ (" + esc(d.currency || "ج.م") + ")"], [d.delivered ? "ok" : "", fmt(d.delivered), "اتسلم"], [d.returned ? "bad" : "", fmt(d.returned), "رجع"]]
+      .map(function (x) { return '<div class="' + x[0] + '"><b>' + x[1] + "</b><small>" + x[2] + "</small></div>"; }).join("");
+    $("crfTags").innerHTML = (d.groups || []).map(function (g) { return '<span class="cr-bd">' + CR_G[g].i + " " + CR_G[g].n + "</span>"; }).join("") + (d.wait ? '<span class="cr-bd">🔔 مستني: ' + esc(d.wait) + "</span>" : "") +
+      (d.cart && (d.groups || []).indexOf("cart") >= 0 ? '<span class="cr-bd">🛒 ' + esc(d.cart.items) + (d.cart.total ? " · " + esc(crAr(d.cart.total)) : "") + "</span>" : "");
+    $("crfMarks").innerHTML = Object.keys(CR_M).map(function (k) { return '<button type="button" data-m="' + k + '" aria-pressed="' + (d.mark === k) + '">' + CR_M[k] + "</button>"; }).join("");
+    $("crfMarks").querySelectorAll("button").forEach(function (b) { b.onclick = function () { crSave("note", { mark: crCur.mark === b.dataset.m ? "" : b.dataset.m }, null, '#crfMarks [data-m="' + b.dataset.m + '"]'); }; });
+    if (act !== $("crfNote")) $("crfNote").value = d.noteText || "";
+    var tabs = [["🧾 الأوردرات", (d.orderList || []).length], ["🕓 اللي حصل", (d.events || []).length], ["💬 كلامه", (d.chat || []).length]];
+    tabs.forEach(function (t, i) {
+      var b = $("crfT" + i), on = i === crTab; b.innerHTML = t[0] + (t[1] ? " <small>" + fmt(t[1]) + "</small>" : ""); b.classList.toggle("on", on); b.setAttribute("aria-selected", on ? "true" : "false"); b.tabIndex = on ? 0 : -1; $("crfP" + i).hidden = !on;
+    });
+    // orders, each with its status to change
+    $("crfOrders").innerHTML = (d.orderList || []).length ? d.orderList.map(function (o) {
+      return '<div class="cr-o"><div><b>' + (o.total ? esc(crAr(o.total)) : "أوردر") + (o.name ? ' · <bdi dir="ltr">' + esc(o.name) + "</bdi>" : "") + "</b><small>" + dateAr(o.at) + " · " + CR_SRC[o.source] + (o.byHand ? " · حالته إنت حددتها" : "") + (o.items ? "<br>" + esc(o.items) : "") + "</small>" +
+        (o.source === "hand" || o.source === "excel" ? '<button type="button" class="x" data-del="' + o.id + '">امسحه</button>' : "") + '</div><select class="' + o.status + '" data-st="' + o.id + '" aria-label="حالة الأوردر">' +
+        Object.keys(CR_S).map(function (k) { return '<option value="' + k + '"' + (o.status === k ? " selected" : "") + ">" + CR_S[k] + "</option>"; }).join("") + "</select></div>";
+    }).join("") : '<div class="cr-none">لسه مفيش أوردرات ليه.</div>';
+    $("crfOrders").querySelectorAll("[data-st]").forEach(function (s) { s.onchange = function () { crSave("order", { id: +s.dataset.st, status: s.value }, "الحالة اتغيّرت ✓", '[data-st="' + s.dataset.st + '"]'); }; });
+    $("crfOrders").querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { if (confirm("تمسح الأوردر ده من ملفه؟")) crSave("unlog", { id: +b.dataset.del }, "اتمسح"); }; });
+    $("crfP1").innerHTML = (d.events || []).length ? d.events.map(function (e) { return '<div class="cr-ev"><i aria-hidden="true">' + (CR_EV[e.kind] || "•") + "</i><div><b>" + esc(e.title) + "</b><small>" + crWhen(e.at) + (e.text ? " · " + esc(e.text) : "") + "</small></div></div>"; }).join("") : '<div class="cr-none">لسه مفيش حاجة هنا: السلات والعروض و«بلّغني لما يرجع» وتأكيد الطلبات بتظهر هنا.</div>';
+    $("crfP2").innerHTML = (d.chat || []).length ? '<div class="cr-chat">' + d.chat.map(function (m) { return '<div class="' + (m.me ? "me" : "") + '">' + esc(m.text) + "<small>" + (m.me ? (m.hand ? "إنت · " : "المساعد · ") : "") + crWhen(m.at) + "</small></div>"; }).join("") + '</div><p class="hint">آخر رسايل الواتساب (بتتحفظ 60 يوم).</p>' : '<div class="cr-none">مفيش رسايل واتساب معاه آخر 60 يوم.</div>';
+    $("crfStop").checked = !!d.stopped; $("crfStop").disabled = !!d.stopped && !d.stopByOwner;
+    $("crfStopT").textContent = d.stopped ? (d.stopByOwner ? "إنت وقّفت رسايله. المساعد لسه بيرد عليه لو كلّمك." : "هو اللي بعت «وقف»، فمينفعش نرجّعها غير لو هو طلب.") : "العروض وتذكير السلة مش هيوصلوله. المساعد لسه بيرد عليه.";
+  }
+  // a change in the file: the answer is the file after it. keep = what to focus once it's redrawn
+  async function crSave(action, body, okText, keep) {
+    setMsg("crfMsg", ""); var p = crCur.phone;
+    try {
+      var d = await api("api/customers.ashx?action=" + action, { method: "POST", json: Object.assign({ phone: p }, body) });
+      if (!crCur || crCur.phone !== p) return true;
+      crCur = d; crFileDraw(); if (okText) toast(okText);
+      if (keep) { var k = $("crSheet").querySelector(keep); if (k) k.focus({ preventScroll: true }); }
+      return true;
+    } catch (e) { setMsg("crfMsg", e.message); if (crCur) crFileDraw(); return false; }
+  }
+  for (var crI = 0; crI < 3; crI++) $("crfT" + crI).onclick = (function (i) { return function () { crTab = i; crFileDraw(); }; })(crI);
+  document.querySelector(".cr-tabs").onkeydown = function (e) { var s = e.key === "ArrowLeft" ? 1 : e.key === "ArrowRight" ? -1 : 0; if (s) { e.preventDefault(); crTab = (crTab + s + 3) % 3; crFileDraw(); $("crfT" + crTab).focus(); } };
+  $("crfName").onchange = function () { crSave("note", { name: this.value.trim() }, "الاسم اتحفظ ✓"); };
+  $("crfName").onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); this.blur(); } };
+  $("crfNote").oninput = function () { $("crfSaved").textContent = ""; };
+  $("crfNote").onchange = async function () { if (await crSave("note", { note: this.value.trim() })) $("crfSaved").textContent = "· اتحفظت ✓"; };
+  $("crfCopy").onclick = function () { copy(localPhone(crCur.phone)); toast("الرقم اتنسخ"); };
+  $("crfLS").innerHTML = Object.keys(CR_S).map(function (k) { return '<option value="' + k + '"' + (k === "delivered" ? " selected" : "") + ">" + CR_S[k] + "</option>"; }).join("");
+  $("crfLogF").onsubmit = async function (e) {
+    e.preventDefault();
+    if (await crSave("log", { total: $("crfLT").value.trim(), items: $("crfLI").value.trim(), date: $("crfLD").value, status: $("crfLS").value }, "الأوردر اتسجّل ✓")) { this.reset(); $("crfLog").open = false; }
+  };
+  $("crfStop").onchange = async function () { var want = this.checked; if (!await crSave("stop", { on: want }, want ? "مش هيوصله عروض" : "هيوصله العروض تاني")) this.checked = !want; };
+  $("crfErase").onclick = async function () {
+    if (!confirm("هنمسح كل اللي عندنا عن الزبون ده: اسمه ورقمه وأوردراته وكلامه وملاحظتك. مفيش رجوع. متأكد؟")) return;
+    try { await api("api/customers.ashx?action=erase", { method: "POST", json: { phone: crCur.phone } }); crClose(); toast("بيانات الزبون اتمسحت"); } catch (e) { setMsg("crfMsg", e.message); }
+  };
+
+  // ---- from the rest of the dashboard ----
+  // an order-confirmation row: the customer's name opens their file, and a warning when they return orders
+  function crMarkRow(row, who, r) {
+    if (r.phone && hasF("crm") && who.textContent) { var b = document.createElement("button"); b.type = "button"; b.className = "cr-link"; b.textContent = who.textContent; b.title = "افتح ملفه"; b.onclick = function () { crOpen(r.phone); }; who.textContent = ""; who.appendChild(b); }
+    if (r.risk) { var s = document.createElement("span"); s.className = "cr-bd bad"; s.textContent = "↩️ " + r.risk; row.appendChild(s); }
+  }
+  // the home page: who's worth a look today
+  async function crHome() {
+    if (!me || !hasF("crm")) return;
+    if (Date.now() - crSumAt < 60000) return; crSumAt = Date.now();
+    var r; try { r = await api("api/customers.ashx?summary=1"); } catch (e) { return; }
+    var chip = $("hmChip-customers"); if (chip) { chip.className = "chip" + (r.all ? " ok" : ""); chip.textContent = r.all ? "✓ " + crCustN(r.all) : "هيظهروا لوحدهم"; }
+    var g = r.groups || {}, out = [];
+    if (r.watch) out.push('<button type="button" class="bad" data-cg="">⚠️ ' + bcPlural(r.watch, "أوردر محتاج", "أوردرين محتاجين", "أوردرات محتاجة", "أوردر محتاج") + " تبص عليه قبل الشحن</button>");
+    ["lost", "cart", "ask", "fresh", "vip"].forEach(function (k) { if ((g[k] || {}).n) out.push('<button type="button" data-cg="' + k + '">' + CR_G[k].i + " " + fmt(g[k].n) + " " + CR_G[k].n + "</button>"); });
+    var el = $("hmCust"); el.hidden = !out.length;
+    el.innerHTML = "<b>👥 زباينك</b>" + out.slice(0, 5).join("");
+    el.querySelectorAll("[data-cg]").forEach(function (b) { b.onclick = function () { crF = { g: b.dataset.cg, m: "", q: "", sort: "recent" }; $("crQ").value = ""; go("customers"); }; });
+  }
+
   // ---------------- what this store's plan includes ----------------
   // The user's rule (2026-11-23): each store sees only its own plan's features. me.hide (PlanGate.Hidden) lists the ones its plan
   // doesn't include: none on the free trial, its own plan's on an ended plan (the renew card shows there), and what every plan has
@@ -6588,6 +7181,7 @@
     var allStyles = hasF("styles");   // the chat's look: the shapes the plan has
     document.querySelectorAll(".sty").forEach(function (c) { c.classList.toggle("pv-off", !allStyles && FREE_STYLES.indexOf(c.dataset.style) < 0); });
     $("socialTabBtn").hidden = !me.meta || !anyF("messenger instagram");
+    navFit();
   }
   // the shape and color the customers see now: one the plan doesn't have shows as the default (PlanGate.Apply), and comes back on upgrade
   function lookSaved() {
@@ -6729,14 +7323,23 @@
   // one thing at a time: an idea being argued about, or a message being answered
   function cnLock() { var off = cnBusy || !cn || cn.balance <= 0; $("cnAsk").disabled = off; $("cnQSend").disabled = off; }
 
-  // its nav button moves into «المزيد» where the tabs wouldn't fit (from the phone's sidebar up to 1280)
-  (function cnPlaceSetup() {
-    var b = $("cnTabBtn"), after = document.querySelector('#navLinks > [data-tab="offers"]'), menu = $("ddMore"), wide = matchMedia("(max-width:760px), (min-width:1280px)");
-    function cnPlace() {
-      if (wide.matches) after.parentNode.insertBefore(b, after.nextSibling); else menu.insertBefore(b, menu.firstChild);
+  // The tabs that go into «المزيد» when they don't fit: «فكّر معانا» first, then «ابعت عرض». Measured, not by width alone: the store's
+  // name, the plan's features and the admin's tab all change how much room there is. In the phone's sidebar everything fits.
+  var navFit = (function () {
+    var off = $("bcTabBtn"), cn = $("cnTabBtn"), nav = off.parentNode, menu = $("ddMore"), mark = document.createComment("tabs that may move"), raf = 0;
+    nav.insertBefore(mark, off);
+    function fit() {
+      raf = 0;
+      nav.insertBefore(off, mark.nextSibling); nav.insertBefore(cn, off.nextSibling);
+      if (!matchMedia("(max-width:760px)").matches && !nav.hidden)
+        [cn, off].forEach(function (x) { if (nav.scrollWidth > nav.clientWidth + 1 && x.offsetParent) menu.insertBefore(x, menu.firstChild); });
       document.querySelectorAll(".dd").forEach(function (d) { d.querySelector(".dd-btn").classList.toggle("on", !!d.querySelector('.dd-menu [data-tab="' + current + '"]')); });
     }
-    wide.addEventListener("change", cnPlace); cnPlace();
+    function ask() { if (!raf) raf = requestAnimationFrame(fit); }
+    addEventListener("resize", ask);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(ask);
+    fit();
+    return ask;
   })();
 
   // ---- the skill's text -> its parts. Works on a half-written answer too (live = still being written). ----

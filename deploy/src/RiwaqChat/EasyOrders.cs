@@ -599,7 +599,7 @@ namespace RiwaqChat
                     { "on", s.EoOcOn }, { "scope", s.EoOcScope ?? "all" },
                     { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
                     { "follow", Followup.Json(c, s, "EoConfirms") },   // the reminder / «مردّش» follow-up and the rate (Followup.cs)
-                    { "recent", on ? (object)EoConfirm.Recent(c, s.Id) : new object[0] } } },
+                    { "recent", on ? (object)EoConfirm.Recent(c, s.Id, s) : new object[0] } } },
                 { "delivery", new Dictionary<string, object> {
                     { "on", s.EoDnOn }, { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) },
                     { "recent", on && s.EoDnOn ? (object)Delivery.Recent(c, s.Id, "eo") : new object[0] } } } };
@@ -708,6 +708,7 @@ namespace RiwaqChat
                     try { o = await EasyOrders.GetOrder(k, orderId); }
                     catch (EoException ex) { if (ex.NotFound) return; readErr = ex.Message; }   // not an order of this store
                     if (readErr == null && (o.ValueKind != JsonValueKind.Object || string.IsNullOrEmpty(EasyOrders.Str(o, "id")))) return;
+                    if (readErr == null) Crm.FromEo(c, s, o);
 
                     string shortId = readErr == null ? EasyOrders.Str(o, "short_id") : null;
                     if (string.IsNullOrEmpty(shortId) && shortHint != null && Regex.IsMatch(shortHint, @"^\d{1,12}$")) shortId = shortHint;
@@ -919,21 +920,22 @@ namespace RiwaqChat
             }
         }
 
-        public static List<Dictionary<string, object>> Recent(SqlConnection c, int storeId, int n = 15)
+        public static List<Dictionary<string, object>> Recent(SqlConnection c, int storeId, StoreInfo s = null, int n = 15)
         {
             var list = new List<Dictionary<string, object>>();
-            using (var cmd = Db.Cmd(c, "SELECT TOP (@n) OrderName, Customer, Total, Status, Note, CreatedAt, AnsweredAt, RemindedAt, AlertedAt, AlertTo FROM dbo.EoConfirms WHERE StoreId=@s ORDER BY Id DESC", "@n", n, "@s", storeId))
+            using (var cmd = Db.Cmd(c, "SELECT TOP (@n) OrderName, Customer, Phone, Total, Status, Note, CreatedAt, AnsweredAt, RemindedAt, AlertedAt, AlertTo FROM dbo.EoConfirms WHERE StoreId=@s ORDER BY Id DESC", "@n", n, "@s", storeId))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                 {
                     var row = new Dictionary<string, object> {
-                        { "order", r["OrderName"] as string ?? "" }, { "customer", r["Customer"] as string ?? "" }, { "total", r["Total"] as string ?? "" },
+                        { "order", r["OrderName"] as string ?? "" }, { "customer", r["Customer"] as string ?? "" }, { "phone", r["Phone"] as string ?? "" }, { "total", r["Total"] as string ?? "" },
                         { "status", r["Status"] as string }, { "note", r["Note"] as string ?? "" },
                         { "at", DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc).ToString("o") },
                         { "answeredAt", r["AnsweredAt"] == DBNull.Value ? "" : DateTime.SpecifyKind((DateTime)r["AnsweredAt"], DateTimeKind.Utc).ToString("o") } };
                     Followup.Decorate(row, r);   // pending: a reminder went, or nobody answered and someone was told to call
                     list.Add(row);
                 }
+            if (s != null) Crm.Decorate(c, s, list);   // a customer who returns orders
             return list;
         }
 
@@ -1115,6 +1117,7 @@ namespace RiwaqChat
                     {
                         string orderId = EasyOrders.Str(o, "order_id"), newStatus = EasyOrders.Str(o, "new_status");
                         EoConfirm.OnStatus(c, s, orderId, newStatus);
+                        Crm.OnEoStatus(c, s, orderId, newStatus);   // «زبايني»: delivered, on its way back...
                         // out for delivery -> the delivery-day message (the order and its status are read back from EasyOrders)
                         if (newStatus == "in_delivery" && s.EoDnOn) Delivery.QueueEo(s.Id, orderId);
                     }
@@ -1123,7 +1126,8 @@ namespace RiwaqChat
                         string id = EasyOrders.Str(o, "id");
                         if (id != null && Regex.IsMatch(id, "^[A-Za-z0-9-]{6,64}$"))
                         {
-                            if (s.EoOcOn) EoConfirm.Queue(s.Id, id, EasyOrders.Str(o, "short_id"));
+                            // the order is read from EasyOrders once: EoConfirm passes it on to «زبايني» (Crm) too
+                            if (s.EoOcOn) EoConfirm.Queue(s.Id, id, EasyOrders.Str(o, "short_id")); else Crm.QueueEo(s.Id, id);
                             EasyOrders.QueueResync(s.Id);   // the stock changed
                         }
                     }
