@@ -121,6 +121,9 @@ namespace RiwaqChat
                     try { await WeeklyReport.SendDue(c, ct); } catch (Exception ex) { Log.Error(ex); }
                     try { await WeeklyReport.SendDailyDue(c, ct); } catch (Exception ex) { Log.Error(ex); }   // the morning summary
                     try { await Followup.SendDue(c, ct); } catch (Exception ex) { Log.Error(ex); }            // unanswered confirmations
+                    try { await ShopReviews.Asks(c, ct); } catch (Exception ex) { Log.Error(ex); }           // SellyStore: «إيه رأيك في أوردرك؟»
+                    try { await ShopPay.Sheets(c, ct); } catch (Exception ex) { Log.Error(ex); }             // SellyStore: orders to the owner's Google Sheet
+                    try { if (Web.Allow("shop-tidy", 1, TimeSpan.FromHours(20))) ShopAccount.Tidy(c); } catch (Exception ex) { Log.Error(ex); }
                     try { await ShopRent.Run(c, ct); } catch (Exception ex) { Log.Error(ex); }               // SellyStore: the rent's reminders, pictures to R2
                 }
                 finally { Ended(c, row, took.ElapsedMilliseconds); Release(c); }   // the next run may start at once; the 4 minutes only cover a run that died half way

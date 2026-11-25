@@ -173,9 +173,34 @@ namespace RiwaqChat
             return Uri.TryCreate(s, UriKind.Absolute, out u) && (u.Scheme == "https" || u.Scheme == "http") && (u.Host == host || u.Host.EndsWith("." + host) || (host == "facebook.com" && (u.Host == "fb.com" || u.Host == "www.fb.com" || u.Host == "fb.me"))) ? "https://" + u.Host + u.PathAndQuery : "";
         }
 
+        // «عربون أو تحويل»: where the owner receives the money
+        static Dictionary<string, object> Pay(Dictionary<string, object> p)
+        {
+            var ways = new List<object>();
+            foreach (var w in ShopJson.List(ShopJson.At(p, "ways")).OfType<Dictionary<string, object>>())
+            {
+                string k = ShopJson.Str(ShopJson.At(w, "k"), 6); if (!ShopPrice.Ways.Contains(k) || ways.Any(y => (string)((Dictionary<string, object>)y)["k"] == k)) continue;
+                ways.Add(D("k", k, "on", ShopJson.Bool(ShopJson.At(w, "on")), "to", Txt(ShopJson.At(w, "to"), 80), "name", Txt(ShopJson.At(w, "name"), 60)));
+            }
+            var dp = ShopJson.Sub(p, "deposit");
+            return D("cod", ShopJson.Bool(ShopJson.At(p, "cod"), true), "ways", ways, "deposit", D("on", ShopJson.Bool(ShopJson.At(dp, "on")), "kind", One(ShopJson.At(dp, "kind"), "pct", "pct", "amt"), "value", Money(ShopJson.At(dp, "value"), 100000), "who", One(ShopJson.At(dp, "who"), "all", "all", "new"), "over", Money(ShopJson.At(dp, "over"), 1000000)));
+        }
+        // «فروع ومواعيد وخريطة»: where the shop is, and which branch a customer may collect from
+        static List<object> Branches(object v)
+        {
+            var l = new List<object>();
+            foreach (var b in ShopJson.List(v).OfType<Dictionary<string, object>>().Take(20))
+            {
+                string n = Txt(ShopJson.At(b, "n"), 60), id = ShopJson.Str(ShopJson.At(b, "id"), 12), map = ShopJson.Str(ShopJson.At(b, "map"), 300); int g = ShopJson.Int(ShopJson.At(b, "gov")); if (n.Length < 2 || ShopGeo.Get(g) == null) continue;
+                if (!Regex.IsMatch(id, "^[a-z0-9]{3,12}$")) id = Shops.Token(4);
+                if (!Regex.IsMatch(map, @"^https://(www\.)?(google\.[a-z.]{2,6}/maps|maps\.google\.[a-z.]{2,6}|maps\.app\.goo\.gl|goo\.gl/maps)[/?].{1,260}$")) map = "";
+                l.Add(D("id", id, "n", n, "gov", g, "ad", Txt(ShopJson.At(b, "ad"), 200), "ph", Phone(ShopJson.At(b, "ph")), "hours", Txt(ShopJson.At(b, "hours"), 100), "map", map, "pickup", ShopJson.Bool(ShopJson.At(b, "pickup"), true)));
+            }
+            return l;
+        }
         public static Dictionary<string, object> CleanSettings(Dictionary<string, object> x, Dictionary<string, object> old)
         {
-            Func<string, Dictionary<string, object>> sub = k => ShopJson.At(x, k) is Dictionary<string, object> ? (Dictionary<string, object>)ShopJson.At(x, k) : ShopJson.Sub(old, k);
+            Func<string, Dictionary<string, object>> sub = k => { var had = ShopJson.Sub(old, k); var now = ShopJson.At(x, k) as Dictionary<string, object>; if (now == null) return had; var all = new Dictionary<string, object>(had); foreach (var kv in now) all[kv.Key] = kv.Value; return all; };
             var ct = sub("contact"); var so = sub("social"); var lg = sub("legal"); var sh = sub("ship"); var or = sub("order"); var px = sub("pixel"); var va = sub("vacation"); var al = sub("alerts");
             Func<string, object> top = k => x.ContainsKey(k) ? x[k] : ShopJson.At(old, k);
             return D(
@@ -183,11 +208,21 @@ namespace RiwaqChat
                 "social", D("fb", Page(ShopJson.At(so, "fb"), "facebook.com"), "ig", Page(ShopJson.At(so, "ig"), "instagram.com"), "tt", Page(ShopJson.At(so, "tt"), "tiktok.com"), "yt", Page(ShopJson.At(so, "yt"), "youtube.com")),
                 "legal", D("seller", Txt(ShopJson.At(lg, "seller"), 120), "address", Txt(ShopJson.At(lg, "address"), 200), "phone", Phone(ShopJson.At(lg, "phone")), "reg", Txt(ShopJson.At(lg, "reg"), 40), "tax", Txt(ShopJson.At(lg, "tax"), 40)),
                 "ship", D("mode", One(ShopJson.At(sh, "mode"), "flat", "flat", "zones"), "fee", Money(ShopJson.At(sh, "fee"), 5000), "freeOver", Money(ShopJson.At(sh, "freeOver"), 1000000), "days", Txt(ShopJson.At(sh, "days"), 30), "note", Pair(ShopJson.At(sh, "note"), 200)),
-                "order", D("min", Money(ShopJson.At(or, "min"), 100000), "phone2", ShopJson.Bool(ShopJson.At(or, "phone2"), true), "area", ShopJson.Bool(ShopJson.At(or, "area"), true), "waBtn", ShopJson.Bool(ShopJson.At(or, "waBtn"), true), "maxQty", Math.Max(1, Math.Min(500, ShopJson.Int(ShopJson.At(or, "maxQty"), 20))), "confirm", ShopJson.Bool(ShopJson.At(or, "confirm"), true)),
-                "pixel", D("meta", Regex.IsMatch(ShopJson.Str(ShopJson.At(px, "meta"), 24), @"^\d{8,20}$") ? ShopJson.Str(ShopJson.At(px, "meta"), 24) : ""),
+                "order", D("min", Money(ShopJson.At(or, "min"), 100000), "phone2", ShopJson.Bool(ShopJson.At(or, "phone2"), true), "area", ShopJson.Bool(ShopJson.At(or, "area"), true), "waBtn", ShopJson.Bool(ShopJson.At(or, "waBtn"), true), "maxQty", Math.Max(1, Math.Min(500, ShopJson.Int(ShopJson.At(or, "maxQty"), 20))), "confirm", ShopJson.Bool(ShopJson.At(or, "confirm"), true),
+                    "otp", ShopJson.Bool(ShopJson.At(or, "otp")), "selfCancel", ShopJson.Bool(ShopJson.At(or, "selfCancel"), true), "block", ShopJson.Bool(ShopJson.At(or, "block"), true), "recv", ShopJson.Bool(ShopJson.At(or, "recv")), "codFee", Money(ShopJson.At(or, "codFee"), 1000),
+                    "gift", D("on", ShopJson.Bool(ShopJson.At(ShopJson.Sub(or, "gift"), "on")), "price", Money(ShopJson.At(ShopJson.Sub(or, "gift"), "price"), 2000))),
+                "acct", D("on", ShopJson.Bool(ShopJson.At(sub("acct"), "on"), true)), "returns", D("on", ShopJson.Bool(ShopJson.At(sub("returns"), "on"), true)), "restock", D("on", ShopJson.Bool(ShopJson.At(sub("restock"), "on"), true)), "news", D("on", ShopJson.Bool(ShopJson.At(sub("news"), "on"), true)),
+                "reviews", D("on", ShopJson.Bool(ShopJson.At(sub("reviews"), "on"), true), "auto", ShopJson.Bool(ShopJson.At(sub("reviews"), "auto"), true), "ask", ShopJson.Bool(ShopJson.At(sub("reviews"), "ask"), true)),
+                "abandon", D("on", ShopJson.Bool(ShopJson.At(sub("abandon"), "on"), true), "delay", Carts.Delays.Contains(ShopJson.Int(ShopJson.At(sub("abandon"), "delay"), 60)) ? ShopJson.Int(ShopJson.At(sub("abandon"), "delay"), 60) : 60, "coupon", ShopPrice.CodeNorm(Txt(ShopJson.At(sub("abandon"), "coupon"), 30))),
+                "pay", Pay(sub("pay")), "branches", Branches(x.ContainsKey("branches") ? x["branches"] : ShopJson.At(old, "branches")),
+                "tax", D("on", ShopJson.Bool(ShopJson.At(sub("tax"), "on")), "pct", Math.Min(40, Money(ShopJson.At(sub("tax"), "pct"), 40))),
+                "sheet", D("url", ShopPay.SheetUrl(ShopJson.Str(ShopJson.At(sub("sheet"), "url"), 200)) ? ShopJson.Str(ShopJson.At(sub("sheet"), "url"), 200) : ""),
+                "pixel", D("meta", Regex.IsMatch(ShopJson.Str(ShopJson.At(px, "meta"), 24), @"^\d{8,20}$") ? ShopJson.Str(ShopJson.At(px, "meta"), 24) : "", "tiktok", Regex.IsMatch(ShopJson.Str(ShopJson.At(px, "tiktok"), 30), @"^[A-Z0-9]{16,24}$") ? ShopJson.Str(ShopJson.At(px, "tiktok"), 30) : "",
+                    "snap", Regex.IsMatch(ShopJson.Str(ShopJson.At(px, "snap"), 40), @"^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$") ? ShopJson.Str(ShopJson.At(px, "snap"), 40) : "", "ga", Regex.IsMatch(ShopJson.Str(ShopJson.At(px, "ga"), 20), @"^G-[A-Z0-9]{6,14}$") ? ShopJson.Str(ShopJson.At(px, "ga"), 20) : ""),
                 "stack", ShopJson.Bool(top("stack")), "returnsDays", Math.Max(14, Math.Min(90, ShopJson.Int(top("returnsDays"), 14))),
                 "vacation", D("on", ShopJson.Bool(ShopJson.At(va, "on")), "until", Regex.IsMatch(ShopJson.Str(ShopJson.At(va, "until"), 10), @"^\d{4}-\d\d-\d\d$") ? ShopJson.Str(ShopJson.At(va, "until"), 10) : "", "msg", Pair(ShopJson.At(va, "msg"), 200)),
-                "alerts", D("wa", ShopJson.Bool(ShopJson.At(al, "wa"), true)));
+                "alerts", D("wa", ShopJson.Bool(ShopJson.At(al, "wa"), true), "cancel", ShopJson.Bool(ShopJson.At(al, "cancel"), true), "edit", ShopJson.Bool(ShopJson.At(al, "edit"), true), "return", ShopJson.Bool(ShopJson.At(al, "return"), true), "review", ShopJson.Bool(ShopJson.At(al, "review"), true), "pay", ShopJson.Bool(ShopJson.At(al, "pay"), true),
+                    "low", ShopJson.Bool(ShopJson.At(al, "low"), true), "lowAt", Math.Max(0, Math.Min(100, ShopJson.Int(ShopJson.At(al, "lowAt"), 3))), "shipMsg", ShopJson.Bool(ShopJson.At(al, "shipMsg"), true)));
         }
         static decimal Money(object v, decimal max) { return Math.Max(0, Math.Min(max, ShopJson.Dec(v))); }
         // a WhatsApp number as wa.me needs it: 2010...

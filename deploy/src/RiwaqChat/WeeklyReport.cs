@@ -120,6 +120,13 @@ namespace RiwaqChat
                 if (waChats > 0) sb.Append("📱 *").Append(N(waChats)).Append("* زبون كلّمك على الواتساب\n");
             }
             // the features' results (only what this store uses)
+            if (Shops.Ready)
+            {
+                using (var cmd = Db.Cmd(c, "SELECT COUNT(*), ISNULL(SUM(CASE WHEN Status NOT IN ('cancelled','returned') THEN Total ELSE 0 END),0), ISNULL(SUM(CASE WHEN Status='delivered' THEN 1 ELSE 0 END),0) FROM dbo.ShopOrders WHERE StoreId=@s AND CreatedAt>=@f", "@s", s.Id, "@f", from)) using (var r = cmd.ExecuteReader())
+                    if (r.Read() && (int)r[0] > 0) sb.Append("🛍️ متجرك: *").Append(N((int)r[0])).Append("* أوردر بـ *").Append(ShopOrders.Money((decimal)r[1])).Append("*").Append((int)r[2] > 0 ? "، اتسلّم منهم " + N((int)r[2]) : "").Append('\n');
+                int wait = Scalar(c, "SELECT COUNT(*) FROM dbo.ShopOrders WHERE StoreId=@s AND Status IN ('new','noreply') AND @f IS NOT NULL", s.Id, from);
+                if (daily && wait > 0) sb.Append("   ⏳ *").Append(N(wait)).Append("* أوردر مستني ردك\n");
+            }
             int chatOrders = Scalar(c, "SELECT COUNT(*) FROM dbo.ChatOrders WHERE StoreId=@s AND Status IN ('placed','awaiting_payment') AND CreatedAt >= @f", s.Id, from);
             if (chatOrders > 0) sb.Append("🛒 *").Append(N(chatOrders)).Append("* طلب اتعمل من الشات\n");
             // order confirmation on WhatsApp: confirmed / cancelled / no answer (Followup.cs), and what the reminder brought back

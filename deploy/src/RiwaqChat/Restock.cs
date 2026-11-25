@@ -27,6 +27,14 @@ namespace RiwaqChat
         const int WaitDays = 60, CheckEveryMin = 30, MaxPerPhone = 5;
 
         public static bool CanWatch(StoreInfo s) { return ShopifyAdmin.For(s) != null || EasyOrders.For(s) != null; }
+        // a rented store (SellyStore) watches its own stock: the customer asks from the product's page, and the owner's switch is the store's own
+        public static bool ShopOn(SqlConnection c, StoreInfo s, Shop sh) { return s != null && sh != null && ShopJson.Bool(ShopJson.At(ShopJson.Sub(sh.Settings, "restock"), "on"), true) && WaAccount.HasService(s) && PlanGate.Allows(c, s, Feature); }
+        public static void FromShop(SqlConnection c, StoreInfo s, Shop sh, ShopProd p, ShopVar v, string phone, string prefix)
+        {
+            string key = p.Id.ToString(CultureInfo.InvariantCulture) + (v != null && v.Opts.Length > 0 ? "|" + v.Id.ToString(CultureInfo.InvariantCulture) : "");
+            using (var cmd = Db.Cmd(c, @"IF NOT EXISTS (SELECT 1 FROM dbo.RestockWaits WHERE StoreId=@s AND Source='shop' AND Phone=@p AND ProductKey=@k AND Status='waiting') AND (SELECT COUNT(*) FROM dbo.RestockWaits WHERE StoreId=@s AND Phone=@p AND Status='waiting') < 10
+                INSERT INTO dbo.RestockWaits(StoreId, Source, ProductKey, Product, Variant, Url, Phone, Status) VALUES(@s, 'shop', @k, @n, @v, @u, @p, 'waiting')", "@s", s.Id, "@k", key, "@n", Cut(p.Name, 200), "@v", v == null || v.Label.Length == 0 ? null : Cut(v.Label, 100), "@u", Cut(sh.Url + prefix + "/p/" + p.Slug, 600), "@p", phone)) cmd.ExecuteNonQuery();
+        }
 
         public static bool On(SqlConnection c, StoreInfo s)
         {
@@ -161,11 +169,12 @@ namespace RiwaqChat
         public static async Task Check(SqlConnection c, CancellationToken ct)
         {
             var due = new List<KeyValuePair<int, string>>();   // store -> product key
-            using (var cmd = Db.Cmd(c, @"SELECT TOP 40 StoreId, ProductKey FROM dbo.RestockWaits WHERE Status='waiting'
+            using (var cmd = Db.Cmd(c, @"SELECT TOP 40 StoreId, ProductKey FROM dbo.RestockWaits WHERE Status='waiting' AND Source<>'shop'
                 AND (CheckedAt IS NULL OR CheckedAt < DATEADD(MINUTE,-@m,SYSUTCDATETIME())) GROUP BY StoreId, ProductKey ORDER BY MIN(ISNULL(CheckedAt,'2000-01-01'))", "@m", CheckEveryMin))
             using (var r = cmd.ExecuteReader()) while (r.Read()) due.Add(new KeyValuePair<int, string>((int)r[0], (string)r[1]));
-            if (due.Count == 0) return;
             bool quiet = WaNotify.QuietUntil().HasValue;
+            if (!quiet) try { await CheckShops(c, ct); } catch (Exception ex) { Log.Error(ex); }
+            if (due.Count == 0) return;
             foreach (var g in due.GroupBy(d => d.Key))
             {
                 if (ct.IsCancellationRequested) return;
@@ -178,6 +187,28 @@ namespace RiwaqChat
                 if (quiet) back.Clear();   // at night nothing goes out; the next morning's check finds it again
                 Touch(c, s.Id, keys);
                 foreach (var key in back) await SendAll(c, s, key);
+            }
+        }
+
+        // the rented stores: their stock is here, so every run looks
+        static async Task CheckShops(SqlConnection c, CancellationToken ct)
+        {
+            if (!Shops.Ready) return;
+            var due = new List<KeyValuePair<int, string>>();
+            using (var cmd = Db.Cmd(c, "SELECT DISTINCT StoreId, ProductKey FROM dbo.RestockWaits WHERE Status='waiting' AND Source='shop'")) using (var r = cmd.ExecuteReader()) while (r.Read()) due.Add(new KeyValuePair<int, string>((int)r[0], (string)r[1]));
+            foreach (var g in due.GroupBy(x => x.Key))
+            {
+                if (ct.IsCancellationRequested) return;
+                var s = Db.StoreById(c, g.Key); var sh = s == null ? null : Shops.ByStore(c, g.Key);
+                if (sh == null || !Shops.Open(c, s, sh) || !ShopOn(c, s, sh) || WaNotify.CantSend(c, s) != null) continue;
+                var d = ShopCache.Get(c, sh); if (d == null) continue;
+                foreach (var kv in g)
+                {
+                    var parts = kv.Value.Split('|'); int pid, vid = 0; ShopProd p; ShopVar v;
+                    if (!int.TryParse(parts[0], out pid) || !d.ById.TryGetValue(pid, out p) || p.Status != "active") continue;
+                    bool back = parts.Length == 2 ? int.TryParse(parts[1], out vid) && d.Vars.TryGetValue(vid, out v) && p.Can(v) : p.Available;
+                    if (back) await SendAll(c, s, kv.Value);
+                }
             }
         }
 

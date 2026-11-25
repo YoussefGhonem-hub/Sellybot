@@ -102,6 +102,8 @@ namespace RiwaqChat
             }
         }
 
+        public static byte[] Read(string path, bool small) { if (path == null || !PathRx.IsMatch(path)) return null; var f = File_(small ? Small(path) : path); return File.Exists(f) ? File.ReadAllBytes(f) : null; }
+        public static async Task<byte[]> Fetch(string url) { using (var r = await Http.GetAsync(url)) return r.IsSuccessStatusCode ? await r.Content.ReadAsByteArrayAsync() : null; }
         // the site's own copy (the Worker asks for it when R2 doesn't have the picture)
         public static void Serve(string path, HttpResponse res, bool head)
         {

@@ -120,11 +120,11 @@ namespace RiwaqChat
             if (a == "hit") { Hit(c, x, req); res.StatusCode = 204; return; }
             if (!Web.Allow("shop-a:" + x.Ip, 120, min)) { Web.Error(res, 429, "rate_limited", "استنى ثواني وجرّب تاني."); return; }
             if (a.Length == 0) { Web.Error(res, 404, "not_found"); return; }
-            var b = Web.Body(req, 40000);
+            var b = Web.Body(req, a == "me" || a == "proof" || a == "pic" ? 900000 : 40000);   // a customer's picture, already small
             switch (a)
             {
                 case "quote":
-                    Web.Json(res, 200, ShopPrice.Json(ShopPrice.Quote(c, x.Data, Lines(b), ShopJson.Str(ShopJson.At(b, "cpn"), 30), ShopJson.Int(ShopJson.At(b, "gov")), ShopOrders.Mobile(ShopJson.Str(ShopJson.At(b, "phone"), 24)), x.Now)));
+                    Web.Json(res, 200, ShopPrice.Json(ShopPrice.Quote(c, x.Data, Lines(b), ShopJson.Str(ShopJson.At(b, "cpn"), 30), ShopJson.Int(ShopJson.At(b, "gov")), ShopOrders.Mobile(ShopJson.Str(ShopJson.At(b, "phone"), 24)), x.Now, true, How(b))));
                     return;
                 case "order": Order(c, x, b, res); return;
                 case "track": Track(c, x, b, res); return;
@@ -136,6 +136,13 @@ namespace RiwaqChat
                     }
                 case "report": Report(c, x, b, res); return;
                 case "lead": Lead(c, x, b, res); return;
+                case "me": ShopAccount.Run(c, x, b, res); return;
+                case "watch": ShopAccount.Watch(c, x, b, res); return;
+                case "find": ShopAccount.Find(c, x, b, res); return;
+                case "proof": ShopPay.Proof(c, x, b, res); return;
+                case "pic": ShopPay.Pic(c, x, b, res); return;
+                case "cart": ShopPay.Cart(c, x, b, res); return;
+                case "news": ShopPay.News(c, x, b, res); return;
                 default: Web.Error(res, 404, "not_found"); return;
             }
         }
@@ -153,6 +160,7 @@ namespace RiwaqChat
             return list;
         }
 
+        static ShopHow How(Dictionary<string, object> b) { return new ShopHow { Pay = ShopJson.Str(ShopJson.At(b, "pay"), 6), Gift = ShopJson.Bool(ShopJson.At(b, "gift")), Branch = ShopJson.Str(ShopJson.At(b, "branch"), 20) }; }
         static void Order(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, HttpResponse res)
         {
             if (!Web.Allow("shop-try:" + x.Ip, 40, TimeSpan.FromMinutes(10))) throw new ShopException("too_many", "حاولت كتير. استنى شوية وجرّب تاني.");
@@ -160,7 +168,8 @@ namespace RiwaqChat
             var o = new ShopOrderIn
             {
                 Lines = Lines(b), Name = s("name", 80), Phone = s("phone", 24), Phone2 = s("phone2", 24), Gov = ShopJson.Int(ShopJson.At(b, "gov")), City = s("city", 60), Area = s("area", 80), Address = s("address", 300), Landmark = s("landmark", 120), Note = s("note", 400),
-                Coupon = s("cpn", 30), ClientKey = s("ck", 60), Lang = x.Lang, Device = Regex.Replace(s("dev", 40), "[^A-Za-z0-9-]", ""), Ip = x.Ip, Src = s("src", 200), Expected = ShopJson.DecN(ShopJson.At(b, "total")), Agreed = ShopJson.Bool(ShopJson.At(b, "agree")), Test = x.Preview
+                Coupon = s("cpn", 30), ClientKey = s("ck", 60), Lang = x.Lang, Device = Regex.Replace(s("dev", 40), "[^A-Za-z0-9-]", ""), Ip = x.Ip, Src = s("src", 200), Expected = ShopJson.DecN(ShopJson.At(b, "total")), Agreed = ShopJson.Bool(ShopJson.At(b, "agree")), Test = x.Preview,
+                How = How(b), GiftMsg = s("giftMsg", 200), RecvName = s("recv", 80), RecvPhone = s("recvPhone", 24), Otp = s("otp", 12), Proof = s("proof", 160).Length == 0 ? null : s("proof", 160)
             };
             // a filled field people don't see: a program, not a person. It's told everything went well.
             if (s("website", 50).Length > 0) { Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "no", 0 }, { "token", "" } }); return; }
@@ -169,7 +178,7 @@ namespace RiwaqChat
             catch (ShopException) { throw; }
             catch (Exception ex) { ShopOrders.Fail(x.Row.StoreId, "order", ex.GetType().Name + ": " + ex.Message); throw; }
             if (!p.Again && !p.Order.Test) ShopHooks.OnPlaced(x.Store, p.Order.Id);
-            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "no", p.Order.No }, { "token", p.Order.Token }, { "total", p.Order.Total }, { "test", p.Order.Test }, { "again", p.Again } });
+            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "no", p.Order.No }, { "token", p.Order.Token }, { "total", p.Order.Total }, { "test", p.Order.Test }, { "again", p.Again }, { "dep", p.Order.Deposit }, { "pay", p.Order.Pay ?? "cod" }, { "ps", p.Order.PayState ?? "" } });
         }
 
         static void Track(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, HttpResponse res)
@@ -207,7 +216,9 @@ namespace RiwaqChat
         {
             if (x.Preview || !Web.Allow("shop-hit:" + x.Ip, 120, TimeSpan.FromMinutes(1))) return;
             string t; using (var sr = new StreamReader(req.InputStream, Encoding.UTF8)) t = sr.ReadToEnd();
-            if (t.Length > 20) return;
+            if (t.Length > 24) return;
+            // one product: p<id> seen, a<id> put in the cart
+            var one = Regex.Match(t, @"([pa])(\d{1,9})$"); if (one.Success) { int pid = int.Parse(one.Groups[2].Value); if (x.Data.ById.ContainsKey(pid)) ShopAccount.Seen(c, x.Row.StoreId, pid, one.Groups[1].Value == "p" ? "Views" : "Carts"); t = t.Substring(0, one.Index) + (one.Groups[1].Value == "p" ? "p" : ""); }
             var cols = new Dictionary<char, string> { { 'v', "Visits" }, { 'd', "Visitors" }, { 'p', "Views" }, { 'c', "Carts" }, { 'k', "Checkouts" } };
             foreach (var ch in t.Distinct()) { string col; if (cols.TryGetValue(ch, out col)) ShopOrders.Daily(c, null, x.Row.StoreId, col, 1); }
         }
@@ -289,6 +300,7 @@ namespace RiwaqChat
             if (path.StartsWith("/_d/", StringComparison.Ordinal)) { Data(x, path.Substring(4), res); return; }
             if (path == "/robots.txt") { Robots(x, res); return; }
             if (path == "/sitemap.xml") { Sitemap(x, res); return; }
+            if (path.StartsWith("/feed/", StringComparison.Ordinal)) { ShopFeed.Write(x, path.Substring(6), res); return; }
             if (path == "/favicon.ico" || path == "/apple-touch-icon.png")
             {
                 var icon = ShopJson.Str(ShopJson.At(x.Look, "icon")); if (icon.Length == 0) icon = ShopJson.Str(ShopJson.At(x.Look, "logo"));
@@ -318,7 +330,11 @@ namespace RiwaqChat
             }
             else if (seg[0] == "page" && seg.Length == 2) { var pg = d.Pages.FirstOrDefault(y => y.Slug == seg[1] && !y.Hidden); if (pg == null) p.T = "404"; else { p.T = "page"; p.Page = pg; } }
             else if (seg[0] == "thanks" && seg.Length == 2) { p.T = "thanks"; p.Token = Regex.Replace(seg[1], "[^a-f0-9]", ""); p.NoIndex = true; }
-            else if (seg.Length == 1 && (seg[0] == "cart" || seg[0] == "checkout" || seg[0] == "track" || seg[0] == "search" || seg[0] == "offers" || seg[0] == "fav")) { p.T = seg[0]; p.NoIndex = seg[0] != "offers"; }
+            else if (seg.Length == 1 && (seg[0] == "cart" || seg[0] == "checkout" || seg[0] == "track" || seg[0] == "search" || seg[0] == "offers" || seg[0] == "fav" || seg[0] == "compare" || seg[0] == "account" || seg[0] == "cats" || (seg[0] == "blog" && d.Posts.Any(y => !y.Hidden)))) { p.T = seg[0]; p.NoIndex = seg[0] != "offers" && seg[0] != "blog" && seg[0] != "cats"; }
+            else if (seg[0] == "account" && seg.Length <= 3) { p.T = "account"; p.NoIndex = true; }
+            else if (seg[0] == "rate" && seg.Length == 2) { p.T = "rate"; p.Token = Regex.Replace(seg[1], "[^a-f0-9]", ""); p.NoIndex = true; }
+            else if (seg[0] == "pay" && seg.Length == 2) { p.T = "pay"; p.Token = Regex.Replace(seg[1], "[^a-f0-9]", ""); p.NoIndex = true; }
+            else if (seg[0] == "blog" && seg.Length == 2) { var po = d.Posts.FirstOrDefault(y => y.Slug == seg[1] && !y.Hidden); if (po == null) p.T = "404"; else { p.T = "post"; p.Post = po; } }
             else p.T = "404";
 
             if (p.T == "404") { res.StatusCode = 404; p.NoIndex = true; }
@@ -328,7 +344,7 @@ namespace RiwaqChat
         static string Query(HttpRequest req) { var q = req.Headers["X-Shop-Query"]; return string.IsNullOrEmpty(q) || q.Length > 600 || !q.StartsWith("?") || q.Any(char.IsControl) ? "" : q; }
         static void Moved(ShopFrontHandler.Ctx x, HttpResponse res, string to) { res.StatusCode = 301; res.AddHeader("Location", x.Prefix + to); res.Cache.SetCacheability(HttpCacheability.Public); res.Cache.SetMaxAge(TimeSpan.FromMinutes(10)); }
 
-        class PageInfo { public string T, Canonical, Token; public ShopCat Cat; public ShopProd Prod; public ShopPage Page; public bool NoIndex; }
+        class PageInfo { public string T, Canonical, Token; public ShopCat Cat; public ShopProd Prod; public ShopPage Page; public ShopPost Post; public string PostBody, PostBodyEn, PostProducts; public bool NoIndex; }
 
         // the data files: immutable for their version
         static void Data(ShopFrontHandler.Ctx x, string file, HttpResponse res)
@@ -337,6 +353,7 @@ namespace RiwaqChat
             if (Regex.IsMatch(file, @"^c-[\w-]+\.json$")) { o = ShopView.Catalog(x.Data, x.Now); fixedFile = file == "c-" + x.Data.CatalogVer(x.Now) + ".json"; }
             else if (m.Success) { ShopProd p; int id = int.Parse(m.Groups[1].Value); if (x.Data.ById.TryGetValue(id, out p) && p.Status == "active") { o = ShopView.Detail(x.Data, p, x.Now); fixedFile = file == "p-" + id + "-" + x.Data.CatalogVer(x.Now) + ".json"; } }
             else if (file == "geo.json") o = ShopGeo.Json();
+            else if ((m = Regex.Match(file, @"^rv-(\d{1,9})-(\d{1,3})-[\w-]+\.json$")).Success) { using (var c2 = Db.Open()) o = ShopReviews.Page(c2, x.Row.StoreId, int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value)); fixedFile = false; }
             if (o == null) { Web.Error(res, 404, "not_found"); return; }
             res.ContentType = "application/json; charset=utf-8";
             if (x.Preview) res.Cache.SetCacheability(HttpCacheability.NoCache);
@@ -347,7 +364,7 @@ namespace RiwaqChat
         static void Robots(ShopFrontHandler.Ctx x, HttpResponse res)
         {
             res.ContentType = "text/plain; charset=utf-8"; res.Cache.SetCacheability(HttpCacheability.Public); res.Cache.SetMaxAge(TimeSpan.FromHours(1));
-            res.Write("User-agent: *\nDisallow: /cart\nDisallow: /checkout\nDisallow: /thanks/\nDisallow: /track\nDisallow: /search\nDisallow: /_a/\n\nSitemap: " + x.Row.Url + "/sitemap.xml\n");
+            res.Write("User-agent: *\nDisallow: /cart\nDisallow: /checkout\nDisallow: /thanks/\nDisallow: /track\nDisallow: /search\nDisallow: /account\nDisallow: /rate/\nDisallow: /pay/\nDisallow: /_a/\n\nSitemap: " + x.Row.Url + "/sitemap.xml\n");
         }
         static void Sitemap(ShopFrontHandler.Ctx x, HttpResponse res)
         {
@@ -357,6 +374,7 @@ namespace RiwaqChat
             foreach (var k in x.Data.Cats.Where(x.Data.CatShown)) add("/c/" + k.Slug, null);
             foreach (var p in x.Data.Shown) add("/p/" + p.Slug, p.UpdatedAt);
             foreach (var p in x.Data.Pages.Where(y => !y.Hidden)) add("/page/" + p.Slug, null);
+            if (x.Data.Posts.Any(y => !y.Hidden)) add("/blog", null); foreach (var p in x.Data.Posts.Where(y => !y.Hidden)) add("/blog/" + p.Slug, p.At);
             sb.Append("</urlset>");
             res.ContentType = "application/xml; charset=utf-8"; res.Cache.SetCacheability(HttpCacheability.Public); res.Cache.SetMaxAge(TimeSpan.FromHours(1)); res.Write(sb.ToString());
         }
@@ -372,14 +390,20 @@ namespace RiwaqChat
                 { "contact", ShopJson.Sub(set, "contact") }, { "social", ShopJson.Sub(set, "social") }, { "legal", ShopJson.Sub(set, "legal") },
                 { "ship", new Dictionary<string, object> { { "fee", ShopJson.Dec(ShopJson.At(ship, "fee")) }, { "over", ShopPrice.FreeOver(d, 0, x.Now) }, { "days", ShopJson.Str(ShopJson.At(ship, "days")) }, { "note", ShopJson.List(ShopJson.At(ship, "note")) },
                     { "zones", d.Zones.Values.Select(z => new Dictionary<string, object> { { "g", z.Gov }, { "f", z.Fee ?? ShopJson.Dec(ShopJson.At(ship, "fee")) }, { "d", z.Days ?? "" }, { "off", z.Off } }).ToArray() }, { "mode", ShopJson.Str(ShopJson.At(ship, "mode")) } } },
-                { "order", new Dictionary<string, object> { { "maxQty", ShopJson.Int(ShopJson.At(order, "maxQty"), 20) }, { "min", ShopJson.Dec(ShopJson.At(order, "min")) }, { "phone2", ShopJson.Bool(ShopJson.At(order, "phone2"), true) }, { "area", ShopJson.Bool(ShopJson.At(order, "area"), true) }, { "waBtn", ShopJson.Bool(ShopJson.At(order, "waBtn"), true) } } },
+                { "order", new Dictionary<string, object> { { "maxQty", ShopJson.Int(ShopJson.At(order, "maxQty"), 20) }, { "min", ShopJson.Dec(ShopJson.At(order, "min")) }, { "phone2", ShopJson.Bool(ShopJson.At(order, "phone2"), true) }, { "area", ShopJson.Bool(ShopJson.At(order, "area"), true) }, { "waBtn", ShopJson.Bool(ShopJson.At(order, "waBtn"), true) },
+                    { "otp", ShopJson.Bool(ShopJson.At(order, "otp")) }, { "codFee", ShopJson.Dec(ShopJson.At(order, "codFee")) }, { "gift", ShopJson.Sub(order, "gift") }, { "recv", ShopJson.Bool(ShopJson.At(order, "recv")) } } },
+                { "pay", new Dictionary<string, object> { { "cod", ShopPrice.Cod(x.Row) }, { "ways", ShopPrice.PayWays(x.Row).Select(w => new Dictionary<string, object> { { "k", ShopJson.At(w, "k") }, { "to", ShopJson.At(w, "to") }, { "name", ShopJson.At(w, "name") } }).ToArray() } } },
+                { "branches", ShopPrice.Branches(x.Row) }, { "acct", ShopAccount.On(x.Row) }, { "retOn", ShopAccount.ReturnsOn(x.Row) }, { "revOn", ShopAccount.ReviewsOn(x.Row) }, { "news", ShopJson.Bool(ShopJson.At(ShopJson.Sub(set, "news"), "on"), true) },
+                { "revs", d.Revs }, { "posts", d.Posts.Where(p => !p.Hidden).Select(p => new Dictionary<string, object> { { "s", p.Slug }, { "t", ShopView.Pair(p.Title, p.TitleEn) }, { "x", ShopView.Pair(p.Short, p.ShortEn) }, { "im", p.Image ?? "" }, { "at", ShopView.Unix(p.At) } }).ToArray() },
                 { "returns", ShopJson.Int(ShopJson.At(set, "returnsDays"), 14) }, { "vacation", ShopPrice.Vacation(d, x.Now) ? ShopJson.Sub(set, "vacation") : null },
                 { "pixel", x.Preview ? "" : ShopJson.Str(ShopJson.At(ShopJson.Sub(set, "pixel"), "meta")) },
+                { "pixels", x.Preview ? null : new Dictionary<string, object> { { "tiktok", Px(set, "tiktok") }, { "snap", Px(set, "snap") }, { "ga", Px(set, "ga") } } },
                 { "pages", d.Pages.Where(p => !p.Hidden).Select(p => new Dictionary<string, object> { { "s", p.Slug }, { "k", p.Kind }, { "t", ShopView.Pair(p.Title, p.TitleEn) }, { "m", p.InMenu }, { "f", p.InFooter } }).ToArray() },
                 { "popup", Popup(c, x) },
                 { "chat", new Dictionary<string, object> { { "on", x.Store.Status == "active" }, { "store", x.Store.Slug }, { "v", (Load("~/widget.js") ?? new FileCopy { Tag = "1" }).Tag }, { "bot", x.Store.BotName ?? "" } } }
             };
         }
+        static string Px(Dictionary<string, object> set, string k) { return ShopJson.Str(ShopJson.At(ShopJson.Sub(set, "pixel"), k), 40); }
         static string Img() { var u = ShopImages.Url("x"); return u.Substring(0, u.Length - 1); }
         // «خصم على أول طلب»: the coupon the owner put in the window
         static object Popup(SqlConnection c, ShopFrontHandler.Ctx x)
@@ -406,6 +430,11 @@ namespace RiwaqChat
             if (p.T == "cat") { title = (string.IsNullOrEmpty(p.Cat.MetaTitle) ? Pick(p.Cat.Name, p.Cat.NameEn, lang) : p.Cat.MetaTitle) + " | " + shopName; desc = !string.IsNullOrEmpty(p.Cat.MetaDesc) ? p.Cat.MetaDesc : Pick(p.Cat.Descr, p.Cat.DescrEn, lang) ?? desc; if (!string.IsNullOrEmpty(p.Cat.Cover ?? p.Cat.Image)) image = p.Cat.Cover ?? p.Cat.Image; }
             else if (p.T == "p") { title = (string.IsNullOrEmpty(p.Prod.MetaTitle) ? Pick(p.Prod.Name, p.Prod.NameEn, lang) : p.Prod.MetaTitle) + " | " + shopName; desc = !string.IsNullOrEmpty(p.Prod.MetaDesc) ? p.Prod.MetaDesc : Plain(Pick(p.Prod.Descr, p.Prod.DescrEn, lang), 200); if (p.Prod.Pics.Count > 0) image = p.Prod.Pics[0].Path; }
             else if (p.T == "page") { title = Pick(p.Page.Title, p.Page.TitleEn, lang) + " | " + shopName; desc = Plain(Pick(p.Page.Body, p.Page.BodyEn, lang), 200); }
+            else if (p.T == "post") { title = Pick(p.Post.Title, p.Post.TitleEn, lang) + " | " + shopName; desc = Pick(p.Post.Short, p.Post.ShortEn, lang); if (!string.IsNullOrEmpty(p.Post.Image)) image = p.Post.Image; using (var cmd = Db.Cmd(c, "SELECT Body, BodyEn, Products FROM dbo.ShopPosts WHERE Id=@i", "@i", p.Post.Id)) using (var r = cmd.ExecuteReader()) if (r.Read()) { p.PostBody = r[0] as string; p.PostBodyEn = r[1] as string; p.PostProducts = r[2] as string; } }
+            else if (p.T == "blog") title = (en ? "Blog" : "المدونة") + " | " + shopName;
+            else if (p.T == "account") title = (en ? "My account" : "حسابي") + " | " + shopName;
+            else if (p.T == "rate") title = (en ? "Rate your order" : "قيّم طلبك") + " | " + shopName;
+            else if (p.T == "pay") title = (en ? "Payment" : "الدفع") + " | " + shopName;
             else if (p.T == "all") title = (en ? "All products" : "كل المنتجات") + " | " + shopName;
             else if (p.T == "offers") title = (en ? "Offers" : "العروض") + " | " + shopName;
             else if (p.T == "cart") title = (en ? "Cart" : "السلة") + " | " + shopName;
@@ -420,8 +449,9 @@ namespace RiwaqChat
             if (p.Prod != null) { page["id"] = p.Prod.Id; page["d"] = ShopView.Detail(d, p.Prod, now); }
             if (p.Page != null) page["pg"] = new Dictionary<string, object> { { "s", p.Page.Slug }, { "k", p.Page.Kind }, { "t", ShopView.Pair(p.Page.Title, p.Page.TitleEn) }, { "b", ShopView.Pair(p.Page.Body, p.Page.BodyEn) } };
             if (p.Token != null) page["token"] = p.Token;
+            if (p.Post != null) page["post"] = new Dictionary<string, object> { { "s", p.Post.Slug }, { "t", ShopView.Pair(p.Post.Title, p.Post.TitleEn) }, { "b", ShopView.Pair(p.PostBody, p.PostBodyEn) }, { "im", p.Post.Image ?? "" }, { "at", ShopView.Unix(p.Post.At) }, { "ps", (p.PostProducts ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) } };
             var boot = new Dictionary<string, object> { { "shop", shop }, { "look", x.Look }, { "lang", lang }, { "pre", x.Prefix }, { "ver", ver }, { "page", page }, { "now", ShopView.Unix(now) }, { "preview", x.Preview }, { "dash", x.Preview ? Dash() : "" }, { "pv", x.Preview ? x.Pv ?? "" : "" },
-                { "a", new Dictionary<string, object> { { "core", Ver("core.js") }, { "geo", "1" } } } };
+                { "a", new Dictionary<string, object> { { "core", Ver("core.js") }, { "more", Ver("more.js") }, { "geo", "1" } } } };
 
             var h = new StringBuilder(16000);
             h.Append("<!doctype html><html lang=\"").Append(lang).Append("\" dir=\"").Append(en ? "ltr" : "rtl").Append("\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover\">");
@@ -447,9 +477,9 @@ namespace RiwaqChat
             h.Append("<script src=\"/_s/core.js?v=").Append(Ver("core.js")).Append("\" defer></script><script src=\"/_s/t/").Append(tpl).Append(".js?v=").Append(Ver("t/" + tpl + ".js")).Append("\" defer></script><script src=\"/_s/run.js?v=").Append(Ver("run.js")).Append("\" defer></script></body></html>");
 
             res.ContentType = "text/html; charset=utf-8";
-            Secure(res, x.Preview);
+            Secure(res, x.Preview, set);
             // the Worker may keep the page a minute (never a preview, nor the customer's own pages)
-            bool keep = !x.Preview && res.StatusCode == 200 && (p.T == "home" || p.T == "cat" || p.T == "p" || p.T == "page" || p.T == "all" || p.T == "offers" || p.T == "cart" || p.T == "checkout" || p.T == "track" || p.T == "search" || p.T == "fav");
+            bool keep = !x.Preview && res.StatusCode == 200 && (p.T == "home" || p.T == "cat" || p.T == "p" || p.T == "page" || p.T == "all" || p.T == "offers" || p.T == "cart" || p.T == "checkout" || p.T == "track" || p.T == "search" || p.T == "fav" || p.T == "compare" || p.T == "account" || p.T == "cats" || p.T == "blog" || p.T == "post");
             if (keep)
             {
                 int sec = 60; var next = d.NextChange(now); if (next.HasValue) sec = Math.Max(5, Math.Min(60, (int)(next.Value - now).TotalSeconds));
@@ -468,11 +498,15 @@ namespace RiwaqChat
 
         // the dashboard, the only place a preview may be framed in and take messages from
         static string Dash() { return "https://" + (Web.Setting("CanonicalHost", "").Length > 0 ? Web.Setting("CanonicalHost") : "sellybot.online"); }
-        static void Secure(HttpResponse res, bool preview)
+        static void Secure(HttpResponse res, bool preview, Dictionary<string, object> set)
         {
-            string img = Img().TrimEnd('/');
+            string img = Img().TrimEnd('/'), sc = "", co = "", im = "";
+            // only the measures this store added
+            if (!preview && Px(set, "tiktok").Length > 0) { sc += " https://analytics.tiktok.com"; co += " https://analytics.tiktok.com https://*.tiktokw.us"; im += " https://analytics.tiktok.com"; }
+            if (!preview && Px(set, "snap").Length > 0) { sc += " https://sc-static.net"; co += " https://tr.snapchat.com https://tr6.snapchat.com"; im += " https://tr.snapchat.com"; }
+            if (!preview && Px(set, "ga").Length > 0) { sc += " https://www.googletagmanager.com"; co += " https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com"; im += " https://*.google-analytics.com https://www.googletagmanager.com"; }
             if (preview) res.AddHeader("X-Robots-Tag", "noindex");
-            res.AddHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data: blob: " + img + " https://www.facebook.com; script-src 'self' https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://www.facebook.com https://connect.facebook.net; media-src 'self' " + img
+            res.AddHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data: blob: " + img + " https://www.facebook.com" + im + "; script-src 'self' https://connect.facebook.net" + sc + "; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://www.facebook.com https://connect.facebook.net" + co + "; media-src 'self' " + img
                 + "; object-src 'none'; base-uri 'none'; form-action 'self' https://wa.me; frame-ancestors " + (preview ? Dash() + (Shops.Scheme == "http" ? " http://localhost:*" : "") : "'none'"));
         }
         // JSON inside a script tag: nothing in a product's text can close it
@@ -502,6 +536,7 @@ namespace RiwaqChat
                 if (hi > lo) { offer["lowPrice"] = lo; offer["highPrice"] = hi; offer["offerCount"] = p.Prod.Vars.Count(y => y.Active); } else offer["price"] = lo == decimal.MaxValue ? p.Prod.Price : lo;
                 var prod = new Dictionary<string, object> { { "@context", "https://schema.org" }, { "@type", "Product" }, { "name", Pick(p.Prod.Name, p.Prod.NameEn, x.Lang) }, { "description", Plain(Pick(p.Prod.Descr, p.Prod.DescrEn, x.Lang), 500) }, { "image", p.Prod.Pics.Select(y => ShopImages.Url(y.Path)).ToArray() }, { "offers", offer } };
                 if (!string.IsNullOrEmpty(p.Prod.Sku)) prod["sku"] = p.Prod.Sku;
+                if (p.Prod.Reviews > 0) prod["aggregateRating"] = new Dictionary<string, object> { { "@type", "AggregateRating" }, { "ratingValue", p.Prod.Rating }, { "reviewCount", p.Prod.Reviews } };
                 if (!string.IsNullOrEmpty(p.Prod.Brand)) prod["brand"] = new Dictionary<string, object> { { "@type", "Brand" }, { "name", p.Prod.Brand } };
                 list.Add(prod);
             }
@@ -534,6 +569,8 @@ namespace RiwaqChat
             }
             else if (p.T == "cat") { h.Append("<h1>").Append(H(Pick(p.Cat.Name, p.Cat.NameEn, lang))).Append("</h1><p>").Append(H(Pick(p.Cat.Descr, p.Cat.DescrEn, lang))).Append("</p>"); foreach (var k in p.Cat.Kids.Where(d.CatShown)) h.Append("<p><a href=\"").Append(pre).Append("/c/").Append(k.Slug).Append("\">").Append(H(Pick(k.Name, k.NameEn, lang))).Append("</a></p>"); var under = d.Under(p.Cat.Id); list(d.Shown.Where(y => y.Cats.Any(under.Contains)).Take(60)); }
             else if (p.T == "page") { h.Append("<h1>").Append(H(Pick(p.Page.Title, p.Page.TitleEn, lang))).Append("</h1><div style=\"white-space:pre-line\">").Append(H(Pick(p.Page.Body, p.Page.BodyEn, lang))).Append("</div>"); }
+            else if (p.T == "post") { h.Append("<h1>").Append(H(Pick(p.Post.Title, p.Post.TitleEn, lang))).Append("</h1><div style=\"white-space:pre-line\">").Append(H(Pick(p.PostBody, p.PostBodyEn, lang))).Append("</div>"); }
+            else if (p.T == "blog") { h.Append("<h1>").Append(en ? "Blog" : "المدونة").Append("</h1>"); foreach (var po in d.Posts.Where(y => !y.Hidden)) h.Append("<p><a href=\"").Append(pre).Append("/blog/").Append(po.Slug).Append("\">").Append(H(Pick(po.Title, po.TitleEn, lang))).Append("</a> ").Append(H(Pick(po.Short, po.ShortEn, lang))).Append("</p>"); }
             else if (p.T == "404") { h.Append("<h1>").Append(en ? "This page isn't here" : "الصفحة دي مش موجودة").Append("</h1>"); list(d.Shown.Take(8)); }
             else { h.Append("<h1>").Append(H(shopName)).Append("</h1>"); list(p.T == "offers" ? d.Shown.Where(y => { decimal? old; ShopOffer of; ShopPrice.Unit(d, y, y.Vars.FirstOrDefault(), x.Now, out old, out of); return old.HasValue; }).Take(60) : d.Shown.Take(p.T == "all" ? 100 : 24)); }
             h.Append("<p>"); foreach (var g in d.Pages.Where(y => !y.Hidden && y.InFooter)) h.Append("<a href=\"").Append(pre).Append("/page/").Append(g.Slug).Append("\">").Append(H(Pick(g.Title, g.TitleEn, lang))).Append("</a> · "); h.Append("</p>");

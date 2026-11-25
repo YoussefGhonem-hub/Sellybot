@@ -53,6 +53,8 @@ namespace RiwaqChat
             res.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; res.AddHeader("Content-Disposition", "attachment; filename=" + name); res.Cache.SetCacheability(HttpCacheability.NoCache); res.BinaryWrite(data);
         }
 
+        public static byte[] Products(SqlConnection c, Shop sh) { return Book("المنتجات", Head, ProductRows(ShopCache.Get(c, sh))); }
+        public static byte[] AllOrders(SqlConnection c, Shop sh) { return Orders(c, sh, null, false); }
         static string Path(ShopData d, ShopProd p) { ShopCat k, up; if (!d.CatById.TryGetValue(p.MainCat, out k)) return ""; return k.ParentId.HasValue && d.CatById.TryGetValue(k.ParentId.Value, out up) ? up.Name + " > " + k.Name : k.Name; }
         static IEnumerable<object[]> ProductRows(ShopData d)
         {
@@ -71,10 +73,10 @@ namespace RiwaqChat
 
         static byte[] Orders(SqlConnection c, Shop sh, HttpRequest req, bool ship)
         {
-            string where = "StoreId=@s"; var args = new List<object> { "@s", sh.StoreId }; DateTime dt; string st = req.QueryString["st"] ?? "";
+            string where = "StoreId=@s"; var args = new List<object> { "@s", sh.StoreId }; DateTime dt; Func<string, string> qs = k => req == null ? "" : req.QueryString[k] ?? ""; string st = qs("st");
             if (ship) where += " AND Status='confirmed'"; else if (ShopOrders.Statuses.Contains(st)) { where += " AND Status=@st"; args.Add("@st"); args.Add(st); }
-            if (DateTime.TryParseExact(req.QueryString["from"] ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt>=@f"; args.Add("@f"); args.Add(dt.AddHours(-2)); }
-            if (DateTime.TryParseExact(req.QueryString["to"] ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt<@t"; args.Add("@t"); args.Add(dt.AddDays(1).AddHours(-2)); }
+            if (DateTime.TryParseExact(qs("from"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt>=@f"; args.Add("@f"); args.Add(dt.AddHours(-2)); }
+            if (DateTime.TryParseExact(qs("to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt<@t"; args.Add("@t"); args.Add(dt.AddDays(1).AddHours(-2)); }
             var ids = new List<long>(); using (var cmd = Db.Cmd(c, "SELECT TOP 5000 Id FROM dbo.ShopOrders WHERE " + where + " ORDER BY Id DESC", args.ToArray())) using (var r = cmd.ExecuteReader()) while (r.Read()) ids.Add(Convert.ToInt64(r[0]));
             var rows = new List<object[]>();
             foreach (var id in ids)

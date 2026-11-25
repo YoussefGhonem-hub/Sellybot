@@ -86,7 +86,7 @@ namespace RiwaqChat
                 case "bot": Web.Json(res, 200, ShopBot.Knows(c, s, sh)); return;
                 case "export": ShopExcel.Export(c, sh, req, res); return;
                 case "geo": Web.Json(res, 200, ShopGeo.Json()); return;
-                default: Web.Error(res, 404, "not_found"); return;
+                default: if (!ShopDesk.Get(c, s, sh, a, id, req, res)) Web.Error(res, 404, "not_found"); return;
             }
         }
 
@@ -103,6 +103,7 @@ namespace RiwaqChat
                 { "draft", sh.Look(true) }, { "settings", sh.Settings }, { "templates", ShopTemplates.List(c) }, { "bizzes", ShopLook.Bizzes },
                 { "cats", d.Cats.Select(k => CatJson(k)).ToArray() }, { "pages", d.Pages.Select(PageJson).ToArray() }, { "zones", d.Zones.Values.Select(z => new Dictionary<string, object> { { "g", z.Gov }, { "f", z.Fee.HasValue ? (object)z.Fee.Value : null }, { "d", z.Days ?? "" }, { "m", z.MinSub.HasValue ? (object)z.MinSub.Value : null }, { "off", z.Off } }).ToArray() },
                 { "counts", new Dictionary<string, object> { { "products", d.Products.Count }, { "shown", d.Shown.Count() }, { "out", d.Products.Count(p => p.Status == "active" && !p.Available) }, { "orders", orders }, { "newOrders", newOrders }, { "offers", d.Offers.Count(o => o.Running(DateTime.UtcNow)) } } },
+                { "waiting", ShopDesk.Waiting(c, sh.StoreId) }, { "plans", new Dictionary<string, object> { { "carts", PlanGate.Allows(c, s, Carts.Feature) }, { "restock", PlanGate.Allows(c, s, Restock.Feature) } } },
                 { "noEn", ShopTranslate.Missing(d) }, { "leads", Scalar(c, "SELECT COUNT(*) FROM dbo.ShopLeads WHERE StoreId=@s", "@s", sh.StoreId) },
                 { "limits", new Dictionary<string, object> { { "mb", Scalar(c, "SELECT ISNULL(SUM(CAST(Bytes AS BIGINT)),0)/1048576 FROM dbo.ShopImages WHERE StoreId=@s", "@s", sh.StoreId) }, { "maxMb", ShopImages.MaxStoreBytes / 1048576 }, { "products", Shops.MaxProducts }, { "images", Shops.MaxImages }, { "cats", Shops.MaxCategories }, { "variants", Shops.MaxVariants } } },
                 { "steps", Steps(c, s, sh, d) }, { "wa", new Dictionary<string, object> { { "linked", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) }, { "service", WaAccount.HasService(s) }, { "confirm", ShopHooks.ConfirmOn(c, s) } } }
@@ -173,7 +174,7 @@ namespace RiwaqChat
                 { "metaTitle", p.MetaTitle ?? "" }, { "metaDesc", p.MetaDesc ?? "" }, { "cats", p.Cats }, { "main", p.MainCat }, { "sold", p.Sold }, { "url", sh.Url + "/p/" + p.Slug },
                 { "options", p.Options.Select(o => new Dictionary<string, object> { { "n", new[] { o.Ar, o.En } }, { "v", o.Vals.Select(v => new[] { v.Ar, v.En, v.Hex }).ToArray() } }).ToArray() },
                 { "vars", p.Vars.Select(v => new Dictionary<string, object> { { "id", v.Id }, { "o", v.Vals }, { "price", v.Price.HasValue ? (object)v.Price.Value : null }, { "old", v.OldPrice.HasValue ? (object)v.OldPrice.Value : null }, { "cost", v.Cost.HasValue ? (object)v.Cost.Value : null }, { "stock", v.Stock }, { "sku", v.Sku ?? "" }, { "image", v.Image ?? "" }, { "active", v.Active } }).ToArray() },
-                { "images", Images(c, sh.StoreId, p.Id) }
+                { "images", Images(c, sh.StoreId, p.Id) }, { "ask", ShopJson.Arr(p.AskJson) }, { "rating", p.Rating }, { "reviews", p.Reviews }
             };
         }
         static object[] Images(SqlConnection c, int storeId, int productId)
@@ -189,7 +190,7 @@ namespace RiwaqChat
         {
             string st = req.QueryString["st"] ?? "", q = (req.QueryString["q"] ?? "").Trim(), from = req.QueryString["from"] ?? "", to = req.QueryString["to"] ?? ""; int page; int.TryParse(req.QueryString["page"], out page); page = Math.Max(0, page); if (q.Length > 80) q = q.Substring(0, 80);
             string where = "StoreId=@s"; var args = new List<object> { "@s", sh.StoreId };
-            if (ShopOrders.Statuses.Contains(st)) { where += " AND Status=@st"; args.Add("@st"); args.Add(st); } else if (st == "todo") where += " AND Status IN ('new','noreply')"; else if (st == "ship") where += " AND Status='confirmed'";
+            if (ShopOrders.Statuses.Contains(st)) { where += " AND Status=@st"; args.Add("@st"); args.Add(st); } else if (st == "todo") where += " AND Status IN ('new','noreply')"; else if (st == "ship") where += " AND Status='confirmed'"; else if (st == "pay") where += " AND PayState='sent' AND Status NOT IN ('cancelled','returned')";
             DateTime dt;
             if (DateTime.TryParseExact(from, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt>=@f"; args.Add("@f"); args.Add(dt.AddHours(-2)); }
             if (DateTime.TryParseExact(to, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt<@t"; args.Add("@t"); args.Add(dt.AddDays(1).AddHours(-2)); }
@@ -211,15 +212,15 @@ namespace RiwaqChat
         static Dictionary<string, object> OrderRow(SqlConnection c, ShopOrder o)
         {
             return new Dictionary<string, object> { { "id", o.Id }, { "no", o.No }, { "status", o.Status }, { "name", o.Name }, { "phone", ShopOrders.Local(o.Phone) }, { "gov", o.Gov }, { "govName", ShopGeo.Name(o.Gov) }, { "city", o.City ?? "" }, { "total", o.Total }, { "items", o.Items.Sum(i => i.Qty) }, { "first", o.Items.Count > 0 ? o.Items[0].Name + (string.IsNullOrEmpty(o.Items[0].Opts) ? "" : " (" + o.Items[0].Opts + ")") : "" }, { "img", o.Items.Count > 0 && !string.IsNullOrEmpty(o.Items[0].Image) ? ShopImages.Url(o.Items[0].Image, true) : "" },
-                { "at", Iso(o.CreatedAt) }, { "statusAt", Iso(o.StatusAt) }, { "dup", o.Dup }, { "seen", o.Seen }, { "channel", o.Channel }, { "note", o.Note ?? "" }, { "staff", o.StaffNote ?? "" }, { "coupon", o.Coupon ?? "" }, { "tracking", o.Tracking ?? "" } };
+                { "at", Iso(o.CreatedAt) }, { "statusAt", Iso(o.StatusAt) }, { "dup", o.Dup }, { "seen", o.Seen }, { "channel", o.Channel }, { "note", o.Note ?? "" }, { "staff", o.StaffNote ?? "" }, { "coupon", o.Coupon ?? "" }, { "tracking", o.Tracking ?? "" }, { "pay", o.Pay }, { "ps", o.PayState ?? "" }, { "pick", o.Extras.ContainsKey("branch") }, { "gift", (o.FeesJson ?? "").Contains("\"gift\"") } };
         }
         static Dictionary<string, object> Order(SqlConnection c, StoreInfo s, Shop sh, long id)
         {
             var o = ShopOrders.ById(c, sh.StoreId, id); if (o == null) return null;
             if (!o.Seen) Exec(c, null, "UPDATE dbo.ShopOrders SET Seen=1 WHERE Id=@i", "@i", id);
             var d = OrderRow(c, o);
-            foreach (var kv in new Dictionary<string, object> { { "phone2", ShopOrders.Local(o.Phone2) ?? "" }, { "area", o.Area ?? "" }, { "address", o.Address }, { "landmark", o.Landmark ?? "" }, { "sub", o.Subtotal }, { "off", o.Discount }, { "ship", o.Ship }, { "offers", ShopJson.Arr(o.OffersJson) }, { "reason", o.CancelReason ?? "" }, { "carrier", o.Carrier ?? "" }, { "restocked", o.Restocked }, { "src", o.Src ?? "" }, { "lang", o.Lang }, { "addressText", ShopOrders.AddressText(o) },
-                { "lines", o.Items.Select(i => new Dictionary<string, object> { { "v", i.VariantId }, { "p", i.ProductId }, { "name", i.Name }, { "opts", i.Opts ?? "" }, { "sku", i.Sku ?? "" }, { "q", i.Qty }, { "price", i.Price }, { "full", i.Full }, { "off", i.Discount }, { "sum", i.Sum }, { "x", i.Extra ?? "" }, { "img", string.IsNullOrEmpty(i.Image) ? "" : ShopImages.Url(i.Image, true) } }).ToArray() } }) d[kv.Key] = kv.Value;
+            foreach (var kv in new Dictionary<string, object> { { "phone2", ShopOrders.Local(o.Phone2) ?? "" }, { "area", o.Area ?? "" }, { "address", o.Address }, { "landmark", o.Landmark ?? "" }, { "sub", o.Subtotal }, { "off", o.Discount }, { "ship", o.Ship }, { "offers", ShopJson.Arr(o.OffersJson) }, { "reason", o.CancelReason ?? "" }, { "carrier", o.Carrier ?? "" }, { "restocked", o.Restocked }, { "src", o.Src ?? "" }, { "from", ShopDesk.Source(o.Src) }, { "lang", o.Lang }, { "addressText", ShopOrders.AddressText(o) }, { "fees", ShopJson.Arr(o.FeesJson) }, { "pay", o.Pay }, { "payName", ShopPay.WayName(o.Pay) }, { "ps", o.PayState ?? "" }, { "dep", o.Deposit }, { "paid", o.Paid }, { "due", o.Due }, { "proof", string.IsNullOrEmpty(o.Proof) ? "" : ShopImages.Url(o.Proof) }, { "ex", o.Extras }, { "refund", o.Refund }, { "returns", ShopReturns.OfOrder(c, o.Id) }, { "token", o.Token },
+                { "lines", o.Items.Select(i => new Dictionary<string, object> { { "i", i.Id }, { "back", i.Returned }, { "v", i.VariantId }, { "p", i.ProductId }, { "name", i.Name }, { "opts", i.Opts ?? "" }, { "sku", i.Sku ?? "" }, { "q", i.Qty }, { "price", i.Price }, { "full", i.Full }, { "off", i.Discount }, { "sum", i.Sum }, { "x", i.Extra ?? "" }, { "img", string.IsNullOrEmpty(i.Image) ? "" : ShopImages.Url(i.Image, true) } }).ToArray() } }) d[kv.Key] = kv.Value;
             var log = new List<object>(); using (var cmd = Db.Cmd(c, "SELECT Who, What, At FROM dbo.ShopOrderLog WHERE OrderId=@o AND StoreId=@s ORDER BY Id DESC", "@o", id, "@s", sh.StoreId)) using (var r = cmd.ExecuteReader()) while (r.Read()) log.Add(new Dictionary<string, object> { { "who", (string)r[0] }, { "what", (string)r[1] }, { "at", Iso(DateTime.SpecifyKind((DateTime)r[2], DateTimeKind.Utc)) } });
             d["log"] = log;
             var h = Crm.Of(c, sh.StoreId, o.Phone); d["risk"] = PlanGate.Allows(c, s, "returns") && h != null ? Crm.RiskLine(c, s, o.Phone) ?? "" : "";
@@ -328,7 +329,7 @@ namespace RiwaqChat
                 case "bot-test": return ShopBot.Test(c, s, sh, res);
                 case "translate": return ShopTranslate.Run(c, s, sh, b, res);
                 case "translate-save": Ok(res, "done", ShopTranslate.Save(c, sh, b)); return null;
-                default: Web.Error(res, 404, "not_found"); return null;
+                default: { Func<Task> later; if (!ShopDesk.Post(c, s, sh, a, b, res, out later)) Web.Error(res, 404, "not_found"); return later; }
             }
         }
 
@@ -583,14 +584,14 @@ namespace RiwaqChat
             int min = Math.Max(1, Math.Min(500, Int(b, "min", 1))), max = Math.Max(0, Math.Min(999, Int(b, "max"))); if (max > 0 && max < min) max = min;
             string slug = FreeSlug(c, "ShopProducts", s, Str(b, "slug", 80), name, id, 80);
             object[] args = { "@s", s, "@i", id, "@slug", slug, "@n", name, "@ne", Nz(Str(b, "nameEn", 150)), "@d", Nz(Str(b, "descr", 8000)), "@de", Nz(Str(b, "descrEn", 8000)), "@p", price, "@o", old > 0 ? (object)old : null, "@c", cost > 0 ? (object)cost : null, "@sku", Nz(Str(b, "sku", 60)), "@u", Nz(Str(b, "unit", 20)), "@br", Nz(Str(b, "brand", 60)), "@tg", Nz(Str(b, "tags", 300)), "@min", min, "@max", max > 0 ? (object)max : null,
-                "@t", Bool(b, "track", true), "@om", outMode, "@st", status, "@op", opts.Count == 0 ? null : ShopJson.Write(opts), "@sp", specs.Length == 0 ? null : ShopJson.Write(specs), "@g", guide == null ? null : ShopJson.Write(Guide(guide)), "@x", extra.Count == 0 ? null : ShopJson.Write(extra), "@mt", Nz(Str(b, "metaTitle", 120)), "@md", Nz(Str(b, "metaDesc", 300)), "@f", Bool(b, "feat"), "@w", Int(b, "weight") > 0 ? (object)Int(b, "weight") : null };
+                "@t", Bool(b, "track", true), "@om", outMode, "@st", status, "@op", opts.Count == 0 ? null : ShopJson.Write(opts), "@sp", specs.Length == 0 ? null : ShopJson.Write(specs), "@g", guide == null ? null : ShopJson.Write(Guide(guide)), "@x", extra.Count == 0 ? null : ShopJson.Write(extra), "@mt", Nz(Str(b, "metaTitle", 120)), "@md", Nz(Str(b, "metaDesc", 300)), "@f", Bool(b, "feat"), "@w", Int(b, "weight") > 0 ? (object)Int(b, "weight") : null, "@ask", Ask(ShopJson.At(b, "ask")), "@hasAsk", b.ContainsKey("ask") };
             using (var tx = c.BeginTransaction())
             {
                 if (id == 0)
-                    using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.ShopProducts(StoreId, Slug, Name, NameEn, Descr, DescrEn, Price, OldPrice, Cost, Sku, Unit, Brand, Tags, MinQty, MaxQty, Track, OutMode, Status, Options, Specs, SizeGuide, Extra, MetaTitle, MetaDesc, Feat, Weight)
-                        OUTPUT INSERTED.Id VALUES(@s, @slug, @n, @ne, @d, @de, @p, @o, @c, @sku, @u, @br, @tg, @min, @max, @t, @om, @st, @op, @sp, @g, @x, @mt, @md, @f, @w)", args)) { cmd.Transaction = tx; id = (int)cmd.ExecuteScalar(); }
+                    using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.ShopProducts(StoreId, Slug, Name, NameEn, Descr, DescrEn, Price, OldPrice, Cost, Sku, Unit, Brand, Tags, MinQty, MaxQty, Track, OutMode, Status, Options, Specs, SizeGuide, Extra, MetaTitle, MetaDesc, Feat, Weight, Ask)
+                        OUTPUT INSERTED.Id VALUES(@s, @slug, @n, @ne, @d, @de, @p, @o, @c, @sku, @u, @br, @tg, @min, @max, @t, @om, @st, @op, @sp, @g, @x, @mt, @md, @f, @w, @ask)", args)) { cmd.Transaction = tx; id = (int)cmd.ExecuteScalar(); }
                 else
-                    Exec(c, tx, @"UPDATE dbo.ShopProducts SET Slug=@slug, Name=@n, NameEn=@ne, Descr=@d, DescrEn=@de, Price=@p, OldPrice=@o, Cost=@c, Sku=@sku, Unit=@u, Brand=@br, Tags=@tg, MinQty=@min, MaxQty=@max, Track=@t, OutMode=@om, Status=@st, Options=@op, Specs=@sp, SizeGuide=@g, Extra=@x, MetaTitle=@mt, MetaDesc=@md, Feat=@f, Weight=@w, UpdatedAt=SYSUTCDATETIME() WHERE StoreId=@s AND Id=@i", args);
+                    Exec(c, tx, @"UPDATE dbo.ShopProducts SET Slug=@slug, Name=@n, NameEn=@ne, Descr=@d, DescrEn=@de, Price=@p, OldPrice=@o, Cost=@c, Sku=@sku, Unit=@u, Brand=@br, Tags=@tg, MinQty=@min, MaxQty=@max, Track=@t, OutMode=@om, Status=@st, Options=@op, Specs=@sp, SizeGuide=@g, Extra=@x, MetaTitle=@mt, MetaDesc=@md, Feat=@f, Weight=@w, Ask=CASE WHEN @hasAsk=1 THEN @ask ELSE Ask END, UpdatedAt=SYSUTCDATETIME() WHERE StoreId=@s AND Id=@i", args);
 
                 // the sizes: one kept by its values, the quantity moved by the difference (an order may have taken some since the page was opened)
                 var have = new Dictionary<string, int>(); using (var cmd = Db.Cmd(c, "SELECT Id, Opts FROM dbo.ShopVariants WHERE StoreId=@s AND ProductId=@p", "@s", s, "@p", id)) { cmd.Transaction = tx; using (var r = cmd.ExecuteReader()) while (r.Read()) have[(string)r[1]] = (int)r[0]; }
@@ -627,6 +628,17 @@ namespace RiwaqChat
             }
             if (me != null && me.Slug != slug) Redirect(c, s, "p", me.Slug, id);
             return id;
+        }
+        // «خيارات يكتبها الزبون»: a name to engrave, a message, a picture (up to 4)
+        static object Ask(object v)
+        {
+            var l = new List<object>();
+            foreach (var a in ShopJson.List(v).OfType<Dictionary<string, object>>().Take(4))
+            {
+                var nm = ShopJson.List(ShopJson.At(a, "n")); string ar = ShopJson.Str(nm.Count > 0 ? nm[0] : null, 60), k = ShopJson.Str(ShopJson.At(a, "k"), 4); if (ar.Length < 2) continue;
+                l.Add(new Dictionary<string, object> { { "k", k == "pic" || k == "long" ? k : "text" }, { "n", new[] { ar, ShopJson.Str(nm.Count > 1 ? nm[1] : null, 60) } }, { "req", ShopJson.Bool(ShopJson.At(a, "req")) }, { "max", Math.Max(1, Math.Min(200, ShopJson.Int(ShopJson.At(a, "max"), 40))) } });
+            }
+            return l.Count == 0 ? null : ShopJson.Write(l);
         }
         public static int SaveProductFrom(SqlConnection c, Shop sh, Dictionary<string, object> b, ShopData given) { return SaveProduct(c, sh, b, given); }
         public static int SaveCatFrom(SqlConnection c, Shop sh, Dictionary<string, object> b) { return SaveCat(c, sh, b); }

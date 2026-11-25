@@ -14,18 +14,22 @@ using System.Web.Hosting;
 
 namespace RiwaqChat
 {
-    public class ShopOrderItem { public long Id; public int ProductId, VariantId, Qty; public string Name, Opts, Sku, Image, Extra; public decimal Price, Full, Discount; public decimal? Cost; public decimal Sum { get { return Price * Qty - Discount; } } }
+    public class ShopOrderItem { public long Id; public int ProductId, VariantId, Qty, Returned; public string Name, Opts, Sku, Image, Extra; public decimal Price, Full, Discount; public decimal? Cost; public decimal Sum { get { return Price * Qty - Discount; } } }
     public class ShopOrder
     {
-        public long Id; public int StoreId, No, Gov; public string Token, Status, Channel, Lang, Name, Phone, Phone2, City, Area, Address, Landmark, Note, Coupon, OffersJson, Pay, StaffNote, CancelReason, Carrier, Tracking, Src;
-        public decimal Subtotal, Discount, Ship, Total; public bool Dup, Test, Restocked, Seen; public DateTime CreatedAt, StatusAt; public DateTime? ConfirmedAt, ShippedAt, DeliveredAt;
+        public long Id; public int StoreId, No, Gov; public string Token, Status, Channel, Lang, Name, Phone, Phone2, City, Area, Address, Landmark, Note, Coupon, OffersJson, Pay, StaffNote, CancelReason, Carrier, Tracking, Src, FeesJson, ExtrasJson, PayState, Proof;
+        public decimal Subtotal, Discount, Ship, Total, Fees, Refund, Deposit, Paid; public bool Dup, Test, Restocked, Seen; public DateTime CreatedAt, StatusAt; public DateTime? ConfirmedAt, ShippedAt, DeliveredAt;
         public List<ShopOrderItem> Items = new List<ShopOrderItem>();
         public string NoText { get { return "#" + No; } }
+        // what the courier still collects (cash), after what was sent before
+        public decimal Due { get { return Math.Max(0, Total - Paid); } }
+        Dictionary<string, object> ex; public Dictionary<string, object> Extras { get { return ex ?? (ex = ShopJson.Obj(ExtrasJson)); } }
     }
 
     public class ShopOrderIn
     {
         public List<ShopLine> Lines = new List<ShopLine>(); public string Name, Phone, Phone2, City, Area, Address, Landmark, Note, Coupon, ClientKey, Lang, Device, Ip, Src, Channel = "web"; public int Gov; public decimal? Expected; public bool Agreed, Test, ByOwner;
+        public ShopHow How = new ShopHow(); public string GiftMsg, RecvName, RecvPhone, Otp, Proof;
     }
 
     public static class ShopOrders
@@ -66,12 +70,22 @@ namespace RiwaqChat
             if (name.Length < 2) bad["name"] = "اكتب اسمك";
             if (phone == null) bad["phone"] = "اكتب رقم موبايل مصري صح";
             if (!string.IsNullOrWhiteSpace(o.Phone2) && phone2 == null) bad["phone2"] = "الرقم التاني مش صح";
+            bool pick = !string.IsNullOrEmpty(o.How.Branch) && ShopPrice.Branch(row, o.How.Branch) != null; if (!pick) o.How.Branch = null;
+            if (pick) { var br = ShopPrice.Branch(row, o.How.Branch); if (ShopGeo.Get(o.Gov) == null) o.Gov = ShopJson.Int(ShopJson.At(br, "gov")); if (cut(o.City, 60).Length < 2) o.City = "استلام من المحل"; if (address.Length < 5) address = "استلام من المحل: " + ShopJson.Str(ShopJson.At(br, "n"), 60); }
+            string recv = cut(o.RecvName, 80), recvPhone = string.IsNullOrWhiteSpace(o.RecvPhone) ? null : Mobile(o.RecvPhone);
+            if (recv.Length > 0 && recvPhone == null) bad["recvPhone"] = "اكتب رقم موبايل المستلم";
             if (ShopGeo.Get(o.Gov) == null) bad["gov"] = "اختار المحافظة";
             if (cut(o.City, 60).Length < 2 && !o.ByOwner) bad["city"] = "اختار المدينة أو المنطقة";
             if (address.Length < 5) bad["address"] = "اكتب العنوان بالتفصيل";
             if (!o.Agreed && !o.ByOwner) bad["agree"] = "وافق على الشروط الأول";
             if (bad.Count > 0) throw new ShopException("fields", "راجع البيانات المكتوبة بالأحمر.", bad);
             if (o.Lines.Count == 0) throw new ShopException("empty", "السلة فاضية.");
+            if (!o.ByOwner && !o.Test)
+            {
+                // «ماتشحنلوش»: the owner marked this number; the store doesn't take its orders by itself (their switch)
+                if (ShopJson.Bool(ShopJson.At(ShopJson.Sub(row.Settings, "order"), "block"), true) && Crm.Of(c, row.StoreId, phone).Mark == "block") throw new ShopException("blocked", "مش قادرين نسجّل طلبك من هنا. كلّم المتجر على واتساب وهو يساعدك.");
+                if (ShopAccount.OtpNeeded(c, s, row, phone) && !ShopAccount.CheckOtp(c, row.StoreId, phone, o.Otp)) throw new ShopException("otp", string.IsNullOrWhiteSpace(o.Otp) ? "اكتب الكود اللي وصلك على الواتساب." : "الكود غلط أو وقته خلص.");
+            }
 
             // twice at most: the catalog may have changed between reading it and taking the store's row
             for (int attempt = 0; ; attempt++)
@@ -79,7 +93,7 @@ namespace RiwaqChat
                 var now = DateTime.UtcNow;
                 var d = ShopCache.Get(c, row);
                 if (d == null) throw new ShopException("closed", "المتجر مقفول دلوقتي.");
-                var q = ShopPrice.Quote(c, d, o.Lines.Select(l => new ShopLine { VariantId = l.VariantId, Qty = l.Qty, Extra = l.Extra }).ToList(), o.Coupon, o.Gov, phone, now);
+                var q = ShopPrice.Quote(c, d, o.Lines.Select(l => new ShopLine { VariantId = l.VariantId, Qty = l.Qty, Extra = l.Extra }).ToList(), o.Coupon, o.Gov, phone, now, true, o.How);
                 if (q.Stop == "vacation") throw new ShopException("vacation", "المتجر واخد إجازة ومش بيستقبل طلبات دلوقتي.");
                 if (q.Stop == "nodelivery") throw new ShopException("nodelivery", "للأسف مابنوصّلش لمحافظة " + ShopGeo.Name(o.Gov) + " دلوقتي.");
                 if (q.Stop == "min") throw new ShopException("min", "أقل طلب " + q.Min.ToString("#,0.##", CultureInfo.InvariantCulture) + " ج.م.", ShopPrice.Json(q));
@@ -87,7 +101,7 @@ namespace RiwaqChat
                 if (!string.IsNullOrWhiteSpace(o.Coupon) && !q.CouponUsed) throw new ShopException("coupon", q.CouponErr ?? "الكود مش شغال.", ShopPrice.Json(q));
                 // the customer saw another total (a price, an offer or the shipping moved): show the new one first
                 if (o.Expected.HasValue && Math.Abs(o.Expected.Value - q.Total) >= 1) throw new ShopException("changed", "الإجمالي اتغيّر من آخر مرة شفته. راجع السعر الجديد وأكّد تاني.", ShopPrice.Json(q));
-                if (o.Test) return new Placed { Quote = q, Order = new ShopOrder { No = 0, Token = "", Total = q.Total, Subtotal = q.Sub, Discount = q.Discount, Ship = q.Ship, Name = name, Phone = phone, Gov = o.Gov, City = cut(o.City, 60), Address = address, Status = "new", CreatedAt = now, Test = true, Lang = o.Lang == "en" ? "en" : "ar" } };
+                if (o.Test) return new Placed { Quote = q, Order = new ShopOrder { No = 0, Token = "", Total = q.Total, Subtotal = q.Sub, Discount = q.Discount, Ship = q.Ship, Fees = q.FeesSum, Pay = q.Pay, Deposit = q.Deposit, Name = name, Phone = phone, Gov = o.Gov, City = cut(o.City, 60), Address = address, Status = "new", CreatedAt = now, Test = true, Lang = o.Lang == "en" ? "en" : "ar" } };
 
                 if (attempt == 0 && !o.ByOwner)
                 {
@@ -123,7 +137,7 @@ namespace RiwaqChat
                                     tx.Rollback(); done = true;
                                     // someone bought it a moment ago: the sum with what is left
                                     var d2 = ShopCache.Get(c, row);
-                                    throw new ShopException("cart", "«" + l.P.Name + "» خلص أو باقي منه أقل من اللي طلبته.", ShopPrice.Json(ShopPrice.Quote(c, d2, o.Lines.Select(x => new ShopLine { VariantId = x.VariantId, Qty = x.Qty, Extra = x.Extra }).ToList(), o.Coupon, o.Gov, phone, now)));
+                                    throw new ShopException("cart", "«" + l.P.Name + "» خلص أو باقي منه أقل من اللي طلبته.", ShopPrice.Json(ShopPrice.Quote(c, d2, o.Lines.Select(x => new ShopLine { VariantId = x.VariantId, Qty = x.Qty, Extra = x.Extra }).ToList(), o.Coupon, o.Gov, phone, now, true, o.How)));
                                 }
                                 took.Add(new object[] { l, n, (int)left });
                             }
@@ -137,9 +151,13 @@ namespace RiwaqChat
                             AND EXISTS (SELECT 1 FROM dbo.ShopOrderItems i WHERE i.OrderId=x.Id AND i.ProductId IN (" + string.Join(",", q.Lines.Select(l => l.P.Id).Distinct()) + "))", "@s", row.StoreId, "@p", phone))
                         { cmd.Transaction = tx; dup = (int)cmd.ExecuteScalar() > 0; }
 
-                        long id; string token = Shops.Token(16);
-                        using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.ShopOrders(StoreId, No, Token, ClientKey, Channel, Lang, Name, Phone, Phone2, Gov, City, Area, Address, Landmark, Note, Subtotal, Discount, Ship, Total, Coupon, Offers, Dup, Ip, Device, Src)
-                            OUTPUT INSERTED.Id VALUES(@s, @no, @t, @k, @ch, @lang, @n, @p, @p2, @g, @city, @area, @a, @lm, @note, @sub, @disc, @ship, @total, @cp, @of, @dup, @ip, @dev, @src)",
+                        long id; string token = Shops.Token(16); string proof = o.ByOwner || o.Proof == null ? null : ShopAccount.PicIn(c, tx, row.StoreId, o.Proof);
+                        var exd = new Dictionary<string, object>(); if (q.Fees.Any(f => f.Kind == "gift") && cut(o.GiftMsg, 200).Length > 0) exd["gift"] = cut(o.GiftMsg, 200); if (recv.Length > 0) exd["recv"] = new Dictionary<string, object> { { "n", recv }, { "p", recvPhone } };
+                        if (q.Branch != null) { var br = ShopPrice.Branch(row, q.Branch); exd["branch"] = new Dictionary<string, object> { { "id", q.Branch }, { "n", ShopJson.Str(ShopJson.At(br, "n"), 60) }, { "ad", ShopJson.Str(ShopJson.At(br, "ad"), 200) } }; }
+                        string extras = exd.Count == 0 ? null : ShopJson.Write(exd);
+                        using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.ShopOrders(StoreId, No, Token, ClientKey, Channel, Lang, Name, Phone, Phone2, Gov, City, Area, Address, Landmark, Note, Subtotal, Discount, Ship, Total, Coupon, Offers, Dup, Ip, Device, Src, Pay, Fees, FeesJson, Extras, PayState, Deposit, Proof)
+                            OUTPUT INSERTED.Id VALUES(@s, @no, @t, @k, @ch, @lang, @n, @p, @p2, @g, @city, @area, @a, @lm, @note, @sub, @disc, @ship, @total, @cp, @of, @dup, @ip, @dev, @src, @pay, @fees, @fj, @ex, @ps, @dep, @proof)",
+                            "@pay", q.Pay, "@fees", q.FeesSum, "@fj", q.Fees.Count == 0 ? null : ShopJson.Write(q.Fees.Select(f => new object[] { f.Kind, ShopView.Pair(f.Name, f.NameEn), f.Amount })), "@ex", extras, "@ps", q.Deposit > 0 ? (proof != null ? "sent" : "wait") : null, "@dep", q.Deposit, "@proof", proof,
                             "@s", row.StoreId, "@no", no, "@t", token, "@k", key, "@ch", o.Channel, "@lang", o.Lang == "en" ? "en" : "ar", "@n", name, "@p", phone, "@p2", phone2, "@g", o.Gov, "@city", Nz(cut(o.City, 60)), "@area", Nz(cut(o.Area, 80)), "@a", address, "@lm", Nz(cut(o.Landmark, 120)),
                             "@note", Nz(cut(o.Note, 400)), "@sub", q.Sub, "@disc", q.Discount, "@ship", q.Ship, "@total", q.Total, "@cp", q.CouponUsed ? q.Coupon : null,
                             "@of", q.Offers.Count == 0 ? null : ShopJson.Write(q.Offers.Select(x => new Dictionary<string, object> { { "id", x.Id }, { "n", x.Name }, { "a", x.Amount } })), "@dup", dup, "@ip", Nz(cut(o.Ip, 64)), "@dev", Nz(cut(o.Device, 40)), "@src", Nz(cut(o.Src, 200))))
@@ -194,7 +212,7 @@ namespace RiwaqChat
         {
             return new ShopOrder { Id = Convert.ToInt64(r["Id"]), StoreId = (int)r["StoreId"], No = (int)r["No"], Token = (string)r["Token"], Status = (string)r["Status"], Channel = (string)r["Channel"], Lang = ((string)r["Lang"]).Trim(), Name = (string)r["Name"], Phone = (string)r["Phone"], Phone2 = r["Phone2"] as string, Gov = (int)r["Gov"],
                 City = r["City"] as string, Area = r["Area"] as string, Address = (string)r["Address"], Landmark = r["Landmark"] as string, Note = r["Note"] as string, Subtotal = (decimal)r["Subtotal"], Discount = (decimal)r["Discount"], Ship = (decimal)r["Ship"], Total = (decimal)r["Total"], Coupon = r["Coupon"] as string, OffersJson = r["Offers"] as string,
-                Pay = (string)r["Pay"], Dup = (bool)r["Dup"], Test = (bool)r["Test"], StaffNote = r["StaffNote"] as string, CancelReason = r["CancelReason"] as string, Carrier = r["Carrier"] as string, Tracking = r["Tracking"] as string, Restocked = (bool)r["Restocked"], Seen = (bool)r["Seen"], Src = r["Src"] as string,
+                Pay = (string)r["Pay"], Dup = (bool)r["Dup"], Test = (bool)r["Test"], StaffNote = r["StaffNote"] as string, CancelReason = r["CancelReason"] as string, Carrier = r["Carrier"] as string, Tracking = r["Tracking"] as string, Restocked = (bool)r["Restocked"], Seen = (bool)r["Seen"], Src = r["Src"] as string, Fees = (decimal)r["Fees"], FeesJson = r["FeesJson"] as string, ExtrasJson = r["Extras"] as string, Refund = (decimal)r["Refund"], PayState = r["PayState"] as string, Deposit = (decimal)r["Deposit"], Paid = (decimal)r["Paid"], Proof = r["Proof"] as string,
                 CreatedAt = Dt(r["CreatedAt"]).Value, StatusAt = Dt(r["StatusAt"]).Value, ConfirmedAt = Dt(r["ConfirmedAt"]), ShippedAt = Dt(r["ShippedAt"]), DeliveredAt = Dt(r["DeliveredAt"]) };
         }
         static ShopOrder One(SqlConnection c, string where, params object[] args)
@@ -216,7 +234,7 @@ namespace RiwaqChat
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                     by[Convert.ToInt64(r["OrderId"])].Items.Add(new ShopOrderItem { Id = Convert.ToInt64(r["Id"]), ProductId = (int)r["ProductId"], VariantId = (int)r["VariantId"], Name = (string)r["Name"], Opts = r["Opts"] as string, Sku = r["Sku"] as string, Image = r["Image"] as string, Qty = (int)r["Qty"],
-                        Price = (decimal)r["Price"], Full = (decimal)r["Full_"], Discount = (decimal)r["Discount"], Cost = r["Cost"] as decimal?, Extra = r["Extra"] as string });
+                        Price = (decimal)r["Price"], Full = (decimal)r["Full_"], Discount = (decimal)r["Discount"], Cost = r["Cost"] as decimal?, Extra = r["Extra"] as string, Returned = (int)r["Returned"] });
         }
 
         // the customer's own view: by number and phone («طلبي فين؟») or by the secret link of the thank-you page
@@ -225,6 +243,7 @@ namespace RiwaqChat
             var d = new Dictionary<string, object>
             {
                 { "no", o.No }, { "status", o.Status }, { "at", ShopView.Unix(o.CreatedAt) }, { "statusAt", ShopView.Unix(o.StatusAt) }, { "total", o.Total }, { "sub", o.Subtotal }, { "off", o.Discount }, { "ship", o.Ship }, { "tracking", o.Tracking ?? "" }, { "carrier", o.Carrier ?? "" },
+                { "fees", ShopJson.Arr(o.FeesJson) }, { "pay", o.Pay }, { "dep", o.Deposit }, { "paid", o.Paid }, { "ps", o.PayState ?? "" }, { "ex", o.Extras }, { "refund", o.Refund },
                 { "gov", o.Gov }, { "city", o.City ?? "" }, { "name", o.Name.Split(' ')[0] },
                 { "items", o.Items.Select(i => new Dictionary<string, object> { { "p", i.ProductId }, { "n", i.Name }, { "o", i.Opts ?? "" }, { "q", i.Qty }, { "t", i.Sum }, { "im", i.Image ?? "" }, { "x", i.Extra ?? "" } }).ToArray() }
             };
@@ -349,7 +368,7 @@ namespace RiwaqChat
                     }
                     if (extraOff >= 0) { if (Math.Abs(extraOff - disc) >= 1) changes.Add("الخصم"); disc = Math.Min(sub, extraOff); }
                     if (Math.Abs(ship - o.Ship) >= 1) changes.Add("الشحن");
-                    decimal total = sub - disc + ship;
+                    decimal total = sub - disc + ship + o.Fees;
                     using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopOrders SET Name=@n, Phone=@p, Phone2=@p2, Gov=@g, City=@city, Area=@area, Address=@a, Landmark=@lm, Note=@note, Subtotal=@sub, Discount=@disc, Ship=@ship, Total=@total, Seen=1 WHERE Id=@i AND StoreId=@s",
                         "@n", name, "@p", phone, "@p2", phone2, "@g", gov, "@city", Nz(city), "@area", Nz(area), "@a", address, "@lm", Nz(lm), "@note", Nz(note), "@sub", sub, "@disc", disc, "@ship", ship, "@total", total, "@i", id, "@s", row.StoreId)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
                     if (changes.Count > 0) Log_(c, tx, row.StoreId, id, "owner", "اتعدّل: " + string.Join("، ", changes) + (total != o.Total ? " (الإجمالي من " + o.Total.ToString("#,0.##", CultureInfo.InvariantCulture) + " لـ " + total.ToString("#,0.##", CultureInfo.InvariantCulture) + ")" : ""));

@@ -382,15 +382,35 @@ namespace RiwaqChat
                     if (ShopJson.Bool(ShopJson.At(ShopJson.Sub(sh.Settings, "alerts"), "wa"), true) && !string.IsNullOrEmpty(s.OwnerPhone))
                     {
                         var t = new StringBuilder("🛒 *طلب جديد من متجرك* ").Append(o.NoText).Append("\n").Append(o.Name).Append(" · ").Append(ShopOrders.Local(o.Phone)).Append(" · ").Append(ShopGeo.Name(o.Gov)).Append("\n\n").Append(ShopOrders.ItemsText(o, 8)).Append("💰 الإجمالي: *").Append(ShopOrders.Money(o.Total)).Append("*\n");
-                        if (o.Dup) t.Append("⚠️ نفس الرقم طلب نفس المنتج النهارده، ممكن يكون مكرر.\n"); if (!string.IsNullOrEmpty(o.Note)) t.Append("📝 ").Append(o.Note).Append("\n");
+                        t.Append(PayNote(o)); if (o.Dup) t.Append("⚠️ نفس الرقم طلب نفس المنتج النهارده، ممكن يكون مكرر.\n"); if (!string.IsNullOrEmpty(o.Note)) t.Append("📝 ").Append(o.Note).Append("\n");
                         var why = await WaNotify.ToOwner(c, s, t.ToString(), "sb-shop-new-" + o.Id); if (why != null && why != WaNotify.NotLinked) ShopOrders.Log_(c, null, storeId, orderId, "system", "تنبيه الواتساب ليك ماوصلش: " + why);
                     }
+                    try { Carts.ShopOrdered(c, storeId, o.Phone, o.NoText); } catch (Exception ex) { Log.Error(ex); }
                     await SendConfirm(c, s, sh, o);
+                    try { await ShopPay.Low(c, s, sh, o); } catch (Exception ex) { Log.Error(ex); }
                 }
             }
             catch (Exception ex) { Log.Error(ex); ShopOrders.Fail(storeId, "after-order", ex.Message); }
         }
 
+        // an order the owner wrote down: it enters «زبايني»; the customer gets the confirmation only when the owner asked for it
+        public static void OnPlacedByOwner(StoreInfo s0, long orderId, bool tell)
+        {
+            int storeId = s0.Id;
+            HostingEnvironment.QueueBackgroundWorkItem(async ct =>
+            {
+                try
+                {
+                    using (var c = Db.Open())
+                    {
+                        var s = Db.StoreById(c, storeId); var sh = Shops.ByStore(c, storeId); var o = ShopOrders.ById(c, storeId, orderId); if (s == null || sh == null || o == null) return;
+                        Crm.FromShop(c, s, new Crm.OrderIn { Source = "shop", Id = o.Id.ToString(CultureInfo.InvariantCulture), Name = o.NoText, Phone = o.Phone, Customer = o.Name, City = ShopGeo.Name(o.Gov), Currency = "ج.م", Items = Cut(string.Join("، ", o.Items.Select(i => i.Name + (i.Qty > 1 ? " × " + i.Qty : ""))), 300), Status = CrmStatus(o.Status), Total = o.Total, At = o.CreatedAt });
+                        Carts.ShopOrdered(c, storeId, o.Phone, o.NoText); if (tell) await SendConfirm(c, s, sh, o);
+                    }
+                }
+                catch (Exception ex) { Log.Error(ex); }
+            });
+        }
         static async Task SendConfirm(SqlConnection c, StoreInfo s, Shop sh, ShopOrder o)
         {
             string status = "pending", note = null;
@@ -422,19 +442,36 @@ namespace RiwaqChat
         // also the written notice the law asks for after the sale: what was ordered, the total, the way back, where to follow it
         static string En(string ar, string en, ShopOrder o) { return o.Lang == "en" ? en : ar; }
         static string MoneyEn(decimal v) { return "EGP " + v.ToString(v == Math.Floor(v) ? "#,0" : "#,0.##", CultureInfo.InvariantCulture); }
+        static string Pickup(ShopOrder o) { var b = ShopJson.Sub(o.Extras, "branch"); return b.Count == 0 ? null : string.Join("، ", new[] { ShopJson.Str(ShopJson.At(b, "n")), ShopJson.Str(ShopJson.At(b, "ad")) }.Where(y => y.Length > 0)); }
+        // the parts of an order the owner mustn't miss: how it's paid, pickup, gift, another recipient
+        static string PayNote(ShopOrder o)
+        {
+            var t = new StringBuilder(); if (o.Pay != "cod" || o.Deposit > 0) t.Append("💳 ").Append(ShopPay.WayName(o.Pay)).Append(o.Deposit > 0 && o.Deposit < o.Total ? "، عربون " + ShopOrders.Money(o.Deposit) : "").Append(o.PayState == "sent" ? " (صورة التحويل وصلت)" : o.Deposit > 0 ? " (لسه مابعتش صورة التحويل)" : "").Append("\n");
+            if (Pickup(o) != null) t.Append("🛍️ استلام من: ").Append(Pickup(o)).Append("\n"); if (o.Extras.ContainsKey("gift")) t.Append("🎁 رسالة الهدية: ").Append(ShopJson.Str(o.Extras["gift"], 200)).Append("\n"); else if ((o.FeesJson ?? "").Contains("\"gift\"")) t.Append("🎁 تغليف هدية\n");
+            var rc = ShopJson.Sub(o.Extras, "recv"); if (rc.Count > 0) t.Append("👤 المستلم: ").Append(ShopJson.Str(ShopJson.At(rc, "n"))).Append(" · ").Append(ShopOrders.Local(ShopJson.Str(ShopJson.At(rc, "p")))).Append("\n");
+            return t.ToString();
+        }
         public static string ConfirmText(Shop sh, ShopOrder o)
         {
             if (o.Lang == "en")
             {
                 var e = new StringBuilder("Hello").Append(First(o.Name).Length > 0 ? " " + First(o.Name) : "").Append(" 👋\nThank you for ordering from *").Append(string.IsNullOrEmpty(sh.NameEn) ? sh.Name : sh.NameEn).Append("*!\n\n🧾 *Order ").Append(o.NoText).Append("*\n").Append(ShopOrders.ItemsText(o));
                 if (o.Discount > 0) e.Append("🏷️ Discount: ").Append(MoneyEn(o.Discount)).Append("\n");
-                e.Append("🚚 Delivery: ").Append(o.Ship > 0 ? MoneyEn(o.Ship) : "free").Append("\n💰 Total: *").Append(MoneyEn(o.Total)).Append("*\n💵 Payment: cash on delivery\n📍 To: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n\n");
+                foreach (var f in ShopJson.Arr(o.FeesJson).Select(ShopJson.List).Where(f => f.Count > 2)) e.Append("➕ ").Append(ShopJson.Str(ShopJson.List(f[1]).ElementAtOrDefault(1), 40)).Append(": ").Append(MoneyEn(ShopJson.Dec(f[2]))).Append("\n");
+                if (Pickup(o) != null) e.Append("🛍️ Pick up from: ").Append(Pickup(o)); else e.Append("🚚 Delivery: ").Append(o.Ship > 0 ? MoneyEn(o.Ship) : "free");
+                e.Append("\n💰 Total: *").Append(MoneyEn(o.Total)).Append("*\n💵 Payment: ").Append(ShopPay.WayName(o.Pay, true)).Append("\n"); if (Pickup(o) == null) e.Append("📍 To: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n");
+                if (o.Deposit > 0 && o.PayState != "paid" && o.PayState != "sent") e.Append("\n💳 Please send *").Append(MoneyEn(o.Deposit)).Append("* and its picture from here: ").Append(sh.Url).Append("/pay/").Append(o.Token).Append("\n");
+                e.Append("\n");
                 e.Append("📦 Track it: ").Append(sh.Url).Append(sh.Url.EndsWith("/en") ? "" : "/en").Append("/track\n↩️ Returns within ").Append(ShopJson.Int(ShopJson.At(sh.Settings, "returnsDays"), 14)).Append(" days: ").Append(sh.Url).Append("/page/returns\n\nPlease confirm so we can start preparing it:\nReply *1* to confirm ✅\nReply *2* to cancel ❌");
                 return e.ToString();
             }
             var sb = new StringBuilder("أهلًا").Append(First(o.Name).Length > 0 ? " " + First(o.Name) : "").Append(" 👋\nشكرًا إنك طلبت من *").Append(sh.Name).Append("*!\n\n🧾 *طلب رقم ").Append(o.NoText).Append("*\n").Append(ShopOrders.ItemsText(o));
             if (o.Discount > 0) sb.Append("🏷️ الخصم: ").Append(ShopOrders.Money(o.Discount)).Append("\n");
-            sb.Append("🚚 الشحن: ").Append(o.Ship > 0 ? ShopOrders.Money(o.Ship) : "مجاني").Append("\n💰 الإجمالي: *").Append(ShopOrders.Money(o.Total)).Append("*\n💵 الدفع: كاش عند الاستلام\n📍 التوصيل: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n\n");
+            foreach (var f in ShopJson.Arr(o.FeesJson).Select(ShopJson.List).Where(f => f.Count > 2)) sb.Append("➕ ").Append(ShopJson.Str(ShopJson.List(f[1]).ElementAtOrDefault(0), 40)).Append(": ").Append(ShopOrders.Money(ShopJson.Dec(f[2]))).Append("\n");
+            if (Pickup(o) != null) sb.Append("🛍️ الاستلام من: ").Append(Pickup(o)); else sb.Append("🚚 الشحن: ").Append(o.Ship > 0 ? ShopOrders.Money(o.Ship) : "مجاني");
+            sb.Append("\n💰 الإجمالي: *").Append(ShopOrders.Money(o.Total)).Append("*\n💵 الدفع: ").Append(ShopPay.WayName(o.Pay)).Append("\n"); if (Pickup(o) == null) sb.Append("📍 التوصيل: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n");
+            if (o.Deposit > 0 && o.PayState != "paid" && o.PayState != "sent") sb.Append("\n💳 محتاجين تحويل *").Append(ShopOrders.Money(o.Deposit)).Append("*، وابعت صورته من هنا: ").Append(sh.Url).Append("/pay/").Append(o.Token).Append("\n");
+            sb.Append("\n");
             sb.Append("📦 تابع طلبك: ").Append(sh.Url).Append("/track\n↩️ الاسترجاع خلال ").Append(ShopJson.Int(ShopJson.At(sh.Settings, "returnsDays"), 14)).Append(" يوم: ").Append(sh.Url).Append("/page/returns\n\nمن فضلك أكّد طلبك عشان نبدأ نجهّزه:\nاكتب *1* لتأكيد الطلب ✅\nاكتب *2* لإلغاء الطلب ❌");
             return sb.ToString();
         }
@@ -450,6 +487,7 @@ namespace RiwaqChat
                     // the owner moved it on: stop waiting for the customer's answer
                     if (who != "customer") using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Status=@st, Note=@n WHERE StoreId=@s AND OrderId=@o AND Status='pending'", "@st", to == "confirmed" ? "confirmed" : to == "cancelled" ? "cancelled" : "skipped", "@n", "غيّرت حالته لـ «" + ShopOrders.StatusText(to) + "»", "@s", storeId, "@o", id)) if (to != "noreply") cmd.ExecuteNonQuery();
                     if (to == "out") await Delivery.OnShop(c, s, o);
+                    if (to == "shipped") { var sh = Shops.ByStore(c, storeId); if (sh != null) await ShopPay.Shipped(c, s, sh, o); }
                 }
             }
             catch (Exception ex) { Log.Error(ex); }

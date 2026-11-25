@@ -26,11 +26,16 @@ namespace RiwaqChat
         public decimal Net { get { return Sum - Disc; } }
     }
 
+    // how the customer pays and receives: part of the sum
+    public class ShopHow { public string Pay = "cod"; public bool Gift; public string Branch; }
+    public class ShopFee { public string Kind, Name, NameEn; public decimal Amount; }
     public class ShopApplied { public int Id; public string Name, NameEn; public decimal Amount; }
 
     public class ShopQuote
     {
         public List<ShopLine> Lines = new List<ShopLine>(); public decimal Items, Sub, Discount, CouponOff, Ship, ShipFull, Total, FreeLeft, FreeOver, Min; public bool FreeShip, Deliver = true, CouponUsed;
+        public List<ShopFee> Fees = new List<ShopFee>(); public decimal Deposit; public string Pay = "cod", Branch;
+        public decimal FeesSum { get { return Fees.Sum(f => f.Amount); } }
         public string Coupon, CouponErr, Days, Stop; public int CouponId; public List<ShopApplied> Offers = new List<ShopApplied>(); public bool Bad { get { return Lines.Any(l => l.Err != null) || Stop != null; } }
     }
 
@@ -78,7 +83,7 @@ namespace RiwaqChat
 
         // ---------- the cart's sum ----------
         // gov 0 = not chosen yet (no shipping in the sum, only «فاضلك كام على الشحن المجاني»)
-        public static ShopQuote Quote(SqlConnection c, ShopData d, List<ShopLine> lines, string coupon, int gov, string phone, DateTime now, bool checkStock = true)
+        public static ShopQuote Quote(SqlConnection c, ShopData d, List<ShopLine> lines, string coupon, int gov, string phone, DateTime now, bool checkStock = true, ShopHow how = null)
         {
             var q = new ShopQuote();
             var set = d.Row.Settings;
@@ -160,7 +165,16 @@ namespace RiwaqChat
             q.FreeShip = (over >= 0 && after >= over && ok.Count > 0) || (cp != null && cp.Type == "ship" && q.CouponUsed);
             q.FreeLeft = over > 0 && !q.FreeShip ? over - after : 0;
             q.Ship = gov > 0 && !q.FreeShip ? fee : 0;
-            q.Total = after + q.Ship;
+            // taken from the shop: no delivery, wherever the customer lives
+            if (how != null && !string.IsNullOrEmpty(how.Branch) && Branch(d.Row, how.Branch) != null) { q.Branch = how.Branch; q.Ship = 0; q.ShipFull = 0; q.FreeLeft = 0; off = false; q.Deliver = true; q.Days = ""; }
+            if (how != null && ok.Count > 0)
+            {
+                var order = ShopJson.Sub(d.Row.Settings, "order"); q.Pay = PayWay(d.Row, how.Pay);
+                var gift = ShopJson.Sub(order, "gift"); if (how.Gift && ShopJson.Bool(ShopJson.At(gift, "on"))) q.Fees.Add(new ShopFee { Kind = "gift", Name = "تغليف هدية", NameEn = "Gift wrap", Amount = ShopJson.Dec(ShopJson.At(gift, "price")) });
+                var cod = ShopJson.Dec(ShopJson.At(order, "codFee")); if (q.Pay == "cod" && cod > 0 && q.Branch == null) q.Fees.Add(new ShopFee { Kind = "cod", Name = "رسوم الدفع عند الاستلام", NameEn = "Cash on delivery fee", Amount = cod });
+            }
+            q.Total = after + q.Ship + q.FeesSum;
+            if (how != null) q.Deposit = DepositOf(c, d.Row, q, phone);
 
             if (ok.Count == 0) q.Stop = "empty";
             else if (after < min) q.Stop = "min";
@@ -168,6 +182,36 @@ namespace RiwaqChat
             if (Vacation(d, now)) q.Stop = "vacation";
             return q;
         }
+
+        // ---------- how it's paid ----------
+        // «عربون أو تحويل»: the owner's own InstaPay / wallet / bank account; the money never passes through Sellybot
+        public static readonly string[] Ways = { "insta", "vf", "bank" };
+        public static List<Dictionary<string, object>> PayWays(Shop sh)
+        {
+            return ShopJson.List(ShopJson.At(ShopJson.Sub(sh.Settings, "pay"), "ways")).OfType<Dictionary<string, object>>().Where(w => ShopJson.Bool(ShopJson.At(w, "on")) && Ways.Contains(ShopJson.Str(ShopJson.At(w, "k"))) && ShopJson.Str(ShopJson.At(w, "to")).Length > 2).ToList();
+        }
+        public static bool Cod(Shop sh) { return ShopJson.Bool(ShopJson.At(ShopJson.Sub(sh.Settings, "pay"), "cod"), true) || PayWays(sh).Count == 0; }
+        // the way asked for when the store has it, else the store's first
+        public static string PayWay(Shop sh, string pay)
+        {
+            if (pay != "cod" && PayWays(sh).Any(w => ShopJson.Str(ShopJson.At(w, "k")) == pay)) return pay;
+            return Cod(sh) ? "cod" : ShopJson.Str(ShopJson.At(PayWays(sh)[0], "k"));
+        }
+        // what has to be sent before the order is prepared: all of it for a transfer, a part of it for cash when the owner asks for one
+        static decimal DepositOf(SqlConnection c, Shop sh, ShopQuote q, string phone)
+        {
+            if (q.Total <= 0 || q.Items == 0) return 0;
+            if (q.Pay != "cod") return q.Total;
+            var dp = ShopJson.Sub(ShopJson.Sub(sh.Settings, "pay"), "deposit"); if (!ShopJson.Bool(ShopJson.At(dp, "on")) || PayWays(sh).Count == 0) return 0;
+            if (q.Total < ShopJson.Dec(ShopJson.At(dp, "over"))) return 0;
+            if (ShopJson.Str(ShopJson.At(dp, "who")) == "new" && !string.IsNullOrEmpty(phone))
+                using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.ShopOrders WHERE StoreId=@s AND Phone=@p AND Status='delivered'", "@s", sh.StoreId, "@p", phone)) if ((int)cmd.ExecuteScalar() > 0) return 0;
+            decimal v = ShopJson.Dec(ShopJson.At(dp, "value")); v = ShopJson.Str(ShopJson.At(dp, "kind")) == "pct" ? Round(q.Total * Math.Min(100, v) / 100m) : v;
+            return Math.Max(0, Math.Min(q.Total, v));
+        }
+        // ---------- the shop's own branches («استلام من المحل») ----------
+        public static List<Dictionary<string, object>> Branches(Shop sh) { return ShopJson.List(ShopJson.At(sh.Settings, "branches")).OfType<Dictionary<string, object>>().ToList(); }
+        public static Dictionary<string, object> Branch(Shop sh, string id) { return Branches(sh).FirstOrDefault(b => ShopJson.Str(ShopJson.At(b, "id")) == id && ShopJson.Bool(ShopJson.At(b, "pickup"))); }
 
         public static bool Vacation(ShopData d, DateTime now)
         {
@@ -311,6 +355,7 @@ namespace RiwaqChat
                 { "l", q.Lines.Select(l => new Dictionary<string, object> { { "v", l.VariantId }, { "x", l.Extra ?? "" }, { "q", l.Qty }, { "u", l.Unit }, { "old", l.Old ?? 0 }, { "d", l.Disc }, { "t", l.Net }, { "e", l.Err ?? "" }, { "mx", l.Max },
                     { "p", l.P == null ? 0 : l.P.Id }, { "o", l.V == null ? "" : l.V.Label }, { "st", l.V == null ? 0 : Math.Max(0, l.V.Stock) } }).ToArray() },
                 { "n", q.Items }, { "sub", q.Sub }, { "off", q.Discount }, { "coff", q.CouponOff }, { "ship", q.Ship }, { "shipFull", q.ShipFull }, { "free", q.FreeShip }, { "left", q.FreeLeft }, { "over", q.FreeOver }, { "total", q.Total }, { "days", q.Days ?? "" },
+                { "fees", q.Fees.Select(f => new object[] { f.Kind, ShopView.Pair(f.Name, f.NameEn), f.Amount }).ToArray() }, { "dep", q.Deposit }, { "pay", q.Pay }, { "branch", q.Branch ?? "" },
                 { "min", q.Min }, { "stop", q.Stop ?? "" }, { "deliver", q.Deliver }, { "cpn", q.Coupon ?? "" }, { "cpnErr", q.CouponErr ?? "" },
                 { "of", q.Offers.Select(o => new Dictionary<string, object> { { "i", o.Id }, { "n", ShopView.Pair(o.Name, o.NameEn) }, { "a", o.Amount } }).ToArray() }
             };

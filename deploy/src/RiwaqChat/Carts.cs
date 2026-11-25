@@ -84,15 +84,15 @@ WHEN NOT MATCHED THEN INSERT (StoreId, Source, CheckoutId, Phone, Customer, Item
         }
 
         // ---------- 2. the reminders that are due (Jobs) ----------
-        class Due { public long Id; public int StoreId; public string Token, Phone, Customer, Items, Total, Url; public DateTime CreatedAt; }
+        class Due { public long Id; public int StoreId; public string Source, Token, Phone, Customer, Items, Total, Url; public DateTime CreatedAt; }
 
         public static async Task SendDue(SqlConnection c, CancellationToken ct)
         {
             var list = new List<Due>();
-            using (var cmd = Db.Cmd(c, "SELECT TOP 40 Id, StoreId, CheckoutId, Phone, Customer, Items, Total, Url, CreatedAt FROM dbo.CartReminders WHERE Status='waiting' AND DueAt <= SYSUTCDATETIME() ORDER BY DueAt"))
+            using (var cmd = Db.Cmd(c, "SELECT TOP 40 Id, StoreId, Source, CheckoutId, Phone, Customer, Items, Total, Url, CreatedAt FROM dbo.CartReminders WHERE Status='waiting' AND DueAt <= SYSUTCDATETIME() ORDER BY DueAt"))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
-                    list.Add(new Due { Id = (long)r["Id"], StoreId = (int)r["StoreId"], Token = (string)r["CheckoutId"], Phone = r["Phone"] as string, Customer = r["Customer"] as string,
+                    list.Add(new Due { Id = (long)r["Id"], StoreId = (int)r["StoreId"], Source = (string)r["Source"], Token = (string)r["CheckoutId"], Phone = r["Phone"] as string, Customer = r["Customer"] as string,
                         Items = r["Items"] as string, Total = r["Total"] as string, Url = r["Url"] as string, CreatedAt = DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc) });
             if (list.Count == 0) return;
 
@@ -117,6 +117,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, Source, CheckoutId, Phone, Customer, Item
 
         static async Task SendOne(SqlConnection c, StoreInfo s, Due d)
         {
+            if (d.Source == "shop") { await SendShop(c, s, d); return; }
             if (s == null || !s.CartOn) { Mark(c, d.Id, "skipped", "استرجاع السلة اتقفل"); return; }
             if (string.IsNullOrEmpty(d.Phone)) { Mark(c, d.Id, "skipped", "الزبون ماكتبش رقم موبايل (أو Shopify مخبّيه)"); return; }
             if (string.IsNullOrEmpty(d.Url)) { Mark(c, d.Id, "skipped", "Shopify مابعتتش لينك إكمال الطلب"); return; }
@@ -142,6 +143,41 @@ WHEN NOT MATCHED THEN INSERT (StoreId, Source, CheckoutId, Phone, Customer, Item
             else Mark(c, d.Id, "failed", why);
         }
 
+        // ---------- a rented store (SellyStore): its own checkout, its own orders, no Shopify ----------
+        public static void FromShop(SqlConnection c, Shop sh, string token, string phone, string name, string items, string total, string path, DateTime due)
+        {
+            using (var cmd = Db.Cmd(c, @"
+MERGE dbo.CartReminders AS t
+USING (SELECT @s AS StoreId, 'shop' AS Source, @k AS CheckoutId) AS x ON t.StoreId = x.StoreId AND t.Source = x.Source AND t.CheckoutId = x.CheckoutId
+WHEN MATCHED AND t.Status = 'waiting' THEN UPDATE SET Phone = @p, Customer = ISNULL(@n, t.Customer), Items = @i, Total = @t, Url = @u, DueAt = @d, UpdatedAt = SYSUTCDATETIME()
+WHEN NOT MATCHED THEN INSERT (StoreId, Source, CheckoutId, Phone, Customer, Items, Total, Url, Status, DueAt) VALUES (@s, 'shop', @k, @p, @n, @i, @t, @u, 'waiting', @d);",
+                "@s", sh.StoreId, "@k", token, "@p", phone, "@n", (object)Cut(FirstName(name), 100) ?? DBNull.Value, "@i", Cut(items, 500), "@t", (object)Cut(total, 40) ?? DBNull.Value, "@u", Cut(sh.Url + path, 800), "@d", due))
+                cmd.ExecuteNonQuery();
+        }
+        // an order came from this number: whatever it left behind is done (a reminder that went out = a recovered sale)
+        public static void ShopOrdered(SqlConnection c, int storeId, string phone, string orderName)
+        {
+            using (var cmd = Db.Cmd(c, @"UPDATE dbo.CartReminders SET Status = CASE WHEN Status='sent' THEN 'recovered' ELSE 'ordered' END, OrderedAt = SYSUTCDATETIME(), Note = @n, UpdatedAt = SYSUTCDATETIME()
+                WHERE StoreId=@s AND Source='shop' AND Phone=@p AND (Status='waiting' OR (Status='sent' AND SentAt > DATEADD(DAY,-7,SYSUTCDATETIME())));
+                UPDATE dbo.ShopCarts SET DoneAt=SYSUTCDATETIME() WHERE StoreId=@s AND Phone=@p", "@s", storeId, "@p", phone, "@n", "اتعمل أوردر " + orderName)) cmd.ExecuteNonQuery();
+        }
+        static async Task SendShop(SqlConnection c, StoreInfo s, Due d)
+        {
+            var sh = s == null ? null : Shops.ByStore(c, s.Id);
+            if (sh == null || !ShopPay.CartOn(sh)) { Mark(c, d.Id, "skipped", "استرجاع السلة اتقفل"); return; }
+            if (!Shops.Open(c, s, sh)) { Mark(c, d.Id, "skipped", "المتجر مقفول"); return; }
+            if (Billing.Expired(s)) { Mark(c, d.Id, "skipped", "الباقة خلصت"); return; }
+            if (!PlanGate.Allows(c, s, Feature)) { Mark(c, d.Id, "skipped", "باقتك الحالية مش شاملة استرجاع السلة"); return; }
+            var cant = WaNotify.CantSend(c, s); if (cant != null) { Mark(c, d.Id, "skipped", cant); return; }
+            if (string.IsNullOrEmpty(d.Phone) || WaOptOut.Has(c, s.Id, d.Phone)) { Mark(c, d.Id, "skipped", "الزبون طلب مايوصلهوش رسايل زي دي"); return; }
+            if (RecentlyReminded(c, s.Id, d.Phone, d.Id)) { Mark(c, d.Id, "skipped", "اتبعتله تذكير في آخر " + GapDays + " أيام"); return; }
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.ShopOrders WHERE StoreId=@s AND Phone=@p AND CreatedAt>=@t", "@s", s.Id, "@p", d.Phone, "@t", d.CreatedAt)) if ((int)cmd.ExecuteScalar() > 0) { Mark(c, d.Id, "ordered", null); return; }
+            if (!Web.Allow("cart:" + s.Id, 60, TimeSpan.FromHours(1))) return;
+            var why = await WaNotify.ToCustomer(c, s, d.Phone, Message(s, d, sh.Name, ShopPay.CartCoupon(sh)), "sb-cart-" + d.Id);
+            if (why == null) using (var cmd = Db.Cmd(c, "UPDATE dbo.CartReminders SET Status='sent', SentAt=SYSUTCDATETIME(), Note=NULL, UpdatedAt=SYSUTCDATETIME() WHERE Id=@id; UPDATE dbo.ShopCarts SET SentAt=SYSUTCDATETIME() WHERE StoreId=@s AND Token=@k", "@id", d.Id, "@s", s.Id, "@k", d.Token)) cmd.ExecuteNonQuery();
+            else Mark(c, d.Id, "failed", why);
+        }
+
         // The order made from this checkout since it started, or null
         static async Task<string> OrderedSince(ShopifyAdmin.Creds creds, string token, DateTime since)
         {
@@ -161,15 +197,16 @@ WHEN NOT MATCHED THEN INSERT (StoreId, Source, CheckoutId, Phone, Customer, Item
                 return (int)cmd.ExecuteScalar() > 0;
         }
 
-        static string Message(StoreInfo s, Due d)
+        static string Message(StoreInfo s, Due d) { return Message(s, d, s.Name, s.CartCoupon); }
+        static string Message(StoreInfo s, Due d, string shop, string coupon)
         {
             var sb = new StringBuilder();
             sb.Append("أهلًا").Append(string.IsNullOrWhiteSpace(d.Customer) ? "" : " " + d.Customer).Append(" 👋\n");
-            sb.Append("شفنا إنك كنت بتطلب من *").Append(s.Name).Append("* ولسه ماكمّلتش:\n");
+            sb.Append("شفنا إنك كنت بتطلب من *").Append(shop).Append("* ولسه ماكمّلتش:\n");
             sb.Append("🛒 ").Append(d.Items).Append('\n');
             if (!string.IsNullOrEmpty(d.Total)) sb.Append("💰 الإجمالي: *").Append(d.Total).Append("*\n");
             sb.Append("\nطلبك محفوظ، وتقدر تكمّله من هنا في دقيقة 👇\n").Append(d.Url).Append('\n');
-            if (!string.IsNullOrWhiteSpace(s.CartCoupon)) sb.Append("\n🎁 ولو كمّلته دلوقتي، استخدم كود *").Append(s.CartCoupon.Trim()).Append("*\n");
+            if (!string.IsNullOrWhiteSpace(coupon)) sb.Append("\n🎁 ولو كمّلته دلوقتي، استخدم كود *").Append(coupon.Trim()).Append("*\n");
             sb.Append("\nلو عندك أي سؤال عن المقاس أو الشحن، ابعتلنا هنا وهنرد عليك على طول.\n");
             sb.Append("_لو مش عايز رسايل زي دي، ابعت «وقف»._");
             return sb.ToString();

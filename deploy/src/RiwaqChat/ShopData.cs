@@ -31,6 +31,10 @@ namespace RiwaqChat
         public DateTime CreatedAt, UpdatedAt;
         public List<ShopOpt> Options = new List<ShopOpt>(); public List<ShopVar> Vars = new List<ShopVar>(); public List<ShopPic> Pics = new List<ShopPic>();
         public List<int> Cats = new List<int>(); public int MainCat;
+        public int[] Stars;   // how many reviews of one star .. five stars (null = none)
+        public int Reviews { get { return Stars == null ? 0 : Stars.Sum(); } }
+        public double Rating { get { int n = Reviews; return n == 0 ? 0 : Math.Round((Stars[0] + 2.0 * Stars[1] + 3 * Stars[2] + 4 * Stars[3] + 5 * Stars[4]) / n, 1); } }
+        public string AskJson;   // what the customer writes or sends with it (a name to engrave, a picture)
         public Dictionary<string, int> Words;
 
         public decimal PriceOf(ShopVar v) { return v != null && v.Price.HasValue ? v.Price.Value : Price; }
@@ -74,6 +78,7 @@ namespace RiwaqChat
     }
 
     public class ShopZone { public int Gov; public decimal? Fee, MinSub; public string Days; public bool Off; }
+    public class ShopPost { public int Id; public string Slug, Title, TitleEn, Short, ShortEn, Image; public bool Hidden; public DateTime At; }
     public class ShopPage { public int Id, Sort; public string Slug, Kind, Title, TitleEn, Body, BodyEn; public bool Hidden, InMenu, InFooter; }
 
     public class ShopData
@@ -82,7 +87,7 @@ namespace RiwaqChat
         public List<ShopProd> Products = new List<ShopProd>(); public Dictionary<int, ShopProd> ById = new Dictionary<int, ShopProd>(); public Dictionary<string, ShopProd> BySlug = new Dictionary<string, ShopProd>();
         public Dictionary<int, ShopVar> Vars = new Dictionary<int, ShopVar>();
         public List<ShopCat> Cats = new List<ShopCat>(); public Dictionary<int, ShopCat> CatById = new Dictionary<int, ShopCat>(); public Dictionary<string, ShopCat> CatBySlug = new Dictionary<string, ShopCat>();
-        public Dictionary<int, ShopZone> Zones = new Dictionary<int, ShopZone>(); public List<ShopOffer> Offers = new List<ShopOffer>(); public List<ShopPage> Pages = new List<ShopPage>();
+        public Dictionary<int, ShopZone> Zones = new Dictionary<int, ShopZone>(); public List<ShopOffer> Offers = new List<ShopOffer>(); public List<ShopPage> Pages = new List<ShopPage>(); public List<ShopPost> Posts = new List<ShopPost>(); public List<object> Revs = new List<object>();
         public Dictionary<string, int> Redirects = new Dictionary<string, int>();   // "p:old-slug" -> product id
         public Dictionary<int, List<int>> CatOrder = new Dictionary<int, List<int>>(); // category -> its products in the owner's order (pinned first)
         public Dictionary<string, int> Df; public double AvgLen = 1;
@@ -234,7 +239,7 @@ namespace RiwaqChat
                 {
                     var p = new ShopProd { Id = (int)r["Id"], Slug = S(r["Slug"]), Name = S(r["Name"]), NameEn = S(r["NameEn"]), Descr = S(r["Descr"]), DescrEn = S(r["DescrEn"]), Price = (decimal)r["Price"], OldPrice = Dn(r["OldPrice"]), Cost = Dn(r["Cost"]), Sku = S(r["Sku"]),
                         Unit = S(r["Unit"]), Brand = S(r["Brand"]), Tags = S(r["Tags"]), MinQty = Math.Max(1, (int)r["MinQty"]), MaxQty = r["MaxQty"] as int?, Track = (bool)r["Track"], OutMode = S(r["OutMode"]), Status = S(r["Status"]), SpecsJson = S(r["Specs"]),
-                        SizeGuideJson = S(r["SizeGuide"]), ExtraJson = S(r["Extra"]), MetaTitle = S(r["MetaTitle"]), MetaDesc = S(r["MetaDesc"]), Sold = (int)r["Sold"], Sort = (int)r["Sort"], Feat = (bool)r["Feat"], Weight = r["Weight"] as int?,
+                        SizeGuideJson = S(r["SizeGuide"]), ExtraJson = S(r["Extra"]), AskJson = S(r["Ask"]), MetaTitle = S(r["MetaTitle"]), MetaDesc = S(r["MetaDesc"]), Sold = (int)r["Sold"], Sort = (int)r["Sort"], Feat = (bool)r["Feat"], Weight = r["Weight"] as int?,
                         CreatedAt = Dt(r["CreatedAt"]).Value, UpdatedAt = Dt(r["UpdatedAt"]).Value, Options = ReadOptions(S(r["Options"])) };
                     d.Products.Add(p); d.ById[p.Id] = p; d.BySlug[p.Slug] = p;
                 }
@@ -270,6 +275,11 @@ namespace RiwaqChat
                 while (r.Read()) d.Pages.Add(new ShopPage { Id = (int)r["Id"], Slug = S(r["Slug"]), Kind = S(r["Kind"]), Title = S(r["Title"]), TitleEn = S(r["TitleEn"]), Body = S(r["Body"]), BodyEn = S(r["BodyEn"]), Hidden = (bool)r["Hidden"], InMenu = (bool)r["InMenu"], InFooter = (bool)r["InFooter"], Sort = (int)r["Sort"] });
             using (var cmd = Db.Cmd(c, "SELECT Kind, OldSlug, TargetId FROM dbo.ShopRedirects WHERE StoreId=@s", "@s", s))
             using (var r = cmd.ExecuteReader()) while (r.Read()) d.Redirects[S(r[0]) + ":" + S(r[1])] = (int)r[2];
+
+            using (var cmd = Db.Cmd(c, "SELECT TOP 100 Id, Slug, Title, TitleEn, LEFT(Body, 400) AS B, LEFT(BodyEn, 400) AS BE, Image, Hidden, At FROM dbo.ShopPosts WHERE StoreId=@s ORDER BY At DESC, Id DESC", "@s", s))
+            using (var r = cmd.ExecuteReader())
+                while (r.Read()) d.Posts.Add(new ShopPost { Id = (int)r["Id"], Slug = S(r["Slug"]), Title = S(r["Title"]), TitleEn = S(r["TitleEn"]), Short = ShopPages.Plain(S(r["B"]), 160), ShortEn = ShopPages.Plain(S(r["BE"]), 160), Image = S(r["Image"]), Hidden = (bool)r["Hidden"], At = Dt(r["At"]).Value });
+            ShopReviews.Load(c, d);
 
             Count(d);
             Index(d);
@@ -355,6 +365,8 @@ namespace RiwaqChat
             if (!string.IsNullOrEmpty(p.Brand)) r["br"] = p.Brand;
             if (!string.IsNullOrEmpty(p.Tags)) r["tg"] = p.Tags;
             if (p.Feat) r["ft"] = true;
+            if (p.Stars != null) { r["rt"] = p.Rating; r["rv"] = p.Reviews; }
+            if (!string.IsNullOrEmpty(p.AskJson)) r["ask"] = ShopJson.Arr(p.AskJson);
             if (used != null) { r["of"] = used.Id; if (used.EndsAt.HasValue && used.Countdown) r["u"] = Unix(used.EndsAt.Value); }
             if (!string.IsNullOrEmpty(p.SpecsJson)) r["sp"] = ShopJson.Arr(p.SpecsJson).Take(14);
             if (!string.IsNullOrEmpty(p.ExtraJson)) r["x"] = ShopJson.Obj(p.ExtraJson);
@@ -371,6 +383,7 @@ namespace RiwaqChat
                     return new Dictionary<string, object> { { "i", v.Id }, { "o", v.Vals }, { "pr", u }, { "old", old ?? 0 }, { "st", p.Track && p.OutMode != "order" ? Math.Max(0, v.Stock) : -1 }, { "can", p.Can(v) }, { "im", v.Image ?? "" }, { "sku", v.Sku ?? "" } }; }).ToArray() },
                 { "rel", Related(d, p).Select(x => x.Id).ToArray() }
             };
+            if (p.Stars != null) r["rs"] = p.Stars;
             var guide = SizeGuide(d, p);
             if (guide != null) r["sg"] = guide;
             return r;
