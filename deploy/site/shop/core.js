@@ -129,7 +129,7 @@ W.useAddr = a => { if (!a) return; Object.assign(S.co, { gov: a.gov, city: a.cit
 /* pages that are drawn by more.js, loaded the first time one is needed */
 const MORE = ["account", "rate", "pay", "compare", "blog", "post", "cats"]; let moreP = null;
 const moreJs = W.moreJs = () => moreP || (moreP = new Promise((ok, no) => { const s = D.createElement("script"); s.src = "/_s/more.js?v=" + (B.a && B.a.more || "1"); s.onload = () => ok(); s.onerror = () => { moreP = null; no(); }; D.head.appendChild(s); }));
-const ext = (v, a) => W.EXT && W.EXT[v] ? (cur()[v] ? cur()[v](a) : W.EXT[v](a)) : (moreJs().then(() => { if (S.view === v) R(true); }).catch(() => { }), `<div class="okp"><p class="mutp">${_("لحظة...", "One moment...")}</p></div>`);
+const ext = (v, a) => W.EXT && W.EXT[v] ? (typeof cur()[v] === "function" ? cur()[v](a) : W.EXT[v](a)) : (moreJs().then(() => { if (S.view === v) R(true); }).catch(() => { }), `<div class="okp"><p class="mutp">${_("لحظة...", "One moment...")}</p></div>`);
 A.watch = (...a) => { moreJs().then(() => A.watch(...a)).catch(() => { }); };
 W.stars = r => `<span class="sts" role="img" aria-label="${r} ${_("من 5", "of 5")}">${[1, 2, 3, 4, 5].map(i => `<i class="${r >= i - .25 ? "f" : r >= i - .75 ? "h" : ""}">${ico("star")}</i>`).join("")}</span>`;
 W.rate = p => p.rv ? `<span class="rtl">${ico("star")}<b>${p.rt}</b><i>(${p.rv})</i></span>` : "";
@@ -138,7 +138,9 @@ W.seenP = not => S.seen.filter(x => x !== not && byId[x]).map(x => byId[x]);
 const R = W.R = keep => {
   const t = cur(), sc = $("sc"); if (!t || !sc || !CAT) return; const y = sc.scrollTop, act = D.activeElement && D.activeElement.id; tokens();
   const v = S.view, body = MORE.includes(v) ? ext(v, S.arg) : v === "co" ? (t.co ? t.co() : checkout()) : v === "ok" ? okPage() : v === "page" ? pageView() : v === "track" ? trackView() : v === "search" ? searchView() : v === "fav" ? favView() : v === "404" ? nfView() : v === "cart" && !t.cart ? cartView() : v === "p" ? (P(S.arg) ? t.pdp(P(S.arg)) : nfView()) : t[v] ? t[v](S.arg) : t.home();
-  sc.innerHTML = (B.preview ? pvBar() : "") + annBar() + (t.hd ? t.hd() : "") + `<main class="v-${v}" id="main">${v === "home" && t.home ? body : body}</main>` + (t.ft0 ? t.ft0(v) : foot()) + (t.cmpBar && S.cmp.length && v !== "compare" && v !== "co" ? t.cmpBar() : "");
+  /* the reviews of a product, for a template that has no place of its own for them */
+  const rvb = v === "p" && P(S.arg) && P(S.arg).rv && !/class="rvk/.test(body) ? `<div class="wrapk">${W.revBox(P(S.arg))}</div>` : "";
+  sc.innerHTML = (B.preview ? pvBar() : "") + annBar() + (t.hd ? t.hd() : "") + `<main class="v-${v}" id="main">${body}${rvb}</main>` + (t.ft0 ? t.ft0(v) : foot()) + (t.cmpBar && S.cmp.length && v !== "compare" && v !== "co" ? t.cmpBar() : "");
   sc.scrollTop = keep ? y : 0; $("st").dataset.top = sc.scrollTop > 60 ? "0" : "1"; badges(); tick(); if (act && keep) { const e = $(act); if (e && e !== D.activeElement) e.focus({ preventScroll: true }); } if (t.after) t.after(v); bubble(); if (v === "co" && !GEO) W.geo().then(() => { if (S.view === "co") R(true); }).catch(() => { });
 };
 const U = W.U = (id, html) => { const e = $(id); if (e) e.innerHTML = html; };

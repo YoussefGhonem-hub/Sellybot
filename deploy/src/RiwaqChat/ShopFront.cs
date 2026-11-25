@@ -118,7 +118,7 @@ namespace RiwaqChat
             // the language the customer is reading: their messages and their order's WhatsApp follow it
             string langs = ShopJson.Str(ShopJson.At(x.Look, "langs")); x.Lang = langs == "en" || (langs == "both" && Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]l=en(&|$)")) ? "en" : "ar";
             if (a == "hit") { Hit(c, x, req); res.StatusCode = 204; return; }
-            if (!Web.Allow("shop-a:" + x.Ip, 120, min)) { Web.Error(res, 429, "rate_limited", "استنى ثواني وجرّب تاني."); return; }
+            if (!Web.Allow("shop-a:" + x.Ip, 600, min)) { Web.Error(res, 429, "rate_limited", "استنى ثواني وجرّب تاني."); return; }
             if (a.Length == 0) { Web.Error(res, 404, "not_found"); return; }
             var b = Web.Body(req, a == "me" || a == "proof" || a == "pic" ? 900000 : 40000);   // a customer's picture, already small
             switch (a)
