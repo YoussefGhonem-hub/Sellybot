@@ -123,11 +123,11 @@ namespace RiwaqChat
             if (s == null || s.Status != "active") return;
             string id = o.Id.ToString(CultureInfo.InvariantCulture);
             if (Exists(c, s.Id, "shop", id)) return;
-            await Send(c, s, new Notice { Source = "shop", OrderId = id, Name = o.NoText, First = FirstName(o.Name), Phone = o.Phone, Due = ShopOrders.Money(o.Total), Paid = false, Today = true }, null, Feature);
+            await Send(c, s, new Notice { Source = "shop", OrderId = id, Name = o.NoText, First = FirstName(o.Name), Phone = o.Phone, Due = o.Lang == "en" ? "EGP " + o.Total.ToString("#,0.##", CultureInfo.InvariantCulture) : ShopOrders.Money(o.Total), Paid = false, Today = true, En = o.Lang == "en" }, null, Feature);
         }
 
         // ---------- the message ----------
-        class Notice { public string Source, OrderId, Name, First, Phone, Due; public bool Paid, Today; }
+        class Notice { public string Source, OrderId, Name, First, Phone, Due; public bool Paid, Today, En; }
 
         static async Task Send(SqlConnection c, StoreInfo s, Notice d, string skip, string storeFeature)
         {
@@ -155,6 +155,8 @@ namespace RiwaqChat
 
         static string Message(StoreInfo s, Notice d)
         {
+            // the customer ordered from the store's English pages
+            if (d.En) return "Hello" + (string.IsNullOrWhiteSpace(d.First) ? "" : " " + d.First) + " 👋\nYour order *" + d.Name + "* from *" + s.Name + "* is out for delivery and arrives today 🚚\n\n" + (d.Due != null ? "💵 Please have *" + d.Due + "* in cash for the courier\n" : "") + "📱 Keep your phone near you and answer the courier's call\n\nIf you won't be there or need to change the address or the time, just reply here 🙏";
             var sb = new StringBuilder();
             sb.Append("أهلًا").Append(string.IsNullOrWhiteSpace(d.First) ? "" : " " + d.First).Append(" 👋\n");
             // Shopify's "out for delivery" is today; EasyOrders' "in delivery" only says the shipping company has it

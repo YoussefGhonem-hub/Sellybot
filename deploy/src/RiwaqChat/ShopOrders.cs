@@ -376,8 +376,14 @@ namespace RiwaqChat
         public static string Money(decimal v) { return v.ToString(v == Math.Floor(v) ? "#,0" : "#,0.##", CultureInfo.InvariantCulture) + " ج.م"; }
         public static string AddressText(ShopOrder o) { return string.Join("، ", new[] { ShopGeo.Name(o.Gov), o.City, o.Area, o.Address, string.IsNullOrEmpty(o.Landmark) ? null : "علامة مميزة: " + o.Landmark }.Where(x => !string.IsNullOrWhiteSpace(x))); }
 
+        public static void FailAt(string slug, string what, string detail)
+        {
+            try { int id; using (var c = Db.Open()) { var sh = Shops.BySlug(c, slug); if (sh == null) return; id = sh.StoreId; } Fail(id, what, detail); } catch (Exception ex) { Log.Error(ex); }
+        }
         public static void Fail(int storeId, string what, string detail)
         {
+            // a customer who couldn't order: the admin hears of it at once (once in half an hour for a store)
+            if (what == "order" && Web.Allow("shop-fail:" + storeId, 1, TimeSpan.FromMinutes(30))) HostingEnvironment.QueueBackgroundWorkItem(ct => ShopHooks.Failed(storeId, detail));
             try { using (var c = Db.Open()) using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopFails(StoreId, What, Detail) VALUES(@s, @w, @d)", "@s", storeId, "@w", what, "@d", detail != null && detail.Length > 600 ? detail.Substring(0, 600) : detail)) cmd.ExecuteNonQuery(); }
             catch (Exception ex) { Log.Error(ex); }
         }

@@ -138,3 +138,4 @@
 .t-atelier .stp{border-radius:0}
 .t-atelier .bt{position:sticky;bottom:-22px;background:var(--bg);padding:14px 0 22px;display:grid;gap:12px;margin-bottom:-22px}
 .t-atelier .bt .tot.b{border:0;padding:0}
+.st.t-atelier .fbar .srt{border:0;border-bottom:1px solid var(--line2);background:none;color:var(--fg);padding:4px 2px;font-size:14px;min-height:36px;max-width:150px}

@@ -490,6 +490,15 @@ BEGIN
   CREATE UNIQUE INDEX UX_ShopConfirms_Order ON dbo.ShopConfirms(StoreId, OrderId);
   CREATE INDEX IX_ShopConfirms_Phone ON dbo.ShopConfirms(StoreId, Phone, Id);
 END
+-- the point of a picture that must stay in view when a template crops it (50,35 = percent across, percent down)
+IF COL_LENGTH('dbo.ShopImages', 'Focus') IS NULL ALTER TABLE dbo.ShopImages ADD Focus NVARCHAR(9) NULL;
+-- «نافذة عرض»: the code is shown for a mobile number; the numbers the store was given
+IF COL_LENGTH('dbo.ShopCoupons', 'PopupPhone') IS NULL ALTER TABLE dbo.ShopCoupons ADD PopupPhone BIT NOT NULL CONSTRAINT DF_ShopCoupons_PopupPhone DEFAULT 0;
+IF OBJECT_ID('dbo.ShopLeads') IS NULL
+BEGIN
+  CREATE TABLE dbo.ShopLeads(Id INT IDENTITY(1,1) PRIMARY KEY, StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Phone NVARCHAR(20) NOT NULL, Coupon NVARCHAR(30) NULL, At DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE UNIQUE INDEX UX_ShopLeads_Phone ON dbo.ShopLeads(StoreId, Phone);
+END
 IF COL_LENGTH('dbo.Plans', 'IncludesShop') IS NULL ALTER TABLE dbo.Plans ADD IncludesShop BIT NOT NULL CONSTRAINT DF_Plans_IncludesShop DEFAULT 0;
 ";
     }

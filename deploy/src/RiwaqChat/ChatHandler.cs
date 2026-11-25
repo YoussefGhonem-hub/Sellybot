@@ -49,7 +49,7 @@ namespace RiwaqChat
                     if (!look.Found && slug != legacySlug) { Web.Error(res, 404, "no_store"); return; }
                     if (!Embed(req, res, look.Origins)) return;
                     if (look.Found && look.Status != "active") { Web.Error(res, 403, "store_off"); return; }
-                    if (req.HttpMethod == "GET") Web.Json(res, 200, look.Json);
+                    if (req.HttpMethod == "GET") Web.Json(res, 200, ctx.Items["shop"] == null ? look.Json : ShopBot.Look(ctx, look.Json));   // a store on SellyStore offers its own questions
                     else Web.Error(res, 405, "method");
                 }
                 catch (Exception ex) { Log.Error(ex); Web.Error(res, 500, "server_error"); }

@@ -33,6 +33,22 @@ namespace RiwaqChat
         }
 
         // ---------- the prompt's part: short, the same for every question ----------
+        // the questions offered in the store's own chat when the owner wrote none: its first categories, then what people ask most
+        public static Dictionary<string, object> Look(HttpContext ctx, Dictionary<string, object> json)
+        {
+            object o; var mine = json.TryGetValue("suggestions", out o) ? o as string[] : null; if (mine != null && mine.Length > 0) return json;
+            return new Dictionary<string, object>(json) { ["suggestions"] = Suggest(ctx) };   // a copy: the kept one is shared with the same store's chat elsewhere
+        }
+        static string[] Suggest(HttpContext ctx)
+        {
+            var x = ctx.Items["shop"] as ShopFrontHandler.Ctx; if (x == null) return new string[0];
+            try
+            {
+                ShopData d; using (var c = Db.Open()) d = x.Data ?? ShopCache.Get(c, x.Row); if (d == null) return new string[0];
+                return d.Cats.Where(k => !k.ParentId.HasValue && d.CatShown(k)).Take(3).Select(k => "عندكم إيه في " + k.Name + "؟").Concat(new[] { "فيه عروض دلوقتي؟", "طلبي فين؟" }).Take(5).ToArray();
+            }
+            catch (Exception ex) { Log.Error(ex); return new string[0]; }
+        }
         public static string Prompt(SqlConnection c, StoreInfo s, Shop sh, ShopData d, string phone)
         {
             var now = DateTime.UtcNow; var set = sh.Settings; var sb = new StringBuilder();
@@ -391,8 +407,8 @@ namespace RiwaqChat
             long? mine = WhatsAppBot.Save(c, s.Id, o.Phone, false, text, null);
             try
             {
-                int cutAt = text.IndexOf("\nاكتب *1*", StringComparison.Ordinal);
-                bool buttons = await Wapilot.TrySendButtons(token, s.WaInstance, chat, cutAt > 0 ? text.Substring(0, cutAt).TrimEnd() : text, new[] { new[] { "sb_oc_yes", "✅ تأكيد الطلب" }, new[] { "sb_oc_no", "❌ إلغاء الطلب" } }, "sb-shop-oc-" + id);
+                int cutAt = text.IndexOf(o.Lang == "en" ? "\nReply *1*" : "\nاكتب *1*", StringComparison.Ordinal);
+                bool buttons = await Wapilot.TrySendButtons(token, s.WaInstance, chat, cutAt > 0 ? text.Substring(0, cutAt).TrimEnd() : text, new[] { new[] { "sb_oc_yes", En("✅ تأكيد الطلب", "✅ Confirm", o) }, new[] { "sb_oc_no", En("❌ إلغاء الطلب", "❌ Cancel", o) } }, "sb-shop-oc-" + id);
                 if (!buttons) await Wapilot.Send(token, s.WaInstance, chat, text, "sb-shop-oc-" + id);
                 ShopOrders.Log_(c, null, s.Id, o.Id, "system", "رسالة التأكيد اتبعتت على الواتساب");
             }
@@ -404,8 +420,18 @@ namespace RiwaqChat
         }
 
         // also the written notice the law asks for after the sale: what was ordered, the total, the way back, where to follow it
+        static string En(string ar, string en, ShopOrder o) { return o.Lang == "en" ? en : ar; }
+        static string MoneyEn(decimal v) { return "EGP " + v.ToString(v == Math.Floor(v) ? "#,0" : "#,0.##", CultureInfo.InvariantCulture); }
         public static string ConfirmText(Shop sh, ShopOrder o)
         {
+            if (o.Lang == "en")
+            {
+                var e = new StringBuilder("Hello").Append(First(o.Name).Length > 0 ? " " + First(o.Name) : "").Append(" 👋\nThank you for ordering from *").Append(string.IsNullOrEmpty(sh.NameEn) ? sh.Name : sh.NameEn).Append("*!\n\n🧾 *Order ").Append(o.NoText).Append("*\n").Append(ShopOrders.ItemsText(o));
+                if (o.Discount > 0) e.Append("🏷️ Discount: ").Append(MoneyEn(o.Discount)).Append("\n");
+                e.Append("🚚 Delivery: ").Append(o.Ship > 0 ? MoneyEn(o.Ship) : "free").Append("\n💰 Total: *").Append(MoneyEn(o.Total)).Append("*\n💵 Payment: cash on delivery\n📍 To: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n\n");
+                e.Append("📦 Track it: ").Append(sh.Url).Append(sh.Url.EndsWith("/en") ? "" : "/en").Append("/track\n↩️ Returns within ").Append(ShopJson.Int(ShopJson.At(sh.Settings, "returnsDays"), 14)).Append(" days: ").Append(sh.Url).Append("/page/returns\n\nPlease confirm so we can start preparing it:\nReply *1* to confirm ✅\nReply *2* to cancel ❌");
+                return e.ToString();
+            }
             var sb = new StringBuilder("أهلًا").Append(First(o.Name).Length > 0 ? " " + First(o.Name) : "").Append(" 👋\nشكرًا إنك طلبت من *").Append(sh.Name).Append("*!\n\n🧾 *طلب رقم ").Append(o.NoText).Append("*\n").Append(ShopOrders.ItemsText(o));
             if (o.Discount > 0) sb.Append("🏷️ الخصم: ").Append(ShopOrders.Money(o.Discount)).Append("\n");
             sb.Append("🚚 الشحن: ").Append(o.Ship > 0 ? ShopOrders.Money(o.Ship) : "مجاني").Append("\n💰 الإجمالي: *").Append(ShopOrders.Money(o.Total)).Append("*\n💵 الدفع: كاش عند الاستلام\n📍 التوصيل: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n\n");
@@ -498,14 +524,14 @@ namespace RiwaqChat
                     if (yes)
                     {
                         if (o.Status == "new" || o.Status == "noreply") ShopOrders.SetStatus(c, storeId, orderId, "confirmed", "customer");
-                        reply = "تمام ✅ طلبك " + o.NoText + " اتأكد، وهنبدأ نجهّزه على طول. شكرًا لثقتك في *" + sh.Name + "* 🙏";
+                        reply = En("تمام ✅ طلبك " + o.NoText + " اتأكد، وهنبدأ نجهّزه على طول. شكرًا لثقتك في *" + sh.Name + "* 🙏", "Done ✅ Order " + o.NoText + " is confirmed and we are preparing it. Thank you for choosing *" + sh.Name + "* 🙏", o);
                     }
                     else if (o.Status == "new" || o.Status == "noreply" || o.Status == "confirmed")
                     {
                         var err = ShopOrders.SetStatus(c, storeId, orderId, "cancelled", "customer", "الزبون لغى من رسالة التأكيد");
-                        reply = err == null ? "تم إلغاء طلبك " + o.NoText + " ❌\nلو غيّرت رأيك: " + sh.Url : "وصلنا إنك عايز تلغي طلبك " + o.NoText + "، وهنتواصل معاك نأكد الإلغاء 🙏";
+                        reply = err == null ? En("تم إلغاء طلبك " + o.NoText + " ❌\nلو غيّرت رأيك: " + sh.Url, "Order " + o.NoText + " is cancelled ❌\nIf you change your mind: " + sh.Url, o) : En("وصلنا إنك عايز تلغي طلبك " + o.NoText + "، وهنتواصل معاك نأكد الإلغاء 🙏", "We got your request to cancel order " + o.NoText + " and will contact you to confirm it 🙏", o);
                     }
-                    else reply = "طلبك " + o.NoText + " حالته «" + ShopOrders.StatusText(o.Status) + "»، فهنتواصل معاك بخصوص الإلغاء 🙏";
+                    else reply = En("طلبك " + o.NoText + " حالته «" + ShopOrders.StatusText(o.Status) + "»، فهنتواصل معاك بخصوص الإلغاء 🙏", "Order " + o.NoText + " is already on its way, so we will contact you about cancelling it 🙏", o);
                     var token = WaAccount.Token(c, s); if (token == null || string.IsNullOrEmpty(s.WaInstance)) return;
                     long? mine = WhatsAppBot.Save(c, s.Id, chatKey, false, reply, null);
                     try { await Wapilot.Send(token, s.WaInstance, chat, reply, "sb-shop-ans-" + id); }
@@ -525,6 +551,11 @@ namespace RiwaqChat
         {
             var ids = new List<int>(); using (var cmd = Db.Cmd(c, "SELECT Id FROM dbo.Stores WHERE IsAdmin=1 AND OwnerPhone IS NOT NULL")) using (var r = cmd.ExecuteReader()) while (r.Read()) ids.Add((int)r[0]);
             foreach (var id in ids) { var s = Db.StoreById(c, id); if (s != null && await WaNotify.ToOwner(c, s, text, idem) == null) return; }
+        }
+        public static async Task Failed(int storeId, string detail)
+        {
+            try { using (var c = Db.Open()) { var sh = Shops.ByStore(c, storeId); if (sh != null) await ToAdmin(c, "⚠️ *طلب فشل في متجر " + sh.Name + "*\n" + Cut(detail ?? "", 200) + "\n" + sh.Url + "\n\nالتفاصيل في «المتاجر المؤجرة» في الأدمن.", "sb-shop-fail-" + storeId + "-" + DateTime.UtcNow.Ticks); } }
+            catch (Exception ex) { Log.Error(ex); }
         }
         public static async Task Reported(int storeId)
         {

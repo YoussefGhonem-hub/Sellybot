@@ -103,7 +103,8 @@ namespace RiwaqChat
                 { "draft", sh.Look(true) }, { "settings", sh.Settings }, { "templates", ShopTemplates.List(c) }, { "bizzes", ShopLook.Bizzes },
                 { "cats", d.Cats.Select(k => CatJson(k)).ToArray() }, { "pages", d.Pages.Select(PageJson).ToArray() }, { "zones", d.Zones.Values.Select(z => new Dictionary<string, object> { { "g", z.Gov }, { "f", z.Fee.HasValue ? (object)z.Fee.Value : null }, { "d", z.Days ?? "" }, { "m", z.MinSub.HasValue ? (object)z.MinSub.Value : null }, { "off", z.Off } }).ToArray() },
                 { "counts", new Dictionary<string, object> { { "products", d.Products.Count }, { "shown", d.Shown.Count() }, { "out", d.Products.Count(p => p.Status == "active" && !p.Available) }, { "orders", orders }, { "newOrders", newOrders }, { "offers", d.Offers.Count(o => o.Running(DateTime.UtcNow)) } } },
-                { "limits", new Dictionary<string, object> { { "products", Shops.MaxProducts }, { "images", Shops.MaxImages }, { "cats", Shops.MaxCategories }, { "variants", Shops.MaxVariants } } },
+                { "noEn", ShopTranslate.Missing(d) }, { "leads", Scalar(c, "SELECT COUNT(*) FROM dbo.ShopLeads WHERE StoreId=@s", "@s", sh.StoreId) },
+                { "limits", new Dictionary<string, object> { { "mb", Scalar(c, "SELECT ISNULL(SUM(CAST(Bytes AS BIGINT)),0)/1048576 FROM dbo.ShopImages WHERE StoreId=@s", "@s", sh.StoreId) }, { "maxMb", ShopImages.MaxStoreBytes / 1048576 }, { "products", Shops.MaxProducts }, { "images", Shops.MaxImages }, { "cats", Shops.MaxCategories }, { "variants", Shops.MaxVariants } } },
                 { "steps", Steps(c, s, sh, d) }, { "wa", new Dictionary<string, object> { { "linked", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) }, { "service", WaAccount.HasService(s) }, { "confirm", ShopHooks.ConfirmOn(c, s) } } }
             };
         }
@@ -178,8 +179,8 @@ namespace RiwaqChat
         static object[] Images(SqlConnection c, int storeId, int productId)
         {
             var l = new List<object>();
-            using (var cmd = Db.Cmd(c, "SELECT Id, Path, W, H, Alt FROM dbo.ShopImages WHERE StoreId=@s AND ProductId=@p ORDER BY Sort, Id", "@s", storeId, "@p", productId)) using (var r = cmd.ExecuteReader())
-                while (r.Read()) l.Add(new Dictionary<string, object> { { "id", (int)r[0] }, { "path", (string)r[1] }, { "url", ShopImages.Url((string)r[1]) }, { "small", ShopImages.Url((string)r[1], true) }, { "w", (int)r[2] }, { "h", (int)r[3] }, { "alt", r[4] as string ?? "" } });
+            using (var cmd = Db.Cmd(c, "SELECT Id, Path, W, H, Alt, Focus FROM dbo.ShopImages WHERE StoreId=@s AND ProductId=@p ORDER BY Sort, Id", "@s", storeId, "@p", productId)) using (var r = cmd.ExecuteReader())
+                while (r.Read()) l.Add(new Dictionary<string, object> { { "id", (int)r[0] }, { "path", (string)r[1] }, { "url", ShopImages.Url((string)r[1]) }, { "small", ShopImages.Url((string)r[1], true) }, { "w", (int)r[2] }, { "h", (int)r[3] }, { "alt", r[4] as string ?? "" }, { "focus", r[5] as string ?? "" } });
             return l.ToArray();
         }
 
@@ -301,7 +302,7 @@ namespace RiwaqChat
                 case "image": Ok(res, "image", ShopImages.Save(c, s.Id, id > 0 ? CheckProduct(c, sh, id) : (int?)null, Str(b, "data", 1800000), Str(b, "small", 400000), Int(b, "w", 1), Int(b, "h", 1), Str(b, "alt", 160))); if (id > 0) Shops.Bump(c, s.Id); return null;
                 case "image-del": ShopImages.Delete(c, s.Id, new[] { Str(b, "path", 160) }); Exec(c, null, "UPDATE dbo.ShopVariants SET Image=NULL WHERE StoreId=@s AND Image=@p", "@s", s.Id, "@p", Str(b, "path", 160)); Shops.Bump(c, s.Id); Ok(res); return null;
                 case "image-sort": { int n = 0; foreach (var x in ShopJson.List(ShopJson.At(b, "paths")).Take(Shops.MaxImages)) Exec(c, null, "UPDATE dbo.ShopImages SET Sort=@n WHERE StoreId=@s AND ProductId=@p AND Path=@path", "@n", n++, "@s", s.Id, "@p", id, "@path", ShopJson.Str(x, 160)); Shops.Bump(c, s.Id); Ok(res); return null; }
-                case "image-alt": Exec(c, null, "UPDATE dbo.ShopImages SET Alt=@a WHERE StoreId=@s AND Path=@p", "@a", Nz(Str(b, "alt", 160)), "@s", s.Id, "@p", Str(b, "path", 160)); Shops.Bump(c, s.Id); Ok(res); return null;
+                case "image-alt": Exec(c, null, "UPDATE dbo.ShopImages SET Alt=@a, Focus=@f WHERE StoreId=@s AND Path=@p", "@a", Nz(Str(b, "alt", 160)), "@f", Regex.IsMatch(Str(b, "focus", 9), @"^\d{1,3},\d{1,3}$") ? Str(b, "focus", 9) : null, "@s", s.Id, "@p", Str(b, "path", 160)); Shops.Bump(c, s.Id); Ok(res); return null;
 
                 case "zones": SaveZones(c, sh, b); Ok(res, "state", State(c, s, Shops.ByStore(c, s.Id))); return null;
                 case "page-save": { int nid = SavePage(c, sh, b); Ok(res, "id", nid, "state", State(c, s, Shops.ByStore(c, s.Id))); return null; }
@@ -325,6 +326,8 @@ namespace RiwaqChat
                 case "coupon-del": Exec(c, null, "DELETE FROM dbo.ShopCoupons WHERE StoreId=@s AND Id=@i", "@s", s.Id, "@i", id); Shops.Bump(c, s.Id); Ok(res, "offers", ShopPromo.List(c, sh)); return null;
                 case "ad-copy": return ShopPromo.AdCopy(c, s, sh, b, res);
                 case "bot-test": return ShopBot.Test(c, s, sh, res);
+                case "translate": return ShopTranslate.Run(c, s, sh, b, res);
+                case "translate-save": Ok(res, "done", ShopTranslate.Save(c, sh, b)); return null;
                 default: Web.Error(res, 404, "not_found"); return null;
             }
         }

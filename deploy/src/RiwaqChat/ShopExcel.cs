@@ -43,6 +43,11 @@ namespace RiwaqChat
             string what = req.QueryString["what"] ?? "", name; byte[] data;
             if (what == "template") { name = "sellystore-products.xlsx"; data = Book("المنتجات", Head, new[] { new object[] { "عباية كريب", "عبايات > خروج", 890m, 1050m, 520m, 5, "AB-01", "أسود", "M", "كريب تقيل بتطريز على الكم", "Crepe abaya", "", "قطعة", "أيوه" }, new object[] { "عباية كريب", "عبايات > خروج", 890m, 1050m, 520m, 3, "AB-01", "أسود", "L", "", "", "", "", "" }, new object[] { "طرحة شيفون", "طرح", 180m, "", 90m, 20, "SC-01", "", "", "شيفون ناعم 180 × 70 سم", "Chiffon scarf", "", "قطعة", "أيوه" } }); }
             else if (what == "products") { name = "products.xlsx"; data = Book("المنتجات", Head, ProductRows(ShopCache.Get(c, sh))); }
+            else if (what == "leads")
+            {
+                var l = new List<object[]>(); using (var cmd = Db.Cmd(c, "SELECT TOP 20000 Phone, Coupon, At FROM dbo.ShopLeads WHERE StoreId=@s ORDER BY Id DESC", "@s", sh.StoreId)) using (var r = cmd.ExecuteReader()) while (r.Read()) l.Add(new object[] { ShopOrders.Local((string)r[0]), r[1] as string ?? "", ((DateTime)r[2]).AddHours(2).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) });
+                name = "numbers.xlsx"; data = Book("الأرقام", new[] { "الموبايل", "الكود", "امتى" }, l);
+            }
             else if (what == "orders" || what == "shipping") { name = what + ".xlsx"; data = Orders(c, sh, req, what == "shipping"); }
             else { Web.Error(res, 404, "not_found"); return; }
             res.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; res.AddHeader("Content-Disposition", "attachment; filename=" + name); res.Cache.SetCacheability(HttpCacheability.NoCache); res.BinaryWrite(data);

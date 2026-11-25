@@ -56,7 +56,7 @@ namespace RiwaqChat
             catch (Exception ex)
             {
                 Log.Error(ex);
-                if (path.StartsWith("/_a/")) { if (path == "/_a/order") ShopOrders.Fail(0, "order", ex.GetType().Name + ": " + ex.Message); Web.Error(res, 500, "server_error", "حصلت مشكلة. جرّب تاني بعد شوية."); }
+                if (path.StartsWith("/_a/")) { if (path == "/_a/order") ShopOrders.FailAt(name, "order", ex.GetType().Name + ": " + ex.Message); Web.Error(res, 500, "server_error", "حصلت مشكلة. جرّب تاني بعد شوية."); }
                 else { res.StatusCode = 500; ShopPages.Message(res, "حصلت مشكلة بسيطة", "جرّب تفتح الصفحة تاني بعد شوية."); }
             }
         }
@@ -81,7 +81,7 @@ namespace RiwaqChat
                 // the owner's preview: a cookie, or (inside the dashboard, where some browsers keep no cookie for a frame) the token in the address
                 var pv = Regex.Match(req.Headers["X-Shop-Query"] ?? "", "[?&]_pv=([a-f0-9]{32})(&|$)"); x.Pv = pv.Success ? pv.Groups[1].Value : null;
                 string token = x.Pv ?? (req.Cookies["sbpv"] == null ? null : req.Cookies["sbpv"].Value);
-                if (path.StartsWith("/_preview/", StringComparison.Ordinal)) { ShopPages.StartPreview(c, x, path.Substring(10), res, Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]f=1(&|$)")); return; }
+                if (path.StartsWith("/_preview/", StringComparison.Ordinal)) { ShopPages.StartPreview(c, x, path.Substring(10), res, Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]f=1(&|$)"), Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]live=1(&|$)")); return; }
                 if (path == "/_preview-off") { ShopPages.Cookie(res, "", DateTime.UtcNow.AddDays(-1)); res.Redirect("/", false); return; }
                 x.Preview = token != null && ShopPages.PreviewOk(c, x.Row.StoreId, token);
                 open = Shops.Open(c, x.Store, x.Row);
@@ -90,7 +90,8 @@ namespace RiwaqChat
                     if (chat || path.StartsWith("/_")) { Web.Error(res, 403, "closed", "المتجر مقفول دلوقتي."); return; }
                     ShopPages.Closed(c, x, res); return;
                 }
-                x.Look = x.Row.Look(x.Preview);
+                // «المنشور» inside the preview, to compare the two
+                x.Look = x.Row.Look(x.Preview && !(x.Row.LiveJson != null && Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]_lv=1(&|$)")));
                 if (!chat)
                 {
                     x.Data = ShopCache.Get(c, x.Row);
@@ -114,6 +115,8 @@ namespace RiwaqChat
         {
             var min = TimeSpan.FromMinutes(1);
             string a = x.Path.StartsWith("/_a/", StringComparison.Ordinal) ? x.Path.Substring(4) : "";
+            // the language the customer is reading: their messages and their order's WhatsApp follow it
+            string langs = ShopJson.Str(ShopJson.At(x.Look, "langs")); x.Lang = langs == "en" || (langs == "both" && Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]l=en(&|$)")) ? "en" : "ar";
             if (a == "hit") { Hit(c, x, req); res.StatusCode = 204; return; }
             if (!Web.Allow("shop-a:" + x.Ip, 120, min)) { Web.Error(res, 429, "rate_limited", "استنى ثواني وجرّب تاني."); return; }
             if (a.Length == 0) { Web.Error(res, 404, "not_found"); return; }
@@ -132,6 +135,7 @@ namespace RiwaqChat
                         Web.Json(res, 200, ShopOrders.CustomerJson(o, true)); return;
                     }
                 case "report": Report(c, x, b, res); return;
+                case "lead": Lead(c, x, b, res); return;
                 default: Web.Error(res, 404, "not_found"); return;
             }
         }
@@ -176,6 +180,17 @@ namespace RiwaqChat
             var o = no > 0 && phone != null ? ShopOrders.ByNo(c, x.Row.StoreId, no) : null;
             if (o == null || (o.Phone != phone && o.Phone2 != phone)) throw new ShopException("nomatch", x.Lang == "en" ? "No order matches this number and phone." : "مفيش طلب بالرقم والموبايل دول. راجعهم وجرّب تاني.");
             Web.Json(res, 200, ShopOrders.CustomerJson(o, false));
+        }
+
+        // «نافذة عرض»: the visitor's mobile for the code
+        static void Lead(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, HttpResponse res)
+        {
+            if (!Web.Allow("shop-lead:" + x.Ip, 8, TimeSpan.FromHours(1))) throw new ShopException("too_many", x.Lang == "en" ? "Too many tries. Please wait a while." : "محاولات كتير. استنى شوية.");
+            var phone = ShopOrders.Mobile(ShopJson.Str(ShopJson.At(b, "phone"), 24)); if (phone == null) throw new ShopException("phone", x.Lang == "en" ? "Enter a valid Egyptian mobile number." : "اكتب رقم موبايل مصري صح.");
+            string code; using (var cmd = Db.Cmd(c, "SELECT TOP 1 Code FROM dbo.ShopCoupons WHERE StoreId=@s AND Popup=1 AND PopupPhone=1 AND Active=1 AND (EndsAt IS NULL OR EndsAt>SYSUTCDATETIME()) AND (StartsAt IS NULL OR StartsAt<=SYSUTCDATETIME()) AND (MaxUses IS NULL OR Uses<MaxUses) ORDER BY Id DESC", "@s", x.Row.StoreId)) code = cmd.ExecuteScalar() as string;
+            if (code == null) throw new ShopException("ended", x.Lang == "en" ? "This offer has ended." : "العرض ده خلص.");
+            if (!x.Preview) using (var cmd = Db.Cmd(c, "IF NOT EXISTS (SELECT 1 FROM dbo.ShopLeads WHERE StoreId=@s AND Phone=@p) INSERT INTO dbo.ShopLeads(StoreId, Phone, Coupon) VALUES(@s, @p, @k)", "@s", x.Row.StoreId, "@p", phone, "@k", code)) try { cmd.ExecuteNonQuery(); } catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { }
+            Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "code", code } });
         }
 
         static void Report(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, HttpResponse res)
@@ -247,13 +262,13 @@ namespace RiwaqChat
             bool https = Shops.Scheme == "https";
             res.AddHeader("Set-Cookie", "sbpv=" + v + "; Path=/; HttpOnly; Expires=" + until.ToString("R") + (https ? "; Secure; SameSite=None; Partitioned" : "; SameSite=Lax"));
         }
-        public static void StartPreview(SqlConnection c, ShopFrontHandler.Ctx x, string token, HttpResponse res, bool frame = false)
+        public static void StartPreview(SqlConnection c, ShopFrontHandler.Ctx x, string token, HttpResponse res, bool frame = false, bool live = false)
         {
             string to = "/"; int q = token.IndexOf('/'); if (q > 0) { to = token.Substring(q); token = token.Substring(0, q); }
             if (!PreviewOk(c, x.Row.StoreId, token)) { res.StatusCode = 410; Message(res, "لينك المعاينة خلص", "اطلب من صاحب المتجر لينك جديد."); return; }
             Cookie(res, token, DateTime.UtcNow.AddHours(24));
             res.Cache.SetCacheability(HttpCacheability.NoCache);
-            res.StatusCode = 302; res.AddHeader("Location", (to.StartsWith("/") && !to.StartsWith("//") ? to : "/") + (frame ? "?_pv=" + token : ""));
+            res.StatusCode = 302; res.AddHeader("Location", (to.StartsWith("/") && !to.StartsWith("//") ? to : "/") + (frame ? "?_pv=" + token + (live ? "&_lv=1" : "") : ""));
         }
 
         // ---------- pages ----------
@@ -375,7 +390,7 @@ namespace RiwaqChat
             {
                 if (!r.Read()) return null;
                 var k = ShopPrice.ReadCoupon(r);
-                return new Dictionary<string, object> { { "code", k.Code }, { "type", k.Type }, { "value", k.Value }, { "min", k.MinSub ?? 0 }, { "first", k.FirstOnly }, { "until", k.EndsAt.HasValue ? ShopView.Unix(k.EndsAt.Value) : 0 } };
+                return new Dictionary<string, object> { { "code", k.PopupPhone ? "" : k.Code }, { "ask", k.PopupPhone }, { "type", k.Type }, { "value", k.Value }, { "min", k.MinSub ?? 0 }, { "first", k.FirstOnly }, { "until", k.EndsAt.HasValue ? ShopView.Unix(k.EndsAt.Value) : 0 } };
             }
         }
 

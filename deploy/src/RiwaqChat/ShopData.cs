@@ -12,7 +12,7 @@ using System.Text;
 
 namespace RiwaqChat
 {
-    public class ShopPic { public string Path, Alt; public int W, H; }
+    public class ShopPic { public string Path, Alt, Focus; public int W, H; }
     public class ShopOptVal { public string Ar, En, Hex; }
     public class ShopOpt { public string Ar, En; public List<ShopOptVal> Vals = new List<ShopOptVal>(); }
 
@@ -246,9 +246,9 @@ namespace RiwaqChat
                     var v = new ShopVar { Id = (int)r["Id"], ProductId = p.Id, Opts = S(r["Opts"]), Price = Dn(r["Price"]), OldPrice = Dn(r["OldPrice"]), Cost = Dn(r["Cost"]), Stock = (int)r["Stock"], Sku = S(r["Sku"]), Image = S(r["Image"]), Active = (bool)r["Active"], Sort = (int)r["Sort"] };
                     p.Vars.Add(v); d.Vars[v.Id] = v;
                 }
-            using (var cmd = Db.Cmd(c, "SELECT ProductId, Path, W, H, Alt FROM dbo.ShopImages WHERE StoreId=@s AND ProductId IS NOT NULL ORDER BY ProductId, Sort, Id", "@s", s))
+            using (var cmd = Db.Cmd(c, "SELECT ProductId, Path, W, H, Alt, Focus FROM dbo.ShopImages WHERE StoreId=@s AND ProductId IS NOT NULL ORDER BY ProductId, Sort, Id", "@s", s))
             using (var r = cmd.ExecuteReader())
-                while (r.Read()) { ShopProd p; if (d.ById.TryGetValue((int)r[0], out p)) p.Pics.Add(new ShopPic { Path = S(r[1]), W = (int)r[2], H = (int)r[3], Alt = S(r[4]) }); }
+                while (r.Read()) { ShopProd p; if (d.ById.TryGetValue((int)r[0], out p)) p.Pics.Add(new ShopPic { Path = S(r[1]), W = (int)r[2], H = (int)r[3], Alt = S(r[4]), Focus = S(r[5]) }); }
             using (var cmd = Db.Cmd(c, "SELECT ProductId, CategoryId, IsMain FROM dbo.ShopProductCategories WHERE StoreId=@s ORDER BY CategoryId, Pinned DESC, Sort, ProductId DESC", "@s", s))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
@@ -315,7 +315,7 @@ namespace RiwaqChat
     {
         public static string[] Pair(string ar, string en) { return new[] { ar ?? "", en ?? "" }; }
         public static long Unix(DateTime t) { return (long)(t - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds; }
-        static object[] Pic(ShopPic x) { return new object[] { x.Path, x.W, x.H, x.Alt ?? "" }; }
+        static object[] Pic(ShopPic x) { return string.IsNullOrEmpty(x.Focus) ? new object[] { x.Path, x.W, x.H, x.Alt ?? "" } : new object[] { x.Path, x.W, x.H, x.Alt ?? "", x.Focus }; }
 
         public static Dictionary<string, object> Summary(ShopData d, ShopProd p, DateTime now, Dictionary<string, object> badges, HashSet<int> best)
         {

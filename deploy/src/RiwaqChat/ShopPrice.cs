@@ -34,7 +34,7 @@ namespace RiwaqChat
         public string Coupon, CouponErr, Days, Stop; public int CouponId; public List<ShopApplied> Offers = new List<ShopApplied>(); public bool Bad { get { return Lines.Any(l => l.Err != null) || Stop != null; } }
     }
 
-    public class ShopCoupon { public int Id; public string Code, Type, ScopeJson; public decimal Value; public decimal? MaxOff, MinSub; public DateTime? StartsAt, EndsAt; public int? MaxUses, PerPhone; public bool FirstOnly, Active, Popup; public int Uses; }
+    public class ShopCoupon { public int Id; public string Code, Type, ScopeJson; public decimal Value; public decimal? MaxOff, MinSub; public DateTime? StartsAt, EndsAt; public int? MaxUses, PerPhone; public bool FirstOnly, PopupPhone, Active, Popup; public int Uses; }
 
     public static class ShopPrice
     {
@@ -261,7 +261,7 @@ namespace RiwaqChat
         {
             return new ShopCoupon { Id = (int)r["Id"], Code = (string)r["Code"], Type = (string)r["Type"], Value = (decimal)r["Value"], MaxOff = r["MaxOff"] as decimal?, MinSub = r["MinSub"] as decimal?, ScopeJson = r["Scope"] as string,
                 StartsAt = r["StartsAt"] is DateTime ? DateTime.SpecifyKind((DateTime)r["StartsAt"], DateTimeKind.Utc) : (DateTime?)null, EndsAt = r["EndsAt"] is DateTime ? DateTime.SpecifyKind((DateTime)r["EndsAt"], DateTimeKind.Utc) : (DateTime?)null,
-                MaxUses = r["MaxUses"] as int?, PerPhone = r["PerPhone"] as int?, FirstOnly = (bool)r["FirstOnly"], Active = (bool)r["Active"], Popup = (bool)r["Popup"], Uses = (int)r["Uses"] };
+                MaxUses = r["MaxUses"] as int?, PerPhone = r["PerPhone"] as int?, FirstOnly = (bool)r["FirstOnly"], Active = (bool)r["Active"], Popup = (bool)r["Popup"], PopupPhone = (bool)r["PopupPhone"], Uses = (int)r["Uses"] };
         }
         static string CouponProblem(SqlConnection c, ShopData d, ShopCoupon cp, string phone, DateTime now)
         {
