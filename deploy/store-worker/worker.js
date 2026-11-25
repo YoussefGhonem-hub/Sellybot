@@ -1,0 +1,157 @@
+// SellyStore on Cloudflare: every <name>.sellystore.online reaches this Worker (a proxied wildcard record and the routes
+//   *.sellystore.online/*   and   sellystore.online/*).
+// It takes the store's name from the address and asks our site for the page (shopfront.ashx), with a secret and the visitor's address.
+// Settings of the Worker (Settings > Variables and secrets):
+//   SHOP_KEY   secret   the key shown in admin > المتاجر
+//   IMAGES     R2 bucket binding (the stores' pictures); without it the pictures come from our site
+// What it does besides passing the request on:
+//   - keeps a public page for up to a minute (the site says how long), and if our site doesn't answer it shows the last copy it has;
+//   - pictures: img.sellystore.online from R2, then from our site;
+//   - never keeps a preview, an order or anything a customer sends.
+// There is nothing secret in this file.
+
+const ROOT = "sellystore.online";
+const SITE = "https://sellybot.online";
+const SLUG = /^[a-z0-9](?:[a-z0-9-]{1,28})[a-z0-9]$/;   // the same rule as in Shop.cs
+const IMG = /^\d+\/[a-z0-9]{8,40}(-s)?\.(webp|jpg|png)$/;
+const STALE = 86400;        // a page kept for when our site is down: a day
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function page(title, text, status) {
+  const body = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(title)}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f3f5f4;color:#17211d;font:17px/1.8 system-ui,'Segoe UI',Tahoma,sans-serif;padding:20px}main{text-align:center;max-width:420px}h1{font-size:26px;margin:0 0 8px}p{margin:0;color:#55635d}@media(prefers-color-scheme:dark){body{background:#121815;color:#e7eeea}p{color:#a1b0a9}}</style></head><body><main><h1>${esc(title)}</h1><p>${esc(text)}</p></main></body></html>`;
+  return new Response(body, { status: status || 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex" } });
+}
+
+async function sameKey(a, b) {
+  if (!a || !b) return false;
+  const e = new TextEncoder(), [x, y] = await Promise.all([crypto.subtle.digest("SHA-256", e.encode(a)), crypto.subtle.digest("SHA-256", e.encode(b))]);
+  const p = new Uint8Array(x), q = new Uint8Array(y); let d = 0;
+  for (let i = 0; i < p.length; i++) d |= p[i] ^ q[i];
+  return d === 0;
+}
+
+// the request as our site gets it: only what it needs, never the visitor's other headers
+function toSite(request, url, env, name, site) {
+  const h = new Headers();
+  for (const k of ["content-type", "accept", "accept-language", "user-agent", "referer"]) { const v = request.headers.get(k); if (v) h.set(k, v); }
+  const pv = /(?:^|;\s*)(sbpv=[a-f0-9]{32})/.exec(request.headers.get("cookie") || "");
+  if (pv) h.set("cookie", pv[1]);
+  h.set("x-shop-key", env.SHOP_KEY || ""); h.set("x-shop-name", name); h.set("x-shop-path", encodeURI(decodeURI(url.pathname)));
+  h.set("x-shop-ip", request.headers.get("cf-connecting-ip") || "0.0.0.0");
+  h.set("x-shop-country", (request.cf && request.cf.country) || ""); h.set("x-shop-query", url.search);
+  const init = { method: request.method, headers: h, redirect: "manual" };
+  if (request.method === "POST") init.body = request.body, init.duplex = "half";
+  // every page has its own address on our site too, so nothing on the way can mix two of them
+  return new Request(site + "/shopfront.ashx?_p=" + encodeURIComponent(name + url.pathname) + (url.search ? "&" + url.search.slice(1) : ""), init);
+}
+
+// what the visitor gets: the site's answer with our own caching and security headers
+function clean(r, extra) {
+  const h = new Headers();
+  for (const k of ["content-type", "content-security-policy", "x-robots-tag", "location", "retry-after", "etag"]) { const v = r.headers.get(k); if (v) h.set(k, v); }
+  const cookies = r.headers.getSetCookie ? r.headers.getSetCookie() : []; for (const c of cookies) if (c.startsWith("sbpv=")) h.append("set-cookie", c);
+  h.set("x-content-type-options", "nosniff"); h.set("referrer-policy", "strict-origin-when-cross-origin"); h.set("strict-transport-security", "max-age=15552000");
+  for (const k in extra || {}) h.set(k, extra[k]);
+  return h;
+}
+
+async function image(request, url, env, ctx, site) {
+  const path = url.pathname.slice(1);
+  if (path.startsWith("_put/")) {
+    if (!(await sameKey(request.headers.get("x-shop-key"), env.SHOP_KEY))) return new Response("no", { status: 403 });
+    const key = path.slice(5);
+    if (!IMG.test(key) || !env.IMAGES) return new Response("no bucket", { status: 400 });
+    if (request.method === "PUT") { const body = await request.arrayBuffer(); if (body.byteLength > 2000000) return new Response("big", { status: 413 }); await env.IMAGES.put(key, body, { httpMetadata: { contentType: request.headers.get("content-type") || "image/webp" } }); return new Response("ok"); }
+    if (request.method === "DELETE") { await env.IMAGES.delete(key); return new Response("ok"); }
+    return new Response("no", { status: 405 });
+  }
+  if (!IMG.test(path) || (request.method !== "GET" && request.method !== "HEAD")) return new Response("", { status: 404 });
+  const cache = caches.default, ck = new Request(url.origin + "/" + path), hit = await cache.match(ck);
+  if (hit) return hit;
+  const head = { "cache-control": "public, max-age=31536000, immutable", "content-security-policy": "default-src 'none'", "x-content-type-options": "nosniff", "access-control-allow-origin": "*", "cross-origin-resource-policy": "cross-origin" };
+  let res = null;
+  if (env.IMAGES) { const o = await env.IMAGES.get(path); if (o) res = new Response(o.body, { headers: { ...head, "content-type": (o.httpMetadata && o.httpMetadata.contentType) || "image/webp" } }); }
+  if (!res) {
+    const r = await fetch(toSite(new Request(url, { method: "GET", headers: request.headers }), url, env, "img", site));
+    if (r.status !== 200) return new Response("", { status: 404, headers: { "cache-control": "public, max-age=60" } });
+    res = new Response(r.body, { headers: { ...head, "content-type": r.headers.get("content-type") || "image/webp" } });
+  }
+  if (request.method === "GET") ctx.waitUntil(cache.put(ck, res.clone()));
+  return res;
+}
+
+// the tests run this with their own SITE / ROOT
+export function make(opt) {
+  const root = (opt && opt.root) || ROOT, site = (opt && opt.site) || SITE, https = !(opt && opt.http);
+  return {
+    async fetch(request, env, ctx) {
+      const url = new URL(request.url), host = url.hostname.toLowerCase();
+      if (https && url.protocol === "http:") return Response.redirect("https://" + host + url.pathname + url.search, 301);
+      if (host === "www." + root) return Response.redirect((https ? "https://" : "http://") + root + "/", 301);
+      const name = host === root ? "" : host.endsWith("." + root) ? host.slice(0, -(root.length + 1)) : null;
+      if (name === null) return page("الصفحة دي مش موجودة", "", 404);
+      if (name === "img") return image(request, url, env, ctx, site);
+      if (name === "status") {
+        if (!(await sameKey(request.headers.get("x-shop-key"), env.SHOP_KEY))) return page("SellyStore", "", 404);
+        const t = Date.now(); let up = 0; try { up = (await fetch(site + "/api/health.ashx")).status; } catch (e) { }
+        return Response.json({ ok: up === 200, site: up, ms: Date.now() - t, r2: !!env.IMAGES, v: 2 });
+      }
+      // "xn--" is how a browser writes non-Latin letters: look-alike names, so never a store
+      if (name && (!SLUG.test(name) || name.startsWith("xn--") || name.includes("--"))) return page("مفيش متجر بالاسم ده", "اتأكد من اللينك واكتبه تاني.", 404);
+      if (!env.SHOP_KEY) return page(name ? "المتجر لسه بيجهز" : "SellyStore", "استنّانا قريب.", 503);
+      if (!["GET", "HEAD", "POST"].includes(request.method)) return new Response("", { status: 405 });
+      let path; try { path = decodeURI(url.pathname); } catch (e) { return page("الصفحة دي مش موجودة", "", 404); }
+      const cache = caches.default, asset = path.startsWith("/_s/") || path === "/widget.js" || path === "/api/logo.ashx", data = path.startsWith("/_d/"), preview = /(?:^|;\s*)sbpv=/.test(request.headers.get("cookie") || "");
+      const keyUrl = url.origin + url.pathname + url.search;
+
+      if (path === "/_purge") {
+        if (request.method !== "POST" || !(await sameKey(request.headers.get("x-shop-key"), env.SHOP_KEY))) return new Response("", { status: 404 });
+        await cache.delete(new Request(url.origin + "/")); return new Response("ok");
+      }
+
+      // ---- what may be kept: the shared files, the versioned data, public pages ----
+      const keepable = request.method === "GET" && !(preview && !asset);
+      let old = null;
+      if (keepable) {
+        old = await cache.match(new Request(keyUrl));
+        if (old) {
+          const until = +(old.headers.get("x-keep-until") || 0);
+          if (asset || data || Date.now() < until) return show(old, asset || data);
+        }
+      }
+      let r;
+      try {
+        const ac = new AbortController(), timer = old ? setTimeout(() => ac.abort(), 8000) : null;
+        r = await fetch(toSite(request, url, env, name, site), old ? { signal: ac.signal } : undefined);
+        if (timer) clearTimeout(timer);
+      } catch (e) { r = null; }
+      // our site is restarting or down: the last copy of the page, up to a day old
+      if (!r || r.status >= 520 || r.status === 502 || r.status === 504 || (r.status === 503 && !r.headers.get("retry-after"))) {
+        if (old) return show(old, asset || data);
+        return request.method === "POST" ? Response.json({ error: "down", message: "المتجر بيتحدّث دلوقتي. جرّب تاني بعد دقيقة." }, { status: 503 }) : page("المتجر بيتحدّث دلوقتي", "جرّب تفتحه تاني بعد دقيقة.", 503);
+      }
+      const keep = +(r.headers.get("x-shop-keep") || 0), cc = r.headers.get("cache-control") || "";
+      const age = /immutable/.test(cc) ? 31536000 : +((/max-age=(\d+)/.exec(cc) || [])[1] || 0);
+      if (asset || data) {
+        const out = new Response(r.body, { status: r.status, headers: clean(r, { "cache-control": r.status === 200 && age ? cc : "no-store" }) });
+        if (keepable && r.status === 200 && age > 0) ctx.waitUntil(cache.put(new Request(keyUrl), out.clone()));
+        return out;
+      }
+      if (keepable && keep > 0 && r.status === 200) {
+        const body = await r.arrayBuffer();
+        ctx.waitUntil(cache.put(new Request(keyUrl), new Response(body, { status: 200, headers: clean(r, { "cache-control": "public, max-age=" + STALE, "x-keep-until": String(Date.now() + keep * 1000) }) })));
+        return new Response(body, { status: 200, headers: clean(r, { "cache-control": "public, max-age=0, must-revalidate" }) });
+      }
+      return new Response(r.body, { status: r.status, headers: clean(r, { "cache-control": r.headers.get("content-type") === "text/event-stream; charset=utf-8" ? "no-cache" : "no-store" }) });
+    }
+  };
+}
+// a copy from the cache, with the headers a visitor should get
+function show(r, long) {
+  const h = new Headers(r.headers); h.delete("x-keep-until");
+  if (!long) h.set("cache-control", "public, max-age=0, must-revalidate");
+  h.set("x-shop-cache", "hit");
+  return new Response(r.body, { status: r.status, headers: h });
+}
+
+export default make();

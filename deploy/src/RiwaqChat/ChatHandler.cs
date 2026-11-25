@@ -90,6 +90,8 @@ namespace RiwaqChat
 
                 // ---- read the conversation ----
                 ArrayList incoming;
+                var shopCtx = ctx.Items["shop"] as ShopFrontHandler.Ctx;   // the chat inside the store's own page (SellyStore)
+                Dictionary<string, object> shopPage = null;                 // what the customer is looking at there
                 string chatSid = null;   // the widget's chat session (ordering from the chat keeps its cart per session)
                 try
                 {
@@ -98,6 +100,7 @@ namespace RiwaqChat
                     if (!input.TryGetValue("messages", out m) || !(m is ArrayList)) throw new Exception();
                     incoming = (ArrayList)m;
                     object sidVal; if (input.TryGetValue("sid", out sidVal)) chatSid = ChatOrders.WebSid(sidVal as string);
+                    object pageVal; if (shopCtx != null && input.TryGetValue("shop", out pageVal)) shopPage = pageVal as Dictionary<string, object>;
                 }
                 catch { Web.Error(res, 400, "bad_request"); return; }
 
@@ -129,10 +132,18 @@ namespace RiwaqChat
                 // ordering from the chat: its instructions + this chat's order so far, after the cached prompt
                 var octx = store == null ? null : ChatOrders.ForChannel(conn, store, chatSid, Web.Ip(req));
                 if (octx != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
-                else if (store != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
+                // the store's own page (SellyStore): its products, shipping, offers and orders, read when asked (ShopBot.cs)
+                var shop = ShopBot.For(conn, store, shopCtx != null && shopCtx.Preview);
+                if (shop != null)
+                {
+                    var sd = ShopCache.Get(conn, shop);
+                    sysBlocks.Add(new TextBlockParam { Text = ShopBot.Prompt(conn, store, shop, sd, null) + ShopBot.PageNote(sd, shopPage) });
+                }
+                else if (store != null && octx == null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
                 // handoff to the owner from the site chat (the assistant asks for the customer's number first)
                 List<ExtraTool> extra = null;
                 if (store != null && Handoff.On(conn, store)) extra = new List<ExtraTool> { Handoff.Tool(store, "web", chatSid ?? "ip:" + Web.Ip(req)) };
+                if (shop != null) { if (extra == null) extra = new List<ExtraTool>(); extra.AddRange(ShopBot.Tools(store.Id, null, Web.Ip(req), shopCtx != null && shopCtx.Preview)); }
                 // Sellybot's own chat: forms the visitor fills inside the chat (sign up, log in, subscribe...) and their own account
                 var siteBot = SiteBotActions.For(conn, ctx, store);
                 if (siteBot != null) { if (extra == null) extra = new List<ExtraTool>(); extra.AddRange(siteBot.Tools); }
@@ -236,7 +247,7 @@ namespace RiwaqChat
             return await Run(Prepare(conn, store, messages, ip, channelNote, extra));
         }
 
-        public static Prepared Prepare(SqlConnection conn, StoreInfo store, List<MessageParam> messages, string ip, string channelNote, List<ExtraTool> extra = null)
+        public static Prepared Prepare(SqlConnection conn, StoreInfo store, List<MessageParam> messages, string ip, string channelNote, List<ExtraTool> extra = null, bool shopPreview = false)
         {
             int maxTokens;
             if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
@@ -248,7 +259,16 @@ namespace RiwaqChat
             // WhatsApp ("wa:<chat>"): the chat is the customer's own number, so ordering needs no extra code
             var octx = ip != null && ip.StartsWith("wa:") ? ChatOrders.ForChannel(conn, store, ip, ip) : null;
             if (octx != null) sys.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
-            else sys.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
+            // the store's own page (SellyStore), on every channel: ShopBot.cs
+            var shop = ShopBot.For(conn, store, shopPreview);
+            if (shop != null)
+            {
+                string own = ip != null && ip.StartsWith("wa:") ? WaChat.Digits(ip.Substring(3)) : null;
+                sys.Add(new TextBlockParam { Text = ShopBot.Prompt(conn, store, shop, ShopCache.Get(conn, shop), own) });
+                extra = extra == null ? new List<ExtraTool>() : new List<ExtraTool>(extra);
+                extra.AddRange(ShopBot.Tools(store.Id, own, ip, shopPreview));
+            }
+            else if (octx == null) sys.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
             var parameters = new MessageCreateParams { Model = Claude.Model, MaxTokens = maxTokens, System = sys, Messages = messages };
             bool orderTool = OrderTracking.On(store);   // Shopify or EasyOrders
             return new Prepared { Params = parameters, Messages = messages, Idx = idx, OrderStore = orderTool ? store : null, Ip = ip, Octx = octx, Extra = extra };
@@ -293,7 +313,7 @@ namespace RiwaqChat
             });
             var result = new LoopResult();
             var msgs = new List<MessageParam>(conversation);
-            int maxRounds = octx != null ? 5 : 4; // up to 3 tool rounds (4 while ordering) + the final answer
+            int maxRounds = octx != null || (extra != null && extra.Any(x => x.Def.Name == ShopBot.TProducts)) ? 5 : 4; // up to 3 tool rounds (4 while ordering) + the final answer
             for (int round = 0; round < maxRounds; round++)
             {
                 bool last = round == maxRounds - 1;
@@ -383,6 +403,7 @@ namespace RiwaqChat
         static bool Embed(HttpRequest req, HttpResponse res, string[] allowed)
         {
             string origin = req.Headers["Origin"];
+            if (HttpContext.Current != null && HttpContext.Current.Items["shop"] != null) return true;   // the store's own page on SellyStore (ShopFront.cs)
             if (string.IsNullOrEmpty(origin) || SameSite(req, origin)) return true;
             if (!allowed.Contains(origin.TrimEnd('/'), StringComparer.OrdinalIgnoreCase)) { Web.Error(res, 403, "origin_not_allowed"); return false; }
             res.AddHeader("Access-Control-Allow-Origin", origin);

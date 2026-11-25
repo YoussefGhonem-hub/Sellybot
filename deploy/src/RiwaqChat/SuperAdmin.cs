@@ -1356,6 +1356,12 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 var ws = st.WaUntil.HasValue && st.WaUntil.Value > now ? st.WaUntil.Value : now;
                 o["waStarts"] = ws.ToString("o"); o["waEnds"] = ws.AddDays(WaAccount.ServiceDays).ToString("o");
             }
+            if (kind == "shop")
+            {
+                // the store's rent (SellyStore): 30 days from today, or after the end of the month still running
+                var sr = Shops.ByStore(c, st.Id); var ss = sr != null && sr.RentUntil.HasValue && sr.RentUntil.Value > now ? sr.RentUntil.Value : now;
+                o["shopStarts"] = ss.ToString("o"); o["shopEnds"] = ss.AddDays(Shops.RentDays * Math.Max(1, months)).ToString("o");
+            }
             if (kind == "topup") o["topupUntil"] = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1).AddSeconds(-1).ToString("o");
             return o;
         }
@@ -1398,7 +1404,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             var s = Db.StoreById(c, storeId);
             var p = Billing.Plan(c, planId);
             if (s == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
-            if (p == null && kind != "wa") { Web.Error(res, 404, "no_plan", "الباقة دي اتمسحت. ارفض الطلب واطلب من صاحب المتجر يختار باقة تانية."); return; }
+            if (p == null && kind != "wa" && kind != "shop") { Web.Error(res, 404, "no_plan", "الباقة دي اتمسحت. ارفض الطلب واطلب من صاحب المتجر يختار باقة تانية."); return; }
             var paid = DecOf(b, "paidEgp") ?? amount;
             if (paid < 0 || paid > price * 10) { Web.Error(res, 400, "bad_paid", "المبلغ المدفوع مش منطقي."); return; }
             string notes = string.Join(" · ", new[] { string.IsNullOrWhiteSpace(payRef) ? null : "الرقم المرجعي: " + payRef,
@@ -1426,6 +1432,13 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                     UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
                     "@k", waCount, "@s", s.Id, "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
                 Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", "wa" }, { "endsAt", waEnd.ToString("o") } });
+                return;
+            }
+            if (kind == "shop")
+            {
+                var shopEnd = ShopRent.Add(c, s, Math.Max(1, months), price, paid, method, notes, out subId);
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, DecidedAt=SYSUTCDATETIME() WHERE Id=@id", "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@id", id.Value)) cmd.ExecuteNonQuery();
+                Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", "shop" }, { "endsAt", shopEnd.ToString("o") } });
                 return;
             }
             if (kind == "topup")
@@ -1774,6 +1787,8 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             bool topup = (Web.Str(b, "kind", 10) ?? "") == "topup";
             PlanInfo p; int months; Billing.Quote q; long units = 0; string kind = topup ? "topup" : "plan";
             bool waOnly = (Web.Str(b, "kind", 10) ?? "") == "wa";
+            bool shopOnly = (Web.Str(b, "kind", 10) ?? "") == "shop";   // the store's rent (SellyStore, ShopRent.cs): a month at a time, on its own
+            Shop shopRow = null;
             // the WhatsApp service for how many numbers (WaLines.cs): count, and "add" = more numbers on the running service (paid for the days left)
             bool waAdd = waOnly && (Web.Str(b, "mode", 10) ?? "") == "add";
             // a renewal that doesn't say how many: all the numbers the store has now (a lower number would cut the others off)
@@ -1789,6 +1804,17 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 p = s.PlanId.HasValue ? (Billing.Plan(c, s.PlanId.Value) ?? new PlanInfo { Id = s.PlanId.Value, Name = s.PlanName ?? "" }) : new PlanInfo { Id = 0, Name = "" };
                 kind = "wa"; months = 1;
                 q = new Billing.Quote { Months = 1 };   // the service's price is added below
+            }
+            else if (shopOnly)
+            {
+                if (!Shops.Visible(c, s)) { Web.Error(res, 404, "not_open", "المتاجر لسه مافتحتش."); return; }
+                var rent = ShopRent.Price(c);
+                if (rent <= 0) { Web.Error(res, 400, "no_price", "سعر المتجر لسه ماتحددش. كلّمنا."); return; }
+                if (Shops.InPlan(c, s)) { Web.Error(res, 400, "in_plan", "المتجر جوه باقتك، مش محتاج إيجار لوحده."); return; }
+                shopRow = Shops.ByStore(c, s.Id);
+                p = s.PlanId.HasValue ? (Billing.Plan(c, s.PlanId.Value) ?? new PlanInfo { Id = s.PlanId.Value, Name = s.PlanName ?? "" }) : new PlanInfo { Id = 0, Name = "" };
+                kind = "shop"; months = 1;
+                q = new Billing.Quote { Months = 1, Price = rent, Discount = 0, Total = rent, Pct = 0 };   // no discounts on it (old price, invites, periods)
             }
             else if (topup)
             {
@@ -1847,7 +1873,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             }
             // the WhatsApp service: asked for with a plan (wa: true) or alone (kind "wa"). Its own monthly price, no period discount,
             // and the number the owner will link, so the admin can get a number ready on Wapilot
-            object waAsk; bool wantWa = waOnly || (!topup && b.TryGetValue("wa", out waAsk) && waAsk is bool && (bool)waAsk);
+            object waAsk; bool wantWa = waOnly || (!topup && !shopOnly && b.TryGetValue("wa", out waAsk) && waAsk is bool && (bool)waAsk);
             string waPhone = null; decimal waEgp = 0;
             // a running plan that includes WhatsApp: its one number comes and renews with that plan; what's bought on its own is more numbers
             // (WaLines.cs, at the "more than one" price). Adding numbers needs the paid service running (else it's a month of them).
@@ -1855,7 +1881,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             // a plan that includes WhatsApp (new, renewed, or later): no separate service and nothing to ask for. Approving the plan
             // turns WhatsApp on (Billing.WaInPlan) and the owner links the number from «واتساب» (the user, 2026-11-23). The number
             // they'll link is optional, so the admin can see it.
-            if (!waOnly && !topup && p.IncludesWa)
+            if (!waOnly && !topup && !shopOnly && p.IncludesWa)
             {
                 wantWa = false;
                 var ph = Web.Str(b, "waPhone", 40);
@@ -1901,7 +1927,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                 if ((int)cmd.ExecuteScalar() > 0) { Web.Error(res, 409, "has_pending", "عندك طلب لسه بيتراجع. استنى الرد عليه، أو الغيه وابعت طلب جديد."); return; }
 
             // what the request means right now, kept for the admin's cards and the store's history
-            string what = kind == "topup" ? "topup" : kind == "upgrade" ? "upgrade" : kind == "wa" ? (waAdd ? "wa-add" : s.WaUntil.HasValue ? "wa-renew" : "wa-new") : Billing.ChangeFor(c, s, p).Kind;
+            string what = kind == "topup" ? "topup" : kind == "upgrade" ? "upgrade" : kind == "wa" ? (waAdd ? "wa-add" : s.WaUntil.HasValue ? "wa-renew" : "wa-new") : kind == "shop" ? (shopRow != null && shopRow.RentUntil.HasValue ? "shop-renew" : "shop-new") : Billing.ChangeFor(c, s, p).Kind;
             // added numbers: how the amount was worked out, for the admin's card and the store's history
             if (waAdd && waQ != null) topupCalc = waQ.Count + " رقم × " + waQ.Unit.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " ج.م × " + waQ.Days + " يوم من " + WaAccount.ServiceDays;
             int newId;

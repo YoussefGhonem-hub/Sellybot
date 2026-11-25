@@ -121,6 +121,7 @@ namespace RiwaqChat
                     try { await WeeklyReport.SendDue(c, ct); } catch (Exception ex) { Log.Error(ex); }
                     try { await WeeklyReport.SendDailyDue(c, ct); } catch (Exception ex) { Log.Error(ex); }   // the morning summary
                     try { await Followup.SendDue(c, ct); } catch (Exception ex) { Log.Error(ex); }            // unanswered confirmations
+                    try { await ShopRent.Run(c, ct); } catch (Exception ex) { Log.Error(ex); }               // SellyStore: the rent's reminders, pictures to R2
                 }
                 finally { Ended(c, row, took.ElapsedMilliseconds); Release(c); }   // the next run may start at once; the 4 minutes only cover a run that died half way
             }

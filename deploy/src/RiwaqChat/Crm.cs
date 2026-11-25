@@ -264,6 +264,9 @@ ELSE SELECT 0;";
             }
         }
 
+        // an order from the store's own SellyStore page (ShopBot.cs)
+        public static void FromShop(SqlConnection c, StoreInfo s, OrderIn o) { Take(c, s, o); }
+
         // An order the store's system just told us about (a webhook, or the pull): saved, and checked for the returns alert when it's new
         static void Take(SqlConnection c, StoreInfo s, OrderIn o)
         {
@@ -979,7 +982,7 @@ UPDATE dbo.ChatOrders SET Phone=NULL, Name=NULL, Address=NULL WHERE StoreId=@s A
 
         public const int MaxImport = 20000;
         // an Excel sheet as rows of cells in their columns (a date stays Excel's number: ReadDate knows it)
-        static List<string[]> Sheet(byte[] data)
+        internal static List<string[]> Sheet(byte[] data)
         {
             var rows = new List<string[]>();
             using (var ms = new MemoryStream(data))
@@ -1015,7 +1018,7 @@ UPDATE dbo.ChatOrders SET Phone=NULL, Name=NULL, Address=NULL WHERE StoreId=@s A
             return n > 0 ? n - 1 : fallback;
         }
 
-        static List<string[]> Csv(string text)
+        internal static List<string[]> Csv(string text)
         {
             var rows = new List<string[]>();
             var head = (text ?? "").Split('\n').FirstOrDefault() ?? "";
@@ -1041,7 +1044,7 @@ UPDATE dbo.ChatOrders SET Phone=NULL, Name=NULL, Address=NULL WHERE StoreId=@s A
 
         // ---------- helpers ----------
         static string Hash(string t) { using (var h = SHA256.Create()) return string.Concat(h.ComputeHash(Encoding.UTF8.GetBytes(t)).Take(12).Select(b => b.ToString("x2"))); }
-        public static string SourceName(string src) { return src == "eo" ? "EasyOrders" : src == "shopify" ? "Shopify" : src == "excel" ? "Excel" : "متسجل بإيدك"; }
+        public static string SourceName(string src) { return src == "shop" ? "متجرك" : src == "eo" ? "EasyOrders" : src == "shopify" ? "Shopify" : src == "excel" ? "Excel" : "متسجل بإيدك"; }
         public static string Money(decimal n, string cur) { return n.ToString(n == Math.Floor(n) ? "#,0" : "#,0.##", CultureInfo.InvariantCulture) + " " + (string.IsNullOrWhiteSpace(cur) ? "ج.م" : cur); }
         static string Cur(string code) { return string.IsNullOrEmpty(code) ? null : code == "EGP" ? "ج.م" : code; }
         static string Times(string q) { return string.IsNullOrEmpty(q) || q == "1" ? "" : " × " + q; }

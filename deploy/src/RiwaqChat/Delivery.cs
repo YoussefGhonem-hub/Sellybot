@@ -117,6 +117,15 @@ namespace RiwaqChat
             catch (Exception ex) { Log.Error(ex); }
         }
 
+        // ---------- the store's own page (SellyStore): the owner, or the shipping company, moved the order to «خرج للتوصيل» ----------
+        public static async Task OnShop(SqlConnection c, StoreInfo s, ShopOrder o)
+        {
+            if (s == null || s.Status != "active") return;
+            string id = o.Id.ToString(CultureInfo.InvariantCulture);
+            if (Exists(c, s.Id, "shop", id)) return;
+            await Send(c, s, new Notice { Source = "shop", OrderId = id, Name = o.NoText, First = FirstName(o.Name), Phone = o.Phone, Due = ShopOrders.Money(o.Total), Paid = false, Today = true }, null, Feature);
+        }
+
         // ---------- the message ----------
         class Notice { public string Source, OrderId, Name, First, Phone, Due; public bool Paid, Today; }
 

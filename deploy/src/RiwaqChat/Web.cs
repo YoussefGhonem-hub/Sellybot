@@ -72,7 +72,13 @@ namespace RiwaqChat
         // visitor's own address is in the CF-Connecting-IP header. The header is believed only when the request really comes
         // from Cloudflare (its published ranges, https://www.cloudflare.com/ips): anyone else could write any address in it
         // and get a fresh rate-limit bucket on every request. Without Cloudflare in front it's simply the connecting address.
-        public static string Ip(HttpRequest req) { return ClientIp(req.UserHostAddress, req.Headers["CF-Connecting-IP"]); }
+        // A store page (ShopFront.cs) comes through our Worker on Cloudflare: the Worker says who the visitor is, with its secret.
+        public static string Ip(HttpRequest req)
+        {
+            System.Net.IPAddress a; string v = req.Headers["X-Shop-Ip"];
+            if (v != null && System.Net.IPAddress.TryParse(v, out a) && Shops.SameKey(req.Headers["X-Shop-Key"], Shops.KnownKey())) return a.ToString();
+            return ClientIp(req.UserHostAddress, req.Headers["CF-Connecting-IP"]);
+        }
 
         public static string ClientIp(string peer, string cfConnectingIp)
         {

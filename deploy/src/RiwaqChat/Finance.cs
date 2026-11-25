@@ -140,7 +140,7 @@ namespace RiwaqChat
             suggest = Math.Ceiling(suggest / 5m) * 5m;   // the console sells credit in round amounts
 
             // ---------- money in ----------
-            var revByKind = new Dictionary<string, decimal> { { "plan", 0 }, { "upgrade", 0 }, { "topup", 0 }, { "wa", 0 }, { "council", 0 } };
+            var revByKind = new Dictionary<string, decimal> { { "plan", 0 }, { "upgrade", 0 }, { "topup", 0 }, { "wa", 0 }, { "council", 0 }, { "shop", 0 } };
             using (var cmd = Db.Cmd(c, "SELECT Kind, ISNULL(SUM(PaidEgp),0) FROM dbo.Subscriptions WHERE CreatedAt >= @ms GROUP BY Kind", "@ms", monthStart))
             using (var r = cmd.ExecuteReader()) while (r.Read()) { var k = (string)r[0]; revByKind[revByKind.ContainsKey(k) ? k : "plan"] += Convert.ToDecimal(r[1]); }
             decimal revenue = revByKind.Values.Sum();
@@ -183,13 +183,13 @@ namespace RiwaqChat
 
             // ---------- the last 6 months ----------
             var months = Enumerable.Range(0, 6).Select(i => monthStart.AddMonths(-5 + i).ToString("yyyy-MM")).ToList();
-            var hist = months.ToDictionary(m => m, m => new Dictionary<string, object> { { "month", m }, { "plan", 0m }, { "topup", 0m }, { "wa", 0m }, { "council", 0m }, { "msgs", 0 }, { "claude", 0m } });
+            var hist = months.ToDictionary(m => m, m => new Dictionary<string, object> { { "month", m }, { "plan", 0m }, { "topup", 0m }, { "wa", 0m }, { "council", 0m }, { "shop", 0m }, { "msgs", 0 }, { "claude", 0m } });
             using (var cmd = Db.Cmd(c, "SELECT CONVERT(CHAR(7), CreatedAt, 126), Kind, SUM(PaidEgp) FROM dbo.Subscriptions WHERE CreatedAt >= @f GROUP BY CONVERT(CHAR(7), CreatedAt, 126), Kind", "@f", monthStart.AddMonths(-5)))
             using (var r = cmd.ExecuteReader())
                 while (r.Read())
                 {
                     var m = (string)r[0]; if (!hist.ContainsKey(m)) continue;
-                    string k = (string)r[1] == "topup" ? "topup" : (string)r[1] == "wa" ? "wa" : (string)r[1] == "council" ? "council" : "plan";
+                    string k = (string)r[1] == "topup" ? "topup" : (string)r[1] == "wa" ? "wa" : (string)r[1] == "council" ? "council" : (string)r[1] == "shop" ? "shop" : "plan";
                     hist[m][k] = (decimal)hist[m][k] + Convert.ToDecimal(r[2]);
                 }
             using (var cmd = Db.Cmd(c, "SELECT u.Month, SUM(u.Messages), SUM(" + W("u") + ") FROM dbo.UsageMonthly u WHERE u.Month >= @f GROUP BY u.Month", "@f", months[0]))

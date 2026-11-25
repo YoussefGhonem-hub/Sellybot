@@ -24,7 +24,7 @@ namespace RiwaqChat
         const int Window = 14;        // hours past due after which an order is too old for this step
         const int BusyMinutes = 30;   // the customer wrote this recently: they're talking to the store, don't interrupt
 
-        static readonly string[][] Sources = { new[] { "OrderConfirms", "OcOn", "Shopify" }, new[] { "EoConfirms", "EoOcOn", "EasyOrders" } };
+        static readonly string[][] Sources = { new[] { "OrderConfirms", "OcOn", "Shopify" }, new[] { "EoConfirms", "EoOcOn", "EasyOrders" }, new[] { "ShopConfirms", null, "متجرك" } };
 
         class Due { public string Table, Source; public long Id; public int StoreId; public string Phone, Name, Customer, Total; public bool Remind; }
 
@@ -32,10 +32,10 @@ namespace RiwaqChat
         {
             if (WaNotify.QuietUntil() != null) return;
             var due = new List<Due>();
-            foreach (var src in Sources)
+            foreach (var src in Sources.Where(x => x[0] != "ShopConfirms" || Shops.Ready))
                 using (var cmd = Db.Cmd(c, @"SELECT TOP 30 x.Id, x.StoreId, x.Phone, x.OrderName, x.Customer, x.Total, CASE WHEN x.RemindedAt IS NULL THEN 1 ELSE 0 END AS Remind
                     FROM dbo." + src[0] + @" x JOIN dbo.Stores s ON s.Id = x.StoreId
-                    WHERE x.Status='pending' AND x.Phone IS NOT NULL AND x.AlertedAt IS NULL AND s.OcFollow > 0 AND s.Status='active' AND s." + src[1] + @" = 1
+                    WHERE x.Status='pending' AND x.Phone IS NOT NULL AND x.AlertedAt IS NULL AND s.OcFollow > 0 AND s.Status='active' " + (src[1] == null ? "" : "AND s." + src[1] + " = 1") + @"
                       AND ((x.RemindedAt IS NULL AND x.CreatedAt <= DATEADD(HOUR, -s.OcFollow, SYSUTCDATETIME()) AND x.CreatedAt > DATEADD(HOUR, -(s.OcFollow + @w), SYSUTCDATETIME()))
                         OR (x.RemindedAt IS NOT NULL AND x.RemindedAt <= DATEADD(HOUR, -s.OcFollow, SYSUTCDATETIME()) AND x.RemindedAt > DATEADD(HOUR, -(s.OcFollow + @w), SYSUTCDATETIME())))
                     ORDER BY x.Id", "@w", Window))
@@ -96,6 +96,7 @@ namespace RiwaqChat
         {
             if (Busy(c, s.Id, d.Phone)) return;
             if (!Claim(c, d, "AlertedAt")) return;
+            if (d.Table == "ShopConfirms") ShopHooks.NoReply(c, s.Id, d.Id);   // the order itself shows «مردّش»
             var risk = Crm.RiskLine(c, s, d.Phone);   // «زبايني»: they return orders
             var text = new StringBuilder("📵 *أوردر مردّش على التأكيد*\n")
                 .Append("🧾 طلب ").Append(d.Name).Append(string.IsNullOrWhiteSpace(d.Customer) ? "" : " · " + d.Customer.Trim())
@@ -119,7 +120,7 @@ namespace RiwaqChat
         public static Rate Stats(SqlConnection c, int storeId, string table, DateTime from)
         {
             var rate = new Rate();
-            foreach (var t in table == null ? new[] { "OrderConfirms", "EoConfirms" } : new[] { table })
+            foreach (var t in table == null ? (Shops.Ready ? new[] { "OrderConfirms", "EoConfirms", "ShopConfirms" } : new[] { "OrderConfirms", "EoConfirms" }) : new[] { table })
                 using (var cmd = Db.Cmd(c, @"SELECT ISNULL(SUM(CASE WHEN Status='confirmed' THEN 1 ELSE 0 END),0) AS Yes,
                         ISNULL(SUM(CASE WHEN Status='cancelled' THEN 1 ELSE 0 END),0) AS No,
                         ISNULL(SUM(CASE WHEN Status='pending' AND (AlertedAt IS NOT NULL OR CreatedAt < DATEADD(HOUR,-24,SYSUTCDATETIME())) THEN 1 ELSE 0 END),0) AS Silent,

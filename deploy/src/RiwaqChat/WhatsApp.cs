@@ -632,6 +632,7 @@ END", "@s", s.Id, "@sub", subject, "@b", body))
             Offers.Seen(c, s.Id, key);                                                   // «ابعت عرض»: everyone who wrote to the store's number
             if (OrderConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;   // "1"/"2" answering an order confirmation (works with the bot off too)
             if (EoConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;      // the same for EasyOrders orders
+            if (ShopHooks.Intercept(c, s, key, m.Chat, text, row.Value)) return true;      // and for orders from the store's own page (SellyStore)
             if (WaOptOut.Intercept(c, s, key, m.Chat, text)) return true;                  // «وقف» after an abandoned-cart / back-in-stock message
             if (!s.WaEnabled) return true;                                               // the bot is switched off (the message is still kept as context)
             long rowId = row.Value; int storeId = s.Id; string chat = m.Chat;
@@ -717,7 +718,7 @@ ELSE
                     var custPhone = WaChat.Digits(chatKey);
                     if (custPhone != null && Restock.On(c, s)) extra.Add(Restock.Tool(s, custPhone));
                     if (custPhone != null && Handoff.On(c, s)) extra.Add(Handoff.Tool(s, "wa", chatKey, line));
-                    pending = OrderConfirm.PendingNote(c, s.Id, chatKey) + EoConfirm.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey)
+                    pending = OrderConfirm.PendingNote(c, s.Id, chatKey) + EoConfirm.PendingNote(c, s.Id, chatKey) + ShopHooks.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey)
                         + Carts.Note(c, s.Id, chatKey) + Handoff.Note(c, s.Id, chatKey);
                 }
 
