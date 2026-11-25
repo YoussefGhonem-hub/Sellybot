@@ -51,7 +51,7 @@ Object.assign(t, {
 - `im()` puts the owner's focus point as `object-position`: use `object-fit: cover` and never override it with !important.
 - «Most wanted» lists only products with `p.sd > 0 || p.ft`.
 - The owner's editor sends the draft look while they type and the page redraws: read `BOOT.look` when drawing, never keep a copy from load time.
-- Class names the engine's CSS uses inside `.st`; don't reuse them for something else: `.sec .sl .sm .mi .ci .no .stk0 .tot .opt .fl .err .chips .sheet .toast .ln .og .cs .zs .crk .sk .wrapk`.
+- Class names the engine's CSS uses inside `.st`; don't reuse them for something else: `.sec .sl .sm .mi .ci .no .stk0 .tot .opt .fl .err .chips .sheet .toast .ln .og .cs .zs .crk .sk .wrapk .lg .spk .f2`.
 
 ## The rules
 
