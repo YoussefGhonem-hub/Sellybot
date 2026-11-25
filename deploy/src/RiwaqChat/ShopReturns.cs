@@ -201,6 +201,12 @@ namespace RiwaqChat
             using (var cmd = Db.Cmd(c, "SELECT TOP 12 ProductId, Name, Stars, Text, CreatedAt FROM dbo.ShopReviews WHERE StoreId=@s AND Status='shown' AND Stars>=4 AND LEN(Text)>=8 ORDER BY Id DESC", "@s", d.Row.StoreId)) using (var r = cmd.ExecuteReader())
                 while (r.Read()) if (d.ById.ContainsKey((int)r[0])) d.Revs.Add(new Dictionary<string, object> { { "p", (int)r[0] }, { "n", (string)r[1] }, { "r", (int)r[2] }, { "t", (string)r[3] }, { "at", ShopView.Unix(DateTime.SpecifyKind((DateTime)r[4], DateTimeKind.Utc)) } });
         }
+        // «صور زباينا»: the pictures of shown reviews (the customer agreed to it when they sent them)
+        public static void LoadPics(SqlConnection c, ShopData d)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT TOP 16 ProductId, Name, Pics FROM dbo.ShopReviews WHERE StoreId=@s AND Status='shown' AND Stars>=4 AND Pics IS NOT NULL ORDER BY Id DESC", "@s", d.Row.StoreId)) using (var r = cmd.ExecuteReader())
+                while (r.Read() && d.Ugc.Count < 16) foreach (var p in ((string)r[2]).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Take(2)) if (d.ById.ContainsKey((int)r[0])) d.Ugc.Add(new Dictionary<string, object> { { "im", p }, { "p", (int)r[0] }, { "n", (string)r[1] } });
+        }
         // /_d/rv-<product>-<page>-<version>.json
         public static Dictionary<string, object> Page(SqlConnection c, int storeId, int productId, int page)
         {

@@ -14,7 +14,7 @@ namespace RiwaqChat
         // ids of the templates (site/shop/t/<id>.js); the admin can close any of them (AppSettings ShopTplOff)
         public static string[] Templates { get { return ShopTemplates.All(); } }   // the templates are files: site/shop/t
         public static readonly string[] Bizzes = { "clothes", "home", "beauty", "spices", "electronics", "toys", "sweets", "plants", "furniture", "jewelry", "grocery", "other" };
-        static readonly string[] Sections = { "slider", "cats", "new", "best", "sale", "pick", "text", "marquee", "hot", "look", "ba", "budget", "faq", "trust", "banner" };
+        static readonly string[] Sections = { "slider", "cats", "new", "best", "sale", "pick", "text", "marquee", "hot", "look", "ba", "budget", "faq", "trust", "banner", "video", "ugc", "revs", "posts" };
         static readonly Regex Hex = new Regex("^#[0-9a-fA-F]{6}$");
 
         public static string TemplateFor(string biz)
@@ -146,7 +146,7 @@ namespace RiwaqChat
         static Dictionary<string, object> Section(Dictionary<string, object> s, int storeId)
         {
             return D("t", ShopJson.Str(ShopJson.At(s, "t"), 12), "on", ShopJson.Bool(ShopJson.At(s, "on"), true), "title", Pair(ShopJson.At(s, "title"), 80), "text", Pair(ShopJson.At(s, "text"), 600), "cat", ShopJson.Int(ShopJson.At(s, "cat")),
-                "n", Math.Max(2, Math.Min(24, ShopJson.Int(ShopJson.At(s, "n"), 8))), "img", Img(ShopJson.At(s, "img"), storeId), "img2", Img(ShopJson.At(s, "img2"), storeId), "link", Link(ShopJson.At(s, "link")), "btn", Pair(ShopJson.At(s, "btn"), 40),
+                "n", Math.Max(2, Math.Min(24, ShopJson.Int(ShopJson.At(s, "n"), 8))), "img", Img(ShopJson.At(s, "img"), storeId), "img2", Img(ShopJson.At(s, "img2"), storeId), "vid", Regex.IsMatch(ShopJson.Str(ShopJson.At(s, "vid"), 160), "^" + storeId + @"/[a-z0-9]{8,40}\.(mp4|webm)$") ? ShopJson.Str(ShopJson.At(s, "vid"), 160) : "", "link", Link(ShopJson.At(s, "link")), "btn", Pair(ShopJson.At(s, "btn"), 40),
                 "items", ShopJson.List(ShopJson.At(s, "items")).OfType<Dictionary<string, object>>().Take(12).Select(i => (object)D("img", Img(ShopJson.At(i, "img"), storeId), "imgM", Img(ShopJson.At(i, "imgM"), storeId),
                     "title", Pair(ShopJson.At(i, "title"), 120), "text", Pair(ShopJson.At(i, "text"), 600), "btn", Pair(ShopJson.At(i, "btn"), 40), "link", Link(ShopJson.At(i, "link")), "p", ShopJson.Int(ShopJson.At(i, "p")),
                     "x", Math.Max(0, Math.Min(100, ShopJson.Int(ShopJson.At(i, "x")))), "y", Math.Max(0, Math.Min(100, ShopJson.Int(ShopJson.At(i, "y")))))).ToArray());

@@ -174,7 +174,7 @@ namespace RiwaqChat
                 { "metaTitle", p.MetaTitle ?? "" }, { "metaDesc", p.MetaDesc ?? "" }, { "cats", p.Cats }, { "main", p.MainCat }, { "sold", p.Sold }, { "url", sh.Url + "/p/" + p.Slug },
                 { "options", p.Options.Select(o => new Dictionary<string, object> { { "n", new[] { o.Ar, o.En } }, { "v", o.Vals.Select(v => new[] { v.Ar, v.En, v.Hex }).ToArray() } }).ToArray() },
                 { "vars", p.Vars.Select(v => new Dictionary<string, object> { { "id", v.Id }, { "o", v.Vals }, { "price", v.Price.HasValue ? (object)v.Price.Value : null }, { "old", v.OldPrice.HasValue ? (object)v.OldPrice.Value : null }, { "cost", v.Cost.HasValue ? (object)v.Cost.Value : null }, { "stock", v.Stock }, { "sku", v.Sku ?? "" }, { "image", v.Image ?? "" }, { "active", v.Active } }).ToArray() },
-                { "images", Images(c, sh.StoreId, p.Id) }, { "ask", ShopJson.Arr(p.AskJson) }, { "goes", ShopView.GoesIds(p) }, { "rating", p.Rating }, { "reviews", p.Reviews }
+                { "images", Images(c, sh.StoreId, p.Id) }, { "ask", ShopJson.Arr(p.AskJson) }, { "goes", ShopView.GoesIds(p) }, { "video", p.Video ?? "" }, { "rating", p.Rating }, { "reviews", p.Reviews }
             };
         }
         static object[] Images(SqlConnection c, int storeId, int productId)
@@ -584,14 +584,14 @@ namespace RiwaqChat
             int min = Math.Max(1, Math.Min(500, Int(b, "min", 1))), max = Math.Max(0, Math.Min(999, Int(b, "max"))); if (max > 0 && max < min) max = min;
             string slug = FreeSlug(c, "ShopProducts", s, Str(b, "slug", 80), name, id, 80);
             object[] args = { "@s", s, "@i", id, "@slug", slug, "@n", name, "@ne", Nz(Str(b, "nameEn", 150)), "@d", Nz(Str(b, "descr", 8000)), "@de", Nz(Str(b, "descrEn", 8000)), "@p", price, "@o", old > 0 ? (object)old : null, "@c", cost > 0 ? (object)cost : null, "@sku", Nz(Str(b, "sku", 60)), "@u", Nz(Str(b, "unit", 20)), "@br", Nz(Str(b, "brand", 60)), "@tg", Nz(Str(b, "tags", 300)), "@min", min, "@max", max > 0 ? (object)max : null,
-                "@t", Bool(b, "track", true), "@om", outMode, "@st", status, "@op", opts.Count == 0 ? null : ShopJson.Write(opts), "@sp", specs.Length == 0 ? null : ShopJson.Write(specs), "@g", guide == null ? null : ShopJson.Write(Guide(guide)), "@x", extra.Count == 0 ? null : ShopJson.Write(extra), "@mt", Nz(Str(b, "metaTitle", 120)), "@md", Nz(Str(b, "metaDesc", 300)), "@f", Bool(b, "feat"), "@w", Int(b, "weight") > 0 ? (object)Int(b, "weight") : null, "@ask", Ask(ShopJson.At(b, "ask")), "@hasAsk", b.ContainsKey("ask"), "@goes", Nz(string.Join(",", ShopJson.List(ShopJson.At(b, "goes")).Select(x => ShopJson.Int(x)).Where(x => x > 0 && x != id && d.ById.ContainsKey(x)).Distinct().Take(8))) };
+                "@t", Bool(b, "track", true), "@om", outMode, "@st", status, "@op", opts.Count == 0 ? null : ShopJson.Write(opts), "@sp", specs.Length == 0 ? null : ShopJson.Write(specs), "@g", guide == null ? null : ShopJson.Write(Guide(guide)), "@x", extra.Count == 0 ? null : ShopJson.Write(extra), "@mt", Nz(Str(b, "metaTitle", 120)), "@md", Nz(Str(b, "metaDesc", 300)), "@f", Bool(b, "feat"), "@w", Int(b, "weight") > 0 ? (object)Int(b, "weight") : null, "@ask", Ask(ShopJson.At(b, "ask")), "@hasAsk", b.ContainsKey("ask"), "@vd", Nz(Vid(b, s)), "@goes", Nz(string.Join(",", ShopJson.List(ShopJson.At(b, "goes")).Select(x => ShopJson.Int(x)).Where(x => x > 0 && x != id && d.ById.ContainsKey(x)).Distinct().Take(8))) };
             using (var tx = c.BeginTransaction())
             {
                 if (id == 0)
-                    using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.ShopProducts(StoreId, Slug, Name, NameEn, Descr, DescrEn, Price, OldPrice, Cost, Sku, Unit, Brand, Tags, MinQty, MaxQty, Track, OutMode, Status, Options, Specs, SizeGuide, Extra, MetaTitle, MetaDesc, Feat, Weight, Ask, Goes)
-                        OUTPUT INSERTED.Id VALUES(@s, @slug, @n, @ne, @d, @de, @p, @o, @c, @sku, @u, @br, @tg, @min, @max, @t, @om, @st, @op, @sp, @g, @x, @mt, @md, @f, @w, @ask, @goes)", args)) { cmd.Transaction = tx; id = (int)cmd.ExecuteScalar(); }
+                    using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.ShopProducts(StoreId, Slug, Name, NameEn, Descr, DescrEn, Price, OldPrice, Cost, Sku, Unit, Brand, Tags, MinQty, MaxQty, Track, OutMode, Status, Options, Specs, SizeGuide, Extra, MetaTitle, MetaDesc, Feat, Weight, Ask, Goes, Video)
+                        OUTPUT INSERTED.Id VALUES(@s, @slug, @n, @ne, @d, @de, @p, @o, @c, @sku, @u, @br, @tg, @min, @max, @t, @om, @st, @op, @sp, @g, @x, @mt, @md, @f, @w, @ask, @goes, @vd)", args)) { cmd.Transaction = tx; id = (int)cmd.ExecuteScalar(); }
                 else
-                    Exec(c, tx, @"UPDATE dbo.ShopProducts SET Slug=@slug, Name=@n, NameEn=@ne, Descr=@d, DescrEn=@de, Price=@p, OldPrice=@o, Cost=@c, Sku=@sku, Unit=@u, Brand=@br, Tags=@tg, MinQty=@min, MaxQty=@max, Track=@t, OutMode=@om, Status=@st, Options=@op, Specs=@sp, SizeGuide=@g, Extra=@x, MetaTitle=@mt, MetaDesc=@md, Feat=@f, Weight=@w, Ask=CASE WHEN @hasAsk=1 THEN @ask ELSE Ask END, Goes=CASE WHEN @hasAsk=1 THEN @goes ELSE Goes END, UpdatedAt=SYSUTCDATETIME() WHERE StoreId=@s AND Id=@i", args);
+                    Exec(c, tx, @"UPDATE dbo.ShopProducts SET Slug=@slug, Name=@n, NameEn=@ne, Descr=@d, DescrEn=@de, Price=@p, OldPrice=@o, Cost=@c, Sku=@sku, Unit=@u, Brand=@br, Tags=@tg, MinQty=@min, MaxQty=@max, Track=@t, OutMode=@om, Status=@st, Options=@op, Specs=@sp, SizeGuide=@g, Extra=@x, MetaTitle=@mt, MetaDesc=@md, Feat=@f, Weight=@w, Ask=CASE WHEN @hasAsk=1 THEN @ask ELSE Ask END, Goes=CASE WHEN @hasAsk=1 THEN @goes ELSE Goes END, Video=CASE WHEN @hasAsk=1 THEN @vd ELSE Video END, UpdatedAt=SYSUTCDATETIME() WHERE StoreId=@s AND Id=@i", args);
 
                 // the sizes: one kept by its values, the quantity moved by the difference (an order may have taken some since the page was opened)
                 var have = new Dictionary<string, int>(); using (var cmd = Db.Cmd(c, "SELECT Id, Opts FROM dbo.ShopVariants WHERE StoreId=@s AND ProductId=@p", "@s", s, "@p", id)) { cmd.Transaction = tx; using (var r = cmd.ExecuteReader()) while (r.Read()) have[(string)r[1]] = (int)r[0]; }
@@ -629,6 +629,7 @@ namespace RiwaqChat
             if (me != null && me.Slug != slug) Redirect(c, s, "p", me.Slug, id);
             return id;
         }
+        static string Vid(Dictionary<string, object> b, int storeId) { var p = Str(b, "video", 160); return Regex.IsMatch(p, "^" + storeId + @"/[a-z0-9]{8,40}\.(mp4|webm)$") ? p : ""; }
         // «خيارات يكتبها الزبون»: a name to engrave, a message, a picture (up to 4)
         static object Ask(object v)
         {

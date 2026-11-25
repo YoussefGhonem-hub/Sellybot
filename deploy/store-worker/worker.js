@@ -13,7 +13,7 @@
 const ROOT = "sellystore.online";
 const SITE = "https://sellybot.online";
 const SLUG = /^[a-z0-9](?:[a-z0-9-]{1,28})[a-z0-9]$/;   // the same rule as in Shop.cs
-const IMG = /^\d+\/[a-z0-9]{8,40}(-s)?\.(webp|jpg|png)$/;
+const IMG = /^\d+\/[a-z0-9]{8,40}(-s)?\.(webp|jpg|png|mp4|webm)$/, VID = /\.(mp4|webm)$/;
 const STALE = 86400;        // a page kept for when our site is down: a day
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -61,7 +61,7 @@ async function image(request, url, env, ctx, site) {
     if (!(await sameKey(request.headers.get("x-shop-key"), env.SHOP_KEY))) return new Response("no", { status: 403 });
     const key = path.slice(5);
     if (!IMG.test(key) || !env.IMAGES) return new Response("no bucket", { status: 400 });
-    if (request.method === "PUT") { const body = await request.arrayBuffer(); if (body.byteLength > 2000000) return new Response("big", { status: 413 }); await env.IMAGES.put(key, body, { httpMetadata: { contentType: request.headers.get("content-type") || "image/webp" } }); return new Response("ok"); }
+    if (request.method === "PUT") { const body = await request.arrayBuffer(); if (body.byteLength > (VID.test(key) ? 6500000 : 2000000)) return new Response("big", { status: 413 }); await env.IMAGES.put(key, body, { httpMetadata: { contentType: request.headers.get("content-type") || "image/webp" } }); return new Response("ok"); }
     if (request.method === "DELETE") { await env.IMAGES.delete(key); return new Response("ok"); }
     return new Response("no", { status: 405 });
   }
@@ -69,6 +69,18 @@ async function image(request, url, env, ctx, site) {
   const cache = caches.default, ck = new Request(url.origin + "/" + path), hit = await cache.match(ck);
   if (hit) return hit;
   const head = { "cache-control": "public, max-age=31536000, immutable", "content-security-policy": "default-src 'none'", "x-content-type-options": "nosniff", "access-control-allow-origin": "*", "cross-origin-resource-policy": "cross-origin" };
+  // a video is given in the pieces a phone asks for, so it isn't kept here as one answer
+  if (VID.test(path)) {
+    const range = request.headers.get("range"), vh = { ...head, "accept-ranges": "bytes", "content-type": path.endsWith(".mp4") ? "video/mp4" : "video/webm" };
+    if (env.IMAGES) {
+      const o = await env.IMAGES.get(path, range ? { range: request.headers } : undefined);
+      if (o) { if (range && o.range) { const a = o.range.offset || 0, len = o.range.length || o.size - a; return new Response(o.body, { status: 206, headers: { ...vh, "content-range": "bytes " + a + "-" + (a + len - 1) + "/" + o.size, "content-length": String(len) } }); } return new Response(o.body, { headers: { ...vh, "content-length": String(o.size) } }); }
+    }
+    const q = toSite(new Request(url, { method: "GET", headers: request.headers }), url, env, "img", site); if (range) q.headers.set("range", range);
+    const r = await fetch(q); if (r.status !== 200 && r.status !== 206) return new Response("", { status: r.status === 416 ? 416 : 404, headers: { "cache-control": "public, max-age=60" } });
+    for (const k of ["content-range", "content-length"]) { const v = r.headers.get(k); if (v) vh[k] = v; }
+    return new Response(request.method === "HEAD" ? null : r.body, { status: r.status, headers: vh });
+  }
   let res = null;
   if (env.IMAGES) { const o = await env.IMAGES.get(path); if (o) res = new Response(o.body, { headers: { ...head, "content-type": (o.httpMetadata && o.httpMetadata.contentType) || "image/webp" } }); }
   if (!res) {

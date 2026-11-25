@@ -44,7 +44,7 @@ namespace RiwaqChat
         {
             ShopProd p; if (!x.Data.ById.TryGetValue(ShopJson.Int(ShopJson.At(b, "p")), out p) || !ShopJson.Arr(p.AskJson).OfType<Dictionary<string, object>>().Any(a => ShopJson.Str(ShopJson.At(a, "k")) == "pic")) throw new ShopException("no", T(x, "المنتج ده مابيستقبلش صور.", "This product doesn't take pictures."));
             if (x.Preview) throw new ShopException("preview", T(x, "المعاينة مابتحفظش حاجة.", "The preview saves nothing."));
-            if (!Web.Allow("shop-ppic:" + x.Ip, 10, TimeSpan.FromHours(1)) || !Web.Allow("shop-pics:" + x.Row.StoreId, 300, TimeSpan.FromHours(24))) throw new ShopException("too_many", T(x, "صور كتير. استنى شوية.", "Too many pictures. Please wait a while."));
+            if (!Web.Allow("shop-ppic:" + x.Ip, 10, TimeSpan.FromHours(1)) || !Web.Allow("shop-pics:" + x.Row.StoreId, 150, TimeSpan.FromHours(24))) throw new ShopException("too_many", T(x, "صور كتير. استنى شوية.", "Too many pictures. Please wait a while."));
             Ok(res, "path", ShopAccount.Upload(c, x, b));
         }
 
@@ -63,6 +63,8 @@ namespace RiwaqChat
             }
             var phone = ShopOrders.Mobile(Str(b, "phone", 24)); var l = ShopActions.Lines(b);
             if (phone == null || l.Count == 0 || x.Preview || !CartOn(x.Row) || !Web.Allow("shop-cart:" + x.Ip, 30, TimeSpan.FromMinutes(10))) { Ok(res); return; }
+            // a reminder is a message from the merchant's own number: one place can't make it write to many strangers
+            if (Web.Allow("shop-cartn:" + x.Row.StoreId + ":" + phone, 1, TimeSpan.FromHours(24)) && (!Web.Allow("shop-cartip:" + x.Row.StoreId + ":" + x.Ip, 6, TimeSpan.FromHours(24)) || !Web.Allow("shop-cartd:" + x.Row.StoreId, 150, TimeSpan.FromHours(24)))) { Ok(res); return; }
             var q = ShopPrice.Quote(c, x.Data, l, null, ShopJson.Int(ShopJson.At(b, "gov")), phone, x.Now, false); if (q.Items == 0) { Ok(res); return; }
             string name = Regex.Replace(Str(b, "name", 80), @"[\u0000-\u001F]", ""), token = Shops.Token(12), json = ShopJson.Write(l.Select(y => new object[] { y.VariantId, y.Qty, y.Extra ?? "" }));
             using (var cmd = Db.Cmd(c, @"UPDATE dbo.ShopCarts SET Lines=@l, Total=@t, Name=ISNULL(@n, Name), Lang=@g, Token=CASE WHEN SentAt IS NOT NULL OR DoneAt IS NOT NULL THEN @k ELSE Token END, SentAt=NULL, DoneAt=NULL, At=SYSUTCDATETIME() OUTPUT INSERTED.Token WHERE StoreId=@s AND Phone=@p", "@l", json, "@t", q.Total, "@n", Nz(name), "@g", x.Lang, "@k", token, "@s", x.Row.StoreId, "@p", phone))
@@ -80,7 +82,7 @@ namespace RiwaqChat
         // ---------- «أخبار المتجر»: the number goes to the owner's own list for «ابعت عرض» ----------
         public static void News(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, HttpResponse res)
         {
-            if (!Web.Allow("shop-news:" + x.Ip, 8, TimeSpan.FromHours(1))) throw new ShopException("too_many", T(x, "محاولات كتير. استنى شوية.", "Too many tries. Please wait a while."));
+            if (!Web.Allow("shop-news:" + x.Ip, 5, TimeSpan.FromHours(1)) || !Web.Allow("shop-newsd:" + x.Row.StoreId, 200, TimeSpan.FromHours(24))) throw new ShopException("too_many", T(x, "محاولات كتير. استنى شوية.", "Too many tries. Please wait a while."));
             var phone = ShopOrders.Mobile(Str(b, "phone", 24)); if (phone == null) throw new ShopException("phone", T(x, "اكتب رقم موبايل مصري صح.", "Enter a valid Egyptian mobile number."));
             if (!x.Preview) try { Exec(c, "UPDATE dbo.BcContacts SET Added=ISNULL(Added,'shop'), AddedAt=ISNULL(AddedAt, SYSUTCDATETIME()) WHERE StoreId=@s AND Phone=@p; IF @@ROWCOUNT=0 INSERT INTO dbo.BcContacts(StoreId, Phone, Added, AddedAt) VALUES(@s, @p, 'shop', SYSUTCDATETIME())", "@s", x.Row.StoreId, "@p", phone); } catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { }
             Ok(res);

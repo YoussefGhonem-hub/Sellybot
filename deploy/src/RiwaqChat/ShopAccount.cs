@@ -44,7 +44,7 @@ namespace RiwaqChat
         static string SendCode(SqlConnection c, ShopFrontHandler.Ctx x, string phone, string kind)
         {
             var hour = TimeSpan.FromHours(1);
-            if (!Web.Allow("shop-code:" + x.Row.StoreId + ":" + phone, 4, hour) || !Web.Allow("shop-codei:" + x.Ip, 12, hour) || !Web.Allow("shop-codes:" + x.Row.StoreId, 200, hour)) return T(x, "طلبت أكواد كتير. استنى ساعة وجرّب تاني.", "Too many codes were asked for. Please try again in an hour.");
+            if (!Web.Allow("shop-code:" + x.Row.StoreId + ":" + phone, 4, hour) || !Web.Allow("shop-codei:" + x.Ip, 8, hour) || !Web.Allow("shop-codes:" + x.Row.StoreId, 60, hour) || !Web.Allow("shop-coded:" + x.Row.StoreId, 400, TimeSpan.FromHours(24))) return T(x, "طلبت أكواد كتير. استنى ساعة وجرّب تاني.", "Too many codes were asked for. Please try again in an hour.");
             string code = Digits6(); int id;
             Exec(c, "UPDATE dbo.ShopCodes SET UsedAt=SYSUTCDATETIME() WHERE StoreId=@s AND Phone=@p AND Kind=@k AND UsedAt IS NULL", "@s", x.Row.StoreId, "@p", phone, "@k", kind);
             using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopCodes(StoreId, Phone, Kind, Hash, ExpiresAt) OUTPUT INSERTED.Id VALUES(@s, @p, @k, @h, DATEADD(MINUTE, @m, SYSUTCDATETIME()))", "@s", x.Row.StoreId, "@p", phone, "@k", kind, "@h", Sha(x.Row.StoreId + ":" + phone + ":" + code), "@m", CodeMinutes)) id = (int)cmd.ExecuteScalar();
@@ -300,11 +300,13 @@ namespace RiwaqChat
         static void Pic(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, string phone, HttpResponse res)
         {
             if (phone == null) Mine(c, x, b, null);
-            if (!Web.Allow("shop-pic:" + x.Ip, 20, TimeSpan.FromHours(1)) || !Web.Allow("shop-pics:" + x.Row.StoreId, 300, TimeSpan.FromHours(24))) throw new ShopException("too_many", T(x, "صور كتير. استنى شوية.", "Too many pictures. Please wait a while."));
+            if (!Web.Allow("shop-pic:" + x.Ip, 20, TimeSpan.FromHours(1)) || !Web.Allow("shop-pics:" + x.Row.StoreId, 150, TimeSpan.FromHours(24))) throw new ShopException("too_many", T(x, "صور كتير. استنى شوية.", "Too many pictures. Please wait a while."));
             Ok(res, "path", Upload(c, x, b));
         }
         public static string Upload(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b)
         {
+            // what customers send never fills the owner's space
+            if (Num(c, "SELECT ISNULL(SUM(CAST(Bytes AS BIGINT)),0)/1048576 FROM dbo.ShopImages WHERE StoreId=@s AND Alt='customer'", "@s", x.Row.StoreId) >= 60) throw new ShopException("full", T(x, "مش قادرين نستقبل صور دلوقتي. ابعتها للمتجر على واتساب.", "Pictures can't be received right now. Please send it on WhatsApp."));
             try { return (string)ShopImages.Save(c, x.Row.StoreId, null, Str(b, "d", 560000), Str(b, "s", 160000), ShopJson.Int(ShopJson.At(b, "w")), ShopJson.Int(ShopJson.At(b, "h")), "customer")["path"]; }
             catch (ShopException ex) when (ex.Code == "full") { throw new ShopException("full", T(x, "مش قادرين نستقبل صور دلوقتي. ابعتها للمتجر على واتساب.", "Pictures can't be received right now. Please send it on WhatsApp.")); }
             catch (ShopException) { throw new ShopException("bad_image", T(x, "الصورة دي مش مدعومة.", "This picture isn't supported.")); }
@@ -377,6 +379,9 @@ namespace RiwaqChat
             if (!Shops.Ready) return;
             Exec(c, @"DELETE FROM dbo.ShopCodes WHERE At<DATEADD(DAY,-2,SYSUTCDATETIME()); DELETE FROM dbo.ShopSessions WHERE ExpiresAt<SYSUTCDATETIME();
                 DELETE FROM dbo.ShopSearches WHERE Day<DATEADD(DAY,-120,SYSUTCDATETIME()); DELETE FROM dbo.ShopProdDaily WHERE Day<DATEADD(DAY,-400,SYSUTCDATETIME()); DELETE FROM dbo.ShopCarts WHERE At<DATEADD(DAY,-30,SYSUTCDATETIME())");
+            // pictures customers sent that went with nothing
+            var old = new List<KeyValuePair<int, string>>(); using (var cmd = Db.Cmd(c, "SELECT TOP 200 StoreId, Path FROM dbo.ShopImages WHERE Alt='customer' AND Used=0 AND CreatedAt<DATEADD(DAY,-2,SYSUTCDATETIME()) AND NOT EXISTS (SELECT 1 FROM dbo.ShopOrderItems i WHERE i.StoreId=dbo.ShopImages.StoreId AND i.Extra LIKE '%'+dbo.ShopImages.Path+'%')")) using (var r = cmd.ExecuteReader()) while (r.Read()) old.Add(new KeyValuePair<int, string>((int)r[0], (string)r[1]));
+            foreach (var g in old.GroupBy(k => k.Key)) ShopImages.Delete(c, g.Key, g.Select(k => k.Value));
         }
     }
 
@@ -445,6 +450,7 @@ IF COL_LENGTH('dbo.ShopOrders', 'SheetAt') IS NULL ALTER TABLE dbo.ShopOrders AD
 -- a code for some customers only (m:<mark> or g:<group> of «زبايني»); a category for a time, or reached by its link only; what goes with a product
 IF COL_LENGTH('dbo.ShopCoupons', 'Who') IS NULL ALTER TABLE dbo.ShopCoupons ADD Who NVARCHAR(20) NULL;
 IF COL_LENGTH('dbo.ShopCategories', 'LinkOnly') IS NULL ALTER TABLE dbo.ShopCategories ADD LinkOnly BIT NOT NULL CONSTRAINT DF_ShopCategories_LinkOnly DEFAULT 0, ShowFrom DATETIME2 NULL, ShowTo DATETIME2 NULL;
+IF COL_LENGTH('dbo.ShopProducts', 'Video') IS NULL ALTER TABLE dbo.ShopProducts ADD Video NVARCHAR(160) NULL;
 IF COL_LENGTH('dbo.ShopProducts', 'Goes') IS NULL ALTER TABLE dbo.ShopProducts ADD Goes NVARCHAR(200) NULL;
 IF COL_LENGTH('dbo.ShopProducts', 'Ask') IS NULL ALTER TABLE dbo.ShopProducts ADD Ask NVARCHAR(MAX) NULL;
 IF COL_LENGTH('dbo.ShopOrderItems', 'Returned') IS NULL ALTER TABLE dbo.ShopOrderItems ADD Returned INT NOT NULL CONSTRAINT DF_ShopOrderItems_Returned DEFAULT 0;

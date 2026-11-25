@@ -101,6 +101,7 @@ namespace RiwaqChat
         {
             if (!Web.Allow("shop-imp:" + s.Id, 12, TimeSpan.FromHours(1))) throw new ShopException("many", "رفعت ملفات كتير في ساعة. استنى شوية.");
             var f = req.Files[0]; string ext = System.IO.Path.GetExtension(f.FileName ?? "").ToLowerInvariant();
+            if (req.Form["kind"] == "video") { if (f.ContentLength > ShopImages.MaxVideo) throw new ShopException("big", "الفيديو لازم يكون لحد 6 ميجا. قصّره أو صغّره وارفعه تاني."); byte[] vd; using (var ms = new MemoryStream()) { f.InputStream.CopyTo(ms); vd = ms.ToArray(); } Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "path", ShopImages.SaveVideo(c, s.Id, vd) } }); return; }
             if (ext != ".xlsx" && ext != ".csv") throw new ShopException("type", "ارفع ملف Excel (xlsx) أو CSV.");
             if (f.ContentLength > 5 * 1024 * 1024) throw new ShopException("big", "الملف كبير. أقصى حجم 5 ميجا.");
             byte[] data; using (var ms = new MemoryStream()) { f.InputStream.CopyTo(ms); data = ms.ToArray(); }
