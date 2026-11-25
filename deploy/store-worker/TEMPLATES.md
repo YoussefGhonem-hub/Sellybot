@@ -53,6 +53,18 @@ Object.assign(t, {
 - The owner's editor sends the draft look while they type and the page redraws: read `BOOT.look` when drawing, never keep a copy from load time.
 - Class names the engine's CSS uses inside `.st`; don't reuse them for something else: `.sec .sl .sm .mi .ci .no .stk0 .tot .opt .fl .err .chips .sheet .toast .ln .og .cs .zs .crk .sk .wrapk .lg .spk .f2`.
 
+## What the engine also has (each one only when there is data for it)
+
+- Pages the engine draws itself (more.js, loaded the first time one is needed; a template restyles them, or replaces one with a function of the same name): `account` and its parts (sign in with a WhatsApp code, orders, an order, a return, addresses, codes, details), `rate`, `pay`, `compare`, `blog`, `post`, `cats`. Links: `url("account")` + `go:account`, `go:account:orders`, `go:compare`, `go:blog`, `go:post:<slug>`, `go:cats`. `BOOT.shop.acct` = the owner has accounts on; `ME()` = who signed in on this phone, or null.
+- Reviews: `p.rt`, `p.rv`, `rate(p)` (small), `stars(n)`, `revBox(p)` (the whole block; the engine adds it under a product page that has no `class="rvk`). Home: `BOOT.shop.revs`, `BOOT.shop.ugc`, `BOOT.shop.posts`.
+- A product: `p.ask` what the customer writes or sends with it (inside `optsUI`; `askUI(p)` for a template with its own options), `p.gw` what goes with it, `p.vd` a short video after `need(p)` (`vidBox(p)`, added by the engine when there is no `class="vdk`), `watch:<id>` on a sold-out one, `cmp:<id>` to compare (`S.cmp`, `t.cmpBar`).
+- The bag: `gifts()` (drawn inside `totals()`), `upBox(n)` / `upsell(n)` what can be added (`upadd:<variant>`), `bill().fees`, `.dep`, `.branch`.
+- Checkout: `formBits.how()` (pickup; already inside `where()`), `pay()` (ways to pay, gift wrap), `who()` (another recipient).
+- Lists: `facets(l).sp` specs worth filtering by, `filt(l, {sp: {[k]: value}, rt: 4})`.
+- A form with `data-s="news"`, a `tel` input and a `.err` line signs a number up for the store's WhatsApp news (only when `BOOT.shop.news`).
+- A category with `lo` is reached by its link only (`t.cats` leaves it out).
+- Their classes (restyle, don't reuse): `.acc .acc-n .acc-b .lgk .lgc .tls .ork .stp .tmk .inf .rtk .rit .adc .cdc .str .rvk .rvs .rvl .pyb .cmk2 .blg .ctg .cth .upk .upi .brk .faqk .vdk .ugg .rvg .pcs .pca .optl .cdi .sts .rtl`.
+
 ## The rules
 
 1. **Money.** A price shown is `pr/lo/hi/old` of the server or `m(n)` of a sum of `lo`/variant prices. The cart's totals come from `bill()` / `totals()`. No template ever makes a discount, a "bundle price", a delivery price or a delivery date of its own. What the demo did as a bundle discount becomes "add them all" at their normal prices; a real discount is an offer the owner makes (it arrives as `old`, `OFFERS`, and lines in `bill().offs`).
