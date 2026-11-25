@@ -41,6 +41,18 @@ Object.assign(t, {
 - Quantities are whole numbers of the product's unit (`p.un`: "كيلو", "علبة", "متر"...). Weights are options of the product, each with its own price.
 - The look the owner chose: `BOOT.look` (hero {img,imgM,title,text,btn,link}, sections, ann, badges, trust, menu, footer, opts). `BOOT.look.opts["<id>.<name>"]` = this template's own texts and switches, always with a default in code. `BOOT.shop` = the store (name, contact, ship, order...).
 
+## The files, and what the engine already does
+
+- `t/<id>.js`, `t/<id>.css`, `t/<id>.meta.json` (`id`, `n`, `for`, `about`, `look` colours, `sort`, `extras`, `opts`; `hold: true` = merchants see it only after the admin ticks it) and `t/<id>.webp`, a picture of the home page on a phone (624x781). A new template is only these files: the server lists what it finds. Ids: lowercase letters, 3 to 16.
+- `secs(skip)` draws every section the owner added, also `look` (a set with its picture): pass in `skip` the kinds the template draws itself.
+- `closeS()` and the phone's Back are handled together: never push history for a sheet.
+- The chat bubble rises above a bar that sticks to the bottom (fixed or sticky, under 220px high).
+- `viewed(p)` when the template opens a product in a window of its own. `addV` returns false at 100 different lines. `BOOT.shop.order.maxQty` is the most of one product.
+- `im()` puts the owner's focus point as `object-position`: use `object-fit: cover` and never override it with !important.
+- «Most wanted» lists only products with `p.sd > 0 || p.ft`.
+- The owner's editor sends the draft look while they type and the page redraws: read `BOOT.look` when drawing, never keep a copy from load time.
+- Class names the engine's CSS uses inside `.st`; don't reuse them for something else: `.sec .sl .sm .mi .ci .no .stk0 .tot .opt .fl .err .chips .sheet .toast .ln .og .cs .zs .crk .sk .wrapk`.
+
 ## The rules
 
 1. **Money.** A price shown is `pr/lo/hi/old` of the server or `m(n)` of a sum of `lo`/variant prices. The cart's totals come from `bill()` / `totals()`. No template ever makes a discount, a "bundle price", a delivery price or a delivery date of its own. What the demo did as a bundle discount becomes "add them all" at their normal prices; a real discount is an offer the owner makes (it arrives as `old`, `OFFERS`, and lines in `bill().offs`).
