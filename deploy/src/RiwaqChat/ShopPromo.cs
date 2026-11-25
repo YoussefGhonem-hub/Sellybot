@@ -47,7 +47,7 @@ namespace RiwaqChat
                 while (r.Read())
                 {
                     DateTime? f = Dt(r["StartsAt"]), t = Dt(r["EndsAt"]); bool on = (bool)r["Active"]; var max = r["MaxUses"] as int?;
-                    coupons.Add(new Dictionary<string, object> { { "shown", (bool)r["Shown"] }, { "id", (int)r["Id"] }, { "code", (string)r["Code"] }, { "type", (string)r["Type"] }, { "value", (decimal)r["Value"] }, { "maxOff", r["MaxOff"] as decimal? ?? 0 }, { "min", r["MinSub"] as decimal? ?? 0 }, { "scope", ShopJson.Obj(r["Scope"] as string) }, { "from", Local(f) }, { "to", Local(t) }, { "maxUses", max ?? 0 }, { "perPhone", r["PerPhone"] as int? ?? 0 }, { "first", (bool)r["FirstOnly"] }, { "active", on }, { "popup", (bool)r["Popup"] }, { "popupPhone", (bool)r["PopupPhone"] }, { "uses", (int)r["Uses"] }, { "state", max.HasValue && (int)r["Uses"] >= max.Value ? "ended" : State(on, f, t, now) } });
+                    coupons.Add(new Dictionary<string, object> { { "who", r["Who"] as string ?? "" }, { "shown", (bool)r["Shown"] }, { "id", (int)r["Id"] }, { "code", (string)r["Code"] }, { "type", (string)r["Type"] }, { "value", (decimal)r["Value"] }, { "maxOff", r["MaxOff"] as decimal? ?? 0 }, { "min", r["MinSub"] as decimal? ?? 0 }, { "scope", ShopJson.Obj(r["Scope"] as string) }, { "from", Local(f) }, { "to", Local(t) }, { "maxUses", max ?? 0 }, { "perPhone", r["PerPhone"] as int? ?? 0 }, { "first", (bool)r["FirstOnly"] }, { "active", on }, { "popup", (bool)r["Popup"] }, { "popupPhone", (bool)r["PopupPhone"] }, { "uses", (int)r["Uses"] }, { "state", max.HasValue && (int)r["Uses"] >= max.Value ? "ended" : State(on, f, t, now) } });
                 }
             return new Dictionary<string, object> { { "offers", offers }, { "coupons", coupons }, { "stack", ShopJson.Bool(ShopJson.At(sh.Settings, "stack")) }, { "now", Local(now) } };
         }
@@ -62,7 +62,7 @@ namespace RiwaqChat
         static ShopOffer Read(SqlConnection c, Shop sh, Dictionary<string, object> b, ShopData d)
         {
             string type = ShopJson.Str(ShopJson.At(b, "type"), 8); var x = ShopJson.Sub(b, "rule"); var rule = new Dictionary<string, object>();
-            if (type != "ship") { var sc = Scope(ShopJson.At(x, "scope"), d); if (EmptyScope(sc)) throw new ShopException("scope", "اختار العرض على إيه: المتجر كله، أو أقسام، أو منتجات."); rule["scope"] = sc; }
+            if (type != "ship" && type != "gift") { var sc = Scope(ShopJson.At(x, "scope"), d); if (EmptyScope(sc)) throw new ShopException("scope", "اختار العرض على إيه: المتجر كله، أو أقسام، أو منتجات."); rule["scope"] = sc; }
             if (type == "auto")
             {
                 bool amt = ShopJson.Str(ShopJson.At(x, "kind")) == "amt"; var v = ShopJson.Dec(ShopJson.At(x, "value"));
@@ -80,6 +80,19 @@ namespace RiwaqChat
                 var tiers = ShopJson.List(ShopJson.At(x, "tiers")).OfType<Dictionary<string, object>>().Select(t => new { q = ShopJson.Int(ShopJson.At(t, "q")), pct = ShopJson.Dec(ShopJson.At(t, "pct")) }).Where(t => t.q > 1 && t.q < 500 && t.pct > 0 && t.pct <= 90).GroupBy(t => t.q).Select(g => g.First()).OrderBy(t => t.q).Take(5).ToList();
                 if (tiers.Count == 0) throw new ShopException("value", "اكتب درجة واحدة على الأقل: كام قطعة، وخصم كام.");
                 rule["tiers"] = tiers.Select(t => new Dictionary<string, object> { { "q", t.q }, { "pct", t.pct } }).ToArray();
+            }
+            else if (type == "pack")
+            {
+                var ids = (int[])((Dictionary<string, object>)rule["scope"])["prods"]; var v = ShopJson.Dec(ShopJson.At(x, "price")); if (ids.Length < 2 || ids.Length > 8) throw new ShopException("scope", "اختار من منتجين لـ 8 للبكدج.");
+                decimal low = ids.Sum(i => d.ById[i].Vars.Where(y => y.Active).Select(y => d.ById[i].PriceOf(y)).DefaultIfEmpty(d.ById[i].Price).Min());
+                if (v < 1 || v >= low) throw new ShopException("value", "سعر البكدج لازم يكون أقل من مجموع المنتجات (" + ShopOrders.Money(low) + ").");
+                rule["scope"] = new Dictionary<string, object> { { "all", false }, { "cats", new int[0] }, { "prods", ids }, { "not", new int[0] } }; rule["price"] = v;
+            }
+            else if (type == "gift") { var over = ShopJson.Dec(ShopJson.At(x, "over")); int gp = ShopJson.Int(ShopJson.At(x, "gift")); if (over < 1) throw new ShopException("value", "اكتب قيمة الطلب اللي عليها الهدية."); if (!d.ById.ContainsKey(gp)) throw new ShopException("gift", "اختار المنتج الهدية."); rule["over"] = over; rule["gift"] = gp; }
+            else if (type == "up")
+            {
+                bool amt = ShopJson.Str(ShopJson.At(x, "kind")) == "amt"; var v = ShopJson.Dec(ShopJson.At(x, "value")); if (v <= 0 || (!amt && v > 90)) throw new ShopException("value", amt ? "اكتب قيمة الخصم." : "اكتب نسبة الخصم من 1 لـ 90.");
+                if (ShopJson.Bool(((Dictionary<string, object>)rule["scope"])["all"])) throw new ShopException("scope", "اختار منتجات معيّنة تظهر في السلة."); rule["kind"] = amt ? "amt" : "pct"; rule["value"] = v; rule["over"] = Math.Max(0, ShopJson.Dec(ShopJson.At(x, "over")));
             }
             else if (type == "ship") { rule["over"] = Math.Max(0, ShopJson.Dec(ShopJson.At(x, "over"))); rule["govs"] = ShopJson.List(ShopJson.At(x, "govs")).Select(i => ShopJson.Int(i)).Where(i => ShopGeo.Get(i) != null).Distinct().ToArray(); }
             else throw new ShopException("type", "اختار نوع العرض.");
@@ -127,9 +140,10 @@ namespace RiwaqChat
             { r.Read(); if ((int)r[0] > 0) throw new ShopException("code", "عندك كود بنفس الاسم."); r.NextResult(); r.Read(); if (id == 0 && (int)r[0] >= Shops.MaxCoupons) throw new ShopException("limit", "وصلت لأقصى عدد أكواد. امسح القديم الأول."); }
             Func<string, int?> n = k => { var v = ShopJson.Int(ShopJson.At(b, k)); return v > 0 ? v : (int?)null; }; Func<string, decimal?> m = k => { var v = ShopJson.Dec(ShopJson.At(b, k)); return v > 0 ? v : (decimal?)null; };
             bool popup = ShopJson.Bool(ShopJson.At(b, "popup"));
-            object[] args = { "@sho", ShopJson.Bool(ShopJson.At(b, "shown")), "@s", sh.StoreId, "@i", id, "@c", code, "@t", type, "@v", type == "ship" ? 0 : value, "@mo", m("maxOff"), "@ms", m("min"), "@sc", EmptyScope(sc) || ShopJson.Bool(sc["all"]) && ((int[])sc["not"]).Length == 0 ? null : ShopJson.Write(sc), "@f", f, "@to", t, "@mu", n("maxUses"), "@pp", n("perPhone"), "@fo", ShopJson.Bool(ShopJson.At(b, "first")), "@a", ShopJson.Bool(ShopJson.At(b, "active"), true), "@pop", popup, "@ppf", popup && ShopJson.Bool(ShopJson.At(b, "popupPhone")) };
-            if (id == 0) using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopCoupons(StoreId, Code, Type, Value, MaxOff, MinSub, Scope, StartsAt, EndsAt, MaxUses, PerPhone, FirstOnly, Active, Popup, PopupPhone, Shown) OUTPUT INSERTED.Id VALUES(@s, @c, @t, @v, @mo, @ms, @sc, @f, @to, @mu, @pp, @fo, @a, @pop, @ppf, @sho)", args)) id = (int)cmd.ExecuteScalar();
-            else using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopCoupons SET Code=@c, Type=@t, Value=@v, MaxOff=@mo, MinSub=@ms, Scope=@sc, StartsAt=@f, EndsAt=@to, MaxUses=@mu, PerPhone=@pp, FirstOnly=@fo, Active=@a, Popup=@pop, PopupPhone=@ppf, Shown=@sho WHERE StoreId=@s AND Id=@i", args)) if (cmd.ExecuteNonQuery() == 0) throw new ShopException("not_found", "الكود ده مش موجود.");
+            string who = ShopJson.Str(ShopJson.At(b, "who"), 20); if (!(who.StartsWith("m:") && Crm.Marks.Contains(who.Substring(2))) && !(who.StartsWith("g:") && Crm.Groups.Contains(who.Substring(2)))) who = "";
+            object[] args = { "@who", Nz(who), "@sho", ShopJson.Bool(ShopJson.At(b, "shown")), "@s", sh.StoreId, "@i", id, "@c", code, "@t", type, "@v", type == "ship" ? 0 : value, "@mo", m("maxOff"), "@ms", m("min"), "@sc", EmptyScope(sc) || ShopJson.Bool(sc["all"]) && ((int[])sc["not"]).Length == 0 ? null : ShopJson.Write(sc), "@f", f, "@to", t, "@mu", n("maxUses"), "@pp", n("perPhone"), "@fo", ShopJson.Bool(ShopJson.At(b, "first")), "@a", ShopJson.Bool(ShopJson.At(b, "active"), true), "@pop", popup, "@ppf", popup && ShopJson.Bool(ShopJson.At(b, "popupPhone")) };
+            if (id == 0) using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopCoupons(StoreId, Code, Type, Value, MaxOff, MinSub, Scope, StartsAt, EndsAt, MaxUses, PerPhone, FirstOnly, Active, Popup, PopupPhone, Shown, Who) OUTPUT INSERTED.Id VALUES(@s, @c, @t, @v, @mo, @ms, @sc, @f, @to, @mu, @pp, @fo, @a, @pop, @ppf, @sho, @who)", args)) id = (int)cmd.ExecuteScalar();
+            else using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopCoupons SET Code=@c, Type=@t, Value=@v, MaxOff=@mo, MinSub=@ms, Scope=@sc, StartsAt=@f, EndsAt=@to, MaxUses=@mu, PerPhone=@pp, FirstOnly=@fo, Active=@a, Popup=@pop, PopupPhone=@ppf, Shown=@sho, Who=@who WHERE StoreId=@s AND Id=@i", args)) if (cmd.ExecuteNonQuery() == 0) throw new ShopException("not_found", "الكود ده مش موجود.");
             if (popup) using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopCoupons SET Popup=0 WHERE StoreId=@s AND Id<>@i", "@s", sh.StoreId, "@i", id)) cmd.ExecuteNonQuery();
             Shops.Bump(c, sh.StoreId);
             return id;

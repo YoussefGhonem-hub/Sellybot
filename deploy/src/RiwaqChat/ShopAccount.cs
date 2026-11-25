@@ -94,6 +94,10 @@ namespace RiwaqChat
         // the checkout: {do:"otp", phone} sends it; the order carries the code
         public static bool CheckOtp(SqlConnection c, int storeId, string phone, string code) { if (!CheckCode(c, storeId, phone, "order", code)) return false; Prove(c, storeId, phone); return true; }
 
+        // the assistant's own order: a number WhatsApp proves is enough, any other gets the code
+        public static void Trust(SqlConnection c, int storeId, string phone) { Prove(c, storeId, phone); }
+        public static string ChatCode(SqlConnection c, StoreInfo s, Shop sh, string phone, string ip) { return SendCode(c, new ShopFrontHandler.Ctx { Store = s, Row = sh, Ip = ip ?? "chat", Lang = "ar" }, phone, "order"); }
+
         // ---------- who is asking ----------
         static string Who(SqlConnection c, int storeId, string token)
         {
@@ -438,6 +442,10 @@ IF COL_LENGTH('dbo.ShopOrders', 'Deposit') IS NULL ALTER TABLE dbo.ShopOrders AD
 IF COL_LENGTH('dbo.ShopOrders', 'Paid') IS NULL ALTER TABLE dbo.ShopOrders ADD Paid DECIMAL(12,2) NOT NULL CONSTRAINT DF_ShopOrders_Paid DEFAULT 0;
 IF COL_LENGTH('dbo.ShopOrders', 'Proof') IS NULL ALTER TABLE dbo.ShopOrders ADD Proof NVARCHAR(160) NULL;
 IF COL_LENGTH('dbo.ShopOrders', 'SheetAt') IS NULL ALTER TABLE dbo.ShopOrders ADD SheetAt DATETIME2 NULL, SheetTry DATETIME2 NULL;
+-- a code for some customers only (m:<mark> or g:<group> of «زبايني»); a category for a time, or reached by its link only; what goes with a product
+IF COL_LENGTH('dbo.ShopCoupons', 'Who') IS NULL ALTER TABLE dbo.ShopCoupons ADD Who NVARCHAR(20) NULL;
+IF COL_LENGTH('dbo.ShopCategories', 'LinkOnly') IS NULL ALTER TABLE dbo.ShopCategories ADD LinkOnly BIT NOT NULL CONSTRAINT DF_ShopCategories_LinkOnly DEFAULT 0, ShowFrom DATETIME2 NULL, ShowTo DATETIME2 NULL;
+IF COL_LENGTH('dbo.ShopProducts', 'Goes') IS NULL ALTER TABLE dbo.ShopProducts ADD Goes NVARCHAR(200) NULL;
 IF COL_LENGTH('dbo.ShopProducts', 'Ask') IS NULL ALTER TABLE dbo.ShopProducts ADD Ask NVARCHAR(MAX) NULL;
 IF COL_LENGTH('dbo.ShopOrderItems', 'Returned') IS NULL ALTER TABLE dbo.ShopOrderItems ADD Returned INT NOT NULL CONSTRAINT DF_ShopOrderItems_Returned DEFAULT 0;
 ";

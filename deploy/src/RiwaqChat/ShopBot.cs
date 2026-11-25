@@ -58,13 +58,16 @@ namespace RiwaqChat
             sb.Append("عدد المنتجات المعروضة: ").Append(d.Shown.Count()).Append("\n");
             var offers = d.Offers.Where(o => o.Running(now)).Take(8).ToList();
             if (offers.Count > 0) sb.Append("العروض الشغالة دلوقتي: ").Append(string.Join("، ", offers.Select(o => o.Name + (o.EndsAt.HasValue ? " (لحد " + ShopPromo.Local(o.EndsAt).Replace("T", " ") + ")" : "")))).Append("\n");
-            sb.Append("الدفع: كاش عند الاستلام بس. الاستبدال والاسترجاع: خلال ").Append(ShopJson.Int(ShopJson.At(set, "returnsDays"), 14)).Append(" يوم من الاستلام.\n");
+            var ways = ShopPrice.PayWays(sh).Select(w => ShopPay.WayName(ShopJson.Str(ShopJson.At(w, "k")))).ToList(); if (ShopPrice.Cod(sh)) ways.Insert(0, "كاش عند الاستلام"); var branches = ShopPrice.Branches(sh);
+            sb.Append("الدفع: ").Append(string.Join("، ", ways)).Append(ways.Count == 1 ? " بس" : "").Append(". ").Append(branches.Count > 0 ? "الفروع: " + string.Join("، ", branches.Take(8).Select(b => ShopJson.Str(ShopJson.At(b, "n")) + " (" + ShopJson.Str(ShopJson.At(b, "ad")) + (ShopJson.Str(ShopJson.At(b, "hours")).Length > 0 ? "، " + ShopJson.Str(ShopJson.At(b, "hours")) : "") + (ShopJson.Bool(ShopJson.At(b, "pickup")) ? "، ينفع الاستلام منه" : "") + ")")) + ". " : "").Append("الاستبدال والاسترجاع: خلال ").Append(ShopJson.Int(ShopJson.At(set, "returnsDays"), 14)).Append(" يوم من الاستلام.\n");
             if (ShopPrice.Vacation(d, now)) sb.Append("المتجر واخد إجازة ومش بيستقبل طلبات دلوقتي.\n");
             sb.Append("إزاي تستخدمه:\n")
               .Append("- السعر والمقاسات والألوان والكمية والعروض من أداة ").Append(TProducts).Append(" بس. استخدمها قبل ما ترد على أي سؤال عن منتج، حتى لو رديت عليه قبل كده، لأن السعر والكمية بيتغيّروا.\n")
               .Append("- سعر الشحن ومدة التوصيل والعروض والأكواد والسياسات والتواصل من أداة ").Append(TInfo).Append(".\n")
               .Append("- حالة الطلب من أداة ").Append(TOrder).Append(phone != null ? "، ورقم الزبون معروف من الواتساب." : "، ومحتاجة رقم الطلب ورقم الموبايل اللي طلب بيه.").Append(" ماتخمّنش حالة طلب أبدًا، وماتقولش بيانات حد تاني.\n")
-              .Append("- لما ترشّح منتج ابعت لينكه زي ما الأداة رجّعته، والزبون يدوس عليه ويطلب. الطلب بيتعمل من صفحة المنتج في المتجر، مش من الشات: ماتاخدش اسم أو عنوان كأنك بتسجّل طلب.\n")
+              .Append("- لما ترشّح منتج ابعت لينكه زي ما الأداة رجّعته.").Append(ShopChatOrder.On(c, s, sh) ? "\n" + ShopChatOrder.Prompt(phone) : " والزبون يدوس عليه ويطلب. الطلب بيتعمل من صفحة المنتج في المتجر، مش من الشات: ماتاخدش اسم أو عنوان كأنك بتسجّل طلب.\n")
+              .Append("- لو الزبون اختار منتج والأداة رجّعت «بيكمّله»، اعرض عليه منتج واحد منها مرة واحدة بس، من غير إلحاح.\n")
+              .Append("- لو سأل على مقاسه: اقرا دليل المقاسات من الأداة برقم المنتج، واسأله عن المقاسات المكتوبة فيه (زي الطول والوزن)، ورشّح من الدليل بس. لو مفيش دليل قول إنك مش متأكد.\n")
               .Append("- لو المقاس أو اللون خلص قول إنه خلص واعرض المتاح. لو المنتج مش موجود قول إنه مش عندنا واعرض الأقرب من الأداة، وماتألّفش منتج أو سعر أو عرض.\n")
               .Append("- لو مالقيتش الإجابة قول إنك مش متأكد وانصحه يكلّم المتجر. الأدوات حاجة داخلية، ماتتكلمش عنها.");
             return sb.ToString();
@@ -148,6 +151,7 @@ namespace RiwaqChat
                 Run = tu => Task.FromResult(with((c, s, sh, d) => OrderOf(c, sh, Arg(tu, "order_number"), phone, Arg(tu, "phone"), ip))),
                 Prompt = null
             });
+            using (var c = Db.Open()) { var s = Db.StoreById(c, storeId); var sh = For(c, s, preview); if (sh != null && (preview || ShopChatOrder.On(c, s, sh))) list.Add(ShopChatOrder.Tool(storeId, phone, ip, preview)); }
             return list;
         }
         static string Arg(ToolUseBlock tu, string n)
@@ -203,6 +207,8 @@ namespace RiwaqChat
             var specs = ShopJson.Arr(p.SpecsJson).Select(x => ShopJson.List(x)).Where(x => x.Count > 1).Select(x => ShopJson.Str(x[0]) + ": " + ShopJson.Str(x[1])).ToList(); if (specs.Count > 0) sb.Append("المواصفات: ").Append(string.Join("، ", specs)).Append("\n");
             if (p.Options.Count > 0 && p.Vars.Select(v => p.PriceOf(v)).Distinct().Count() > 1) sb.Append("الأسعار: ").Append(string.Join("، ", p.Vars.Where(v => v.Active).Take(20).Select(v => v.Label + " " + ShopOrders.Money(ShopPrice.Unit(d, p, v, now, out old, out of)) + (p.Can(v) ? "" : " (خلص)")))).Append("\n");
             var low = p.Vars.Where(v => v.Active && p.Track && p.OutMode != "order" && v.Stock > 0 && v.Stock <= 3).Take(6).Select(v => (v.Label.Length > 0 ? v.Label + " " : "") + "باقي " + v.Stock).ToList(); if (low.Count > 0) sb.Append("قرب يخلص: ").Append(string.Join("، ", low)).Append("\n");
+            var goes = ShopView.With(d, p).Take(3).ToList(); if (goes.Count > 0) sb.Append("بيكمّله: ").Append(string.Join("، ", goes.Select(x => x.Name + " بـ " + ShopOrders.Money(ShopPrice.Unit(d, x, x.Vars.FirstOrDefault(x.Can), now, out old, out of)) + " (رقمه " + x.Id + ")"))).Append("\n");
+            if (p.Reviews > 0) sb.Append("تقييمات الزباين: ").Append(p.Rating.ToString("0.#", CultureInfo.InvariantCulture)).Append(" من 5 (").Append(p.Reviews).Append(" تقييم)\n");
             if (!p.Available && p.OutMode != "order") { var rel = ShopView.Related(d, p, 3).ToList(); if (rel.Count > 0) sb.Append("بدائل متاحة:\n").Append(string.Join("\n", rel.Select(x => Line(d, x, now)))).Append("\n"); }
             var det = ShopView.Detail(d, p, now); object guide; if (det.TryGetValue("sg", out guide)) { var g = guide as Dictionary<string, object>; sb.Append("دليل المقاسات: ").Append(string.Join(" | ", ShopJson.List(ShopJson.At(g, "head")).Select(x => ShopJson.Str(x)))).Append(" ؛ ").Append(string.Join(" ؛ ", ShopJson.List(ShopJson.At(g, "rows")).Select(r => string.Join(" | ", ShopJson.List(r).Select(x => ShopJson.Str(x)))))).Append("\n"); }
             if (p.MinQty > 1) sb.Append("أقل كمية في الطلب: ").Append(p.MinQty).Append("\n");
@@ -259,6 +265,9 @@ namespace RiwaqChat
                 case "auto": return "خصم " + (ShopJson.Str(ShopJson.At(r, "kind")) == "amt" ? ShopOrders.Money(ShopJson.Dec(ShopJson.At(r, "value"))) : ShopJson.Dec(ShopJson.At(r, "value")).ToString("0.##") + "%") + " " + on;
                 case "bxgy": { var pct = ShopJson.Dec(ShopJson.At(r, "pct"), 100); return "اشتري " + ShopJson.Int(ShopJson.At(r, "buy"), 2) + " وخد " + ShopJson.Int(ShopJson.At(r, "get"), 1) + (pct >= 100 ? " هدية" : " بخصم " + pct.ToString("0.##") + "%") + " (على الأرخص) " + on; }
                 case "qty": return string.Join("، ", ShopJson.List(ShopJson.At(r, "tiers")).OfType<Dictionary<string, object>>().Select(t => ShopJson.Int(ShopJson.At(t, "q")) + " قطع أو أكتر: خصم " + ShopJson.Dec(ShopJson.At(t, "pct")).ToString("0.##") + "%")) + " " + on;
+                case "pack": return "بكدج بـ " + ShopOrders.Money(ShopJson.Dec(ShopJson.At(r, "price"))) + " لما تاخدهم مع بعض " + on;
+                case "gift": { ShopProd gp; return "هدية " + (d.ById.TryGetValue(ShopJson.Int(ShopJson.At(r, "gift")), out gp) ? "«" + gp.Name + "» " : "") + "مع الطلب من " + ShopOrders.Money(ShopJson.Dec(ShopJson.At(r, "over"))); }
+                case "up": return "قطعة واحدة بخصم " + (ShopJson.Str(ShopJson.At(r, "kind")) == "amt" ? ShopOrders.Money(ShopJson.Dec(ShopJson.At(r, "value"))) : ShopJson.Dec(ShopJson.At(r, "value")).ToString("0.##") + "%") + " مع أي طلب" + (ShopJson.Dec(ShopJson.At(r, "over")) > 0 ? " من " + ShopOrders.Money(ShopJson.Dec(ShopJson.At(r, "over"))) : "") + " " + on;
                 default: { var over = ShopJson.Dec(ShopJson.At(r, "over")); var govs = ShopJson.List(ShopJson.At(r, "govs")).Select(x => ShopGeo.Name(ShopJson.Int(x))).Where(x => x.Length > 0).ToList(); return "شحن مجاني" + (over > 0 ? " للطلبات من " + ShopOrders.Money(over) : "") + (govs.Count > 0 ? " لـ " + string.Join("، ", govs) : ""); }
             }
         }
@@ -371,7 +380,8 @@ namespace RiwaqChat
         static string First(string name) { return (name ?? "").Trim().Split(' ')[0]; }
         static string CrmStatus(string st) { return st == "shipped" || st == "out" ? "shipped" : st == "delivered" ? "delivered" : st == "cancelled" ? "cancelled" : st == "returned" ? "returned" : "open"; }
 
-        static async Task Placed(int storeId, long orderId)
+        // quiet: the customer confirmed it in the chat already, so no confirmation message
+        static async Task Placed(int storeId, long orderId, bool quiet = false)
         {
             try
             {
@@ -386,7 +396,7 @@ namespace RiwaqChat
                         var why = await WaNotify.ToOwner(c, s, t.ToString(), "sb-shop-new-" + o.Id); if (why != null && why != WaNotify.NotLinked) ShopOrders.Log_(c, null, storeId, orderId, "system", "تنبيه الواتساب ليك ماوصلش: " + why);
                     }
                     try { Carts.ShopOrdered(c, storeId, o.Phone, o.NoText); } catch (Exception ex) { Log.Error(ex); }
-                    await SendConfirm(c, s, sh, o);
+                    if (!quiet) await SendConfirm(c, s, sh, o);
                     try { await ShopPay.Low(c, s, sh, o); } catch (Exception ex) { Log.Error(ex); }
                 }
             }

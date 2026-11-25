@@ -125,7 +125,7 @@ namespace RiwaqChat
                             { cmd.Transaction = tx; var v = cmd.ExecuteScalar(); if (v != null) { tx.Rollback(); done = true; return new Placed { Order = ById(c, row.StoreId, Convert.ToInt64(v)), Again = true }; } }
 
                         var took = new List<object[]>();
-                        foreach (var g in q.Lines.GroupBy(l => l.VariantId).OrderBy(g => g.Key))
+                        foreach (var g in q.Lines.GroupBy(l => l.VariantId).OrderBy(g => g.Key).ToList())
                         {
                             var l = g.First(); int n = g.Sum(x => x.Qty);
                             if (!l.P.Track) { took.Add(new object[] { l, n, null }); continue; }
@@ -134,6 +134,7 @@ namespace RiwaqChat
                                 cmd.Transaction = tx; var left = cmd.ExecuteScalar();
                                 if (left == null)
                                 {
+                                    if (g.All(x => x.Gift > 0)) { foreach (var x in g.ToList()) q.Lines.Remove(x); continue; }   // the gift ran out: the order goes on without it
                                     tx.Rollback(); done = true;
                                     // someone bought it a moment ago: the sum with what is left
                                     var d2 = ShopCache.Get(c, row);
@@ -172,7 +173,7 @@ namespace RiwaqChat
                             if (t[2] != null) Stock(c, tx, row.StoreId, l.P.Id, l.VariantId, -(int)t[1], (int)t[2], "order", id, null);
                             using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopProducts SET Sold=Sold+@n WHERE Id=@p AND StoreId=@s", "@n", (int)t[1], "@p", l.P.Id, "@s", row.StoreId)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
                         }
-                        Log_(c, tx, row.StoreId, id, o.ByOwner ? "owner" : "customer", o.ByOwner ? "اتسجل بإيد التاجر" : "الطلب اتعمل " + (o.Channel == "chat" ? "من الشات" : "من المتجر"));
+                        Log_(c, tx, row.StoreId, id, o.ByOwner ? "owner" : "customer", o.ByOwner ? "اتسجل بإيد التاجر" : "الطلب اتعمل " + (o.Channel == "chat" ? "من الشات" : o.Channel == "wa" ? "من شات الواتساب" : o.Channel == "msgr" ? "من المسنجر" : o.Channel == "tg" ? "من تيليجرام" : "من المتجر"));
                         Daily(c, tx, row.StoreId, "Orders", 1);
                         tx.Commit(); done = true;
                         var order = ById(c, row.StoreId, id);
@@ -411,7 +412,7 @@ namespace RiwaqChat
     // What the rest of Sellybot does when something happens to an order (WhatsApp, «زبايني», alerts): ShopBot.cs
     public static partial class ShopHooks
     {
-        public static void OnPlaced(StoreInfo s, long orderId) { int sid = s.Id; HostingEnvironment.QueueBackgroundWorkItem(ct => Placed(sid, orderId)); }
+        public static void OnPlaced(StoreInfo s, long orderId, bool quiet = false) { int sid = s.Id; HostingEnvironment.QueueBackgroundWorkItem(ct => Placed(sid, orderId, quiet)); }
         public static void OnStatus(SqlConnection c, int storeId, long id, string from, string to, string who) { HostingEnvironment.QueueBackgroundWorkItem(ct => Changed(storeId, id, from, to, who)); }
         public static void OnEdit(SqlConnection c, int storeId, long id) { HostingEnvironment.QueueBackgroundWorkItem(ct => Edited(storeId, id)); }
     }

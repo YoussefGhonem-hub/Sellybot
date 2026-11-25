@@ -4,6 +4,9 @@
 //   bxgy  {buy, get, pct (100 = free), max, scope}       buy 2 and the third at half price: the cheapest pieces get it
 //   qty   {tiers: [{q, pct}], scope}                     the more of one product, the cheaper the piece
 //   ship  {over, govs}                                   free shipping above an amount and/or to these governorates
+//   pack  {price, scope: {prods}}                        these products together (one of each) for one price, as many times as the cart has them
+//   gift  {over, gift: product}                          the product is added free when the cart reaches the amount
+//   up    {kind, value, over, scope}                     «ضيف ده بـ ...»: one piece of these at a lower price when the rest of the cart reaches the amount
 // scope: {all} or {cats: [..]} (a category covers its sub-categories) or {prods: [..]}, and {not: [..]} products left out.
 // Offers never add up unless the owner allows it (Settings.stack): a product whose price is already down takes no second offer, each
 // line takes the one offer that saves most, and a coupon either covers the products without an offer or replaces the offers,
@@ -21,7 +24,7 @@ namespace RiwaqChat
         public int VariantId, Qty; public string Extra;
         public ShopProd P; public ShopVar V;
         public decimal Full, Unit, Disc;            // list price, price after the product's own offer, discount on the whole line from cart offers and the coupon
-        public decimal? Old; public ShopOffer Auto; public string Err; public int Max;
+        public decimal? Old; public ShopOffer Auto; public string Err; public int Max, Gift;   // Gift = the offer that gives it
         public decimal Sum { get { return Unit * Qty; } }
         public decimal Net { get { return Sum - Disc; } }
     }
@@ -39,7 +42,7 @@ namespace RiwaqChat
         public string Coupon, CouponErr, Days, Stop; public int CouponId; public List<ShopApplied> Offers = new List<ShopApplied>(); public bool Bad { get { return Lines.Any(l => l.Err != null) || Stop != null; } }
     }
 
-    public class ShopCoupon { public int Id; public string Code, Type, ScopeJson; public decimal Value; public decimal? MaxOff, MinSub; public DateTime? StartsAt, EndsAt; public int? MaxUses, PerPhone; public bool FirstOnly, PopupPhone, Active, Popup; public int Uses; }
+    public class ShopCoupon { public int Id; public string Code, Type, ScopeJson, Who; public decimal Value; public decimal? MaxOff, MinSub; public DateTime? StartsAt, EndsAt; public int? MaxUses, PerPhone; public bool FirstOnly, PopupPhone, Active, Popup; public int Uses; }
 
     public static class ShopPrice
     {
@@ -155,6 +158,13 @@ namespace RiwaqChat
                 applied.Insert(0, new ShopApplied { Id = g.Key.Id, Name = g.Key.Name, NameEn = g.Key.NameEn, Amount = 0 });
             q.Offers = applied; q.Sub = sub; q.Discount = offerOff + q.CouponOff;
             decimal after = q.Sub - q.Discount;
+            // a gift with the order: a line that costs nothing, as long as there is one of it
+            foreach (var g in d.Offers.Where(o => o.Type == "gift" && o.Running(now)).OrderByDescending(o => ShopJson.Dec(ShopJson.At(o.Rule, "over"))).Take(1 + (stack ? 5 : 0)).Where(o => ok.Count > 0 && after >= ShopJson.Dec(ShopJson.At(o.Rule, "over"))).ToList())
+            {
+                ShopProd gp; if (!d.ById.TryGetValue(ShopJson.Int(ShopJson.At(g.Rule, "gift")), out gp)) continue; var gv = gp.Vars.FirstOrDefault(gp.Can); if (gv == null) continue;
+                if (gp.Track && gp.OutMode != "order" && gv.Stock <= q.Lines.Where(l => l.VariantId == gv.Id).Sum(l => l.Qty)) continue;
+                q.Lines.Add(new ShopLine { VariantId = gv.Id, Qty = 1, P = gp, V = gv, Gift = g.Id, Extra = "هدية العرض", Max = 1 }); applied.Add(new ShopApplied { Id = g.Id, Name = g.Name, NameEn = g.NameEn, Amount = 0 });
+            }
 
             // shipping
             string days; bool off; decimal min;
@@ -241,14 +251,14 @@ namespace RiwaqChat
         static List<ShopApplied> CartOffers(ShopData d, List<ShopLine> lines, bool stack, DateTime now)
         {
             var res = new List<ShopApplied>();
-            var offers = d.Offers.Where(o => (o.Type == "bxgy" || o.Type == "qty") && o.Running(now)).ToList();
+            var offers = d.Offers.Where(o => (o.Type == "bxgy" || o.Type == "qty" || o.Type == "pack" || o.Type == "up") && o.Running(now)).ToList();
             var free = new HashSet<ShopLine>(lines.Where(l => stack || l.Auto == null));
             while (offers.Count > 0 && free.Count > 0)
             {
                 Try best = null;
                 foreach (var o in offers)
                 {
-                    var t = Work(d, o, lines.Where(l => free.Contains(l) && o.Covers(l.P, d)).ToList());
+                    var t = Work(d, o, lines.Where(l => free.Contains(l) && o.Covers(l.P, d)).ToList(), lines);
                     if (t != null && t.Amount > 0 && (best == null || t.Amount > best.Amount)) best = t;
                 }
                 if (best == null) break;
@@ -259,10 +269,30 @@ namespace RiwaqChat
             return res;
         }
 
-        static Try Work(ShopData d, ShopOffer o, List<ShopLine> lines)
+        static Try Work(ShopData d, ShopOffer o, List<ShopLine> lines, List<ShopLine> all)
         {
             var t = new Try { O = o };
             if (lines.Count == 0) return null;
+            if (o.Type == "pack")
+            {
+                // one of each product, the cheapest pieces first; the saving is shared over the lines it came from
+                var prods = ShopJson.List(ShopJson.At(ShopJson.Sub(o.Rule, "scope"), "prods")).Select(x => ShopJson.Int(x)).Distinct().ToList(); decimal price = ShopJson.Dec(ShopJson.At(o.Rule, "price"));
+                if (prods.Count < 2 || price <= 0) return null;
+                int sets = prods.Min(id => lines.Where(l => l.P.Id == id).Sum(l => l.Qty)); if (sets == 0) return null;
+                var used = new Dictionary<ShopLine, int>(); decimal sum = 0;
+                foreach (var id in prods) { int need = sets; foreach (var l in lines.Where(x => x.P.Id == id).OrderBy(x => x.Unit)) { int k = Math.Min(need, l.Qty); if (k <= 0) break; used[l] = k; sum += l.Unit * k; need -= k; } }
+                decimal off = sum - price * sets; if (off <= 0) return null;
+                decimal left = off; var keys = used.Keys.ToList();
+                for (int i = 0; i < keys.Count; i++) { var x = i == keys.Count - 1 ? left : Math.Round(off * keys[i].Unit * used[keys[i]] / sum, 2); x = Math.Min(x, keys[i].Sum); t.By[keys[i]] = x; left -= x; t.Amount += x; }
+                return t;
+            }
+            if (o.Type == "up")
+            {
+                decimal rest = all.Where(l => !o.Covers(l.P, d)).Sum(l => l.Net), over = ShopJson.Dec(ShopJson.At(o.Rule, "over")), val = ShopJson.Dec(ShopJson.At(o.Rule, "value"));
+                if (rest <= 0 || rest < over || val <= 0) return null;
+                var one = lines.OrderBy(l => l.Unit).First(); decimal off = ShopJson.Str(ShopJson.At(o.Rule, "kind")) == "amt" ? val : one.Unit - Round(one.Unit * (1 - Math.Min(95, val) / 100m));
+                t.By[one] = Math.Min(off, one.Unit - 1); t.Amount = t.By[one]; return t.Amount > 0 ? t : null;
+            }
             if (o.Type == "bxgy")
             {
                 int buy = Math.Max(1, ShopJson.Int(ShopJson.At(o.Rule, "buy"), 2)), get = Math.Max(1, ShopJson.Int(ShopJson.At(o.Rule, "get"), 1)), max = ShopJson.Int(ShopJson.At(o.Rule, "max"));
@@ -305,13 +335,20 @@ namespace RiwaqChat
         {
             return new ShopCoupon { Id = (int)r["Id"], Code = (string)r["Code"], Type = (string)r["Type"], Value = (decimal)r["Value"], MaxOff = r["MaxOff"] as decimal?, MinSub = r["MinSub"] as decimal?, ScopeJson = r["Scope"] as string,
                 StartsAt = r["StartsAt"] is DateTime ? DateTime.SpecifyKind((DateTime)r["StartsAt"], DateTimeKind.Utc) : (DateTime?)null, EndsAt = r["EndsAt"] is DateTime ? DateTime.SpecifyKind((DateTime)r["EndsAt"], DateTimeKind.Utc) : (DateTime?)null,
-                MaxUses = r["MaxUses"] as int?, PerPhone = r["PerPhone"] as int?, FirstOnly = (bool)r["FirstOnly"], Active = (bool)r["Active"], Popup = (bool)r["Popup"], PopupPhone = (bool)r["PopupPhone"], Uses = (int)r["Uses"] };
+                MaxUses = r["MaxUses"] as int?, PerPhone = r["PerPhone"] as int?, FirstOnly = (bool)r["FirstOnly"], Active = (bool)r["Active"], Popup = (bool)r["Popup"], PopupPhone = (bool)r["PopupPhone"], Who = r["Who"] as string, Uses = (int)r["Uses"] };
         }
         static string CouponProblem(SqlConnection c, ShopData d, ShopCoupon cp, string phone, DateTime now)
         {
             if (!cp.Active || (cp.StartsAt.HasValue && cp.StartsAt.Value > now)) return "الكود ده مش شغال دلوقتي.";
             if (cp.EndsAt.HasValue && cp.EndsAt.Value <= now) return "الكود ده خلص.";
             if (cp.MaxUses.HasValue && cp.Uses >= cp.MaxUses.Value) return "الكود ده خلص، اتستخدم العدد المسموح.";
+            // a code for some of «زبايني»: a mark the owner put, or one of the ready groups
+            if (!string.IsNullOrEmpty(cp.Who))
+            {
+                if (string.IsNullOrEmpty(phone)) return "الكود ده لزباين معيّنين. اكتب رقم موبايلك الأول.";
+                bool yes = cp.Who.StartsWith("m:") ? Crm.Of(c, d.Row.StoreId, phone).Mark == cp.Who.Substring(2) : cp.Who.StartsWith("g:") && Crm.Who(c, d.Row.StoreId, cp.Who.Substring(2)).Any(w => w.Phone == phone);
+                if (!yes) return "الكود ده مش على رقمك.";
+            }
             if (!string.IsNullOrEmpty(phone) && (cp.PerPhone.HasValue || cp.FirstOnly))
             {
                 int used, before;
@@ -352,7 +389,7 @@ namespace RiwaqChat
         {
             return new Dictionary<string, object>
             {
-                { "l", q.Lines.Select(l => new Dictionary<string, object> { { "v", l.VariantId }, { "x", l.Extra ?? "" }, { "q", l.Qty }, { "u", l.Unit }, { "old", l.Old ?? 0 }, { "d", l.Disc }, { "t", l.Net }, { "e", l.Err ?? "" }, { "mx", l.Max },
+                { "l", q.Lines.Select(l => new Dictionary<string, object> { { "v", l.VariantId }, { "g", l.Gift }, { "x", l.Extra ?? "" }, { "q", l.Qty }, { "u", l.Unit }, { "old", l.Old ?? 0 }, { "d", l.Disc }, { "t", l.Net }, { "e", l.Err ?? "" }, { "mx", l.Max },
                     { "p", l.P == null ? 0 : l.P.Id }, { "o", l.V == null ? "" : l.V.Label }, { "st", l.V == null ? 0 : Math.Max(0, l.V.Stock) } }).ToArray() },
                 { "n", q.Items }, { "sub", q.Sub }, { "off", q.Discount }, { "coff", q.CouponOff }, { "ship", q.Ship }, { "shipFull", q.ShipFull }, { "free", q.FreeShip }, { "left", q.FreeLeft }, { "over", q.FreeOver }, { "total", q.Total }, { "days", q.Days ?? "" },
                 { "fees", q.Fees.Select(f => new object[] { f.Kind, ShopView.Pair(f.Name, f.NameEn), f.Amount }).ToArray() }, { "dep", q.Deposit }, { "pay", q.Pay }, { "branch", q.Branch ?? "" },

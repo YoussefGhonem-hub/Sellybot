@@ -319,7 +319,7 @@ namespace RiwaqChat
                 {
                     ShopCat k; int id;
                     if (!d.CatBySlug.TryGetValue(seg[1], out k) && d.Redirects.TryGetValue("c:" + seg[1], out id) && d.CatById.TryGetValue(id, out k)) { Moved(x, res, "/c/" + k.Slug + Query(req)); return; }
-                    if (k == null || k.Hidden) { p.T = "404"; } else { p.T = "cat"; p.Cat = k; }
+                    if (k == null || !k.InTime(DateTime.UtcNow)) { p.T = "404"; } else { p.T = "cat"; p.Cat = k; p.NoIndex = k.LinkOnly; }
                 }
             }
             else if (seg[0] == "p" && seg.Length == 2)

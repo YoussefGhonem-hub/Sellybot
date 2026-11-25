@@ -34,6 +34,7 @@ namespace RiwaqChat
         public int[] Stars;   // how many reviews of one star .. five stars (null = none)
         public int Reviews { get { return Stars == null ? 0 : Stars.Sum(); } }
         public double Rating { get { int n = Reviews; return n == 0 ? 0 : Math.Round((Stars[0] + 2.0 * Stars[1] + 3 * Stars[2] + 4 * Stars[3] + 5 * Stars[4]) / n, 1); } }
+        public string Goes;   // ids of what goes with it, chosen by the owner
         public string AskJson;   // what the customer writes or sends with it (a name to engrave, a picture)
         public Dictionary<string, int> Words;
 
@@ -50,7 +51,8 @@ namespace RiwaqChat
 
     public class ShopCat
     {
-        public int Id, Sort; public int? ParentId; public string Slug, Name, NameEn, Descr, DescrEn, Image, Cover, MetaTitle, MetaDesc, SizeGuideJson; public bool Hidden, InMenu, InHome;
+        public int Id, Sort; public int? ParentId; public string Slug, Name, NameEn, Descr, DescrEn, Image, Cover, MetaTitle, MetaDesc, SizeGuideJson; public bool Hidden, InMenu, InHome, LinkOnly; public DateTime? From, To;
+        public bool InTime(DateTime now) { return !Hidden && (!From.HasValue || From.Value <= now) && (!To.HasValue || To.Value > now); }
         public List<ShopCat> Kids = new List<ShopCat>();
         public int Count;   // shown products in it and under it
     }
@@ -93,7 +95,9 @@ namespace RiwaqChat
         public Dictionary<string, int> Df; public double AvgLen = 1;
 
         public IEnumerable<ShopProd> Shown { get { return Products.Where(p => p.Shown); } }
-        public bool CatShown(ShopCat k) { if (k.Hidden || k.Count == 0) return false; ShopCat p; return !k.ParentId.HasValue || (CatById.TryGetValue(k.ParentId.Value, out p) && !p.Hidden); }
+        public bool CatShown(ShopCat k) { return !k.LinkOnly && CatOpen(k); }
+        // also the ones reached by their link only (for ads)
+        public bool CatOpen(ShopCat k) { var now = DateTime.UtcNow; if (!k.InTime(now) || k.Count == 0) return false; ShopCat p; return !k.ParentId.HasValue || (CatById.TryGetValue(k.ParentId.Value, out p) && p.InTime(now)); }
         public string ImgUrl(string path, bool small = false) { return string.IsNullOrEmpty(path) ? "" : ShopImages.Url(path, small); }
 
         // The catalog's version for browsers and Cloudflare: changes with every edit, every stock move, and when an offer starts or ends by itself.
@@ -101,12 +105,14 @@ namespace RiwaqChat
         {
             int h = 17;
             foreach (var o in Offers) if (o.Running(now)) h = unchecked(h * 31 + o.Id);
+            foreach (var k in Cats) if ((k.From.HasValue || k.To.HasValue) && k.InTime(now)) h = unchecked(h * 37 + k.Id);
             return Ver.ToString(CultureInfo.InvariantCulture) + "-" + StockVer.ToString(CultureInfo.InvariantCulture) + "-" + (h & 0xFFFFFF).ToString("x");
         }
         // when the next offer starts or ends by itself
         public DateTime? NextChange(DateTime now)
         {
             DateTime? n = null;
+            foreach (var k in Cats) foreach (var t in new[] { k.From, k.To }) if (t.HasValue && t.Value > now && (!n.HasValue || t.Value < n.Value)) n = t;
             foreach (var o in Offers)
             {
                 if (!o.Active) continue;
@@ -228,7 +234,7 @@ namespace RiwaqChat
                 while (r.Read())
                 {
                     var k = new ShopCat { Id = (int)r["Id"], ParentId = r["ParentId"] as int?, Slug = S(r["Slug"]), Name = S(r["Name"]), NameEn = S(r["NameEn"]), Descr = S(r["Descr"]), DescrEn = S(r["DescrEn"]), Image = S(r["Image"]), Cover = S(r["Cover"]), Sort = (int)r["Sort"],
-                        Hidden = (bool)r["Hidden"], InMenu = (bool)r["InMenu"], InHome = (bool)r["InHome"], MetaTitle = S(r["MetaTitle"]), MetaDesc = S(r["MetaDesc"]), SizeGuideJson = S(r["SizeGuide"]) };
+                        Hidden = (bool)r["Hidden"], InMenu = (bool)r["InMenu"], InHome = (bool)r["InHome"], LinkOnly = (bool)r["LinkOnly"], From = Dt(r["ShowFrom"]), To = Dt(r["ShowTo"]), MetaTitle = S(r["MetaTitle"]), MetaDesc = S(r["MetaDesc"]), SizeGuideJson = S(r["SizeGuide"]) };
                     d.Cats.Add(k); d.CatById[k.Id] = k; d.CatBySlug[k.Slug] = k;
                 }
             foreach (var k in d.Cats) { ShopCat p; if (k.ParentId.HasValue && d.CatById.TryGetValue(k.ParentId.Value, out p)) p.Kids.Add(k); }
@@ -239,7 +245,7 @@ namespace RiwaqChat
                 {
                     var p = new ShopProd { Id = (int)r["Id"], Slug = S(r["Slug"]), Name = S(r["Name"]), NameEn = S(r["NameEn"]), Descr = S(r["Descr"]), DescrEn = S(r["DescrEn"]), Price = (decimal)r["Price"], OldPrice = Dn(r["OldPrice"]), Cost = Dn(r["Cost"]), Sku = S(r["Sku"]),
                         Unit = S(r["Unit"]), Brand = S(r["Brand"]), Tags = S(r["Tags"]), MinQty = Math.Max(1, (int)r["MinQty"]), MaxQty = r["MaxQty"] as int?, Track = (bool)r["Track"], OutMode = S(r["OutMode"]), Status = S(r["Status"]), SpecsJson = S(r["Specs"]),
-                        SizeGuideJson = S(r["SizeGuide"]), ExtraJson = S(r["Extra"]), AskJson = S(r["Ask"]), MetaTitle = S(r["MetaTitle"]), MetaDesc = S(r["MetaDesc"]), Sold = (int)r["Sold"], Sort = (int)r["Sort"], Feat = (bool)r["Feat"], Weight = r["Weight"] as int?,
+                        SizeGuideJson = S(r["SizeGuide"]), ExtraJson = S(r["Extra"]), AskJson = S(r["Ask"]), Goes = S(r["Goes"]), MetaTitle = S(r["MetaTitle"]), MetaDesc = S(r["MetaDesc"]), Sold = (int)r["Sold"], Sort = (int)r["Sort"], Feat = (bool)r["Feat"], Weight = r["Weight"] as int?,
                         CreatedAt = Dt(r["CreatedAt"]).Value, UpdatedAt = Dt(r["UpdatedAt"]).Value, Options = ReadOptions(S(r["Options"])) };
                     d.Products.Add(p); d.ById[p.Id] = p; d.BySlug[p.Slug] = p;
                 }
@@ -366,6 +372,7 @@ namespace RiwaqChat
             if (!string.IsNullOrEmpty(p.Tags)) r["tg"] = p.Tags;
             if (p.Feat) r["ft"] = true;
             if (p.Stars != null) { r["rt"] = p.Rating; r["rv"] = p.Reviews; }
+            if (!string.IsNullOrEmpty(p.Goes)) r["gw"] = GoesIds(p);
             if (!string.IsNullOrEmpty(p.AskJson)) r["ask"] = ShopJson.Arr(p.AskJson);
             if (used != null) { r["of"] = used.Id; if (used.EndsAt.HasValue && used.Countdown) r["u"] = Unix(used.EndsAt.Value); }
             if (!string.IsNullOrEmpty(p.SpecsJson)) r["sp"] = ShopJson.Arr(p.SpecsJson).Take(14);
@@ -400,6 +407,9 @@ namespace RiwaqChat
             }
             return null;
         }
+        public static int[] GoesIds(ShopProd p) { return (p.Goes ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => ShopJson.Int(x)).Where(x => x > 0).ToArray(); }
+        // what goes with it: the owner's choice, without what is sold out
+        public static IEnumerable<ShopProd> With(ShopData d, ShopProd p) { return GoesIds(p).Select(i => { ShopProd x; return d.ById.TryGetValue(i, out x) ? x : null; }).Where(x => x != null && x.Shown && x.Available); }
         // the same category first, then the closest price
         public static IEnumerable<ShopProd> Related(ShopData d, ShopProd p, int n = 8)
         {
@@ -410,7 +420,7 @@ namespace RiwaqChat
 
         public static Dictionary<string, object> Category(ShopData d, ShopCat k)
         {
-            return new Dictionary<string, object> { { "i", k.Id }, { "s", k.Slug }, { "n", Pair(k.Name, k.NameEn) }, { "p", k.ParentId ?? 0 }, { "im", k.Image ?? "" }, { "cv", k.Cover ?? "" }, { "d", Pair(k.Descr, k.DescrEn) }, { "k", k.Count }, { "h", k.InHome }, { "m", k.InMenu } };
+            return new Dictionary<string, object> { { "i", k.Id }, { "s", k.Slug }, { "n", Pair(k.Name, k.NameEn) }, { "p", k.ParentId ?? 0 }, { "im", k.Image ?? "" }, { "cv", k.Cover ?? "" }, { "d", Pair(k.Descr, k.DescrEn) }, { "k", k.Count }, { "h", k.InHome && !k.LinkOnly }, { "m", k.InMenu && !k.LinkOnly }, { "lo", k.LinkOnly } };
         }
 
         // everything the pages list: categories and products (immutable for its version, so browsers keep it)
@@ -421,7 +431,7 @@ namespace RiwaqChat
             foreach (var kv in d.CatOrder) order[kv.Key.ToString(CultureInfo.InvariantCulture)] = kv.Value;
             return new Dictionary<string, object>
             {
-                { "v", d.CatalogVer(now) }, { "c", d.Cats.Where(d.CatShown).Select(k => Category(d, k)).ToArray() },
+                { "v", d.CatalogVer(now) }, { "c", d.Cats.Where(d.CatOpen).Select(k => Category(d, k)).ToArray() },
                 { "p", d.Shown.Select(p => Summary(d, p, now, badges, best)).ToArray() }, { "co", order },
                 { "of", d.Offers.Where(o => o.Running(now)).Select(o => OfferJson(o)).ToArray() }
             };
