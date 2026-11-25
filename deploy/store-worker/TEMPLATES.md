@@ -22,6 +22,7 @@ Object.assign(t, {
   cartS: () => html, cartTitle, cartSide: "end|bottom|mid",  // or its own cart SHEET
   co: () => html,                      // only if the design's checkout is really different; otherwise the engine's (restyle it in CSS)
   ft0: v => html,                      // only if the design's footer is different; it must still end with foot()
+  views: {ok, track, search, fav, 404, page, cats, ...}, // a page the engine draws, drawn by the design instead (arg = what follows its name in the address); only when it really differs
   act: {name(arg1, arg2, el){}},       // data-a="name:arg1:arg2"
   chg: {name(value, arg1){}},          // data-c="name:arg1"  (select, checkbox: value is true/false)
   inp: {name(value, arg1){}},          // data-i="name:arg1"  (typing, ranges)
@@ -63,7 +64,7 @@ Object.assign(t, {
 - Lists: `facets(l).sp` specs worth filtering by, `filt(l, {sp: {[k]: value}, rt: 4})`.
 - A form with `data-s="news"`, a `tel` input and a `.err` line signs a number up for the store's WhatsApp news (only when `BOOT.shop.news`).
 - A category with `lo` is reached by its link only (`t.cats` leaves it out).
-- Their classes (restyle, don't reuse): `.acc .acc-n .acc-b .lgk .lgc .tls .ork .stp .tmk .inf .rtk .rit .adc .cdc .str .rvk .rvs .rvl .pyb .cmk2 .blg .ctg .cth .upk .upi .brk .faqk .vdk .ugg .rvg .pcs .pca .optl .cdi .sts .rtl`.
+- Their classes (restyle, don't reuse): `.acc .acc-n .acc-b .sbg .lgk .lgc .tls .ork .stp .tmk .inf .rtk .rit .adc .cdc .str .rvk .rvs .rvl .pyb .cmk2 .blg .ctg .cth .upk .upi .brk .faqk .vdk .ugg .rvg .pcs .pca .optl .cdi .sts .rtl`.
 
 ## The rules
 
