@@ -192,7 +192,7 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
                 var o = new Reply { Status = (int)r.StatusCode };
                 try { o.Bytes = await r.Content.ReadAsByteArrayAsync(); } catch (Exception) { throw new CarrierException(name + " قطعت في نص الرد. جرّب كمان شوية.", "net", unsure: true); }
                 var type = r.Content.Headers.ContentType == null ? "" : r.Content.Headers.ContentType.MediaType ?? "";
-                if (!type.Contains("pdf") && o.Bytes.Length < 8000000) { o.Text = Encoding.UTF8.GetString(o.Bytes); if (o.Text.Length > 0 && (o.Text[0] == '{' || o.Text[0] == '[' || o.Text[0] == '"')) try { o.Root = Web.Js.DeserializeObject(o.Text); } catch { } }
+                if (!type.Contains("pdf") && o.Bytes.Length < 8000000) { o.Text = Encoding.UTF8.GetString(o.Bytes).TrimStart('﻿'); /* Aramex's WCF pages start with a BOM */ if (o.Text.Length > 0 && (o.Text[0] == '{' || o.Text[0] == '[' || o.Text[0] == '"')) try { o.Root = Web.Js.DeserializeObject(o.Text); } catch { } }
                 return o;
             }
         }
