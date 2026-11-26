@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-sbl-wait="#authView,#appView">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -2004,6 +2004,7 @@
 <script src="ref.js"></script>
 </head>
 <body>
+<script src="sb-loader.js?v=1"></script><!-- Sellybot's loader: first in <body>, not deferred (sb-loader.js) -->
 
 <header class="nav">
   <div class="nav-in">
@@ -7423,8 +7424,10 @@
     }, 2500);
   }
   async function openShop(view) {
-    try { await shopLoad(); if (current === "shop") SbShop.open($("shopRoot"), { toast: toast, me: me, go: go, view: view }); }
+    var done = window.SbLoader ? SbLoader.start() : function () { };   // its files and first numbers: Sellybot's loader if they're slow
+    try { await shopLoad(); if (current === "shop") await SbShop.open($("shopRoot"), { toast: toast, me: me, go: go, view: view }); }
     catch (e) { toast(e.message); }
+    finally { done(); }
   }
 
   // ---------------- what this store's plan includes ----------------
