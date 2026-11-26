@@ -51,6 +51,7 @@ namespace RiwaqChat
                 case "print": Print(c, s, sh, req, res); return true;
                 case "backup": Backup(c, sh, res); return true;
             }
+            if (ShopRew.Get(c, s, sh, a, req, res)) return true;
             return Carriers.Get(c, s, sh, a, req, res);
         }
 
@@ -71,6 +72,7 @@ namespace RiwaqChat
                 case "sheet-try": later = ShopPay.Try(c, sh, b, res); return true;
                 case "ai-desc": later = ShopTranslate.Describe(c, s, sh, b, res); return true;
             }
+            if (ShopRew.Post(c, s, sh, a, b, res)) return true;
             return Carriers.Post(c, s, sh, a, b, res, out later);
         }
 
@@ -255,7 +257,7 @@ namespace RiwaqChat
             if (!DateTime.TryParseExact(req.QueryString["to"] ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out z) || z > today) z = today;
             if (a > z) a = z; if ((z - a).TotalDays > 400) a = z.AddDays(-400); from = a; to = z;
         }
-        const string Good = "o.Status NOT IN ('cancelled','returned')";
+        const string Good = "o.Status NOT IN ('cancelled','returned') AND o.Channel<>'gift'";   // a gift card's money is counted apart, when it's sold (ShopRew.Report)
         public static string Source(string src)
         {
             var s = (src ?? "").ToLowerInvariant(); if (s.Length == 0) return "مباشر أو مش معروف";
@@ -266,10 +268,11 @@ namespace RiwaqChat
         {
             DateTime from, to; Span(req, out from, out to); DateTime f = from.AddHours(-2), t = to.AddDays(1).AddHours(-2); object[] a = { "@s", sh.StoreId, "@f", f, "@t", t }; var d = ShopCache.Get(c, sh);
             var sum = Rows(c, r => D("orders", (int)r[0], "sales", (decimal)r[1], "got", (int)r[2], "gotEgp", (decimal)r[3], "cancelled", (int)r[4], "returned", (int)r[5], "disc", (decimal)r[6], "ship", (decimal)r[7], "refund", (decimal)r[8], "open", (int)r[9]),
-                "SELECT COUNT(*), ISNULL(SUM(CASE WHEN " + Good + " THEN o.Total ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='delivered' THEN 1 ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='delivered' THEN o.Total-o.Refund ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='cancelled' THEN 1 ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='returned' THEN 1 ELSE 0 END),0), ISNULL(SUM(CASE WHEN " + Good + " THEN o.Discount ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='delivered' THEN o.Ship ELSE 0 END),0), ISNULL(SUM(o.Refund),0), ISNULL(SUM(CASE WHEN o.Status IN ('new','noreply','confirmed','shipped','out') THEN 1 ELSE 0 END),0) FROM dbo.ShopOrders o WHERE o.StoreId=@s AND o.CreatedAt>=@f AND o.CreatedAt<@t", a)[0];
+                "SELECT COUNT(*), ISNULL(SUM(CASE WHEN " + Good + " THEN o.Total ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='delivered' AND o.Channel<>'gift' THEN 1 ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='delivered' AND o.Channel<>'gift' THEN o.Total-o.Refund ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='cancelled' THEN 1 ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='returned' THEN 1 ELSE 0 END),0), ISNULL(SUM(CASE WHEN " + Good + " THEN o.Discount ELSE 0 END),0), ISNULL(SUM(CASE WHEN o.Status='delivered' AND o.Channel<>'gift' THEN o.Ship ELSE 0 END),0), ISNULL(SUM(o.Refund),0), ISNULL(SUM(CASE WHEN o.Status IN ('new','noreply','confirmed','shipped','out') THEN 1 ELSE 0 END),0) FROM dbo.ShopOrders o WHERE o.StoreId=@s AND o.CreatedAt>=@f AND o.CreatedAt<@t", a)[0];
             // profit of what was delivered: what was paid for the pieces less what they cost the owner (a piece with no cost is told apart)
-            var pf = Rows(c, r => new[] { (decimal)r[0], (decimal)r[1], (decimal)r[2] }, "SELECT ISNULL(SUM(CASE WHEN i.Cost IS NOT NULL THEN (i.Price*i.Qty-i.Discount)*(i.Qty-i.Returned)/i.Qty ELSE 0 END),0), ISNULL(SUM(CASE WHEN i.Cost IS NOT NULL THEN i.Cost*(i.Qty-i.Returned) ELSE 0 END),0), ISNULL(SUM(CASE WHEN i.Cost IS NULL THEN (i.Price*i.Qty-i.Discount)*(i.Qty-i.Returned)/i.Qty ELSE 0 END),0) FROM dbo.ShopOrderItems i JOIN dbo.ShopOrders o ON o.Id=i.OrderId WHERE o.StoreId=@s AND o.Status='delivered' AND i.Qty>0 AND o.CreatedAt>=@f AND o.CreatedAt<@t", a)[0];
+            var pf = Rows(c, r => new[] { (decimal)r[0], (decimal)r[1], (decimal)r[2] }, "SELECT ISNULL(SUM(CASE WHEN i.Cost IS NOT NULL THEN (i.Price*i.Qty-i.Discount)*(i.Qty-i.Returned)/i.Qty ELSE 0 END),0), ISNULL(SUM(CASE WHEN i.Cost IS NOT NULL THEN i.Cost*(i.Qty-i.Returned) ELSE 0 END),0), ISNULL(SUM(CASE WHEN i.Cost IS NULL THEN (i.Price*i.Qty-i.Discount)*(i.Qty-i.Returned)/i.Qty ELSE 0 END),0) FROM dbo.ShopOrderItems i JOIN dbo.ShopOrders o ON o.Id=i.OrderId WHERE o.StoreId=@s AND o.Status='delivered' AND o.Channel<>'gift' AND i.Qty>0 AND o.CreatedAt>=@f AND o.CreatedAt<@t", a)[0];
             sum["profit"] = Math.Round(pf[0] - pf[1], 2); sum["cost"] = Math.Round(pf[1], 2); sum["noCost"] = Math.Round(pf[2], 2);
+            sum["rew"] = ShopRew.Report(c, sh.StoreId, req);   // gift cards sold and used, points, friends: apart
             var days = Rows(c, r => new object[] { ((DateTime)r[0]).ToString("yyyy-MM-dd"), (int)r[1], (decimal)r[2] }, "SELECT CAST(DATEADD(HOUR,2,o.CreatedAt) AS DATE), COUNT(*), ISNULL(SUM(CASE WHEN " + Good + " THEN o.Total ELSE 0 END),0) FROM dbo.ShopOrders o WHERE o.StoreId=@s AND o.CreatedAt>=@f AND o.CreatedAt<@t GROUP BY CAST(DATEADD(HOUR,2,o.CreatedAt) AS DATE) ORDER BY 1", a);
             var seen = Rows(c, r => new[] { (int)r[0], (int)r[1], (int)r[2] }, "SELECT ProductId, SUM(Views), SUM(Carts) FROM dbo.ShopProdDaily WHERE StoreId=@s AND Day>=@a AND Day<=@z GROUP BY ProductId", "@s", sh.StoreId, "@a", from, "@z", to).ToDictionary(x => x[0]);
             var sold = Rows(c, r => D("id", (int)r[0], "n", (string)r[1], "q", (int)r[2], "egp", (decimal)r[3], "profit", r[4] is decimal ? (object)(decimal)r[4] : null, "back", (int)r[5]),

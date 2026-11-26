@@ -30,7 +30,7 @@ namespace RiwaqChat
     }
 
     // how the customer pays and receives: part of the sum
-    public class ShopHow { public string Pay = "cod"; public bool Gift; public string Branch; }
+    public class ShopHow { public string Pay = "cod"; public bool Gift; public string Branch; public ShopRewIn Rw; }
     public class ShopFee { public string Kind, Name, NameEn; public decimal Amount; }
     public class ShopApplied { public int Id; public string Name, NameEn; public decimal Amount; }
 
@@ -40,6 +40,7 @@ namespace RiwaqChat
         public List<ShopFee> Fees = new List<ShopFee>(); public decimal Deposit; public string Pay = "cod", Branch;
         public decimal FeesSum { get { return Fees.Sum(f => f.Amount); } }
         public string Coupon, CouponErr, Days, Stop; public int CouponId; public List<ShopApplied> Offers = new List<ShopApplied>(); public bool Bad { get { return Lines.Any(l => l.Err != null) || Stop != null; } }
+        public ShopRewQ Rw;   // gift card, points, a friend's gift (ShopRew.cs)
     }
 
     public class ShopCoupon { public int Id; public string Code, Type, ScopeJson, Who; public decimal Value; public decimal? MaxOff, MinSub; public DateTime? StartsAt, EndsAt; public int? MaxUses, PerPhone; public bool FirstOnly, PopupPhone, Active, Popup; public int Uses; }
@@ -183,8 +184,10 @@ namespace RiwaqChat
                 var gift = ShopJson.Sub(order, "gift"); if (how.Gift && ShopJson.Bool(ShopJson.At(gift, "on"))) q.Fees.Add(new ShopFee { Kind = "gift", Name = "تغليف هدية", NameEn = "Gift wrap", Amount = ShopJson.Dec(ShopJson.At(gift, "price")) });
                 var cod = ShopJson.Dec(ShopJson.At(order, "codFee")); if (q.Pay == "cod" && cod > 0 && q.Branch == null) q.Fees.Add(new ShopFee { Kind = "cod", Name = "رسوم الدفع عند الاستلام", NameEn = "Cash on delivery fee", Amount = cod });
             }
+            after -= ShopRew.Off(c, d, q, how, phone, now, after);   // a friend's gift, a reward code, points
             q.Total = after + q.Ship + q.FeesSum;
             if (how != null) q.Deposit = DepositOf(c, d.Row, q, phone);
+            ShopRew.Pay(c, d, q, how, now);                          // a gift card pays part of what is left
 
             if (ok.Count == 0) q.Stop = "empty";
             else if (after < min) q.Stop = "min";
@@ -394,6 +397,7 @@ namespace RiwaqChat
                 { "n", q.Items }, { "sub", q.Sub }, { "off", q.Discount }, { "coff", q.CouponOff }, { "ship", q.Ship }, { "shipFull", q.ShipFull }, { "free", q.FreeShip }, { "left", q.FreeLeft }, { "over", q.FreeOver }, { "total", q.Total }, { "days", q.Days ?? "" },
                 { "fees", q.Fees.Select(f => new object[] { f.Kind, ShopView.Pair(f.Name, f.NameEn), f.Amount }).ToArray() }, { "dep", q.Deposit }, { "pay", q.Pay }, { "branch", q.Branch ?? "" },
                 { "min", q.Min }, { "stop", q.Stop ?? "" }, { "deliver", q.Deliver }, { "cpn", q.Coupon ?? "" }, { "cpnErr", q.CouponErr ?? "" },
+                { "rw", ShopRew.Json(q) },
                 { "of", q.Offers.Select(o => new Dictionary<string, object> { { "i", o.Id }, { "n", ShopView.Pair(o.Name, o.NameEn) }, { "a", o.Amount } }).ToArray() }
             };
         }

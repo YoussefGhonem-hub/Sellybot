@@ -61,6 +61,7 @@ namespace RiwaqChat
             var ways = ShopPrice.PayWays(sh).Select(w => ShopPay.WayName(ShopJson.Str(ShopJson.At(w, "k")))).ToList(); if (ShopPrice.Cod(sh)) ways.Insert(0, "كاش عند الاستلام"); var branches = ShopPrice.Branches(sh);
             sb.Append("الدفع: ").Append(string.Join("، ", ways)).Append(ways.Count == 1 ? " بس" : "").Append(". ").Append(branches.Count > 0 ? "الفروع: " + string.Join("، ", branches.Take(8).Select(b => ShopJson.Str(ShopJson.At(b, "n")) + " (" + ShopJson.Str(ShopJson.At(b, "ad")) + (ShopJson.Str(ShopJson.At(b, "hours")).Length > 0 ? "، " + ShopJson.Str(ShopJson.At(b, "hours")) : "") + (ShopJson.Bool(ShopJson.At(b, "pickup")) ? "، ينفع الاستلام منه" : "") + ")")) + ". " : "").Append("الاستبدال والاسترجاع: خلال ").Append(ShopJson.Int(ShopJson.At(set, "returnsDays"), 14)).Append(" يوم من الاستلام.\n");
             if (ShopPrice.Vacation(d, now)) sb.Append("المتجر واخد إجازة ومش بيستقبل طلبات دلوقتي.\n");
+            sb.Append(ShopRew.BotPrompt(sh));   // gift cards, points, «هات صاحبك» when on
             sb.Append("إزاي تستخدمه:\n")
               .Append("- السعر والمقاسات والألوان والكمية والعروض من أداة ").Append(TProducts).Append(" بس. استخدمها قبل ما ترد على أي سؤال عن منتج، حتى لو رديت عليه قبل كده، لأن السعر والكمية بيتغيّروا.\n")
               .Append("- سعر الشحن ومدة التوصيل والعروض والأكواد والسياسات والتواصل من أداة ").Append(TInfo).Append(".\n")
@@ -152,6 +153,7 @@ namespace RiwaqChat
                 Prompt = null
             });
             using (var c = Db.Open()) { var s = Db.StoreById(c, storeId); var sh = For(c, s, preview); if (sh != null && (preview || ShopChatOrder.On(c, s, sh))) list.Add(ShopChatOrder.Tool(storeId, phone, ip, preview)); }
+            ShopRew.BotTool(list, storeId, ip, preview);   // a gift card's balance, with its code
             return list;
         }
         static string Arg(ToolUseBlock tu, string n)
@@ -459,6 +461,7 @@ namespace RiwaqChat
             var t = new StringBuilder(); if (o.Pay != "cod" || o.Deposit > 0) t.Append("💳 ").Append(ShopPay.WayName(o.Pay)).Append(o.Deposit > 0 && o.Deposit < o.Total ? "، عربون " + ShopOrders.Money(o.Deposit) : "").Append(o.PayState == "sent" ? " (صورة التحويل وصلت)" : o.Deposit > 0 ? " (لسه مابعتش صورة التحويل)" : "").Append("\n");
             if (Pickup(o) != null) t.Append("🛍️ استلام من: ").Append(Pickup(o)).Append("\n"); if (o.Extras.ContainsKey("gift")) t.Append("🎁 رسالة الهدية: ").Append(ShopJson.Str(o.Extras["gift"], 200)).Append("\n"); else if ((o.FeesJson ?? "").Contains("\"gift\"")) t.Append("🎁 تغليف هدية\n");
             var rc = ShopJson.Sub(o.Extras, "recv"); if (rc.Count > 0) t.Append("👤 المستلم: ").Append(ShopJson.Str(ShopJson.At(rc, "n"))).Append(" · ").Append(ShopOrders.Local(ShopJson.Str(ShopJson.At(rc, "p")))).Append("\n");
+            t.Append(ShopRew.PayNote(o));
             return t.ToString();
         }
         public static string ConfirmText(Shop sh, ShopOrder o)
@@ -470,6 +473,7 @@ namespace RiwaqChat
                 foreach (var f in ShopJson.Arr(o.FeesJson).Select(ShopJson.List).Where(f => f.Count > 2)) e.Append("➕ ").Append(ShopJson.Str(ShopJson.List(f[1]).ElementAtOrDefault(1), 40)).Append(": ").Append(MoneyEn(ShopJson.Dec(f[2]))).Append("\n");
                 if (Pickup(o) != null) e.Append("🛍️ Pick up from: ").Append(Pickup(o)); else e.Append("🚚 Delivery: ").Append(o.Ship > 0 ? MoneyEn(o.Ship) : "free");
                 e.Append("\n💰 Total: *").Append(MoneyEn(o.Total)).Append("*\n💵 Payment: ").Append(ShopPay.WayName(o.Pay, true)).Append("\n"); if (Pickup(o) == null) e.Append("📍 To: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n");
+                e.Append(ShopRew.ConfirmNote(o, true));
                 if (o.Deposit > 0 && o.PayState != "paid" && o.PayState != "sent") e.Append("\n💳 Please send *").Append(MoneyEn(o.Deposit)).Append("* and its picture from here: ").Append(sh.Url).Append("/pay/").Append(o.Token).Append("\n");
                 e.Append("\n");
                 e.Append("📦 Track it: ").Append(sh.Url).Append(sh.Url.EndsWith("/en") ? "" : "/en").Append("/track\n↩️ Returns within ").Append(ShopJson.Int(ShopJson.At(sh.Settings, "returnsDays"), 14)).Append(" days: ").Append(sh.Url).Append("/page/returns\n\nPlease confirm so we can start preparing it:\nReply *1* to confirm ✅\nReply *2* to cancel ❌");
@@ -480,6 +484,7 @@ namespace RiwaqChat
             foreach (var f in ShopJson.Arr(o.FeesJson).Select(ShopJson.List).Where(f => f.Count > 2)) sb.Append("➕ ").Append(ShopJson.Str(ShopJson.List(f[1]).ElementAtOrDefault(0), 40)).Append(": ").Append(ShopOrders.Money(ShopJson.Dec(f[2]))).Append("\n");
             if (Pickup(o) != null) sb.Append("🛍️ الاستلام من: ").Append(Pickup(o)); else sb.Append("🚚 الشحن: ").Append(o.Ship > 0 ? ShopOrders.Money(o.Ship) : "مجاني");
             sb.Append("\n💰 الإجمالي: *").Append(ShopOrders.Money(o.Total)).Append("*\n💵 الدفع: ").Append(ShopPay.WayName(o.Pay)).Append("\n"); if (Pickup(o) == null) sb.Append("📍 التوصيل: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n");
+            sb.Append(ShopRew.ConfirmNote(o, false));
             if (o.Deposit > 0 && o.PayState != "paid" && o.PayState != "sent") sb.Append("\n💳 محتاجين تحويل *").Append(ShopOrders.Money(o.Deposit)).Append("*، وابعت صورته من هنا: ").Append(sh.Url).Append("/pay/").Append(o.Token).Append("\n");
             sb.Append("\n");
             sb.Append("📦 تابع طلبك: ").Append(sh.Url).Append("/track\n↩️ الاسترجاع خلال ").Append(ShopJson.Int(ShopJson.At(sh.Settings, "returnsDays"), 14)).Append(" يوم: ").Append(sh.Url).Append("/page/returns\n\nمن فضلك أكّد طلبك عشان نبدأ نجهّزه:\nاكتب *1* لتأكيد الطلب ✅\nاكتب *2* لإلغاء الطلب ❌");

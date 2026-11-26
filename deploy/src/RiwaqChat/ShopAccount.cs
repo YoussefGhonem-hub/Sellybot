@@ -348,6 +348,7 @@ namespace RiwaqChat
                 DELETE FROM dbo.ShopReturns WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopSessions WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopCodes WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopConfirms WHERE StoreId=@s AND Phone=@p;
                 DELETE FROM dbo.ShopLeads WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopCustomers WHERE StoreId=@s AND Phone=@p; DELETE FROM dbo.ShopCarts WHERE StoreId=@s AND Phone=@p", "@s", storeId, "@p", phone);
             try { Crm.Erase(c, storeId, phone); } catch (Exception ex) { Log.Error(ex); }
+            try { ShopRew.Wipe(c, storeId, phone); } catch (Exception ex) { Log.Error(ex); }
             try { ShopImages.Delete(c, storeId, pics.Distinct().Where(k => Num(c, "SELECT COUNT(*) FROM dbo.ShopImages WHERE StoreId=@s AND Path=@p AND Alt='customer'", "@s", storeId, "@p", k) > 0).ToList()); } catch (Exception ex) { Log.Error(ex); }
             return null;
         }

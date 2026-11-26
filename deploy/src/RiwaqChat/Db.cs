@@ -1086,6 +1086,8 @@ IF OBJECT_ID('dbo.CrmNotes') IS NULL
 IF COL_LENGTH('dbo.Stores', 'CrmAlert') IS NULL ALTER TABLE dbo.Stores ADD CrmAlert BIT NOT NULL CONSTRAINT DF_Stores_CrmAlert DEFAULT 1,
   CrmShopAt DATETIME2 NULL, CrmTryAt DATETIME2 NULL, CrmHooked BIT NOT NULL CONSTRAINT DF_Stores_CrmHooked DEFAULT 0;
 IF COL_LENGTH('dbo.WaOptOuts', 'ByOwner') IS NULL ALTER TABLE dbo.WaOptOuts ADD ByOwner BIT NOT NULL CONSTRAINT DF_WaOptOuts_ByOwner DEFAULT 0;
+-- a merchant's second store and its main one (ShopBrands.cs): made here, not with the stores' tables, because the admin's list reads it
+IF COL_LENGTH('dbo.Stores', 'ParentId') IS NULL ALTER TABLE dbo.Stores ADD ParentId INT NULL;
 -- once: the orders the confirmation messages know already, and the plans (the file: every plan; the groups and the returns alert: from «المتقدمة»)
 IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'crm')
 BEGIN

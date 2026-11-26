@@ -361,6 +361,7 @@ namespace RiwaqChat
             var x = ShopJson.Sub(b, "settings"); var old = sh.Settings; var set = ShopLook.CleanSettings(x, old);
             foreach (var k in new[] { "shipSeen", "returnsSeen" }) if (ShopJson.Bool(ShopJson.At(old, k))) set[k] = true;
             if (x.ContainsKey("ship")) set["shipSeen"] = true;
+            ShopRew.Clean(x, old, set);   // gift cards, points, «هات صاحبك»
             Shops.SaveSettings(c, sh, set);
         }
 

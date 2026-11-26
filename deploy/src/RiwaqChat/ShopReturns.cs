@@ -136,6 +136,7 @@ namespace RiwaqChat
                 catch (ShopException) { throw; }
                 catch { try { tx.Rollback(); } catch { } throw; }
             }
+            if (to == "received" && (string)r["kind"] == "return") ShopRew.Part(c, sh.StoreId, oid);   // the points of what came back go
             // everything came back and nothing replaces it: the order itself is returned (its quantity is already back)
             if (to == "received" && (string)r["kind"] == "return") { var o2 = ShopOrders.ById(c, sh.StoreId, oid); if (o2 != null && o2.Status == "delivered" && o2.Items.All(i => i.Returned >= i.Qty)) ShopOrders.SetStatus(c, sh.StoreId, oid, "returned", "owner", ReasonText((string)r["reason"]), false); }
             if (ShopJson.Bool(ShopJson.At(b, "tell"), true) && (to == "approved" || to == "rejected" || to == "done")) Notify(sh.StoreId, id, oid, (string)r["kind"], to, note);

@@ -64,6 +64,7 @@ Object.assign(t, {
 - Lists: `facets(l).sp` specs worth filtering by, `filt(l, {sp: {[k]: value}, rt: 4})`.
 - A form with `data-s="news"`, a `tel` input and a `.err` line signs a number up for the store's WhatsApp news (only when `BOOT.shop.news`).
 - A category with `lo` is reached by its link only (`t.cats` leaves it out).
+- Gift cards, points, «هات صاحبك» (`rew.js` + `rew.css`, loaded only when the owner turned one on; `BOOT.shop.rw`): the engine draws the pages `gift` and `r` (`url("gift")`, `go:gift`), `menuItems()` may end with `{t: "gift"}`, `totals()` carries the card's part and what is left, the code box comes after `formBits.coupon()`, and the account has `account/rew`. Their classes: `.rw-card .rwg .rwk .rwc .rwp .rwt .rwn .rwr .rwa .rwl .rwi .rwic .rwbal`.
 - Their classes (restyle, don't reuse): `.acc .acc-n .acc-b .sbg .lgk .lgc .tls .ork .stp .tmk .inf .rtk .rit .adc .cdc .str .rvk .rvs .rvl .pyb .cmk2 .blg .ctg .cth .upk .upi .brk .faqk .vdk .ugg .rvg .pcs .pca .optl .cdi .sts .rtl`.
 
 ## The rules
