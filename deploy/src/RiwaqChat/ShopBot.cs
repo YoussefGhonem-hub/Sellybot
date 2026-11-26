@@ -173,6 +173,7 @@ namespace RiwaqChat
             if (!p.Available) sb.Append("، خلصان دلوقتي");
             else if (p.Options.Count > 0) { var inn = p.Vars.Where(p.Can).Select(v => v.Label).Take(14).ToList(); var outt = p.Vars.Where(v => v.Active && !p.Can(v)).Select(v => v.Label).Take(8).ToList(); sb.Append("، المتاح: ").Append(string.Join("، ", inn)); if (outt.Count > 0) sb.Append("، خلص: ").Append(string.Join("، ", outt)); }
             else if (p.Track && p.OutMode != "order" && p.Total <= 5) sb.Append("، باقي ").Append(p.Total);
+            ShopGoods.BotLine(d, p, sb);   // «حجز مسبق، متوقع يوصل يوم ...»
             return sb.Append("، اللينك: ").Append(d.Row.Url).Append("/p/").Append(p.Slug).ToString();
         }
 

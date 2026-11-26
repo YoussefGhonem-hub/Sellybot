@@ -19,6 +19,7 @@ namespace RiwaqChat
     public class ShopVar
     {
         public int Id, ProductId, Sort; public int Stock; public string Opts, Sku, Image; public decimal? Price, OldPrice, Cost; public bool Active;
+        public int PreLeft;   // «حجز مسبق»: how many more can be booked beyond the shelf (ShopPre.cs)
         public string[] Vals { get { return string.IsNullOrEmpty(Opts) ? new string[0] : Opts.Split('|'); } }
         public string Label { get { return string.IsNullOrEmpty(Opts) ? "" : Opts.Replace("|", " / "); } }
     }
@@ -43,7 +44,7 @@ namespace RiwaqChat
         public decimal? OldOf(ShopVar v) { return v != null && v.Price.HasValue ? v.OldPrice : OldPrice; }
         public decimal? CostOf(ShopVar v) { return v != null && v.Cost.HasValue ? v.Cost : Cost; }
         // can one more of it be bought now
-        public bool Can(ShopVar v) { return v != null && v.Active && Status == "active" && (!Track || OutMode == "order" || v.Stock > 0); }
+        public bool Can(ShopVar v) { return v != null && v.Active && Status == "active" && (!Track || OutMode == "order" || v.Stock > 0 || v.PreLeft > 0); }
         public bool Available { get { return Vars.Any(Can); } }
         public int Total { get { return Vars.Where(v => v.Active).Sum(v => Math.Max(0, v.Stock)); } }
         // what customers see in the store (an empty product with «يختفي» isn't there at all)
@@ -202,6 +203,7 @@ namespace RiwaqChat
                 r.NextResult();
                 while (r.Read()) { ShopProd p; if (d.ById.TryGetValue((int)r[0], out p)) p.Sold = (int)r[1]; }
             }
+            ShopGoods.Load(c, d);
             Count(d);
             d.StockVer = stock;
         }
@@ -287,6 +289,7 @@ namespace RiwaqChat
             using (var r = cmd.ExecuteReader())
                 while (r.Read()) d.Posts.Add(new ShopPost { Id = (int)r["Id"], Slug = S(r["Slug"]), Title = S(r["Title"]), TitleEn = S(r["TitleEn"]), Short = ShopPages.Plain(S(r["B"]), 160), ShortEn = ShopPages.Plain(S(r["BE"]), 160), Image = S(r["Image"]), Hidden = (bool)r["Hidden"], At = Dt(r["At"]).Value });
             ShopReviews.Load(c, d); ShopReviews.LoadPics(c, d);
+            ShopGoods.Load(c, d);
 
             Count(d);
             Index(d);
@@ -378,6 +381,7 @@ namespace RiwaqChat
             if (used != null) { r["of"] = used.Id; if (used.EndsAt.HasValue && used.Countdown) r["u"] = Unix(used.EndsAt.Value); }
             if (!string.IsNullOrEmpty(p.SpecsJson)) r["sp"] = ShopJson.Arr(p.SpecsJson).Take(14);
             if (!string.IsNullOrEmpty(p.ExtraJson)) r["x"] = ShopJson.Obj(p.ExtraJson);
+            ShopGoods.Card(d, p, r);
             return r;
         }
 
@@ -395,6 +399,7 @@ namespace RiwaqChat
             if (!string.IsNullOrEmpty(p.Video)) r["vd"] = p.Video;
             var guide = SizeGuide(d, p);
             if (guide != null) r["sg"] = guide;
+            ShopGoods.Detail(d, p, r);
             return r;
         }
         // the product's own size guide, or its category's (or the parent category's)

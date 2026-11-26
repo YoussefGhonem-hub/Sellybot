@@ -40,6 +40,7 @@ namespace RiwaqChat
         public List<ShopFee> Fees = new List<ShopFee>(); public decimal Deposit; public string Pay = "cod", Branch;
         public decimal FeesSum { get { return Fees.Sum(f => f.Amount); } }
         public string Coupon, CouponErr, Days, Stop; public int CouponId; public List<ShopApplied> Offers = new List<ShopApplied>(); public bool Bad { get { return Lines.Any(l => l.Err != null) || Stop != null; } }
+        public Dictionary<string, object> Cat;   // pre-orders in the cart, branches that don't hold it (ShopGoods.cs)
     }
 
     public class ShopCoupon { public int Id; public string Code, Type, ScopeJson, Who; public decimal Value; public decimal? MaxOff, MinSub; public DateTime? StartsAt, EndsAt; public int? MaxUses, PerPhone; public bool FirstOnly, PopupPhone, Active, Popup; public int Uses; }
@@ -113,6 +114,7 @@ namespace RiwaqChat
                 else if (ofProduct > cap) l.Err = "max";
                 else if (ofProduct < l.P.MinQty) l.Err = "min";
             }
+            ShopGoods.Quote(c, d, q, how, checkStock);
             var ok = q.Lines.Where(l => l.P != null && l.Err != "gone" && l.Err != "out").ToList();
             q.Items = ok.Sum(l => l.Qty);
 
@@ -185,6 +187,7 @@ namespace RiwaqChat
             }
             q.Total = after + q.Ship + q.FeesSum;
             if (how != null) q.Deposit = DepositOf(c, d.Row, q, phone);
+            ShopGoods.Paid(c, d, q, how);
 
             if (ok.Count == 0) q.Stop = "empty";
             else if (after < min) q.Stop = "min";
@@ -393,7 +396,7 @@ namespace RiwaqChat
                     { "p", l.P == null ? 0 : l.P.Id }, { "o", l.V == null ? "" : l.V.Label }, { "st", l.V == null ? 0 : Math.Max(0, l.V.Stock) } }).ToArray() },
                 { "n", q.Items }, { "sub", q.Sub }, { "off", q.Discount }, { "coff", q.CouponOff }, { "ship", q.Ship }, { "shipFull", q.ShipFull }, { "free", q.FreeShip }, { "left", q.FreeLeft }, { "over", q.FreeOver }, { "total", q.Total }, { "days", q.Days ?? "" },
                 { "fees", q.Fees.Select(f => new object[] { f.Kind, ShopView.Pair(f.Name, f.NameEn), f.Amount }).ToArray() }, { "dep", q.Deposit }, { "pay", q.Pay }, { "branch", q.Branch ?? "" },
-                { "min", q.Min }, { "stop", q.Stop ?? "" }, { "deliver", q.Deliver }, { "cpn", q.Coupon ?? "" }, { "cpnErr", q.CouponErr ?? "" },
+                { "min", q.Min }, { "stop", q.Stop ?? "" }, { "deliver", q.Deliver }, { "cpn", q.Coupon ?? "" }, { "cpnErr", q.CouponErr ?? "" }, { "cat", q.Cat },
                 { "of", q.Offers.Select(o => new Dictionary<string, object> { { "i", o.Id }, { "n", ShopView.Pair(o.Name, o.NameEn) }, { "a", o.Amount } }).ToArray() }
             };
         }

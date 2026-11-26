@@ -51,7 +51,7 @@ namespace RiwaqChat
                 case "print": Print(c, s, sh, req, res); return true;
                 case "backup": Backup(c, sh, res); return true;
             }
-            return Carriers.Get(c, s, sh, a, req, res);
+            return Carriers.Get(c, s, sh, a, req, res) || ShopGoods.Get(c, s, sh, a, id, req, res);
         }
 
         public static bool Post(SqlConnection c, StoreInfo s, Shop sh, string a, Dictionary<string, object> b, HttpResponse res, out Func<Task> later)
@@ -71,7 +71,7 @@ namespace RiwaqChat
                 case "sheet-try": later = ShopPay.Try(c, sh, b, res); return true;
                 case "ai-desc": later = ShopTranslate.Describe(c, s, sh, b, res); return true;
             }
-            return Carriers.Post(c, s, sh, a, b, res, out later);
+            return Carriers.Post(c, s, sh, a, b, res, out later) || ShopGoods.Post(c, s, sh, a, b, res, out later);
         }
 
         // ---------- an order taken by phone ----------
@@ -150,7 +150,8 @@ namespace RiwaqChat
         {
             var ids = Rows(c, r => Convert.ToInt64(r[0]), "SELECT TOP 300 Id FROM dbo.ShopOrders WHERE StoreId=@s AND Status='confirmed' ORDER BY Id", "@s", sh.StoreId);
             var os = ids.Select(i => ShopOrders.ById(c, sh.StoreId, i)).Where(o => o != null).ToList();
-            var by = os.SelectMany(o => o.Items.Select(i => new { o, i })).GroupBy(k => k.i.VariantId + "|" + (k.i.Extra ?? "")).Select(g => D("n", g.First().i.Name, "o", g.First().i.Opts ?? "", "x", g.First().i.Extra ?? "", "sku", g.First().i.Sku ?? "", "q", g.Sum(k => k.i.Qty), "im", string.IsNullOrEmpty(g.First().i.Image) ? "" : ShopImages.Url(g.First().i.Image, true), "nos", g.Select(k => k.o.No).Distinct().ToArray())).OrderByDescending(d => (int)d["q"]).ToList();
+            var by = os.SelectMany(o => o.Items.Select(i => new { o, i })).GroupBy(k => k.i.VariantId + "|" + (k.i.Extra ?? "")).Select(g => D("n", g.First().i.Name, "o", g.First().i.Opts ?? "", "x", g.First().i.Extra ?? "", "sku", g.First().i.Sku ?? "", "q", g.Sum(k => k.i.Qty), "im", string.IsNullOrEmpty(g.First().i.Image) ? "" : ShopImages.Url(g.First().i.Image, true), "nos", g.Select(k => k.o.No).Distinct().ToArray(), "v", g.First().i.VariantId)).OrderByDescending(d => (int)d["q"]).ToList();
+            ShopGoods.Prep(c, sh, os, by);   // where to take each line from, what still waits for its pieces
             return D("list", by, "orders", os.Count, "ids", os.Select(o => o.Id).ToArray());
         }
 
@@ -202,7 +203,7 @@ namespace RiwaqChat
             else if (kind == "prep")
             {
                 var p = Prep(c, sh); h.Append("<div class=\"pg\"><h1 style=\"margin:0\">قايمة التجهيز</h1><p>").Append(name).Append(" · ").Append(DateTime.UtcNow.AddHours(2).ToString("yyyy-MM-dd HH:mm")).Append(" · ").Append(p["orders"]).Append(" أوردر متأكد</p><table><thead><tr><th>المنتج</th><th>الكود</th><th>الكمية</th><th>أوردرات</th></tr></thead><tbody>");
-                foreach (var i in (List<Dictionary<string, object>>)p["list"]) h.Append("<tr><td>").Append(H((string)i["n"])).Append(((string)i["o"]).Length > 0 ? "<br><small>" + H((string)i["o"]) + "</small>" : "").Append(((string)i["x"]).Length > 0 ? "<br><small>" + H((string)i["x"]) + "</small>" : "").Append("</td><td class=\"num\">").Append(H((string)i["sku"])).Append("</td><td><b>").Append(i["q"]).Append("</b></td><td>").Append(string.Join("، ", (int[])i["nos"])).Append("</td></tr>");
+                foreach (var i in (List<Dictionary<string, object>>)p["list"]) h.Append("<tr><td>").Append(H((string)i["n"])).Append(((string)i["o"]).Length > 0 ? "<br><small>" + H((string)i["o"]) + "</small>" : "").Append(((string)i["x"]).Length > 0 ? "<br><small>" + H((string)i["x"]) + "</small>" : "").Append(i.ContainsKey("at") ? "<br><small>" + H((string)i["at"]) + "</small>" : "").Append(i.ContainsKey("pre") ? "<br><small>مستني " + i["pre"] + " حجز مسبق</small>" : "").Append("</td><td class=\"num\">").Append(H((string)i["sku"])).Append("</td><td><b>").Append(i["q"]).Append("</b></td><td>").Append(string.Join("، ", (int[])i["nos"])).Append("</td></tr>");
                 h.Append("</tbody></table></div>");
             }
             else { Web.Error(res, 404, "not_found"); return; }
