@@ -266,6 +266,7 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
                     if (!update())
                         try { Exec(c2, "INSERT INTO dbo.Carriers(StoreId, Company, KeyBox, Code, Last4, AccName, HookId, HookBox, Places, MoreBox) VALUES(@s, @c, @k, @cd, @l, @n, @h, @hb, @p, @m)", "@s", s.Id, "@c", co.Id, "@k", Secrets.Protect(k.Key), "@cd", Nz(k.Code), "@l", last, "@n", Nz(Cut(k.AccName, 120)), "@h", Shops.Token(12), "@hb", Secrets.Protect(Shops.Token(24)), "@p", places, "@m", more); }
                         catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { update(); }
+                    ShopShipPick.Forget(s.Id);   // the checkout's companies see the new link at once
                     if (CarrierAreas.Count(c2, co.Id) == 0) HostingEnvironment.QueueBackgroundWorkItem(ct => CarrierAreas.Refresh(co, true, ct));
                     Web.Json(res, 200, Tab(c2, s));
                 }
@@ -374,8 +375,8 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
             later = null; if (!a.StartsWith("ship-", StringComparison.Ordinal) || !On(c, s)) return false;
             switch (a)
             {
-                case "ship-link": later = LinkUp(c, s, b, res); return true;
-                case "ship-unlink": Exec(c, "DELETE FROM dbo.Carriers WHERE StoreId=@s AND Company=@c", "@s", s.Id, "@c", Str(b, "c", 10)); Web.Json(res, 200, Tab(c, s)); return true;
+                case "ship-link": ShopShipPick.Forget(s.Id); later = LinkUp(c, s, b, res); return true;
+                case "ship-unlink": Exec(c, "DELETE FROM dbo.Carriers WHERE StoreId=@s AND Company=@c", "@s", s.Id, "@c", Str(b, "c", 10)); ShopShipPick.Forget(s.Id); Web.Json(res, 200, Tab(c, s)); return true;
                 case "ship-set": SaveSet(c, s, b); Web.Json(res, 200, Tab(c, s)); return true;
                 case "ship-check": CheckMany(c, s, sh, b, res); return true;
                 case "ship-send": later = SendMany(c, s, b, res); return true;
@@ -418,7 +419,7 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
                 var h = err != null || empty ? null : CarrierAreas.Match(c, s.Id, co.Id, o.Gov, o.City, o.Area); var warn = new List<string>();
                 if (o.Deposit > 0 && o.PayState != "paid") warn.Add(o.PayState == "sent" ? "راجع صورة التحويل الأول" : "لسه ماحوّلش، فالمندوب هيحصّل المبلغ كله"); if (Crm.Of(c, s.Id, o.Phone).Mark == "block") warn.Add("متعلّم «ماتشحنلوش»");
                 if (h != null && h.Row == null && h.Closed) warn.Add(co.Name + " مابتوصّلش للمنطقة دي");
-                return D("id", o.Id, "no", o.No, "name", o.Name, "place", string.Join("، ", new[] { ShopGeo.Name(o.Gov), o.City, o.Area }.Where(x => !string.IsNullOrWhiteSpace(x))), "addr", Cut(o.Address, 120), "gov", o.Gov, "cod", o.Due, "err", err ?? "", "warn", warn, "key", h != null && h.Sure ? h.Row.Key : "", "area", h != null && h.Sure ? h.Row.Label : "", "picked", h != null && h.Picked, "more", h == null ? new object[0] : h.More.Take(12).Select(x => (object)D("k", x.Key, "t", x.Label)).ToArray());
+                return D("id", o.Id, "no", o.No, "name", o.Name, "place", string.Join("، ", new[] { ShopGeo.Name(o.Gov), o.City, o.Area }.Where(x => !string.IsNullOrWhiteSpace(x))), "addr", Cut(o.Address, 120), "gov", o.Gov, "cod", o.Due, "err", err ?? "", "warn", warn, "pick", ShopShipPick.KeyOf(o), "key", h != null && h.Sure ? h.Row.Key : "", "area", h != null && h.Sure ? h.Row.Label : "", "picked", h != null && h.Picked, "more", h == null ? new object[0] : h.More.Take(12).Select(x => (object)D("k", x.Key, "t", x.Label)).ToArray());
             }).ToArray();
             Ok(res, "list", rows, "need", co.NotReady(k) ?? "", "empty", empty, "open", k.B("open", false));
         }

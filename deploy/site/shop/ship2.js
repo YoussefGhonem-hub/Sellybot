@@ -1,15 +1,15 @@
-/* SellyStore: «ميعاد التوصيل» (the customer picks the delivery day at checkout) and shipping by city or weight (the sum is asked again
-   as soon as the city is known). Loaded only when BOOT.shop.ship2 is there. Every day shown comes from the server (/_a/days), which
+/* SellyStore: «ميعاد التوصيل» (the customer picks the delivery day at checkout), shipping by city or weight (the sum is asked again
+   as soon as the city is known) and «الزبون يختار شركة الشحن» (each way with its fee and days, from the sum: ShopShipPick.cs). Loaded only when BOOT.shop.ship2 is there. Every day shown comes from the server (/_a/days), which
    checks it again when the order is placed; the fee always comes from /_a/quote. Works inside any template's checkout (formBits.where). */
 (() => {
 "use strict";
-const W = window, D = document, $ = i => D.getElementById(i), { S, _, esc, A, CH } = W, X = W.BOOT.shop.ship2 || {}, DY = X.day, RT = X.rate;
-const css = D.createElement("style"); css.textContent = ".ddg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,108px),1fr));gap:8px}.ddg button{font:inherit;color:inherit;background:var(--card);border:1.5px solid var(--line2,var(--line));border-radius:var(--r,12px);min-height:48px;padding:6px 8px;cursor:pointer;text-align:center;line-height:1.3}.ddg button[aria-pressed=true]{border-color:var(--ac,var(--fg));box-shadow:inset 0 0 0 1px var(--ac,var(--fg))}.ddp{margin-top:8px}.ddg button b{display:block;font-size:15px}.ddg button small{color:var(--mut);font-size:12.5px}.ddw .mutp{margin:6px 0 0}"; D.head.appendChild(css);
+const W = window, D = document, $ = i => D.getElementById(i), { S, _, esc, A, CH } = W, X = W.BOOT.shop.ship2 || {}, DY = X.day, RT = X.rate, PK = X.pick;
+const css = D.createElement("style"); css.textContent = ".ddg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,108px),1fr));gap:8px}.ddg button{font:inherit;color:inherit;background:var(--card);border:1.5px solid var(--line2,var(--line));border-radius:var(--r,12px);min-height:48px;padding:6px 8px;cursor:pointer;text-align:center;line-height:1.3}.ddg button[aria-pressed=true]{border-color:var(--ac,var(--fg));box-shadow:inset 0 0 0 1px var(--ac,var(--fg))}.ddp{margin-top:8px}.ddg button b{display:block;font-size:15px}.ddg button small{color:var(--mut);font-size:12.5px}.ddw .mutp{margin:6px 0 0}.cpg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:8px}.cpg button{font:inherit;color:inherit;background:var(--card);border:1.5px solid var(--line2,var(--line));border-radius:var(--r,12px);min-height:64px;padding:10px 12px;cursor:pointer;text-align:start;display:grid;gap:2px;line-height:1.35}.cpg button[aria-checked=true]{border-color:var(--ac,var(--fg));box-shadow:inset 0 0 0 1px var(--ac,var(--fg))}.cpg button b{font-size:15px;overflow-wrap:anywhere}.cpg .cpf{font-weight:700}.cpg small{color:var(--mut);font-size:12.5px}.cpg button:focus-visible{outline:2px solid var(--ac,var(--fg));outline-offset:2px}"; D.head.appendChild(css);
 let L = null, LG = 0, N = 0;   /* the days for governorate LG */
 const gov = () => +S.co.gov || 0, covered = () => DY && !S.co.branch && gov() > 0 && (!DY.govs.length || DY.govs.includes(gov()));
 const cityOf = () => { const c = S.co, g = W.gov && W.gov(); return c.city && g && !g.c.includes(c.city) ? (c.cityT || "").trim() : c.city || ""; };
 /* what the sum and the order carry (core.js how()) */
-W.how2 = () => { const o = {}; if (RT) o.cq = cityOf(); if (covered() && S.co.day) { o.day = S.co.day; if (DY.parts && S.co.dpart) o.dpart = S.co.dpart; } return o; };
+W.how2 = () => { const o = {}; if (RT) o.cq = cityOf(); if (PK && !S.co.branch && S.co.car) o.car = S.co.car; if (covered() && S.co.day) { o.day = S.co.day; if (DY.parts && S.co.dpart) o.dpart = S.co.dpart; } return o; };
 
 async function load(force) {
   const g = gov(); if (!covered() || (!force && L && LG === g)) return; const n = ++N;
@@ -22,8 +22,22 @@ const box = () => {
   return `<div class="sec ddw" id="ddw"><h2>${_("ميعاد التوصيل", "Delivery day")}${DY.must ? "" : ` <small class="mutp">${_("(اختياري)", "(optional)")}</small>`}</h2><div class="ddg" role="group" aria-label="${_("يوم التوصيل", "Delivery day")}">${L.map(d => { const t = _(d.t.ar, d.t.en).split(" "); return `<button type="button" data-a="dday:${d.d}" aria-pressed="${S.co.day === d.d}"><b>${esc(t[0])}</b><small dir="ltr">${esc(t.slice(1).join(" "))}</small></button>`; }).join("")}</div>${DY.parts ? `<div class="ddg ddp" role="group" aria-label="${_("الفترة", "Time of day")}">${[["am", "الصبح", "Morning"], ["pm", "بالليل", "Evening"]].map(p => `<button type="button" data-a="dpart:${p[0]}" aria-pressed="${S.co.dpart === p[0]}"><b>${_(p[1], p[2])}</b></button>`).join("")}</div>` : ""}<span class="err" id="e-day" role="alert"></span></div>`;
 };
 const draw = () => { const e = $("ddw"); if (e) e.outerHTML = box(); else if (covered() && S.view === "co") W.R(true); };
+/* «الزبون يختار شركة الشحن»: the ways come with the sum (S.q.copts); the first in the owner's order is on until the customer picks */
+const ways = () => PK && !S.co.branch && gov() > 0 && S.q && S.q.copts && S.q.copts.length > 1 ? S.q.copts : null;
+const carBox = () => {
+  const l = ways(); if (!PK || S.co.branch) return ""; if (!l) return '<div id="cpw"></div>';
+  if (!l.some(o => o.k === S.co.car)) S.co.car = S.q.car || l[0].k;
+  const fee = o => o.free ? _("ببلاش", "Free") : W.m(o.fee);
+  return `<div class="sec cpw" id="cpw"><h2>${_("هتستلم مع مين؟", "Who delivers it?")}</h2><div class="cpg" role="radiogroup" aria-label="${_("شركة الشحن", "Delivery company")}">${l.map(o => { const on = o.k === S.co.car; return `<button type="button" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}" data-a="cpick:${esc(o.k)}"><b>${esc(_(o.n))}</b><span class="cpf">${fee(o)}</span>${o.d ? `<small>${_(`بيوصلك خلال ${esc(o.d)} يوم`, `Arrives in ${esc(o.d)} days`)}</small>` : ""}</button>`; }).join("")}</div><span class="err" id="e-car" role="alert"></span></div>`;
+};
+const drawCar = () => { const e = $("cpw"); if (e) { const f = D.activeElement && e.contains(D.activeElement); e.outerHTML = carBox(); if (f) { const b = D.querySelector("#cpw [aria-checked=true]"); if (b) b.focus(); } } };
+A.cpick = k => { if (S.co.car === k) return; S.co.car = k; drawCar(); W.requote(true); };
+D.addEventListener("keydown", e => { const g = e.target.closest && e.target.closest(".cpg"); if (!g || !/^Arrow(Left|Right|Up|Down)$/.test(e.key)) return; const b = [...g.querySelectorAll("button")], i = b.indexOf(e.target), rtl = getComputedStyle(g).direction === "rtl", fwd = e.key === "ArrowDown" || e.key === (rtl ? "ArrowLeft" : "ArrowRight"); if (i < 0) return; e.preventDefault(); const n = b[(i + (fwd ? 1 : b.length - 1)) % b.length]; A.cpick(n.dataset.a.slice(6)); });
+/* every new sum redraws the ways (core.js retot() draws the lines first) */
+if (PK && W.lines) { const l0 = W.lines; W.lines = (...a) => { if (S.view === "co") setTimeout(drawCar, 0); return l0(...a); }; }
+if (PK && A.place) { const p1 = A.place; A.place = async () => { const l = ways(); if (l && !l.some(o => o.k === S.co.car)) { const e = $("e-car"); if (e) { e.textContent = _("اختار هتستلم مع مين", "Choose who delivers it"); $("cpw").scrollIntoView({ block: "center" }); } return; } await p1(); }; }
 /* inside every checkout: after «where to» */
-const fb = W.formBits, w0 = fb.where; fb.where = () => w0() + box();
+const fb = W.formBits, w0 = fb.where; fb.where = () => w0() + carBox() + box();
 A.dday = v => { S.co.day = S.co.day === v && !DY.must ? "" : v; draw(); };
 A.dpart = v => { S.co.dpart = S.co.dpart === v && !DY.must ? "" : v; draw(); };
 if (CH) { const g0 = CH.gov, c0 = CH.city; CH.gov = v => { S.co.day = ""; S.co.dpart = ""; L = null; g0(v); }; CH.city = v => { c0(v); if (RT) W.requote(true); }; }

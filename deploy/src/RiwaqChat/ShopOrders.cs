@@ -101,6 +101,7 @@ namespace RiwaqChat
                 if (q.Stop == "min") throw new ShopException("min", "أقل طلب " + q.Min.ToString("#,0.##", CultureInfo.InvariantCulture) + " ج.م.", ShopPrice.Json(q));
                 if (q.Stop == "empty" || q.Lines.Any(l => l.Err != null)) throw new ShopException("cart", "فيه حاجة في سلتك اتغيّرت. راجعها وأكّد تاني.", ShopPrice.Json(q));
                 if (!string.IsNullOrWhiteSpace(o.Coupon) && !q.CouponUsed) throw new ShopException("coupon", q.CouponErr ?? "الكود مش شغال.", ShopPrice.Json(q));
+                ShopShipPick.Check(o, q);   // «الزبون يختار شركة الشحن»: one of the ways on now
                 if (!o.ByOwner) ShopCard.Check(c, row, q, o.Lang);   // a digital line is paid first; installments above the owner's minimum
                 // the customer saw another total (a price, an offer or the shipping moved): show the new one first
                 if (o.Expected.HasValue && Math.Abs(o.Expected.Value - q.Total) >= 1) throw new ShopException("changed", "الإجمالي اتغيّر من آخر مرة شفته. راجع السعر الجديد وأكّد تاني.", ShopPrice.Json(q));
@@ -161,7 +162,7 @@ namespace RiwaqChat
                         long id; string token = Shops.Token(16); string proof = o.ByOwner || o.Proof == null ? null : ShopAccount.PicIn(c, tx, row.StoreId, o.Proof);
                         var exd = new Dictionary<string, object>(); if (q.Fees.Any(f => f.Kind == "gift") && cut(o.GiftMsg, 200).Length > 0) exd["gift"] = cut(o.GiftMsg, 200); if (recv.Length > 0) exd["recv"] = new Dictionary<string, object> { { "n", recv }, { "p", recvPhone } };
                         if (q.Branch != null) { var br = ShopPrice.Branch(row, q.Branch); exd["branch"] = new Dictionary<string, object> { { "id", q.Branch }, { "n", ShopJson.Str(ShopJson.At(br, "n"), 60) }, { "ad", ShopJson.Str(ShopJson.At(br, "ad"), 200) } }; }
-                        ShopShipDay.Extra(o, exd);
+                        ShopShipDay.Extra(o, exd); ShopShipPick.Extra(q, exd);
                         string extras = exd.Count == 0 ? null : ShopJson.Write(exd);
                         using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.ShopOrders(StoreId, No, Token, ClientKey, Channel, Lang, Name, Phone, Phone2, Gov, City, Area, Address, Landmark, Note, Subtotal, Discount, Ship, Total, Coupon, Offers, Dup, Ip, Device, Src, Pay, Fees, FeesJson, Extras, PayState, Deposit, Proof)
                             OUTPUT INSERTED.Id VALUES(@s, @no, @t, @k, @ch, @lang, @n, @p, @p2, @g, @city, @area, @a, @lm, @note, @sub, @disc, @ship, @total, @cp, @of, @dup, @ip, @dev, @src, @pay, @fees, @fj, @ex, @ps, @dep, @proof)",
@@ -343,7 +344,7 @@ namespace RiwaqChat
             bool sameItems = lines.Count == o.Items.Count && lines.Zip(o.Items, (x, y) => x.VariantId == y.VariantId && x.Qty == y.Qty).All(x => x);
             if (lines.Count == 0) return "الأوردر لازم يفضل فيه منتج واحد على الأقل. لو عايز تلغيه، غيّر حالته لملغي.";
             string days; bool off; decimal min;
-            decimal ship = b.ContainsKey("ship") ? Math.Max(0, ShopJson.Dec(ShopJson.At(b, "ship"))) : (gov != o.Gov || ShopShipRate.CityMoves(d, gov, o.City, city) || (!sameItems && ShopShipRate.Weighs(d, gov))) && o.Ship > 0 ? ShopShipRate.Fee(c, d, gov, city, ShopShipRate.On(d) ? ShopPrice.Quote(c, d, lines.Select(l => new ShopLine { VariantId = l.VariantId, Qty = l.Qty, Extra = l.Extra }).ToList(), null, gov, phone, now, false).Lines : null, ShopPrice.ShipFee(d, gov, out days, out off, out min) ?? 0) : o.Ship;
+            decimal ship = b.ContainsKey("ship") ? Math.Max(0, ShopJson.Dec(ShopJson.At(b, "ship"))) : (gov != o.Gov || ShopShipRate.CityMoves(d, gov, o.City, city) || (!sameItems && ShopShipRate.Weighs(d, gov))) && o.Ship > 0 ? ShopShipPick.Refee(c, d, o, ShopShipRate.Fee(c, d, gov, city, ShopShipRate.On(d) ? ShopPrice.Quote(c, d, lines.Select(l => new ShopLine { VariantId = l.VariantId, Qty = l.Qty, Extra = l.Extra }).ToList(), null, gov, phone, now, false).Lines : null, ShopPrice.ShipFee(d, gov, out days, out off, out min) ?? 0)) : o.Ship;   // the company the customer chose keeps its own fee
             decimal extraOff = b.ContainsKey("off") ? Math.Max(0, ShopJson.Dec(ShopJson.At(b, "off"))) : -1;
 
             using (var tx = c.BeginTransaction())

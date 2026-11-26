@@ -5,7 +5,7 @@
 //   ShopShipCash.cs   «مراجعة فلوس التحصيل»: what the couriers collected against what the company paid, by statement or by hand
 // This file: the tables, the settings (Settings.ship2, cleaned here), the owner's calls, and what the storefront is told.
 // The owner's settings: ship2.dday {on, wd, govs, from, to, cut, max, parts, must}, ship2.srate {on, w, cities, inc, per, zones},
-// ship2.sback {on}, ship2.scash {on, days}.
+// ship2.sback {on}, ship2.scash {on, days}, ship2.pick («الزبون يختار شركة الشحن», ShopShipPick.cs).
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -65,7 +65,7 @@ IF OBJECT_ID('dbo.ShipCashFiles') IS NULL
         {
             var bk = ShopJson.Sub(x, "sback"); var cs = ShopJson.Sub(x, "scash");
             return D("dday", ShopShipDay.Clean(ShopJson.Sub(x, "dday")), "srate", ShopShipRate.Clean(ShopJson.Sub(x, "srate")), "sback", D("on", ShopJson.Bool(ShopJson.At(bk, "on"))),
-                "scash", D("on", ShopJson.Bool(ShopJson.At(cs, "on")), "days", Clamp(ShopJson.Int(ShopJson.At(cs, "days"), 14), 3, 90)), "self", ShopSelf.Clean(ShopJson.Sub(x, "self")));
+                "scash", D("on", ShopJson.Bool(ShopJson.At(cs, "on")), "days", Clamp(ShopJson.Int(ShopJson.At(cs, "days"), 14), 3, 90)), "self", ShopSelf.Clean(ShopJson.Sub(x, "self")), "pick", ShopShipPick.Clean(ShopJson.Sub(x, "pick")));
         }
 
         // BOOT.shop.ship2 (ShopFront.ShopJsonFor): null = nothing on, the page loads nothing more
@@ -73,9 +73,9 @@ IF OBJECT_ID('dbo.ShipCashFiles') IS NULL
         {
             try
             {
-                var day = ShopShipDay.Boot(x.Row); var rate = ShopShipRate.Boot(x.Data);
-                if (day == null && rate == null) return null;
-                return D("day", day, "rate", rate, "v", ShopPages.Ver("ship2.js"));
+                var day = ShopShipDay.Boot(x.Row); var rate = ShopShipRate.Boot(x.Data); bool pick = ShopShipPick.Boot(x.Row);
+                if (day == null && rate == null && !pick) return null;
+                var r = D("day", day, "rate", rate, "v", ShopPages.Ver("ship2.js")); if (pick) r["pick"] = true; return r;
             }
             catch (Exception ex) { Log.Error(ex); return null; }
         }
