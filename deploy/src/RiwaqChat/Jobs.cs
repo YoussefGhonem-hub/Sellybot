@@ -61,6 +61,8 @@ namespace RiwaqChat
             new Lane { Name = "card", Work = (src, ct) => ShopCard.Run(ct) },
             // SellyStore's catalog: an import that stopped half way, the pre-orders' messages, replies to the owner held for the morning
             new Lane { Name = "cat", Work = (src, ct) => ShopGoods.Run(ct) },
+            // «ربط ببرامج تانية»: the webhooks and their retries, what changed in the products; «القياس من السيرفر»: the ad events in batches (claimed in the database)
+            new Lane { Name = "links", Work = (src, ct) => ShopApiHooks.Run(ct) },
         };
 
         public static void Start()

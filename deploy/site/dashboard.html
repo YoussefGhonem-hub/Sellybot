@@ -7433,11 +7433,11 @@
   }
 
   // ---------------- «متجري» (SellyStore): its own files, loaded once when the tab opens ----------------
-  var shopFiles = null, SHOP_V = "20261126l";
+  var shopFiles = null, SHOP_V = "20261126m";
   function shopLoad() {
     return shopFiles || (shopFiles = new Promise(function (ok, no) {
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/app.css?v=" + SHOP_V; document.head.appendChild(l);
-      var list = ["app", "qr", "catalog", "sell", "desk", "look", "ship", "team", "rew", "ship2", "card", "cat", "seasons", "abtest", "domain"];
+      var list = ["app", "qr", "catalog", "sell", "desk", "look", "ship", "team", "rew", "ship2", "card", "cat", "seasons", "abtest", "domain", "api"];
       (function next() {
         var n = list.shift(); if (!n) return ok();
         var s = document.createElement("script"); s.src = "shop-admin/" + n + ".js?v=" + SHOP_V; s.onload = next;
