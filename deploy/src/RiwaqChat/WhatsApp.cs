@@ -607,6 +607,7 @@ END", "@s", s.Id, "@sub", subject, "@b", body))
                 if (!string.IsNullOrEmpty(s.OwnerPhone) && key == s.OwnerPhone) return true;
                 // our own reply echoed back (message.any) -> ignore; anything else is the owner answering by hand -> the bot steps aside for a while
                 if (text.Length > 0 && IsOurs(c, s.Id, key, text, line)) return true;
+                if (text.Length == 0 && m.HasMedia && Inbox.SentPicture(c, s.Id, Inbox.WaChan(line), key)) return true;   // a picture sent from SellyChat
                 Save(c, s.Id, key, false, text.Length > 0 ? text : "[ملف/صورة من المتجر]", "owner:" + (m.Id ?? Guid.NewGuid().ToString("N")), null, line);
                 return true;
             }
@@ -660,17 +661,17 @@ ELSE
                 {
                     var v = cmd.ExecuteScalar();
                     if (v == null || v == DBNull.Value) return null;
-                    SellyChat.Kick(storeId);   // a copy to SellyChat, when the store has it
+                    Inbox.Touch(c, storeId, Inbox.WaChan(line), chatKey, fromCustomer, body, msgId);   // SellyChat's list of chats
                     return Convert.ToInt64(v);
                 }
             }
             catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { return null; }
         }
 
-        // what we sent ourselves: the assistant's replies, and the answers written in SellyChat (MsgId owner:cw-<id>)
+        // what we sent ourselves: the assistant's replies, and the answers written in SellyChat (MsgId owner:in-<staff>-<random>)
         static bool IsOurs(SqlConnection c, int storeId, string chatKey, string text, int line)
         {
-            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=0 AND (MsgId IS NULL OR MsgId LIKE 'owner:cw-%') AND Line=@l
+            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=0 AND (MsgId IS NULL OR MsgId LIKE 'owner:in-%') AND Line=@l
                 AND CreatedAt > DATEADD(MINUTE,-30,SYSUTCDATETIME()) AND CHARINDEX(@t, Body) > 0", "@s", storeId, "@c", chatKey, "@t", text, "@l", line))
                 return (int)cmd.ExecuteScalar() > 0;
         }
@@ -701,6 +702,7 @@ ELSE
                     if (rows.Count == 0 || rows[0].Id != rowId) return;
                     // the owner (or whoever holds this number) is talking to this customer themselves
                     if (rows.Any(x => x.Owner && x.At > DateTime.UtcNow.AddHours(-PauseHours))) return;
+                    if (Inbox.Quiet(c, storeId, Inbox.WaChan(line), chatKey)) return;   // «وقّف المساعد هنا» in SellyChat
 
                     s = Db.StoreById(c, storeId);
                     if (s == null || s.Status != "active" || !s.WaEnabled || string.IsNullOrEmpty(s.WaInstance)) return;
