@@ -7393,7 +7393,7 @@
   // They download all together and run in this order (async=false): one after the other took ~0.7 s each on the live site.
   // Browsers and Cloudflare keep shop-admin/ a week (web.template.config), so a change needs a new SHOP_V. The deploy
   // (ci-deploy.ps1) also adds the files' own fingerprint to SHOP_V, so a forgotten bump can't leave anyone on old files.
-  var shopFiles = null, SHOP_V = "20261126u", shopCss = false, shopGot = 0, shopDone = [];
+  var shopFiles = null, SHOP_V = "20261126w", shopCss = false, shopGot = 0, shopDone = [];
   var SHOP_JS = ["app", "qr", "catalog", "sell", "desk", "look", "ship", "deliver", "team", "rew", "ship2", "card", "cat", "seasons", "abtest", "domain", "api"];
   function shopUrl(f) { return "shop-admin/" + f + "?v=" + SHOP_V; }
   function shopLoad() {
