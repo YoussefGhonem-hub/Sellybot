@@ -131,7 +131,7 @@ namespace RiwaqChat
             try { r = await Call(k, "/order/getOrders", new Dictionary<string, object> { { "command", 1 }, { "serialNumber", new[] { reference } } }); }
             catch (CarrierException ex) when (ex.Code == "145003064") { return null; }
             catch (CarrierException ex) when (!ex.Unsure && !ex.Down && !ex.BadKey) { throw new CarrierException("J&T مش بتسمح لنا ندوّر على الشحنة. دوّر عليها في حسابك برقم " + reference + ".", "nofind"); }
-            var x = ShopJson.List(ShopJson.At(r, "data")).OfType<Dictionary<string, object>>().FirstOrDefault(o => ShopJson.Str(ShopJson.At(o, "txlogisticId")) == reference && ShopJson.Str(ShopJson.At(o, "billCode")).Length > 0 && !Regex.IsMatch(ShopJson.Str(ShopJson.At(o, "orderStatus")), "cancel|取消", RegexOptions.IgnoreCase));
+            var x = ShopJson.List(ShopJson.At(r, "data")).OfType<Dictionary<string, object>>().FirstOrDefault(o => ShopJson.Str(ShopJson.At(o, "txlogisticId")) == reference && ShopJson.Str(ShopJson.At(o, "billCode")).Length > 0 && !Regex.IsMatch(ShopJson.Str(ShopJson.At(o, "orderStatus")), "cancel|取消", RegexOptions.IgnoreCase) && ShopJson.Str(ShopJson.At(o, "orderStatus")) != "104");
             return x == null ? null : new CarrierMade { Tracking = ShopJson.Str(ShopJson.At(x, "billCode"), 60), Id = reference };
         }
 
