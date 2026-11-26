@@ -496,7 +496,7 @@
           <button data-go="wa"><span class="ic">💬</span>الواتساب <span class="count" id="waCount" hidden>0</span></button>
           <button data-go="meta"><span class="ic">📨</span>مسنجر وإنستجرام <span class="count" id="mtCount" hidden>0</span></button>
           <button data-go="tg"><span class="ic">✈️</span>تيليجرام</button>
-          <button data-go="sc"><span class="ic">💬</span>SellyChat</button>
+          <button data-go="sc"><span class="ic">💬</span>محادثاتي</button>
           <button data-go="council"><span class="ic">🧠</span>فكّر معانا <span class="count" id="cnCount" hidden>0</span></button>
         </div></div>
       </div>
@@ -840,36 +840,31 @@
         </table></div>
       </section>
 
-      <!-- SellyChat (SellyChat.cs): the server (Chatwoot's community edition with Sellybot's name, deploy/sellychat/), who sees it, every store's account -->
+      <!-- «💬 محادثاتي» (SellyChat, Inbox.cs): who has it before it's open to a plan, employees per store, and which stores use it -->
       <section data-page="sc" hidden>
         <div class="grid2b">
           <form class="card anim" id="scForm" autocomplete="off">
-            <h3>سيرفر SellyChat</h3>
-            <p class="sub">SellyChat هو Chatwoot (النسخة المفتوحة) باسمنا ولوجونا، على سيرفر Linux لوحده. خطوات تشغيله في <bdi class="ltr">deploy/sellychat/README.md</bdi>، وفي آخرها بيطلعلك المفتاح (PLATFORM_TOKEN).</p>
-            <label for="scUrl">عنوان السيرفر</label>
-            <input type="text" id="scUrl" class="ltr" maxlength="200" placeholder="https://chat.sellybot.online">
-            <label for="scTok" style="margin-top:10px">مفتاح الـ Platform App</label>
-            <input type="password" id="scTok" class="ltr" maxlength="200" placeholder="سيبه فاضي لو مش هتغيّره">
-            <label for="scTesters" style="margin-top:10px">متاجر تجرّبه قبل الكل</label>
+            <h3>«💬 محادثاتي» (SellyChat)</h3>
+            <p class="sub">صفحة جوه Sellybot بيرد منها التاجر وموظفينه على رسايل الواتساب والمسنجر والإنستجرام وتيليجرام من مكان واحد. شغالة على نفس سيرفر Sellybot، ومحتاجتش أي إعداد.</p>
+            <label for="scTesters">متاجر تجرّبها قبل الكل</label>
             <input type="text" id="scTesters" class="ltr" maxlength="1000" placeholder="store-slug, another-slug">
-            <div class="hint">SellyChat مقفول على الكل لحد ما تختار أقل باقة فيه من «الباقات والخصومات» ← المميزات. المتاجر اللي هنا بتشوفه قبلها (بالـ slug بتاعها، وبينهم فاصلة). ومتجر Sellybot نفسه بيشوفه دايمًا.</div>
+            <div class="hint">اكتب اسم المتجر اللي في لينكه (اللي مكتوب رمادي جنب اسمه في «المتاجر»)، ولو أكتر من متجر حط بينهم فاصلة. متجر Sellybot نفسه بيشوفها دايمًا.</div>
             <label for="scSeatsN" style="margin-top:10px">أكبر عدد موظفين للمتجر</label>
             <input type="number" id="scSeatsN" class="ltr" min="1" max="50" step="1">
             <div class="msg" id="scMsg"></div>
-            <div class="row" style="margin-top:12px"><button class="btn" id="scSave">حفظ والتأكد منه</button></div>
+            <div class="row" style="margin-top:12px"><button class="btn" id="scSave">حفظ</button></div>
           </form>
           <div class="card anim" style="animation-delay:.1s">
-            <h3>الحالة</h3>
+            <h3>مين شايفها؟</h3>
             <div class="calc">
-              <div class="r"><span>السيرفر</span><b id="scSrv">—</b></div>
-              <div class="r"><span>مفتوح لـ</span><b id="scWho">—</b></div>
+              <div class="r"><span>مفتوحة لـ</span><b id="scWho">—</b></div>
             </div>
             <div class="hint" id="scHint" style="margin-top:10px"></div>
           </div>
         </div>
-        <div class="toolbar" style="margin-top:16px"><h3 style="margin:0">المتاجر اللي شغّلته</h3><span class="space"></span><button class="btn ghost sm" id="scReload" type="button">تحديث</button></div>
+        <div class="toolbar" style="margin-top:16px"><h3 style="margin:0">المتاجر اللي بتستخدمها</h3><span class="space"></span><button class="btn ghost sm" id="scReload" type="button">تحديث</button></div>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>المتجر</th><th>المحادثات</th><th>الموظفين</th><th>الحالة</th><th>آخر رسالة اتنقلت</th></tr></thead>
+          <thead><tr><th>المتجر</th><th>المحادثات</th><th>مستنية رد</th><th>الموظفين</th><th>آخر رسالة</th></tr></thead>
           <tbody id="scRows"></tbody>
         </table></div>
       </section>
@@ -1079,7 +1074,7 @@
   // ---------- navigation ----------
   var TITLES = { home: ["الرئيسية", "نظرة عامة على المنصة الشهر ده"], money: ["المكسب والتكلفة", "بتكسب كام، بتصرف كام، وتشحن Claude بكام"], reqs: ["طلبات الاشتراك", "أصحاب المتاجر بيدفعوا ويبعتوا طلب، وانت بتوافق أو ترفض"],stores: ["المتاجر والمستخدمين", "اشتراكات، حدود، باسوردات، ودخول كصاحب متجر"], plans: ["الباقات والخصومات", "اعمل باقة، عدّلها، امسحها، أو حط عليها خصم"],
                  subs: ["الاشتراكات والإيرادات", "كل اشتراك اتسجل وفلوسه"], support: ["الدعم الفني", "تذاكر أصحاب المتاجر"], wa: ["الواتساب", "حساب Wapilot الواحد، وكل رقم لأي متجر"],
-                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], sc: ["SellyChat", "صندوق رسايل واحد للتاجر وفريقه: كل القنوات في مكان واحد"], council: ["فكّر معانا", "التاجر يعرض فكرته، وبيدفع بالتوكنز لوحدها"], shops: ["المتاجر المؤجرة", "SellyStore: متجر باسم التاجر ولينكه"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
+                 meta: ["مسنجر وإنستجرام", "تطبيق Meta الواحد، والصفحات والحسابات المربوطة"], tg: ["تيليجرام", "بوت Sellybot اللي بيعمل بوتات التجار، والبوتات المربوطة"], sc: ["💬 محادثاتي (SellyChat)", "التاجر وفريقه بيردّوا على كل القنوات من مكان واحد"], council: ["فكّر معانا", "التاجر يعرض فكرته، وبيدفع بالتوكنز لوحدها"], shops: ["المتاجر المؤجرة", "SellyStore: متجر باسم التاجر ولينكه"], settings: ["الإعدادات", "سعر الدولار، واتساب، وباسورد الإدارة"] };
   function moveInd() {
     var on = document.querySelector("#nav button.on"); if (!on) return;
     var g = on.closest(".ng"); if (g && !g.classList.contains("open")) on = g.querySelector(".ngh");
@@ -1313,36 +1308,32 @@
     if (!confirm("شيل بوت Sellybot؟ التجار مش هيقدروا يعملوا بوت بضغطة لحد ما تحط بوت تاني. البوتات المربوطة هتفضل شغالة.")) return;
     try { renderTgAdmin(await tgApi("clear", {})); toast("اتشال ✓"); } catch (err) { toast(err.message, true); }
   };
-  // ---------- SellyChat: the server, who sees it, every store's account (api/sellychat-admin.ashx) ----------
+  // ---------- «💬 محادثاتي» (SellyChat): testers, employees per store, who uses it (api/inbox-admin.ashx) ----------
   async function scApi(action, body) {
     var init = { method: body ? "POST" : "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch" } };
     if (body) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
-    var r = await fetch("api/sellychat-admin.ashx" + (action ? "?action=" + action : ""), init), data = null;
+    var r = await fetch("api/inbox-admin.ashx" + (action ? "?action=" + action : ""), init), data = null;
     try { data = await r.json(); } catch (e) {}
     if (r.status === 401) { showLogin(); throw new Error("سجّل دخول تاني."); }
     if (!r.ok) throw new Error((data && data.message) || "حصلت مشكلة، جرّب تاني.");
     return data;
   }
   function renderScAdmin(d) {
-    $("scUrl").value = d.url || ""; $("scTok").value = ""; $("scTesters").value = d.testers || ""; $("scSeatsN").value = d.seats;
-    var ready = d.url && d.hasToken;
-    $("scSrv").textContent = !ready ? "مش متظبط" : d.check ? "⚠️ " + d.check : "شغال ✅";
+    $("scTesters").value = d.testers || ""; $("scSeatsN").value = d.seats;
     var testers = (d.testers || "").split(/[,\s،]+/).filter(Boolean).length;
-    $("scWho").textContent = !ready ? "—" : d.minPlan ? "الباقات من اللي اخترتها وأعلى" + (testers ? " + " + fmt(testers) + " متجر تجربة" : "") : testers ? fmt(testers) + " متجر تجربة بس" : "متجر Sellybot بس";
-    $("scHint").textContent = !ready ? "من غير السيرفر والمفتاح، صفحة «💬 محادثاتي» مش بتظهر لأي تاجر."
-      : d.minPlan ? "التجار اللي باقتهم فيها SellyChat بيشوفوا «💬 محادثاتي» في لوحتهم." : "عشان يظهر للتجار: اختار أقل باقة فيه من «الباقات والخصومات» ← المميزات.";
+    $("scWho").textContent = d.minPlan ? "الباقات من اللي اخترتها وأعلى" + (testers ? " + " + fmt(testers) + " متجر تجربة" : "") : testers ? fmt(testers) + " متجر تجربة + متجر Sellybot" : "متجر Sellybot بس";
+    $("scHint").textContent = d.minPlan ? "التجار اللي باقتهم فيها «محادثاتي» بيشوفوها في لوحتهم." : "مقفولة على التجار. عشان تفتحها: «الباقات والخصومات» ← المميزات ← «💬 محادثاتي»، واختار أقل باقة فيها.";
     var rows = d.stores || [];
     $("scRows").innerHTML = rows.length ? rows.map(function (x) {
-      var st = x.status ? '<span class="pill warn">' + esc(x.status) + "</span>" : '<span class="pill ok">شغال ✅</span>';
-      return "<tr><td><b dir=\"auto\">" + esc(x.store) + '</b> <span class="hint ltr">' + esc(x.slug) + "</span></td><td>" + fmt(x.conversations) + "</td><td>" + fmt(x.agents) + "</td><td>" + st + "</td><td>" + (x.lastAt ? esc(ago(x.lastAt)) : "—") + "</td></tr>";
-    }).join("") : '<tr><td colspan="5" class="hint">لسه محدش شغّل SellyChat.</td></tr>';
+      return "<tr><td><b dir=\"auto\">" + esc(x.store) + '</b> <span class="hint ltr">' + esc(x.slug) + "</span></td><td>" + fmt(x.chats) + "</td><td>" + fmt(x.waiting) + "</td><td>" + fmt(x.staff) + "</td><td>" + (x.lastAt ? esc(ago(x.lastAt)) : "—") + "</td></tr>";
+    }).join("") : '<tr><td colspan="5" class="hint">لسه محدش بيستخدمها.</td></tr>';
   }
   async function loadSc() { try { renderScAdmin(await scApi()); } catch (e) { toast(e.message, true); } }
   $("scReload").onclick = loadSc;
   $("scForm").onsubmit = async function (e) {
     e.preventDefault(); var b = $("scSave"); $("scMsg").textContent = ""; $("scMsg").className = "msg";
     busy(b, true);
-    try { renderScAdmin(await scApi("save", { url: $("scUrl").value.trim(), token: $("scTok").value.trim(), testers: $("scTesters").value, seats: Number($("scSeatsN").value) || 5 })); toast("اتحفظ ✓"); }
+    try { renderScAdmin(await scApi("save", { testers: $("scTesters").value, seats: Number($("scSeatsN").value) || 5 })); toast("اتحفظ ✓"); }
     catch (err) { $("scMsg").className = "msg err"; $("scMsg").textContent = err.message; }
     busy(b, false);
   };
