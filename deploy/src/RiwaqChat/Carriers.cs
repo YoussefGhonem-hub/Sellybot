@@ -574,8 +574,9 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
             return async () =>
             {
                 string no; try { no = await co.Pickup(k, day, n, place.Length == 0 ? k.S("place") : place, note, wait); } catch (CarrierException ex) { if (ex.BadKey) using (var c2 = Db.Open()) Fault(c2, k, ex.Message); throw Said(ex); }
+                string warn = no != null && no.StartsWith("?", StringComparison.Ordinal) ? no.Substring(1) : ""; if (warn.Length > 0) no = "";   // the company may not have taken it (ShipBlu)
                 using (var c2 = Db.Open()) { k.Set["pickup"] = D("date", day.ToString("yyyy-MM-dd"), "n", n, "no", no ?? ""); Exec(c2, "UPDATE dbo.Carriers SET Defaults=@d WHERE StoreId=@s AND Company=@c", "@d", ShopJson.Write(k.Set), "@s", s.Id, "@c", co.Id); }
-                Ok(res, "no", no ?? "");
+                Ok(res, "no", no ?? "", "warn", warn);
             };
         }
 

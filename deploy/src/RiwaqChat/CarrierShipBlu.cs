@@ -80,7 +80,17 @@ namespace RiwaqChat
         {
             if (waiting.Count == 0) throw new CarrierException("مفيش شحنات مستنية الاستلام. ابعت الأوردرات الأول.", "none");
             var b = new Dictionary<string, object> { { "tracking_numbers", waiting.Select(x => x.Tracking).ToArray() }, { "orders", waiting.Select(x => x.TheirId).Where(x => !string.IsNullOrEmpty(x)).Select(x => { int n; return int.TryParse(x, out n) ? (object)n : x; }).ToArray() }, { "pickup_date", day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) } };
-            await Call(k, HttpMethod.Post, "/delivery-orders/request-pickup/", b); return "";
+            // their docs write only the address, with no body and an empty answer: the numbers also go in the address (as the labels' do), and one
+            // order is read again after; still «created» = ShipBlu didn't take it, said to the owner instead of a plain ✅ (Carriers.AskPickup: «?» = a warning)
+            var tn = Uri.EscapeDataString(string.Join(",", waiting.Select(x => x.Tracking))).Replace("%2C", ",");
+            await Call(k, HttpMethod.Post, "/delivery-orders/request-pickup/?tracking_numbers=" + tn, b);
+            try
+            {
+                var one = waiting[0].Tracking; var d = Rows(await Call(k, HttpMethod.Get, "/delivery-orders/?tracking_number=" + Uri.EscapeDataString(one))).FirstOrDefault(y => T(y, "tracking_number") == one);
+                if (d != null && string.Equals(T(d, "status", 40), "CREATED", StringComparison.OrdinalIgnoreCase)) return "?ShipBlu لسه ماأكدتش طلب المندوب. لو ماجاش، اطلبه من حسابك على ShipBlu.";
+            }
+            catch (CarrierException) { }
+            return "";
         }
 
         public override Task Cancel(CarrierLink k, CarrierShip x) { throw new CarrierException("ShipBlu مابتسمحش بالإلغاء من بره حسابها. الغيها من حسابك على ShipBlu، وهنعرف لوحدنا خلال ساعة (أو دوس «حدّث الحالة»).", "nocancel"); }
