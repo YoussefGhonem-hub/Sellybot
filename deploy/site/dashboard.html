@@ -4281,8 +4281,10 @@
     $("adminTabBtn").hidden = !me.isAdmin;
     // Messenger + Instagram: hidden until it opens to everyone (MetaApp.Visible), and when the plan has neither (applyPlanView)
     render(); loadItems(); mountHelpChat();
-    var want = fresh && !/^#customers\/\d{8,15}$/.test(location.hash) ? "" : (location.hash || "").replace("#", ""), file = /^customers\/(\d{8,15})$/.exec(want);   // #customers/2010… = that customer's file
+    var want = fresh && !/^#(customers\/\d{8,15}|shop\/[a-z]+)$/.test(location.hash) ? "" : (location.hash || "").replace("#", ""), file = /^customers\/(\d{8,15})$/.exec(want);   // #customers/2010… = that customer's file
     if (file) want = "customers";
+    var shopV = /^shop\/([a-z]+)$/.exec(want);   // #shop/orders = that tab of «متجري» (the «متجري» reels' buttons)
+    if (shopV) { want = "shop"; try { sessionStorage.setItem("sm-view", shopV[1]); } catch (e) { } }
     go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) || (want === "customers" && hasF("crm")) || (want === "council" && hasF("council")) || (want === "sellychat" && hasF("inbox")) || (want === "shop" && me.shop) ? want : "home");
     if (file && current === "customers") crOpen(file[1]);
     setTimeout(showNews, 1200);   // what's new since this browser last looked
