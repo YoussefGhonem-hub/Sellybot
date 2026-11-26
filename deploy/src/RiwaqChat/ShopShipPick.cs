@@ -95,6 +95,9 @@ namespace RiwaqChat
             q.Ways = l.Select(o => { var full = Fee(o, govFee); bool free = codeFree || (o.Free && over >= 0 && after >= over && any); return new Way { O = o, Full = full, Fee = free ? 0 : full, Free = free, Days = Days(o, govDays) }; }).ToList();
             var want = how == null ? "" : how.Carrier ?? ""; var w = q.Ways.FirstOrDefault(x => x.O.K == want); q.CarOk = w != null; if (w == null) w = q.Ways[0];
             q.Car = w.O.K; q.ShipFull = w.Full; q.FreeShip = w.Free; q.FreeLeft = w.O.Free && over > 0 && !w.Free ? over - after : 0; q.Ship = w.Fee; q.Days = w.Days;
+            // a way «شحن مجاني فوق» doesn't cover has no free shipping to reach: -1 («never», as FreeOver says it), so no bar says «الشحن مجاني
+            // ليك» while it is charged (every bar shows only above 0; 0 would read «always free» in some templates)
+            if (!w.O.Free && (how == null || string.IsNullOrEmpty(how.Branch) || ShopPrice.Branch(d.Row, how.Branch) == null)) q.FreeOver = -1;   // taken from a branch: as it was
         }
         static Way Chosen(ShopQuote q) { return q.Ways == null || q.Branch != null ? null : q.Ways.FirstOrDefault(x => x.O.K == q.Car); }
 
