@@ -167,7 +167,7 @@ namespace RiwaqChat
             Func<int, DateTime> at = h => Carriers.FromCairo(day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " " + h.ToString("00", CultureInfo.InvariantCulture) + ":00") ?? DateTime.UtcNow;
             var who = Party(k.M("n"), k.S("sn"), Store(k.StoreId), ShopOrders.Local(k.S("sp")), null, k.S("email"), from.AreaId, k.S("ss"), "EG"); decimal w = Kg(k, 0);
             var item = D("ProductGroup", "DOM", "ProductType", k.S("pt", "ONP"), "NumberOfShipments", parcels, "PackageType", "Box", "Payment", "P", "ShipmentWeight", D("Unit", "KG", "Value", w * parcels), "ShipmentVolume", D("Unit", "Cm3", "Value", 1),
-                "NumberOfPieces", parcels, "CashAmount", null, "ExtraCharges", null, "ShipmentDimensions", D("Length", 0, "Width", 0, "Height", 0, "Unit", "CM"), "Comments", "");
+                "NumberOfPieces", parcels, "CashAmount", null, "ExtraCharges", null, "ShipmentDimensions", null, "Comments", "");   // zeros are refused («less or equal zero»); their WooCommerce plugin sends none
             var pk = D("PickupAddress", ShopJson.Sub(who, "PartyAddress"), "PickupContact", ShopJson.Sub(who, "Contact"), "PickupLocation", "Reception", "PickupDate", at(h1), "ReadyTime", at(h1), "LastPickupTime", at(h2), "ClosingTime", at(h2), "Comments", Carriers.Cut(note, 150),
                 "Reference1", "", "Reference2", "", "Vehicle", "Car", "Shipments", null, "PickupItems", new[] { item }, "Status", "Ready",
                 "ExistingShipments", waiting.Count == 0 ? null : waiting.Where(x => !string.IsNullOrEmpty(x.Tracking)).Take(100).Select(x => D("Number", x.Tracking, "OriginEntity", k.M("ent"), "ProductGroup", "DOM")).ToArray(), "Branch", "", "RouteCode", "");
