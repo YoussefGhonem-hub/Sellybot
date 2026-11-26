@@ -94,11 +94,13 @@ namespace RiwaqChat
             if (Regex.IsMatch(all, @"e-?mail", RegexOptions.IgnoreCase)) return new CarrierException("أرامكس بتطلب إيميل. اكتبه في إعدادات أرامكس.", "email");
             var first = l.FirstOrDefault(x => x.Value.Length > 0); return new CarrierException("أرامكس رفضت: " + (first.Value == null ? "من غير سبب" : Carriers.Cut(first.Value, 180)), string.IsNullOrEmpty(first.Key) ? "refused" : first.Key);
         }
-        // their dates: /Date(ms)/ (JavaScriptSerializer writes a DateTime that way, and reads it back as one)
+        // their dates: /Date(ms)/ (JavaScriptSerializer writes a DateTime that way, and reads it back as one), else any written date (ISO)
         static DateTime? When(object v)
         {
             if (v is DateTime) return DateTime.SpecifyKind(((DateTime)v).ToUniversalTime(), DateTimeKind.Utc);
-            var m = Regex.Match(ShopJson.Str(v, 60), @"Date\((-?\d+)"); long ms; return m.Success && long.TryParse(m.Groups[1].Value, out ms) ? new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ms) : (DateTime?)null;
+            var t = ShopJson.Str(v, 60); var m = Regex.Match(t, @"Date\((-?\d+)"); long ms;
+            if (m.Success && long.TryParse(m.Groups[1].Value, out ms)) return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ms);
+            DateTime d; return t.Length > 0 && DateTime.TryParse(t, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out d) ? DateTime.SpecifyKind(d, DateTimeKind.Utc) : (DateTime?)null;
         }
 
         public override async Task Check(CarrierLink k)
