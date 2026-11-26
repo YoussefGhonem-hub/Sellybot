@@ -569,7 +569,7 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
         static Func<Task> AskPickup(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
             var co = Of(Str(b, "c", 10)); var k = Need(c, s.Id, Str(b, "c", 10)); if (!co.PickupCall) throw new ShopException("pickup", "مندوب " + co.Name + " بييجي مع الأوردر نفسه، في الميعاد اللي في الإعدادات.");
-            DateTime day; if (!DateTime.TryParseExact(Str(b, "date", 10), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day) || day < Cairo(DateTime.UtcNow).Date || day > Cairo(DateTime.UtcNow).Date.AddDays(30)) throw new ShopException("date", "اختار يوم من النهارده لحد شهر قدام.");
+            DateTime day; if (!DateTime.TryParseExact(Str(b, "date", 10), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day) || day < Cairo(DateTime.UtcNow).Date || day > Cairo(DateTime.UtcNow).Date.AddDays(co.Id == "aramex" ? 7 : 30)) throw new ShopException("date", co.Id == "aramex" ? "أرامكس بتاخد الطلب لحد أسبوع قدام. اختار يوم أقرب." : "اختار يوم من النهارده لحد شهر قدام.");
             if (day.DayOfWeek == DayOfWeek.Friday) throw new ShopException("date", "مفيش استلام يوم الجمعة. اختار يوم تاني.");
             var wait = Ships(c, 100, "StoreId=@s AND Company=@c AND State='live' AND ISNULL(Ours,'made')='made' ORDER BY Id", "@s", s.Id, "@c", co.Id); int n = Math.Max(1, Math.Min(500, Int(b, "n", Math.Max(1, wait.Count)))); string place = Str(b, "place", 60), note = Str(b, "note", 200);
             if (!Web.Allow("ship-pick:" + s.Id, 20, TimeSpan.FromHours(1))) throw new ShopException("too_many", "طلبات كتير. استنى شوية.");
