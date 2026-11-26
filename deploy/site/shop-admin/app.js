@@ -193,10 +193,13 @@ SB.body = () => root.querySelector(".sm-body"); SB.view = () => view;
 SB.open = async (el, ctx) => {
   X = ctx; root = el; SB.x = ctx;
   if (!opened) { opened = true; el.innerHTML = '<div class="sm"><header class="sm-head"></header><nav class="sm-nav" aria-label="أقسام متجري">' + navH() + '</nav><div class="sm-body"></div></div>'; wire(el); const nr = el.querySelector(".sm-nr"); if (nr) nr.addEventListener("scroll", ngPlace, { passive: true }); }
+  let v = "home"; try { v = sessionStorage.getItem("sm-view") || "home"; } catch (e) { }
+  // the home page's numbers are asked for together with the state, not after it (each call to the live site is ~0.5 s)
+  if ((ctx.view || v) === "home") hFirst = { p: SB.get("home").catch(() => null), at: Date.now() };
   try { if (!st) el.querySelector(".sm-body").innerHTML = '<div class="sm-load" role="status"><i></i> بنفتح متجرك...</div>'; setState(await SB.get("state")); }
-  catch (e) { el.querySelector(".sm-body").innerHTML = `<div class="card sm-empty"><p>${esc(e.message)}</p></div>`; opened = false; return; }
+  catch (e) { el.querySelector(".sm-body").innerHTML = `<div class="card sm-empty"><p>${esc(e.message)}</p></div>`; opened = false; hFirst = null; return; }
   if (!st.biz) { SB.wizard(); }
-  let v = "home"; try { v = sessionStorage.getItem("sm-view") || "home"; } catch (e) { } SB.show(ctx.view || v, ctx.arg);
+  SB.show(ctx.view || v, ctx.arg);
 };
 
 /* ---------- preview, publish ---------- */
@@ -259,9 +262,9 @@ SB.wizard = () => {
 };
 
 /* ================= home ================= */
-let hSpan = "week", hData = null, hTable = false;
+let hSpan = "week", hData = null, hTable = false, hFirst = null;
 V.home = {
-  async open(body) { hData = await SB.get("home"); if (view !== "home") return; V.home.draw(body); },
+  async open(body) { const f = hFirst && Date.now() - hFirst.at < 30000 ? hFirst.p : null; hFirst = null; hData = (f && await f) || await SB.get("home"); if (view !== "home") return; V.home.draw(body); },
   draw(body) {
     const done = st.steps.filter(x => x.done).length, all = st.steps.length, must = st.steps.filter(x => x.must && !x.done), s = hData[hSpan], conv = s.visitors ? s.webOrders / s.visitors * 100 : 0;
     const showSteps = st.status !== "live" || must.length;

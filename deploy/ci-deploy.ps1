@@ -51,6 +51,17 @@ if (Test-Path $out) { Remove-Item -Recurse -Force $out }
 Copy-Item -Recurse (Join-Path $here "site") $out
 $products = Join-Path $here "..\data\products.txt"
 if (Test-Path $products) { Copy-Item $products (Join-Path $out "App_Data\products.txt") -Force }
+# «متجري»'s files are kept a week by browsers and Cloudflare (web.template.config), so their version also carries their
+# own fingerprint: a change shipped without a new SHOP_V still reaches everyone right away.
+$sa = Get-ChildItem (Join-Path $out "shop-admin\*") -File -Include *.js, *.css | Sort-Object Name
+$fp = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes((($sa | ForEach-Object { $_.Name + ":" + (Get-FileHash -Algorithm SHA256 $_.FullName).Hash }) -join "|")))).Replace("-", "").Substring(0, 8).ToLower()
+foreach ($s in @(@("dashboard.html", 'SHOP_V = "([^"]+)"', 'SHOP_V = "$1-FP"'), @("dashboard.html", 'shop-admin/brands\.js\?v=([\w-]+)', 'shop-admin/brands.js?v=$1-FP'), @("staff\index.html", '\bV = "(\d{8}[a-z]*)"', 'V = "$1-FP"'))) {
+  $p = Join-Path $out $s[0]; $html = [IO.File]::ReadAllText($p, [Text.Encoding]::UTF8)
+  $rx = [regex]$s[1]
+  if (-not $rx.IsMatch($html)) { Remove-Item -Recurse -Force $out; Fail "Can't find the shop-admin files' version in $($s[0]) ($($s[1])). Fix ci-deploy.ps1 or the page." }
+  [IO.File]::WriteAllText($p, $rx.Replace($html, $s[2].Replace("FP", $fp), 1), (New-Object Text.UTF8Encoding $false))
+}
+Say "OK  shop-admin files stamped ($fp)" Green
 $conn = "Data Source=" + (CsValue $cfg.DB_SERVER) + ";Initial Catalog=" + (CsValue $cfg.DB_NAME) + ";User ID=" + (CsValue $cfg.DB_USER) +
         ";Password=" + (CsValue $cfg.DB_PASSWORD) + ";Encrypt=True;TrustServerCertificate=True"
 $wc = Join-Path $out "web.config"
