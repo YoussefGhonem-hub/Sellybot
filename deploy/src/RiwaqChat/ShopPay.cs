@@ -24,14 +24,14 @@ namespace RiwaqChat
         static object Nz(string s) { return string.IsNullOrWhiteSpace(s) ? null : s; }
         static void Exec(SqlConnection c, string sql, params object[] a) { using (var cmd = Db.Cmd(c, sql, a)) cmd.ExecuteNonQuery(); }
         static void Ok(HttpResponse res, params object[] kv) { var d = new Dictionary<string, object> { { "ok", true } }; for (int i = 0; i + 1 < kv.Length; i += 2) d[(string)kv[i]] = kv[i + 1]; Web.Json(res, 200, d); }
-        public static string WayName(string k, bool en = false) { return k == "insta" ? (en ? "InstaPay" : "إنستاباي") : k == "vf" ? (en ? "Mobile wallet" : "محفظة موبايل") : k == "bank" ? (en ? "Bank transfer" : "تحويل بنكي") : en ? "Cash on delivery" : "كاش عند الاستلام"; }
+        public static string WayName(string k, bool en = false) { return ShopCard.Name(k, en) ?? (k == "insta" ? (en ? "InstaPay" : "إنستاباي") : k == "vf" ? (en ? "Mobile wallet" : "محفظة موبايل") : k == "bank" ? (en ? "Bank transfer" : "تحويل بنكي") : en ? "Cash on delivery" : "كاش عند الاستلام"); }
 
         // the customer's picture of the transfer, from the order's page (its secret token)
         public static void Proof(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, HttpResponse res)
         {
             if (x.Preview) throw new ShopException("preview", T(x, "المعاينة مابتحفظش حاجة.", "The preview saves nothing."));
             var o = ShopOrders.ByToken(c, x.Row.StoreId, Regex.Replace(Str(b, "tok", 40), "[^a-f0-9]", ""));
-            if (o == null || o.Deposit <= 0 || o.PayState == "paid" || o.Status == "cancelled" || o.Status == "returned") throw new ShopException("no_order", T(x, "الطلب ده مش محتاج تحويل.", "This order doesn't need a transfer."));
+            if (o == null || o.Deposit <= 0 || o.PayState == "paid" || o.PayState == "card" || o.Status == "cancelled" || o.Status == "returned") throw new ShopException("no_order", T(x, "الطلب ده مش محتاج تحويل.", "This order doesn't need a transfer."));
             if (!Web.Allow("shop-proof:" + x.Ip, 10, TimeSpan.FromHours(1)) || !Web.Allow("shop-prf:" + o.Id, 8, TimeSpan.FromHours(24))) throw new ShopException("too_many", T(x, "محاولات كتير. استنى شوية.", "Too many tries. Please wait a while."));
             string path = ShopAccount.Upload(c, x, b); Exec(c, "UPDATE dbo.ShopImages SET Used=1 WHERE StoreId=@s AND Path=@p", "@s", x.Row.StoreId, "@p", path);
             Exec(c, "UPDATE dbo.ShopOrders SET Proof=@p, PayState='sent', Seen=0 WHERE Id=@i AND StoreId=@s AND ISNULL(PayState,'')<>'paid'", "@p", path, "@i", o.Id, "@s", x.Row.StoreId);
@@ -100,6 +100,7 @@ namespace RiwaqChat
             if (ok) Exec(c, "UPDATE dbo.ShopOrders SET PayState='paid', Paid=@a, Seen=1, SheetAt=NULL WHERE Id=@i AND StoreId=@s", "@a", amount, "@i", o.Id, "@s", sh.StoreId); else Exec(c, "UPDATE dbo.ShopOrders SET PayState='bad', Paid=0, Seen=1 WHERE Id=@i AND StoreId=@s", "@i", o.Id, "@s", sh.StoreId);
             ShopOrders.Log_(c, null, sh.StoreId, o.Id, "owner", ok ? "التحويل وصل: " + ShopOrders.Money(amount) : "التحويل مش مظبوط: " + note);
             if (ok && o.Status == "new" && ShopJson.Bool(ShopJson.At(b, "confirm"), true)) ShopOrders.SetStatus(c, sh.StoreId, o.Id, "confirmed", "owner");
+            if (ok) ShopCard.AfterPaid(c, sh.StoreId, o.Id, "transfer");   // what follows a payment (digital links...)
             string msg = o.Lang == "en" ? (ok ? "We received your transfer of EGP " + amount.ToString("#,0.##", CultureInfo.InvariantCulture) + " for order " + o.NoText + " ✅" + (o.Total > amount ? "\nLeft on delivery: EGP " + (o.Total - amount).ToString("#,0.##", CultureInfo.InvariantCulture) : "") : "About your transfer for order " + o.NoText + ": " + note + "\n" + sh.Url + "/pay/" + o.Token)
                 : (ok ? "وصلنا تحويلك " + ShopOrders.Money(amount) + " لأوردر " + o.NoText + " ✅" + (o.Total > amount ? "\nالباقي عند الاستلام: " + ShopOrders.Money(o.Total - amount) : "") : "بخصوص تحويل أوردر " + o.NoText + ": " + note + "\nابعت الصورة من هنا: " + sh.Url + "/pay/" + o.Token);
             if (ShopJson.Bool(ShopJson.At(b, "tell"), true)) Customer(sh.StoreId, o.Phone, msg, "sb-shop-paid-" + o.Id + "-" + DateTime.UtcNow.Ticks);

@@ -143,6 +143,7 @@ namespace RiwaqChat
                 case "pic": ShopPay.Pic(c, x, b, res); return;
                 case "cart": ShopPay.Cart(c, x, b, res); return;
                 case "news": ShopPay.News(c, x, b, res); return;
+                case "card": ShopCard.Front(c, x, b, res); return;
                 default: Web.Error(res, 404, "not_found"); return;
             }
         }
@@ -177,7 +178,8 @@ namespace RiwaqChat
             try { p = ShopOrders.Place(c, x.Store, x.Row, o); }
             catch (ShopException) { throw; }
             catch (Exception ex) { ShopOrders.Fail(x.Row.StoreId, "order", ex.GetType().Name + ": " + ex.Message); throw; }
-            if (!p.Again && !p.Order.Test) ShopHooks.OnPlaced(x.Store, p.Order.Id);
+            ShopCard.Placed(c, x, b, p);   // a card order waits for Paymob: its alert and confirmation come when it's paid
+            if (!p.Again && !p.Order.Test && !ShopCard.Holds(p.Order)) ShopHooks.OnPlaced(x.Store, p.Order.Id);
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "no", p.Order.No }, { "token", p.Order.Token }, { "total", p.Order.Total }, { "test", p.Order.Test }, { "again", p.Again }, { "dep", p.Order.Deposit }, { "pay", p.Order.Pay ?? "cod" }, { "ps", p.Order.PayState ?? "" } });
         }
 
@@ -298,6 +300,7 @@ namespace RiwaqChat
             if (path.Length > 1 && path.EndsWith("/")) path = path.TrimEnd('/');
 
             if (path.StartsWith("/_d/", StringComparison.Ordinal)) { Data(x, path.Substring(4), res); return; }
+            if (path.StartsWith("/_dl/", StringComparison.Ordinal)) { ShopDigital.Serve(c, x, path.Substring(5), req, res); return; }   // a digital product's private link
             if (path == "/robots.txt") { Robots(x, res); return; }
             if (path == "/sitemap.xml") { Sitemap(x, res); return; }
             if (path.StartsWith("/feed/", StringComparison.Ordinal)) { ShopFeed.Write(x, path.Substring(6), res); return; }
@@ -399,7 +402,7 @@ namespace RiwaqChat
                 { "pixel", x.Preview ? "" : ShopJson.Str(ShopJson.At(ShopJson.Sub(set, "pixel"), "meta")) },
                 { "pixels", x.Preview ? null : new Dictionary<string, object> { { "tiktok", Px(set, "tiktok") }, { "snap", Px(set, "snap") }, { "ga", Px(set, "ga") } } },
                 { "pages", d.Pages.Where(p => !p.Hidden).Select(p => new Dictionary<string, object> { { "s", p.Slug }, { "k", p.Kind }, { "t", ShopView.Pair(p.Title, p.TitleEn) }, { "m", p.InMenu }, { "f", p.InFooter } }).ToArray() },
-                { "popup", Popup(c, x) },
+                { "popup", Popup(c, x) }, { "card", ShopCard.FrontJson(c, x) },
                 { "chat", new Dictionary<string, object> { { "on", x.Store.Status == "active" }, { "store", x.Store.Slug }, { "v", (Load("~/widget.js") ?? new FileCopy { Tag = "1" }).Tag }, { "bot", x.Store.BotName ?? "" } } }
             };
         }
@@ -474,7 +477,7 @@ namespace RiwaqChat
             h.Append("</head><body><div id=\"app\"><div class=\"ssr\">");
             Ssr(h, x, p, shopName);
             h.Append("</div></div><script type=\"application/json\" id=\"boot\">").Append(Safe(Web.Js.Serialize(boot))).Append("</script>");
-            h.Append("<script src=\"/_s/core.js?v=").Append(Ver("core.js")).Append("\" defer></script><script src=\"/_s/t/").Append(tpl).Append(".js?v=").Append(Ver("t/" + tpl + ".js")).Append("\" defer></script><script src=\"/_s/run.js?v=").Append(Ver("run.js")).Append("\" defer></script></body></html>");
+            h.Append("<script src=\"/_s/core.js?v=").Append(Ver("core.js")).Append("\" defer></script><script src=\"/_s/t/").Append(tpl).Append(".js?v=").Append(Ver("t/" + tpl + ".js")).Append("\" defer></script>").Append(ShopCard.Tag(shop)).Append("<script src=\"/_s/run.js?v=").Append(Ver("run.js")).Append("\" defer></script></body></html>");
 
             res.ContentType = "text/html; charset=utf-8";
             Secure(res, x.Preview, set);

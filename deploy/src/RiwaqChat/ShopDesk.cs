@@ -51,6 +51,7 @@ namespace RiwaqChat
                 case "print": Print(c, s, sh, req, res); return true;
                 case "backup": Backup(c, sh, res); return true;
             }
+            if (ShopCard.Get(c, s, sh, a, req, res)) return true;   // paying by card, digital products
             return Carriers.Get(c, s, sh, a, req, res);
         }
 
@@ -71,6 +72,7 @@ namespace RiwaqChat
                 case "sheet-try": later = ShopPay.Try(c, sh, b, res); return true;
                 case "ai-desc": later = ShopTranslate.Describe(c, s, sh, b, res); return true;
             }
+            if (ShopCard.Post(c, s, sh, a, b, res, out later)) return true;   // paying by card, digital products
             return Carriers.Post(c, s, sh, a, b, res, out later);
         }
 

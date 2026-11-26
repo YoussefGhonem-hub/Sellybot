@@ -183,6 +183,7 @@ namespace RiwaqChat
                 var gift = ShopJson.Sub(order, "gift"); if (how.Gift && ShopJson.Bool(ShopJson.At(gift, "on"))) q.Fees.Add(new ShopFee { Kind = "gift", Name = "تغليف هدية", NameEn = "Gift wrap", Amount = ShopJson.Dec(ShopJson.At(gift, "price")) });
                 var cod = ShopJson.Dec(ShopJson.At(order, "codFee")); if (q.Pay == "cod" && cod > 0 && q.Branch == null) q.Fees.Add(new ShopFee { Kind = "cod", Name = "رسوم الدفع عند الاستلام", NameEn = "Cash on delivery fee", Amount = cod });
             }
+            ShopDigital.Quote(d, q, ok);   // digital lines only: no delivery
             q.Total = after + q.Ship + q.FeesSum;
             if (how != null) q.Deposit = DepositOf(c, d.Row, q, phone);
 
@@ -200,11 +201,12 @@ namespace RiwaqChat
         {
             return ShopJson.List(ShopJson.At(ShopJson.Sub(sh.Settings, "pay"), "ways")).OfType<Dictionary<string, object>>().Where(w => ShopJson.Bool(ShopJson.At(w, "on")) && Ways.Contains(ShopJson.Str(ShopJson.At(w, "k"))) && ShopJson.Str(ShopJson.At(w, "to")).Length > 2).ToList();
         }
-        public static bool Cod(Shop sh) { return ShopJson.Bool(ShopJson.At(ShopJson.Sub(sh.Settings, "pay"), "cod"), true) || PayWays(sh).Count == 0; }
+        public static bool Cod(Shop sh) { return ShopJson.Bool(ShopJson.At(ShopJson.Sub(sh.Settings, "pay"), "cod"), true) || (PayWays(sh).Count == 0 && !ShopCard.Has(sh, null)); }
         // the way asked for when the store has it, else the store's first
         public static string PayWay(Shop sh, string pay)
         {
             if (pay != "cod" && PayWays(sh).Any(w => ShopJson.Str(ShopJson.At(w, "k")) == pay)) return pay;
+            if (ShopCard.Has(sh, pay)) return pay;   // card, wallet, installments (Paymob)
             return Cod(sh) ? "cod" : ShopJson.Str(ShopJson.At(PayWays(sh)[0], "k"));
         }
         // what has to be sent before the order is prepared: all of it for a transfer, a part of it for cash when the owner asks for one

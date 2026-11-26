@@ -92,6 +92,7 @@ SB.editProduct = async id => {
       <section class="card"><h3>الصور</h3><div data-u="imgs">${imgs()}</div><div data-u="vid">${vidUI()}</div></section>
       <section class="card"><h3>الأساسيات</h3>${fld("name", "اسم المنتج", p.name, { max: 150, must: true, x: 'data-in="f:name"' + (p.id ? "" : " autofocus") })}${en ? fld("nameEn", "الاسم بالإنجليزي", p.nameEn, { max: 150, dir: "ltr", x: 'data-in="f:nameEn"' }) : ""}<div class="sm-3">${fld("price", "السعر", p.price || "", { mode: "decimal", suf: "ج", must: true, x: 'data-in="n:price"' })}${fld("old", "قبل الخصم", p.old || "", { mode: "decimal", suf: "ج", hint: "اختياري، ولازم يكون سعر حقيقي", x: 'data-in="n:old"' })}${fld("cost", "التكلفة عليك", p.cost || "", { mode: "decimal", suf: "ج", hint: "ليك إنت بس", x: 'data-in="n:cost"' })}</div><div data-u="profit">${profit()}</div></section>
       <section class="card"><h3>المقاسات والألوان</h3><p class="sub">لو المنتج بمقاس ولون واحد، سيبها فاضية.</p><div data-u="opts">${optUI()}</div><div data-u="vars">${varUI()}</div></section>
+      ${SB.digiUI ? SB.digiUI(p) : ""}
       <section class="card"><h3>الكمية</h3><div data-u="stock">${stockUI()}</div></section>
       <section class="card"><div class="row"><h3>الوصف</h3><span class="space"></span><button type="button" class="btn ghost sm" data-do="aiDesc">✨ اكتبهولي من الصورة</button></div>${fld("descr", "اكتب اللي الزبون بيسأل عنه", p.descr, { area: 7, max: 8000, x: "", hint: "البوت بيرد من الكلام ده. سطر يبدأ بـ - بيبقى نقطة." })}${en ? fld("descrEn", "الوصف بالإنجليزي", p.descrEn, { area: 5, max: 8000, dir: "ltr" }) : ""}</section>
       <section class="card"><h3>المواصفات</h3><div data-u="specs">${specUI()}</div></section>
@@ -142,7 +143,7 @@ SB.editProduct = async id => {
         if (p.name.trim().length < 2) throw new Error("اكتب اسم المنتج."); if (!(p.price > 0)) throw new Error("اكتب السعر."); const named = p.options.filter(x => x.v.length); if (named.some(x => !x.n[0].trim())) throw new Error("اكتب اسم الاختيار (مقاس، لون...).");
         const body = { ...p, options: named.map(x => ({ n: x.n, v: x.v })), specs: p.specs.filter(x => x[0] && x[1]), ask: p.ask.filter(a => a.n[0].trim()), images: p.images.map(x => x.path), vars: p.vars.map(v => ({ o: v.o, price: v.price, old: v.old, cost: v.cost, stock: v.stock, ...(v.id ? { stock0: v.stock0 } : {}), sku: v.sku, image: v.image, active: v.active })), guide: p.guide && p.guide.rows.length ? p.guide : null };
         if (!p.vars.length) { body.stock = p.stock; if (p.id) body.stock0 = p.stock0; delete body.vars; }
-        const r = await post("prod-save", body); for (const x of gone) try { await post("image-del", { path: x }); } catch (e) { } dirty = false; await SB.reload(); say("اتحفظ ✅"); await o.close(true); if (SB.view() === "products") load(); else if (SB.view() === "home") SB.show("home"); if (more === "more") SB.editProduct(0); return r;
+        const r = await post("prod-save", body); if (SB.digiSave) await SB.digiSave(r.id); for (const x of gone) try { await post("image-del", { path: x }); } catch (e) { } dirty = false; await SB.reload(); say("اتحفظ ✅"); await o.close(true); if (SB.view() === "products") load(); else if (SB.view() === "home") SB.show("home"); if (more === "more") SB.editProduct(0); return r;
       }); }
     }
   });
