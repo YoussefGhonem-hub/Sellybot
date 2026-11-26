@@ -82,7 +82,7 @@ A.shSet = async id => {
       ${id === "jt" || id === "aramex" ? "" : SB.tog("open", s.open, "مسموح للزبون يفتح الشحنة قبل ما يستلم", id === "bosta" ? "بوسطة بتطلب صور المنتج، وبنبعتلها صور متجرك" : "")}
       ${id === "aramex" ? "" : SB.tog("value", s.value !== false, id === "jt" ? "ابعت قيمة المنتجات (تأمين)" : "ابعت قيمة المنتجات للشركة", id === "bosta" ? "من غيرها بوسطة مابتحسبش التأمين" : "")}
       ${SB.tog("rescue", s.rescue !== false, "إنقاذ الأوردر", "لو محاولة فشلت، الزبون يوصله رسالة واحدة على واتساب المتجر تناسب السبب، ومش بالليل")}
-      ${id === "aramex" ? '<p class="sm-hint">البوليصة A4 زي ما أرامكس بتطلعها.</p>' : `<div class="sm-f"><label>البوليصة</label>${SB.seg("lab", [["A4", id === "shipblu" ? "A4 (اتنين في الصفحة)" : "A4"], ["A6", "A6 (طابعة بوليصات)"]], s.label || "A4")}</div>`}</div>`,
+      ${id === "aramex" ? '<p class="sm-hint">البوليصة A4 زي ما أرامكس بتطلعها.</p>' : `<div class="sm-f"><label>البوليصة</label>${SB.seg("lab", [["A4", id === "shipblu" ? "A4 (اتنين في الصفحة)" : "A4"], ["A6", id === "shipblu" ? "بوليصة في كل صفحة" : "A6 (طابعة بوليصات)"]], s.label || "A4")}</div>`}</div>`,
     foot: () => '<button type="button" class="btn" data-do="go">احفظ</button>',
     acts: {
       lab: v => { keep(); s.label = v; dirty = true; p.draw(); }, area: async () => { keep(); const x = await pickArea(id, 0, "منطقة الاستلام منك"); if (x) { sa = x.k; sl = x.t; dirty = true; } p.draw(); },
