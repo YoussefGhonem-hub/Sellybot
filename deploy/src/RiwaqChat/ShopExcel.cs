@@ -17,31 +17,83 @@ namespace RiwaqChat
     {
         static readonly string[] Head = { "الاسم", "القسم", "السعر", "السعر قبل الخصم", "سعر الشرا", "الكمية", "الكود", "اللون", "المقاس", "الوصف", "الاسم بالإنجليزي", "الماركة", "الوحدة", "ظاهر" };
 
-        public static byte[] Book(string sheet, string[] head, IEnumerable<object[]> rows)
+        public static byte[] Book(string sheet, string[] head, IEnumerable<object[]> rows) { return Sheets(new Sh { Name = sheet, Head = head, Rows = rows }); }
+
+        // one sheet of a workbook: an optional line above the column names, then the names, then the rows
+        public class Sh { public string Name, Note; public string[] Head; public IEnumerable<object[]> Rows; public double[] Widths; }
+
+        // a workbook of one sheet or more. An upload reads the first one (Crm.Sheet), so the products come first.
+        public static byte[] Sheets(params Sh[] list)
         {
             using (var ms = new MemoryStream())
             {
                 using (var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook))
                 {
-                    var wb = doc.AddWorkbookPart(); wb.Workbook = new X.Workbook(); var ws = wb.AddNewPart<WorksheetPart>(); var data = new X.SheetData();
-                    ws.Worksheet = new X.Worksheet(new X.SheetViews(new X.SheetView { WorkbookViewId = 0, RightToLeft = true }), new X.SheetFormatProperties { DefaultRowHeight = 16 }, new X.Columns(new X.Column { Min = 1, Max = (uint)head.Length, Width = 18, CustomWidth = true }), data);
-                    wb.Workbook.AppendChild(new X.Sheets(new X.Sheet { Id = wb.GetIdOfPart(ws), SheetId = 1, Name = sheet }));
+                    var wb = doc.AddWorkbookPart(); wb.Workbook = new X.Workbook(); var sheets = wb.Workbook.AppendChild(new X.Sheets()); uint n = 0;
                     Func<object, X.Cell> cell = v => v is decimal || v is int || v is long
                         ? new X.Cell { DataType = X.CellValues.Number, CellValue = new X.CellValue(Convert.ToDecimal(v).ToString("0.##", CultureInfo.InvariantCulture)) }
                         : new X.Cell { DataType = X.CellValues.InlineString, InlineString = new X.InlineString(new X.Text(new string((v as string ?? "").Where(ch => ch >= 0x20 || ch == '\n' || ch == '\t').ToArray())) { Space = SpaceProcessingModeValues.Preserve }) };
-                    data.Append(new X.Row(head.Select(h => cell(h))));
-                    foreach (var r in rows) data.Append(new X.Row(r.Select(cell)));
+                    foreach (var s in list)
+                    {
+                        var ws = wb.AddNewPart<WorksheetPart>(); var data = new X.SheetData(); var cols = new X.Columns();
+                        for (int i = 0; i < s.Head.Length; i++) cols.Append(new X.Column { Min = (uint)(i + 1), Max = (uint)(i + 1), Width = s.Widths != null && i < s.Widths.Length ? s.Widths[i] : 18, CustomWidth = true });
+                        ws.Worksheet = new X.Worksheet(new X.SheetViews(new X.SheetView { WorkbookViewId = 0, RightToLeft = true, TabSelected = n == 0 }), new X.SheetFormatProperties { DefaultRowHeight = 16 }, cols, data);
+                        if (!string.IsNullOrEmpty(s.Note)) data.Append(new X.Row(cell(s.Note)));
+                        data.Append(new X.Row(s.Head.Select(h => cell(h))));
+                        foreach (var r in s.Rows) data.Append(new X.Row(r.Select(cell)));
+                        sheets.Append(new X.Sheet { Id = wb.GetIdOfPart(ws), SheetId = ++n, Name = s.Name });
+                    }
                     wb.Workbook.Save();
                 }
                 return ms.ToArray();
             }
         }
 
+        /* «ملف مثال»: what a filled file looks like, from more than one kind of shop. The ready file to fill has no rows,
+           so nobody uploads the examples by mistake; an upload of the example as it is gets told so (Import). */
+        const string ExampleNote = "ده ملف مثال عشان تشوف شكل الملف. اكتب منتجاتك مكان السطور دي، أو نزّل الملف الجاهز واملاه. شرح كل عمود في الصفحة التانية «اقرا الأول».";
+        static readonly object[][] Example = {
+            new object[] { "تيشيرت قطن بيزك", "أزياء > تيشيرتات", 350m, 450m, 180m, 6, "TS-01-WM", "أبيض", "M", "قطن 100% مريح للبس كل يوم", "Basic cotton tee", "", "قطعة", "أيوه" },
+            new object[] { "تيشيرت قطن بيزك", "", 350m, 450m, "", 4, "TS-01-WL", "أبيض", "L", "", "", "", "", "" },
+            new object[] { "تيشيرت قطن بيزك", "", 350m, 450m, "", 5, "TS-01-BM", "أسود", "M", "", "", "", "", "" },
+            new object[] { "تيشيرت قطن بيزك", "", 370m, 470m, "", 0, "TS-01-BXL", "أسود", "XL", "", "", "", "", "" },
+            new object[] { "سماعة بلوتوث لاسلكي", "إلكترونيات > سماعات", 1290m, 1590m, 900m, 12, "HP-20", "", "", "بطارية لحد 30 ساعة وشحن سريع", "Wireless headphones", "ساوند", "قطعة", "أيوه" },
+            new object[] { "عسل نحل جبلي", "بقالة > عسل", 150m, "", 95m, 20, "HN-500", "", "نص كيلو", "عسل جبلي في برطمان إزاز", "Mountain honey", "", "برطمان", "أيوه" },
+            new object[] { "عسل نحل جبلي", "", 280m, "", 180m, 15, "HN-1000", "", "كيلو", "", "", "", "", "" },
+            new object[] { "شنطة يد جلد", "شنط", 950m, "", 600m, 3, "BG-07-BR", "بني", "", "جلد طبيعي بسوستة وجيب من جوه", "Leather handbag", "", "قطعة", "أيوه" },
+            new object[] { "شنطة يد جلد", "", 950m, "", "", 2, "BG-07-BK", "أسود", "", "", "", "", "", "" },
+            new object[] { "كريم مرطب للوش", "عناية > بشرة", 220m, "", 120m, 30, "CR-50", "", "", "50 مل للبشرة العادية والجافة", "Face moisturizer", "", "علبة", "أيوه" },
+            new object[] { "طقم أكواب إزاز 6 قطع", "البيت", 400m, "", 250m, 8, "CU-06", "", "", "إزاز شفاف يستحمل السخونية", "Glass cup set", "", "طقم", "لأ" } };
+        static readonly double[] HeadW = { 26, 22, 10, 15, 11, 9, 12, 10, 11, 34, 22, 12, 10, 8 };
+        static Sh ReadMe()
+        {
+            Func<string, string, string, string, object[]> r = (a, b, x, e) => new object[] { a, b, x, e };
+            return new Sh { Name = "اقرا الأول", Head = new[] { "العمود", "لازم؟", "تكتب فيه إيه", "مثال" }, Widths = new double[] { 18, 9, 70, 22 }, Rows = new[] {
+                r("الاسم", "لازم", "اسم المنتج زي ما الزبون هيشوفه. لو ليه ألوان أو مقاسات: سطر لكل واحد، بنفس الاسم بالظبط.", "تيشيرت قطن بيزك"),
+                r("القسم", "", "القسم، ولو ليه قسم فرعي اكتب: القسم > الفرعي. القسم اللي مش موجود بيتعمل لوحده.", "أزياء > تيشيرتات"),
+                r("السعر", "لازم", "السعر بالجنيه، رقم بس. لو مقاس سعره مختلف اكتب سعره في سطره.", "350"),
+                r("السعر قبل الخصم", "", "لو عليه خصم: السعر القديم، ولازم يكون أكبر من السعر.", "450"),
+                r("سعر الشرا", "", "اللي دفعته في المنتج. ليك انت بس، الزبون مش بيشوفه.", "180"),
+                r("الكمية", "", "الكمية اللي عندك، و0 يعني خلص. في الألوان والمقاسات اكتب كمية كل سطر. منتج من غير ألوان ولا مقاسات وكميته فاضية بيفضل متاح من غير عدّ.", "6"),
+                r("الكود", "", "كود من عندك. لما ترفع الملف تاني، المنتج بيتعرف باسمه أو بكوده ومش بيتكرر.", "TS-01-WM"),
+                r("اللون", "", "لون السطر ده.", "أبيض"),
+                r("المقاس", "", "مقاس أو وزن أو حجم السطر ده.", "M، نص كيلو"),
+                r("الوصف", "", "كلام عن المنتج بيظهر في صفحته.", "قطن 100% مريح للبس كل يوم"),
+                r("الاسم بالإنجليزي", "", "لو متجرك بالإنجليزي كمان.", "Basic cotton tee"),
+                r("الماركة", "", "اسم الماركة لو ليه.", "ساوند"),
+                r("الوحدة", "", "المنتج بيتباع بإيه.", "قطعة، علبة، برطمان"),
+                r("ظاهر", "", "«أيوه» أو فاضي: الزباين بيشوفوه. «لأ»: بيتحفظ مخفي لحد ما تظهره.", "أيوه"),
+                r("", "", "", ""),
+                r("الصور", "", "بتتضاف من صفحة كل منتج بعد ما ترفع الملف.", ""),
+                r("الحجم", "", "الملف لحد 5 ميجا، ولحد 5000 سطر.", "") } };
+        }
+
         public static void Export(SqlConnection c, Shop sh, HttpRequest req, HttpResponse res)
         {
             if (!Web.Allow("shop-xls:" + sh.StoreId, 60, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "ملفات كتير في ساعة، استنى شوية."); return; }
             string what = req.QueryString["what"] ?? "", name; byte[] data;
-            if (what == "template") { name = "sellystore-products.xlsx"; data = Book("المنتجات", Head, new[] { new object[] { "عباية كريب", "عبايات > خروج", 890m, 1050m, 520m, 5, "AB-01", "أسود", "M", "كريب تقيل بتطريز على الكم", "Crepe abaya", "", "قطعة", "أيوه" }, new object[] { "عباية كريب", "عبايات > خروج", 890m, 1050m, 520m, 3, "AB-01", "أسود", "L", "", "", "", "", "" }, new object[] { "طرحة شيفون", "طرح", 180m, "", 90m, 20, "SC-01", "", "", "شيفون ناعم 180 × 70 سم", "Chiffon scarf", "", "قطعة", "أيوه" } }); }
+            if (what == "template") { name = "sellystore-products.xlsx"; data = Sheets(new Sh { Name = "المنتجات", Head = Head, Widths = HeadW, Rows = new object[0][] }, ReadMe()); }
+            else if (what == "example") { name = "sellystore-example.xlsx"; data = Sheets(new Sh { Name = "المنتجات", Note = ExampleNote, Head = Head, Widths = HeadW, Rows = Example }, ReadMe()); }
             else if (what == "products") { name = "products.xlsx"; var d = ShopCache.Get(c, sh); data = Book("المنتجات", ShopPlaces.XlsHead(c, sh, Head), ShopPlaces.XlsRows(c, sh, d, ProductRows(d))); }   // a column per place (ShopPlaces.cs)
             else if (what == "leads")
             {
@@ -131,6 +183,13 @@ namespace RiwaqChat
                 if (x.Price < 1) { var same = list.LastOrDefault(y => y.Name == x.Name); if (same != null) { x.Price = same.Price; x.Old = same.Old; } else { errors.Add("صف " + line + " (" + x.Name + "): السعر ناقص أو مش رقم"); continue; } }
                 lastName = x.Name; list.Add(x);
                 if (list.Count > 5000) break;
+            }
+            // the example file (its line above the column names says so): its own rows are examples, not the owner's products
+            if (rows.Take(head).Any(r => r.Length > 0 && (r[0] ?? "").Trim().StartsWith("ده ملف مثال")))
+            {
+                int before = list.Count; list.RemoveAll(x => Example.Any(e => (string)e[0] == x.Name && (string)e[6] == x.Sku));
+                if (list.Count == 0) throw new ShopException("example", "ده ملف المثال زي ما هو. اكتب منتجاتك مكان سطوره، أو نزّل الملف الجاهز واملاه.");
+                if (list.Count < before) errors.Add("سطور المثال اتسابت ومترفعتش.");
             }
             if (list.Count == 0) throw new ShopException("empty", "الملف مفيهوش منتجات نقدر نقراها." + (errors.Count > 0 ? " " + errors[0] : ""));
 
