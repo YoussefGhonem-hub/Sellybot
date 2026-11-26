@@ -62,6 +62,14 @@ foreach ($s in @(@("dashboard.html", 'SHOP_V = "([^"]+)"', 'SHOP_V = "$1-FP"'), 
   [IO.File]::WriteAllText($p, $rx.Replace($html, $s[2].Replace("FP", $fp), 1), (New-Object Text.UTF8Encoding $false))
 }
 Say "OK  shop-admin files stamped ($fp)" Green
+# The loader every page loads first (sb-loader.js, also kept a week): its ?v= in every page becomes its own fingerprint.
+$lfp = (Get-FileHash -Algorithm SHA256 (Join-Path $out "sb-loader.js")).Hash.Substring(0, 8).ToLower(); $ln = 0
+foreach ($f in Get-ChildItem $out -Recurse -Filter *.html) {
+  $html = [IO.File]::ReadAllText($f.FullName, [Text.Encoding]::UTF8); $new = [regex]::Replace($html, 'sb-loader\.js\?v=[\w-]+', "sb-loader.js?v=$lfp")
+  if ($new -ne $html) { [IO.File]::WriteAllText($f.FullName, $new, (New-Object Text.UTF8Encoding $false)); $ln++ }
+}
+if ($ln -lt 5) { Remove-Item -Recurse -Force $out; Fail "Only $ln pages load sb-loader.js?v=... (every Sellybot page should)." }
+Say "OK  sb-loader.js stamped in $ln pages ($lfp)" Green
 $conn = "Data Source=" + (CsValue $cfg.DB_SERVER) + ";Initial Catalog=" + (CsValue $cfg.DB_NAME) + ";User ID=" + (CsValue $cfg.DB_USER) +
         ";Password=" + (CsValue $cfg.DB_PASSWORD) + ";Encrypt=True;TrustServerCertificate=True"
 $wc = Join-Path $out "web.config"

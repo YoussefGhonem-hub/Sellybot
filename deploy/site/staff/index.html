@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-sbl-wait="#signin,#lock,#shopRoot">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -90,6 +90,7 @@
 </style>
 </head>
 <body>
+<script src="../sb-loader.js?v=1"></script><!-- Sellybot's loader: first in <body>, not deferred (sb-loader.js) -->
 <header class="st-top"><div class="in">
   <a class="st-logo" href="./" aria-label="Sellybot">
     <svg viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>
@@ -121,7 +122,7 @@
 <script>
 (function () {
   "use strict";
-  var $ = function (id) { return document.getElementById(id); }, V = "20261126u", slug = (new URLSearchParams(location.search).get("s") || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
+  var $ = function (id) { return document.getElementById(id); }, V = "20261126v", slug = (new URLSearchParams(location.search).get("s") || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
   // what each tick shows of «متجري» (ShopStaff.cs says what each one may do: the server checks every request)
   var VIEWS = { orders: ["orders"], products: ["products", "cats"], returns: ["returns", "reviews"], money: ["home", "report"], ship: ["orders", "ship"] };
   var tT = 0; function toast(t) { var e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(tT); tT = setTimeout(function () { e.classList.remove("show"); }, 3200); }
