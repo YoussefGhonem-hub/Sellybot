@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace RiwaqChat
 {
-    public class CarrierShipBlu : Carrier
+    public partial class CarrierShipBlu : Carrier
     {
         static string Base { get { return Web.Setting("ShipBluBase", "https://api.shipblu.com/api/v1").TrimEnd('/'); } }
         public override string Id { get { return "shipblu"; } }
@@ -51,7 +51,7 @@ namespace RiwaqChat
             int size; if (!int.TryParse(k.S("size", "1"), out size) || size < 1 || size > 9) size = 1; int zone; int.TryParse(p.Area.AreaId, out zone);
             var who = new Dictionary<string, object> { { "full_name", p.Name }, { "phone", p.Phone }, { "address", new Dictionary<string, object> { { "line_1", p.Address }, { "line_2", string.IsNullOrWhiteSpace(p.Landmark) ? p.Area.Area : p.Landmark }, { "zone", zone } } } }; if (p.Phone2 != null) who["secondary_phone"] = p.Phone2; if (p.Email.Length > 0) who["email"] = p.Email;
             var b = new Dictionary<string, object> { { "customer", who }, { "packages", new[] { new Dictionary<string, object> { { "package_size", size }, { "description", p.Goods }, { "fragile", false } } } }, { "cash_amount", p.Cod }, { "merchant_order_reference", p.Ref }, { "is_customer_allowed_to_open_packages", k.B("open", false) } };
-            if (p.Note.Length > 0) b["order_notes"] = p.Note; if (k.B("value", true) && p.Value > 0) b["declared_value"] = p.Value;
+            if (p.Note.Length > 0) b["order_notes"] = p.Note; if (k.B("value", true) && p.Value > 0) b["declared_value"] = p.Value; if (p.Day != null) b["preferred_date"] = p.Day;
             var r = await Call(k, HttpMethod.Post, "/delivery-orders/", b); return new CarrierMade { Tracking = T(r.Body, "tracking_number"), Id = T(r.Body, "id") };
         }
 

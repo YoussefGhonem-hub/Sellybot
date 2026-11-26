@@ -124,9 +124,10 @@ namespace RiwaqChat
             switch (a)
             {
                 case "quote":
-                    Web.Json(res, 200, ShopPrice.Json(ShopPrice.Quote(c, x.Data, Lines(b), ShopJson.Str(ShopJson.At(b, "cpn"), 30), ShopJson.Int(ShopJson.At(b, "gov")), ShopOrders.Mobile(ShopJson.Str(ShopJson.At(b, "phone"), 24)), x.Now, true, How(b))));
+                    Web.Json(res, 200, ShopPrice.Json(ShopPrice.Quote(c, x.Data, Lines(b), ShopJson.Str(ShopJson.At(b, "cpn"), 30), ShopJson.Int(ShopJson.At(b, "gov")), ShopOrders.Mobile(ShopJson.Str(ShopJson.At(b, "phone"), 24)), x.Now, true, How(b), ShopJson.Str(ShopJson.At(b, "cq"), 60))));
                     return;
                 case "order": Order(c, x, b, res); return;
+                case "days": ShopShipDay.Front(c, x, b, res); return;
                 case "track": Track(c, x, b, res); return;
                 case "thanks":
                     {
@@ -169,7 +170,7 @@ namespace RiwaqChat
             {
                 Lines = Lines(b), Name = s("name", 80), Phone = s("phone", 24), Phone2 = s("phone2", 24), Gov = ShopJson.Int(ShopJson.At(b, "gov")), City = s("city", 60), Area = s("area", 80), Address = s("address", 300), Landmark = s("landmark", 120), Note = s("note", 400),
                 Coupon = s("cpn", 30), ClientKey = s("ck", 60), Lang = x.Lang, Device = Regex.Replace(s("dev", 40), "[^A-Za-z0-9-]", ""), Ip = x.Ip, Src = s("src", 200), Expected = ShopJson.DecN(ShopJson.At(b, "total")), Agreed = ShopJson.Bool(ShopJson.At(b, "agree")), Test = x.Preview,
-                How = How(b), GiftMsg = s("giftMsg", 200), RecvName = s("recv", 80), RecvPhone = s("recvPhone", 24), Otp = s("otp", 12), Proof = s("proof", 160).Length == 0 ? null : s("proof", 160)
+                How = How(b), GiftMsg = s("giftMsg", 200), RecvName = s("recv", 80), RecvPhone = s("recvPhone", 24), Otp = s("otp", 12), Proof = s("proof", 160).Length == 0 ? null : s("proof", 160), Day = s("day", 10), DayPart = s("dpart", 4)
             };
             // a filled field people don't see: a program, not a person. It's told everything went well.
             if (s("website", 50).Length > 0) { Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "no", 0 }, { "token", "" } }); return; }
@@ -395,6 +396,7 @@ namespace RiwaqChat
                 { "pay", new Dictionary<string, object> { { "cod", ShopPrice.Cod(x.Row) }, { "ways", ShopPrice.PayWays(x.Row).Select(w => new Dictionary<string, object> { { "k", ShopJson.At(w, "k") }, { "to", ShopJson.At(w, "to") }, { "name", ShopJson.At(w, "name") } }).ToArray() } } },
                 { "branches", ShopPrice.Branches(x.Row) }, { "acct", ShopAccount.On(x.Row) }, { "retOn", ShopAccount.ReturnsOn(x.Row) }, { "revOn", ShopAccount.ReviewsOn(x.Row) }, { "news", ShopJson.Bool(ShopJson.At(ShopJson.Sub(set, "news"), "on"), true) },
                 { "revs", d.Revs }, { "ugc", d.Ugc }, { "posts", d.Posts.Where(p => !p.Hidden).Select(p => new Dictionary<string, object> { { "s", p.Slug }, { "t", ShopView.Pair(p.Title, p.TitleEn) }, { "x", ShopView.Pair(p.Short, p.ShortEn) }, { "im", p.Image ?? "" }, { "at", ShopView.Unix(p.At) } }).ToArray() },
+                { "ship2", ShopShip2.Boot(x) },
                 { "returns", ShopJson.Int(ShopJson.At(set, "returnsDays"), 14) }, { "vacation", ShopPrice.Vacation(d, x.Now) ? ShopJson.Sub(set, "vacation") : null },
                 { "pixel", x.Preview ? "" : ShopJson.Str(ShopJson.At(ShopJson.Sub(set, "pixel"), "meta")) },
                 { "pixels", x.Preview ? null : new Dictionary<string, object> { { "tiktok", Px(set, "tiktok") }, { "snap", Px(set, "snap") }, { "ga", Px(set, "ga") } } },

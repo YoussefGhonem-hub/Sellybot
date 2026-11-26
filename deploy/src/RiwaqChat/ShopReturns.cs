@@ -89,6 +89,7 @@ namespace RiwaqChat
         {
             var l = Statuses.Contains(st) ? Rows(c, true, "StoreId=@s AND Status=@st", "@s", sh.StoreId, "@st", st) : Rows(c, true, "StoreId=@s", "@s", sh.StoreId);
             foreach (var d in l) { var o = ShopOrders.ById(c, sh.StoreId, (long)d["order"]); d["name"] = o == null ? "" : o.Name; d["total"] = o == null ? 0 : o.Total; d["paid"] = o == null ? "" : o.Pay; }
+            ShopShipBack.Mark(c, sh, l);   // «المندوب يجيب المرتجع»
             return new Dictionary<string, object> { { "list", l }, { "waiting", Waiting(c, sh.StoreId) }, { "reasons", Stats(c, sh.StoreId) } };
         }
         // «أسباب المرتجع»: the last 90 days, by reason and by product

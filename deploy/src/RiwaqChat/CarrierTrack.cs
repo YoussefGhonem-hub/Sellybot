@@ -34,7 +34,8 @@ namespace RiwaqChat
 
         static void Happened(SqlConnection c, int storeId, long shipId, CarrierEvent e, string src)
         {
-            var x = ById(c, storeId, shipId); if (x == null || x.Source != "shop") return; long oid = long.Parse(x.OrderId, CultureInfo.InvariantCulture);
+            var x = ById(c, storeId, shipId); if (x != null && x.Source == "ret") { ShopShipBack.Happened(c, x, e, src); return; }   // a return pickup (ShopShipBack) never moves the order
+            if (x == null || x.Source != "shop") return; long oid = long.Parse(x.OrderId, CultureInfo.InvariantCulture);
             // the notification came before our own answer was saved
             if (string.IsNullOrEmpty(x.Tracking) && !string.IsNullOrEmpty(e.Tracking) && (x.State == "making" || x.State == "unsure")) { Made(c, x, new CarrierMade { Tracking = e.Tracking, Id = e.TheirId }); x = ById(c, storeId, shipId); }
             // what asking gives has no time of its own: only a change counts
@@ -56,6 +57,7 @@ namespace RiwaqChat
             bool end = ours == "delivered" || ours == "returned" || ours == "lost" || (ours == "cancelled" && x.Picked);
             Exec(c, "UPDATE dbo.Shipments SET Status=@st, Ours=@o, LastEventAt=@a, Attempts=@n, Reason=CASE WHEN @att=1 THEN @rs ELSE Reason END, ReasonText=CASE WHEN @att=1 OR @txt IS NOT NULL THEN @txt ELSE ReasonText END, CheckedAt=SYSUTCDATETIME(), State=CASE WHEN @end=1 THEN 'done' ELSE State END, DoneAt=CASE WHEN @end=1 THEN SYSUTCDATETIME() ELSE DoneAt END, RescueDue=CASE WHEN @keep=1 THEN RescueDue ELSE NULL END, BackAt=CASE WHEN @o='returned' THEN @a ELSE BackAt END WHERE Id=@i",
                 "@st", Cut(e.Code, 40), "@o", ours, "@a", at, "@n", tries, "@att", e.Ours == "attempt" ? 1 : 0, "@rs", Nz(Cut(e.Reason, 12)), "@txt", Nz(Cut(e.Text, 200)), "@end", end ? 1 : 0, "@keep", ours == "attempt" ? 1 : 0, "@i", x.Id);
+            if (e.Cod.HasValue && ours == "delivered") ShopShipCash.Collected(c, x, e.Cod.Value);
             var co = Of(x.Company); string why = string.IsNullOrEmpty(e.Text) ? "" : "\nالسبب: " + e.Text, track = "\nرقم التتبع: " + x.Tracking, idem = "sb-ship-" + x.Id + "-";
             var o = ShopOrders.ById(c, storeId, oid); if (o == null) return;
 
@@ -220,13 +222,13 @@ namespace RiwaqChat
         }
         static async Task Ask(CarrierLink k, List<CarrierShip> l)
         {
-            var got = await Of(k.Company).Ask(k, l); var by = l.GroupBy(x => x.Tracking ?? "").ToDictionary(g => g.Key, g => g.First());
+            var got = await ShopShipBack.Ask(Of(k.Company), k, l); var by = l.GroupBy(x => x.Tracking ?? "").ToDictionary(g => g.Key, g => g.First());
             using (var c = Db.Open()) { Exec(c, "UPDATE dbo.Shipments SET CheckedAt=SYSUTCDATETIME() WHERE Id IN (" + string.Join(",", l.Select(x => x.Id)) + ")"); foreach (var e in got) { CarrierShip x; if (by.TryGetValue(e.Tracking ?? "", out x)) Apply(c, x.StoreId, x.Id, e, "ask"); } }
         }
         // a press that got no answer: is it there?
         static async Task Sure(CarrierLink k, CarrierShip x)
         {
-            var m = await Of(x.Company).Find(k, x.Ref);
+            var m = await (x.Source == "ret" ? ShopShipBack.Find(k, x) : Of(x.Company).Find(k, x.Ref));
             using (var c = Db.Open())
             {
                 if (m != null) { if (!string.IsNullOrEmpty(m.Tracking)) Made(c, x, m); return; }
@@ -241,6 +243,7 @@ namespace RiwaqChat
             if (!Shops.Ready) return; var until = DateTime.UtcNow.AddMinutes(4);
             foreach (var co in All) { try { await CarrierAreas.Refresh(co, false, ct); } catch (Exception ex) { Log.Error(ex); } if (ct.IsCancellationRequested) return; }
             try { await RescueDue(ct); } catch (Exception ex) { Log.Error(ex); }
+            try { await ShopShipBack.Run(ct); } catch (Exception ex) { Log.Error(ex); }
             try { await Unsure(ct, until); } catch (Exception ex) { Log.Error(ex); }
             foreach (var co in All) try { await Poll(co, ct, until); } catch (Exception ex) { Log.Error(ex); }
         }

@@ -42,11 +42,12 @@ namespace RiwaqChat
     {
         public string Ref, OrderNo, Name, Phone, Phone2, Email, Address, Landmark, Note, Goods, HookUrl, HookSecret; public int Items; public decimal Cod, Value; public CarrierAreaRow Area;
         public List<string> Pics = new List<string>(); public List<ShopOrderItem> Lines = new List<ShopOrderItem>();
+        public string Day, Part, NewGoods; public decimal Kg;   // ShopShip2: the delivery day the customer chose, an exchange's new piece, the real weight (0 = not known)
     }
     public class CarrierMade { public string Tracking, Id; }
     // what a company says happened; Ours: made, picked, transit, out, attempt, delivered, returning, returned, cancelled, lost, hold, "" (nothing for us).
     // Loud: the owner must hear it. Blind: it came without the shipment's type, so «on its way» may be back to the owner
-    public class CarrierEvent { public string Ref, Tracking, TheirId, Code, Ours = "", Reason = "", Text; public int Attempts; public DateTime? At; public bool Loud, Blind; }
+    public class CarrierEvent { public string Ref, Tracking, TheirId, Code, Ours = "", Reason = "", Text; public int Attempts; public DateTime? At; public bool Loud, Blind; public decimal? Cod; }
     public class CarrierShip
     {
         public long Id; public int StoreId, Attempts, Rescued; public string Source, OrderId, OrderName, Company, Ref, Phone, Tracking, TheirId, State, Status, Ours, Reason, ReasonText, Area, Error; public decimal Cod;
@@ -263,7 +264,7 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
         }
 
         // ---------- reading, for the owner ----------
-        public static readonly Dictionary<string, string> OursText = new Dictionary<string, string> { { "made", "اتسجّلت عند الشركة" }, { "picked", "استلمتها الشركة" }, { "transit", "في مخازن الشركة" }, { "out", "خرجت للتوصيل" }, { "attempt", "محاولة فشلت" }, { "delivered", "اتسلّمت" }, { "returning", "راجعة ليك" }, { "returned", "رجعت" }, { "cancelled", "اتلغت" }, { "lost", "ضاعت أو اتكسرت" }, { "hold", "واقفة عندهم" } };
+        public static readonly Dictionary<string, string> OursText = new Dictionary<string, string> { { "made", "اتسجّلت عند الشركة" }, { "picked", "استلمتها الشركة" }, { "transit", "في مخازن الشركة" }, { "out", "خرجت للتوصيل" }, { "attempt", "محاولة فشلت" }, { "delivered", "اتسلّمت" }, { "returning", "راجعة ليك" }, { "returned", "رجعت" }, { "cancelled", "اتلغت" }, { "lost", "ضاعت أو اتكسرت" }, { "hold", "واقفة عندهم" }, { "asked", "المندوب لسه ماراحش" }, { "going", "المندوب رايح للزبون" }, { "took", "المندوب استلم المرتجع" } };
         const string NeedsLook = "(State='unsure' OR (State='live' AND Ours IN ('attempt','returning')) OR (BackAt IS NOT NULL AND GotAt IS NULL))";
 
         internal static CarrierShip ReadShip(System.Data.IDataRecord r)
@@ -432,7 +433,7 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
                 else { var h = CarrierAreas.Match(c, sid, co.Id, o.Gov, o.City, o.Area); if (!h.Sure) throw new ShopException("area", h.Closed ? co.Name + " مابتوصّلش للمنطقة دي." : CarrierAreas.Count(c, co.Id) == 0 ? "لسه بنجيب مناطق " + co.Name + ". استنى دقيقة وجرّب تاني." : "اختار منطقة الأوردر عند " + co.Name + "."); area = h.Row; }
                 if (co.Id == "bosta" && k.B("open", false) && !o.Items.Any(i => !string.IsNullOrEmpty(i.Image))) throw new ShopException("pics", "بوسطة بتطلب صورة للمنتج عشان الزبون يفتح الشحنة. ضيف صورة للمنتج، أو شيل «مسموح بفتح الشحنة» من إعدادات بوسطة.");
                 row = Claim(c, o, co, area, last, out look);
-                p = Parcel(c, s, sh, o, k, area, row.Ref, origin);
+                p = Parcel(c, s, sh, o, k, area, row.Ref, origin); ShopShip2.Parcel(c, sh, o, p);
             }
             // maybe: the company may have it, so nothing is created again before it says it doesn't
             CarrierException why = null; CarrierMade made = null; bool maybe = look;
@@ -591,7 +592,8 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
         // «وصلتني»: the parcel that came back is in the owner's hands; the quantity goes back now (unless it's damaged)
         static void Got(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
-            var x = ById(c, s.Id, Int(b, "id")); if (x == null || !x.BackAt.HasValue) throw new ShopException("state", "الشحنة دي لسه مارجعتش.");
+            var x = ById(c, s.Id, Int(b, "id")); if (x != null && x.Source == "ret") { ShopShipBack.Got(c, s, Shops.ByStore(c, s.Id), x, b, res); return; }
+            if (x == null || !x.BackAt.HasValue) throw new ShopException("state", "الشحنة دي لسه مارجعتش.");
             var o = ShopOrders.ById(c, s.Id, long.Parse(x.OrderId, CultureInfo.InvariantCulture)); bool stock = ShopJson.Bool(ShopJson.At(b, "restock"), true), moved = false;
             using (var tx = c.BeginTransaction())
             {

@@ -86,7 +86,7 @@ namespace RiwaqChat
 
         // ---------- the cart's sum ----------
         // gov 0 = not chosen yet (no shipping in the sum, only «فاضلك كام على الشحن المجاني»)
-        public static ShopQuote Quote(SqlConnection c, ShopData d, List<ShopLine> lines, string coupon, int gov, string phone, DateTime now, bool checkStock = true, ShopHow how = null)
+        public static ShopQuote Quote(SqlConnection c, ShopData d, List<ShopLine> lines, string coupon, int gov, string phone, DateTime now, bool checkStock = true, ShopHow how = null, string city = null)
         {
             var q = new ShopQuote();
             var set = d.Row.Settings;
@@ -169,6 +169,7 @@ namespace RiwaqChat
             // shipping
             string days; bool off; decimal min;
             var fee = ShipFee(d, gov, out days, out off, out min) ?? 0;
+            fee = ShopShipRate.Fee(c, d, gov, city, q.Lines, fee);   // a city of its own, the kilos above what the fee includes (off: as it was)
             q.Days = days; q.Min = min; q.Deliver = !off; q.ShipFull = fee;
             decimal over = FreeOver(d, gov, now);
             q.FreeOver = over;

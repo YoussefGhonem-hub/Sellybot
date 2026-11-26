@@ -163,7 +163,7 @@ const save = () => ls.set("ss-cart", cart.map(l => ({ v: l.v, q: l.q, x: l.x || 
 const C = W.C = () => cart.map((l, i) => { const v = vars[l.v], p = v && v.p; if (!p) return null; const ql = S.q && S.q.l && S.q.l.find(z => z.v === l.v && (z.x || "") === (l.x || "")); return { i, v: l.v, id: p.id, q: l.q, x: l.x || "", g: l.g || "", pr: ql ? ql.u : v.pr, old: ql ? ql.old : v.old, off: ql ? ql.d : 0, err: ql ? ql.e : "", mx: ql ? ql.mx : 0, im: W.imOf(p, v.vals), o: v.vals.map((x, k) => [x, W.valN(p, k, x)]).map((x, k) => { const g = p.o[k] && p.o[k].v.find(y => y[0] === v.vals[k]); return g ? [g[0], g[1]] : [v.vals[k], ""]; }), k: l.v + "|" + (l.x || "") }; }).filter(Boolean);
 const cn = W.cn = () => cart.reduce((a, l) => a + (vars[l.v] ? l.q : 0), 0);
 const sub = W.sub = () => C().reduce((a, l) => a + l.pr * l.q, 0);
-const how = () => ({ pay: payW(), gift: !!S.co.gift, branch: S.co.branch || "" });
+const how = () => ({ pay: payW(), gift: !!S.co.gift, branch: S.co.branch || "", ...(W.how2 ? W.how2() : {}) });   /* how2: ship2.js (the city for the fee, the delivery day) */
 const payW = () => { const w = (SH.pay || {}).ways || [], cod = !SH.pay || SH.pay.cod; return S.co.pay && (S.co.pay === "cod" ? cod : w.some(x => x.k === S.co.pay)) ? S.co.pay : cod ? "cod" : (w[0] || {}).k || "cod"; };
 const key = () => JSON.stringify([cart, S.co.gov || 0, S.cpn || "", how()]);
 let qT = null, qN = 0;
@@ -425,6 +425,7 @@ W.start = async () => {
   if (S.view === "co" || cart.length) geo().then(() => { if (S.view === "co") R(true); }); else setTimeout(geo, 2500);
   /* signed in on this phone: the checkout starts filled */
   const me = W.ME(); if (me) { if (!S.co.name) S.co.name = me.name; if (!S.co.ph) S.co.ph = me.phone; if (!S.co.gov && (me.addr || []).length) W.useAddr(me.addr.find(x => x.def) || me.addr[0]); }
+  if (SH.ship2) { const s = D.createElement("script"); s.src = "/_s/ship2.js?v=" + SH.ship2.v; D.head.appendChild(s); }   /* «ميعاد التوصيل», shipping by city or weight */
   R(); title(); if (cart.length) requote(true);
   /* the link of the reminder brings the cart back */
   const ct = new URLSearchParams(location.search).get("c"); if (ct && /^[a-f0-9]{24}$/.test(ct)) { history.replaceState(history.state, "", location.pathname); fetch(au("/_a/cart"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tok: ct }) }).then(r => r.json()).then(j => { const l = (j.l || []).filter(x => vars[x[0]] && vars[x[0]].can); if (l.length) { cart = l.map(x => ({ v: x[0], q: x[1], x: x[2] || "", g: "" })); changed(); if (S.view === "cart" || cur().cartS) { if (cur().cart) R(); else A.cart(); } } }).catch(() => { }); }

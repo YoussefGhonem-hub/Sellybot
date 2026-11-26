@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace RiwaqChat
 {
-    public class CarrierBosta : Carrier
+    public partial class CarrierBosta : Carrier
     {
         const string Egypt = "60e4482c7cb7d4bc4849c4d5";   // Bosta's id of the country
         static string Base { get { return Web.Setting("BostaBase", "https://app.bosta.co/api/v2").TrimEnd('/'); } }
@@ -154,7 +154,7 @@ namespace RiwaqChat
         public static CarrierEvent FromHook(Dictionary<string, object> b)
         {
             int st = ShopJson.Int(ShopJson.At(b, "state"), -1); if (st < 0) return null; var e = Map(st, ShopJson.Str(ShopJson.At(b, "type"), 40), ShopJson.Int(ShopJson.At(b, "exceptionCode")), ShopJson.Str(ShopJson.At(b, "exceptionReason"), 150));
-            e.Tracking = ShopJson.Str(ShopJson.At(b, "trackingNumber"), 60); e.Ref = ShopJson.Str(ShopJson.At(b, "businessReference"), 60); e.TheirId = ShopJson.Str(ShopJson.At(b, "_id"), 60); e.Attempts = ShopJson.Int(ShopJson.At(b, "numberOfAttempts"));
+            e.Tracking = ShopJson.Str(ShopJson.At(b, "trackingNumber"), 60); e.Ref = ShopJson.Str(ShopJson.At(b, "businessReference"), 60); e.TheirId = ShopJson.Str(ShopJson.At(b, "_id"), 60); e.Attempts = ShopJson.Int(ShopJson.At(b, "numberOfAttempts")); e.Cod = ShopJson.DecN(ShopJson.At(b, "cod"));
             decimal ms; if (decimal.TryParse(ShopJson.Str(ShopJson.At(b, "timeStamp"), 20), NumberStyles.Number, CultureInfo.InvariantCulture, out ms) && ms > 1600000000000m && ms < 4000000000000m) e.At = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds((double)ms);
             return e;
         }
