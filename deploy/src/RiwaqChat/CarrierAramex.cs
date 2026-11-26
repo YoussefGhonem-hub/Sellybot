@@ -130,7 +130,7 @@ namespace RiwaqChat
                 "Shipper", Party(k.M("n"), k.S("sn"), store, ShopOrders.Local(k.S("sp")), null, k.S("email"), from.AreaId, k.S("ss"), "EG"),
                 "Consignee", Party("", p.Name, p.Name, p.Phone, p.Phone2, p.Email, p.Area.AreaId, p.Address + (string.IsNullOrWhiteSpace(p.Landmark) ? "" : "، علامة مميزة: " + p.Landmark), "EG"),
                 "ThirdParty", null, "ShippingDateTime", now, "DueDate", now.AddDays(1), "Comments", Carriers.Cut(p.Note, 150), "PickupLocation", "", "OperationsInstructions", "", "AccountingInstrcutions", "", "Details", details, "Attachments", new object[0], "PickupGUID", "", "Number", null);
-            var r = await Call(k, "Shipping", "CreateShipments", D("Shipments", new[] { x }, "LabelInfo", D("ReportID", 9201, "ReportType", "URL")));
+            var r = await Call(k, "Shipping", "CreateShipments", D("Shipments", new[] { x }, "LabelInfo", D("ReportID", 9729, "ReportType", "URL")));
             var s = ShopJson.List(ShopJson.At(r, "Shipments")).OfType<Dictionary<string, object>>().FirstOrDefault(); string id = s == null ? "" : ShopJson.Str(ShopJson.At(s, "ID"), 60);
             return new CarrierMade { Tracking = id, Id = id };
         }
@@ -145,7 +145,7 @@ namespace RiwaqChat
         // ---------- the label: PrintLabel, the file itself in the answer (RPT) ----------
         public override async Task<byte[]> Labels(CarrierLink k, List<CarrierShip> l, string size)
         {
-            var r = await Call(k, "Shipping", "PrintLabel", D("ShipmentNumber", l[0].Tracking, "ProductGroup", "DOM", "OriginEntity", k.M("ent"), "LabelInfo", D("ReportID", 9201, "ReportType", "RPT")));
+            var r = await Call(k, "Shipping", "PrintLabel", D("ShipmentNumber", l[0].Tracking, "ProductGroup", "DOM", "OriginEntity", k.M("ent"), "LabelInfo", D("ReportID", 9729, "ReportType", "RPT")));
             var lb = ShopJson.Sub(r, "ShipmentLabel"); var f = ShopJson.At(lb, "LabelFileContents"); byte[] pdf = null;
             var nums = ShopJson.List(f); if (nums.Count > 60) try { pdf = nums.Select(x => (byte)ShopJson.Int(x)).ToArray(); } catch { pdf = null; }   // WCF writes a byte[] as numbers
             if (pdf == null || !(pdf.Length > 4 && pdf[0] == '%' && pdf[1] == 'P')) pdf = Carriers.PdfIn(new Carriers.Reply { Root = r, Bytes = new byte[0] });
