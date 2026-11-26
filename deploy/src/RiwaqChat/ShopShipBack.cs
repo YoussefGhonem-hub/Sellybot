@@ -269,7 +269,7 @@ namespace RiwaqChat
                 return "";
             }
             // ShipBlu: a return's status, or an exchange's «return|delivery» statuses
-            var two = code.Split('|'); string r = two[0], d = two.Length > 1 ? two[1] : "";
+            var two = (code ?? "").ToUpperInvariant().Split('|'); string r = two[0].Trim(), d = two.Length > 1 ? two[1].Trim() : "";   // small letters or capitals
             switch (r)
             {
                 case "PICKED_UP": return "took";

@@ -61,7 +61,7 @@ namespace RiwaqChat
             for (int page = 0; page < 3; page++)
             {
                 var r = await Call(k, HttpMethod.Get, "/delivery-orders/?limit=100&offset=" + page * 100 + "&merchant_order_reference=" + Uri.EscapeDataString(reference)); var l = Rows(r);
-                var x = l.FirstOrDefault(o => T(o, "merchant_order_reference") == reference && T(o, "status") != "CANCELLED" && T(o, "tracking_number").Length > 0); if (x != null) return new CarrierMade { Tracking = T(x, "tracking_number"), Id = T(x, "id") };
+                var x = l.FirstOrDefault(o => T(o, "merchant_order_reference") == reference && !string.Equals(T(o, "status"), "CANCELLED", StringComparison.OrdinalIgnoreCase) && T(o, "tracking_number").Length > 0); if (x != null) return new CarrierMade { Tracking = T(x, "tracking_number"), Id = T(x, "id") };
                 if (l.Count < 100) break;
             }
             return null;
@@ -115,18 +115,21 @@ namespace RiwaqChat
             return s;
         }
 
+        // their tutorial prints the statuses in capitals, their API and public clients send them in small letters: either is read
         public static CarrierEvent Map(string status)
         {
-            var e = new CarrierEvent { Code = status };
+            status = (status ?? "").Trim().ToUpperInvariant(); var e = new CarrierEvent { Code = status };
             switch (status)
             {
-                case "CREATED": case "PICKUP_REQUESTED": case "PICKUP_RESCHEDULED": e.Ours = "made"; break;
+                case "CREATED": case "PICKUP_REQUESTED": case "PICKUP_RESCHEDULED": case "OUT_FOR_PICKUP": e.Ours = "made"; break;
                 case "PICKED_UP": e.Ours = "picked"; break;
-                case "IN_TRANSIT": case "EN_ROUTE": e.Ours = "transit"; break;
+                case "IN_TRANSIT": case "EN_ROUTE": case "REATTEMPT_DELIVERY": e.Ours = "transit"; break;
+                case "ON_HOLD": case "OPS_DELAY": e.Ours = "hold"; break;
+                case "LOST": case "DAMAGED": e.Ours = "lost"; e.Text = status == "LOST" ? "ShipBlu سجّلتها مفقودة" : "ShipBlu سجّلتها متكسّرة"; break;
                 case "OUT_FOR_DELIVERY": e.Ours = "out"; break;
                 case "DELIVERY_ATTEMPTED": e.Ours = "attempt"; break;
                 case "DELIVERED": e.Ours = "delivered"; break;
-                case "RETURN_TO_ORIGIN": case "OUT_FOR_RETURN": e.Ours = "returning"; break;
+                case "RETURN_TO_ORIGIN": case "RETURNED_TO_ORIGIN": case "OUT_FOR_RETURN": e.Ours = "returning"; break;
                 case "RETURN_REFUSED": e.Ours = "hold"; e.Loud = true; e.Text = "رفضت استلام المرتجع"; break;
                 case "RETURN_POSTPONED": e.Ours = "hold"; e.Text = "المرتجع اتأجّل لبكرة"; break;
                 case "RETURNED": e.Ours = "returned"; break;
