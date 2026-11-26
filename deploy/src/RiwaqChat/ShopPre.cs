@@ -185,7 +185,7 @@ namespace RiwaqChat
                 if (places) ShopPlaces.Take(c, tx, storeId, vid, k, g[0], ShopPlaces.Prefer);
                 ShopOrders.Log_(c, tx, storeId, g[0], "system", "البضاعة وصلت: " + k + " من «" + name + "» اتحجزوا للطلب");
             }
-            HostingEnvironment.QueueBackgroundWorkItem(ct => SendDue(ct));
+            HostingEnvironment.QueueBackgroundWorkItem(async ct => { await Task.Delay(2000, ct); await SendDue(ct); });   // once the change it is part of is saved
         }
 
         // ---------- the owner ----------

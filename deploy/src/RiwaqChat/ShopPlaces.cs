@@ -130,7 +130,7 @@ namespace RiwaqChat
                 // back where it came from, the last place first
                 foreach (var x in Rows(c, tx, r => new[] { (int)r[0], (int)r[1] }, "SELECT PlaceId, Qty FROM dbo.ShopOrderAt WITH (UPDLOCK) WHERE OrderId=@o AND VariantId=@v AND Qty>0 ORDER BY PlaceId DESC", "@o", orderId.Value, "@v", variantId))
                 {
-                    if (n == 0) break; int k = Math.Min(n, x[1]); Add(at, x[0], k); n -= k;
+                    if (n == 0) break; int k = Math.Min(n, x[1]); Add(at, places.Any(p => p.Id == x[0]) ? x[0] : places[0].Id, k); n -= k;   // a place deleted (or a branch removed) since: the first one
                     Exec(c, tx, "UPDATE dbo.ShopOrderAt SET Qty=Qty-@k WHERE OrderId=@o AND VariantId=@v AND PlaceId=@p", "@k", k, "@o", orderId.Value, "@v", variantId, "@p", x[0]);
                 }
             }

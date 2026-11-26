@@ -263,6 +263,8 @@ namespace RiwaqChat
         static void Busy(SqlConnection c, int storeId)
         {
             Exec(c, "UPDATE dbo.ShopImports SET State='stopped' WHERE StoreId=@s AND State='preview' AND CreatedAt<DATEADD(DAY,-2,SYSUTCDATETIME())", "@s", storeId);
+            // a read of EasyOrders that the site's restart cut (its key lived in that task only): it can be started again
+            Exec(c, "UPDATE dbo.ShopImports SET State='failed', Error=N'القراية من EasyOrders وقفت. ابدأها تاني.' WHERE StoreId=@s AND State='fetch' AND ISNULL(BeatAt, CreatedAt)<DATEADD(MINUTE,-10,SYSUTCDATETIME())", "@s", storeId);
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.ShopImports WHERE StoreId=@s AND State IN ('fetch','queued','run')", "@s", storeId)) if ((int)cmd.ExecuteScalar() > 0) throw new ShopException("busy", "فيه نقل شغال دلوقتي. استنى لما يخلص.");
         }
 
