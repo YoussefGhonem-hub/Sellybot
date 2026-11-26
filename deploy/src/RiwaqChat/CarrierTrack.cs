@@ -265,9 +265,10 @@ namespace RiwaqChat
                 using (var c = Db.Open())
                 {
                     // claimed here, so two worker processes don't ask twice; a store whose key broke waits an hour
+                    // a link no notification has reached yet is asked every two hours at most (Bosta's day would bring «خرج للتوصيل» a day late)
                     var ids = new List<long>();
                     using (var cmd = Db.Cmd(c, @"WITH x AS (SELECT TOP 60 s.* FROM dbo.Shipments s JOIN dbo.Carriers k ON k.StoreId=s.StoreId AND k.Company=s.Company WHERE s.State='live' AND s.Company=@c AND s.CreatedAt>DATEADD(DAY,-60,SYSUTCDATETIME())
-                        AND (s.CheckedAt IS NULL OR s.CheckedAt<DATEADD(MINUTE,-@m,SYSUTCDATETIME())) AND (s.LastEventAt IS NULL OR s.LastEventAt<DATEADD(MINUTE,-@m,SYSUTCDATETIME()) OR @m<=60) AND (k.LastErrorAt IS NULL OR k.LastErrorAt<DATEADD(HOUR,-1,SYSUTCDATETIME())) AND (@q=0 OR k.HeardAt IS NULL) ORDER BY ISNULL(s.CheckedAt,'2000-01-01'))
+                        AND (s.CheckedAt IS NULL OR s.CheckedAt<DATEADD(MINUTE,-(CASE WHEN k.HeardAt IS NULL AND @m>120 THEN 120 ELSE @m END),SYSUTCDATETIME())) AND (s.LastEventAt IS NULL OR s.LastEventAt<DATEADD(MINUTE,-(CASE WHEN k.HeardAt IS NULL AND @m>120 THEN 120 ELSE @m END),SYSUTCDATETIME()) OR (CASE WHEN k.HeardAt IS NULL AND @m>120 THEN 120 ELSE @m END)<=60) AND (k.LastErrorAt IS NULL OR k.LastErrorAt<DATEADD(HOUR,-1,SYSUTCDATETIME())) AND (@q=0 OR k.HeardAt IS NULL) ORDER BY ISNULL(s.CheckedAt,'2000-01-01'))
                         UPDATE x SET CheckedAt=SYSUTCDATETIME() OUTPUT INSERTED.Id", "@c", co.Id, "@m", co.PollMinutes, "@q", co.QuietAfterPush ? 1 : 0)) using (var r = cmd.ExecuteReader()) while (r.Read()) ids.Add(Convert.ToInt64(r[0]));
                     if (ids.Count > 0) l = Ships(c, 0, "Id IN (" + string.Join(",", ids) + ")");
                 }
