@@ -52,7 +52,7 @@ namespace RiwaqChat
                 case "backup": Backup(c, sh, res); return true;
             }
             if (ShopRew.Get(c, s, sh, a, req, res)) return true;
-            return Carriers.Get(c, s, sh, a, req, res);
+            return Carriers.Get(c, s, sh, a, req, res) || ShopShip2.Get(c, s, sh, a, req, res);
         }
 
         public static bool Post(SqlConnection c, StoreInfo s, Shop sh, string a, Dictionary<string, object> b, HttpResponse res, out Func<Task> later)
@@ -73,7 +73,7 @@ namespace RiwaqChat
                 case "ai-desc": later = ShopTranslate.Describe(c, s, sh, b, res); return true;
             }
             if (ShopRew.Post(c, s, sh, a, b, res)) return true;
-            return Carriers.Post(c, s, sh, a, b, res, out later);
+            return Carriers.Post(c, s, sh, a, b, res, out later) || ShopShip2.Post(c, s, sh, a, b, res, out later);
         }
 
         // ---------- an order taken by phone ----------
@@ -153,7 +153,7 @@ namespace RiwaqChat
             var ids = Rows(c, r => Convert.ToInt64(r[0]), "SELECT TOP 300 Id FROM dbo.ShopOrders WHERE StoreId=@s AND Status='confirmed' ORDER BY Id", "@s", sh.StoreId);
             var os = ids.Select(i => ShopOrders.ById(c, sh.StoreId, i)).Where(o => o != null).ToList();
             var by = os.SelectMany(o => o.Items.Select(i => new { o, i })).GroupBy(k => k.i.VariantId + "|" + (k.i.Extra ?? "")).Select(g => D("n", g.First().i.Name, "o", g.First().i.Opts ?? "", "x", g.First().i.Extra ?? "", "sku", g.First().i.Sku ?? "", "q", g.Sum(k => k.i.Qty), "im", string.IsNullOrEmpty(g.First().i.Image) ? "" : ShopImages.Url(g.First().i.Image, true), "nos", g.Select(k => k.o.No).Distinct().ToArray())).OrderByDescending(d => (int)d["q"]).ToList();
-            return D("list", by, "orders", os.Count, "ids", os.Select(o => o.Id).ToArray());
+            return D("list", by, "orders", os.Count, "ids", os.Select(o => o.Id).ToArray(), "days", ShopShipDay.Prep(os));
         }
 
         // ---------- what is printed ----------
@@ -179,7 +179,7 @@ namespace RiwaqChat
                     if (kind == "label")
                     {
                         h.Append("<div class=\"pg lb\"><div class=\"row\"><div><h1>").Append(name).Append("</h1><span class=\"num\">").Append(phone).Append("</span></div><div style=\"text-align:end\"><b>أوردر ").Append(o.No).Append("</b><br><small>").Append(o.CreatedAt.AddHours(2).ToString("yyyy-MM-dd")).Append("</small></div></div>").Append(Barcode(string.IsNullOrEmpty(o.Tracking) ? o.No.ToString() : o.Tracking)).Append("<div style=\"text-align:center\" class=\"num\">").Append(H(string.IsNullOrEmpty(o.Tracking) ? o.No.ToString() : o.Tracking)).Append("</div>")
-                            .Append("<div class=\"to\"><b>").Append(H(toName)).Append("</b><br><span class=\"num\">").Append(H(ShopOrders.Local(toPhone))).Append(o.Phone2 == null ? "" : " · " + H(ShopOrders.Local(o.Phone2))).Append("</span><br>").Append(H(ShopOrders.AddressText(o))).Append("</div><div class=\"due\">").Append(o.Due > 0 ? "المطلوب: " + H(M(o.Due)) : "مدفوع، مفيش تحصيل").Append("</div><div class=\"it\">");
+                            .Append("<div class=\"to\"><b>").Append(H(toName)).Append("</b><br><span class=\"num\">").Append(H(ShopOrders.Local(toPhone))).Append(o.Phone2 == null ? "" : " · " + H(ShopOrders.Local(o.Phone2))).Append("</span><br>").Append(H(ShopOrders.AddressText(o))).Append("</div><div class=\"due\">").Append(o.Due > 0 ? "المطلوب: " + H(M(o.Due)) : "مدفوع، مفيش تحصيل").Append("</div>").Append(ShopShipDay.Label(o)).Append("<div class=\"it\">");
                         foreach (var i in o.Items) h.Append("• ").Append(H(i.Name)).Append(string.IsNullOrEmpty(i.Opts) ? "" : " (" + H(i.Opts) + ")").Append(" × ").Append(i.Qty).Append("<br>");
                         if (!string.IsNullOrEmpty(o.Note)) h.Append("<b>ملاحظة:</b> ").Append(H(o.Note)); h.Append("</div></div>");
                     }

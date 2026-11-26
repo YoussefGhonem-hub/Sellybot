@@ -29,7 +29,7 @@ namespace RiwaqChat
     public class ShopOrderIn
     {
         public List<ShopLine> Lines = new List<ShopLine>(); public string Name, Phone, Phone2, City, Area, Address, Landmark, Note, Coupon, ClientKey, Lang, Device, Ip, Src, Channel = "web"; public int Gov; public decimal? Expected; public bool Agreed, Test, ByOwner;
-        public ShopHow How = new ShopHow(); public string GiftMsg, RecvName, RecvPhone, Otp, Proof;
+        public ShopHow How = new ShopHow(); public string GiftMsg, RecvName, RecvPhone, Otp, Proof, Day, DayPart;
     }
 
     public static class ShopOrders
@@ -86,6 +86,7 @@ namespace RiwaqChat
                 if (ShopJson.Bool(ShopJson.At(ShopJson.Sub(row.Settings, "order"), "block"), true) && Crm.Of(c, row.StoreId, phone).Mark == "block") throw new ShopException("blocked", "مش قادرين نسجّل طلبك من هنا. كلّم المتجر على واتساب وهو يساعدك.");
                 if (ShopAccount.OtpNeeded(c, s, row, phone) && !ShopAccount.CheckOtp(c, row.StoreId, phone, o.Otp)) throw new ShopException("otp", string.IsNullOrWhiteSpace(o.Otp) ? "اكتب الكود اللي وصلك على الواتساب." : "الكود غلط أو وقته خلص.");
             }
+            ShopShipDay.Check(c, row, o);   // the delivery day the customer chose is one on offer
 
             // twice at most: the catalog may have changed between reading it and taking the store's row
             for (int attempt = 0; ; attempt++)
@@ -93,7 +94,7 @@ namespace RiwaqChat
                 var now = DateTime.UtcNow;
                 var d = ShopCache.Get(c, row);
                 if (d == null) throw new ShopException("closed", "المتجر مقفول دلوقتي.");
-                var q = ShopPrice.Quote(c, d, o.Lines.Select(l => new ShopLine { VariantId = l.VariantId, Qty = l.Qty, Extra = l.Extra }).ToList(), o.Coupon, o.Gov, phone, now, true, o.How);
+                var q = ShopPrice.Quote(c, d, o.Lines.Select(l => new ShopLine { VariantId = l.VariantId, Qty = l.Qty, Extra = l.Extra }).ToList(), o.Coupon, o.Gov, phone, now, true, o.How, o.City);
                 if (q.Stop == "vacation") throw new ShopException("vacation", "المتجر واخد إجازة ومش بيستقبل طلبات دلوقتي.");
                 if (q.Stop == "nodelivery") throw new ShopException("nodelivery", "للأسف مابنوصّلش لمحافظة " + ShopGeo.Name(o.Gov) + " دلوقتي.");
                 if (q.Stop == "min") throw new ShopException("min", "أقل طلب " + q.Min.ToString("#,0.##", CultureInfo.InvariantCulture) + " ج.م.", ShopPrice.Json(q));
@@ -138,7 +139,7 @@ namespace RiwaqChat
                                     tx.Rollback(); done = true;
                                     // someone bought it a moment ago: the sum with what is left
                                     var d2 = ShopCache.Get(c, row);
-                                    throw new ShopException("cart", "«" + l.P.Name + "» خلص أو باقي منه أقل من اللي طلبته.", ShopPrice.Json(ShopPrice.Quote(c, d2, o.Lines.Select(x => new ShopLine { VariantId = x.VariantId, Qty = x.Qty, Extra = x.Extra }).ToList(), o.Coupon, o.Gov, phone, now, true, o.How)));
+                                    throw new ShopException("cart", "«" + l.P.Name + "» خلص أو باقي منه أقل من اللي طلبته.", ShopPrice.Json(ShopPrice.Quote(c, d2, o.Lines.Select(x => new ShopLine { VariantId = x.VariantId, Qty = x.Qty, Extra = x.Extra }).ToList(), o.Coupon, o.Gov, phone, now, true, o.How, o.City)));
                                 }
                                 took.Add(new object[] { l, n, (int)left });
                             }
@@ -158,6 +159,7 @@ namespace RiwaqChat
                         long id; string token = Shops.Token(16); string proof = o.ByOwner || o.Proof == null ? null : ShopAccount.PicIn(c, tx, row.StoreId, o.Proof);
                         var exd = new Dictionary<string, object>(); if (q.Fees.Any(f => f.Kind == "gift") && cut(o.GiftMsg, 200).Length > 0) exd["gift"] = cut(o.GiftMsg, 200); if (recv.Length > 0) exd["recv"] = new Dictionary<string, object> { { "n", recv }, { "p", recvPhone } };
                         if (q.Branch != null) { var br = ShopPrice.Branch(row, q.Branch); exd["branch"] = new Dictionary<string, object> { { "id", q.Branch }, { "n", ShopJson.Str(ShopJson.At(br, "n"), 60) }, { "ad", ShopJson.Str(ShopJson.At(br, "ad"), 200) } }; }
+                        ShopShipDay.Extra(o, exd);
                         string extras = exd.Count == 0 ? null : ShopJson.Write(exd);
                         using (var cmd = Db.Cmd(c, @"INSERT INTO dbo.ShopOrders(StoreId, No, Token, ClientKey, Channel, Lang, Name, Phone, Phone2, Gov, City, Area, Address, Landmark, Note, Subtotal, Discount, Ship, Total, Coupon, Offers, Dup, Ip, Device, Src, Pay, Fees, FeesJson, Extras, PayState, Deposit, Proof)
                             OUTPUT INSERTED.Id VALUES(@s, @no, @t, @k, @ch, @lang, @n, @p, @p2, @g, @city, @area, @a, @lm, @note, @sub, @disc, @ship, @total, @cp, @of, @dup, @ip, @dev, @src, @pay, @fees, @fj, @ex, @ps, @dep, @proof)",
@@ -166,6 +168,7 @@ namespace RiwaqChat
                             "@note", Nz(cut(o.Note, 400)), "@sub", q.Sub, "@disc", q.Discount, "@ship", q.Ship, "@total", q.Total, "@cp", q.CouponUsed ? q.Coupon : null,
                             "@of", q.Offers.Count == 0 ? null : ShopJson.Write(q.Offers.Select(x => new Dictionary<string, object> { { "id", x.Id }, { "n", x.Name }, { "a", x.Amount } })), "@dup", dup, "@ip", Nz(cut(o.Ip, 64)), "@dev", Nz(cut(o.Device, 40)), "@src", Nz(cut(o.Src, 200))))
                         { cmd.Transaction = tx; id = Convert.ToInt64(cmd.ExecuteScalar()); }
+                        ShopShipDay.Take(c, tx, row, id, o);   // the day's last place goes to one order
                         foreach (var l in q.Lines)
                             using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopOrderItems(StoreId, OrderId, ProductId, VariantId, Name, Opts, Sku, Image, Qty, Price, Full_, Discount, Cost, Extra) VALUES(@s, @o, @p, @v, @n, @op, @sku, @im, @q, @pr, @f, @d, @c, @x)",
                                 "@s", row.StoreId, "@o", id, "@p", l.P.Id, "@v", l.VariantId, "@n", l.P.Name, "@op", Nz(l.V.Label), "@sku", Nz(l.V.Sku ?? l.P.Sku), "@im", Nz(l.V.Image ?? (l.P.Pics.Count > 0 ? l.P.Pics[0].Path : null)), "@q", l.Qty, "@pr", l.Unit, "@f", l.Full, "@d", l.Disc, "@c", l.P.CostOf(l.V).HasValue ? (object)l.P.CostOf(l.V).Value : null, "@x", Nz(cut(l.Extra, 600))))
@@ -336,7 +339,7 @@ namespace RiwaqChat
             bool sameItems = lines.Count == o.Items.Count && lines.Zip(o.Items, (x, y) => x.VariantId == y.VariantId && x.Qty == y.Qty).All(x => x);
             if (lines.Count == 0) return "الأوردر لازم يفضل فيه منتج واحد على الأقل. لو عايز تلغيه، غيّر حالته لملغي.";
             string days; bool off; decimal min;
-            decimal ship = b.ContainsKey("ship") ? Math.Max(0, ShopJson.Dec(ShopJson.At(b, "ship"))) : gov != o.Gov && o.Ship > 0 ? (ShopPrice.ShipFee(d, gov, out days, out off, out min) ?? 0) : o.Ship;
+            decimal ship = b.ContainsKey("ship") ? Math.Max(0, ShopJson.Dec(ShopJson.At(b, "ship"))) : (gov != o.Gov || ShopShipRate.CityMoves(d, gov, o.City, city) || (!sameItems && ShopShipRate.Weighs(d, gov))) && o.Ship > 0 ? ShopShipRate.Fee(c, d, gov, city, ShopShipRate.On(d) ? ShopPrice.Quote(c, d, lines.Select(l => new ShopLine { VariantId = l.VariantId, Qty = l.Qty, Extra = l.Extra }).ToList(), null, gov, phone, now, false).Lines : null, ShopPrice.ShipFee(d, gov, out days, out off, out min) ?? 0) : o.Ship;
             decimal extraOff = b.ContainsKey("off") ? Math.Max(0, ShopJson.Dec(ShopJson.At(b, "off"))) : -1;
 
             using (var tx = c.BeginTransaction())

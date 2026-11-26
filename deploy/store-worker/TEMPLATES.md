@@ -60,7 +60,7 @@ Object.assign(t, {
 - Reviews: `p.rt`, `p.rv`, `rate(p)` (small), `stars(n)`, `revBox(p)` (the whole block; the engine adds it under a product page that has no `class="rvk`). Home: `BOOT.shop.revs`, `BOOT.shop.ugc`, `BOOT.shop.posts`.
 - A product: `p.ask` what the customer writes or sends with it (inside `optsUI`; `askUI(p)` for a template with its own options), `p.gw` what goes with it, `p.vd` a short video after `need(p)` (`vidBox(p)`, added by the engine when there is no `class="vdk`), `watch:<id>` on a sold-out one, `cmp:<id>` to compare (`S.cmp`, `t.cmpBar`).
 - The bag: `gifts()` (drawn inside `totals()`), `upBox(n)` / `upsell(n)` what can be added (`upadd:<variant>`), `bill().fees`, `.dep`, `.branch`.
-- Checkout: `formBits.how()` (pickup; already inside `where()`), `pay()` (ways to pay, gift wrap), `who()` (another recipient).
+- Checkout: `formBits.how()` (pickup; already inside `where()`), `pay()` (ways to pay, gift wrap), `who()` (another recipient). When the owner turns on «ميعاد التوصيل», `ship2.js` adds the day picker (`#ddw`, `.ddg` buttons) at the end of `where()`, and asks the sum again when the city changes: a template that draws its own checkout keeps calling `formBits.where()`.
 - Lists: `facets(l).sp` specs worth filtering by, `filt(l, {sp: {[k]: value}, rt: 4})`.
 - A form with `data-s="news"`, a `tel` input and a `.err` line signs a number up for the store's WhatsApp news (only when `BOOT.shop.news`).
 - A category with `lo` is reached by its link only (`t.cats` leaves it out).

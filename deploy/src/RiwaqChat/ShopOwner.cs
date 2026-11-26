@@ -194,6 +194,7 @@ namespace RiwaqChat
             DateTime dt;
             if (DateTime.TryParseExact(from, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt>=@f"; args.Add("@f"); args.Add(dt.AddHours(-2)); }
             if (DateTime.TryParseExact(to, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt<@t"; args.Add("@t"); args.Add(dt.AddDays(1).AddHours(-2)); }
+            where += ShopShipDay.Filter(req, args);   // ?day=: the delivery day the customer chose
             if (q.Length > 0)
             {
                 var digits = Regex.Replace(ShopJson.Digits(q), @"\D", ""); int no; int.TryParse(digits.Length < 9 ? digits : "", out no);
@@ -212,7 +213,7 @@ namespace RiwaqChat
         static Dictionary<string, object> OrderRow(SqlConnection c, ShopOrder o)
         {
             return new Dictionary<string, object> { { "id", o.Id }, { "no", o.No }, { "status", o.Status }, { "name", o.Name }, { "phone", ShopOrders.Local(o.Phone) }, { "gov", o.Gov }, { "govName", ShopGeo.Name(o.Gov) }, { "city", o.City ?? "" }, { "total", o.Total }, { "items", o.Items.Sum(i => i.Qty) }, { "first", o.Items.Count > 0 ? o.Items[0].Name + (string.IsNullOrEmpty(o.Items[0].Opts) ? "" : " (" + o.Items[0].Opts + ")") : "" }, { "img", o.Items.Count > 0 && !string.IsNullOrEmpty(o.Items[0].Image) ? ShopImages.Url(o.Items[0].Image, true) : "" },
-                { "at", Iso(o.CreatedAt) }, { "statusAt", Iso(o.StatusAt) }, { "dup", o.Dup }, { "seen", o.Seen }, { "channel", o.Channel }, { "note", o.Note ?? "" }, { "staff", o.StaffNote ?? "" }, { "coupon", o.Coupon ?? "" }, { "tracking", o.Tracking ?? "" }, { "pay", o.Pay }, { "ps", o.PayState ?? "" }, { "pick", o.Extras.ContainsKey("branch") }, { "gift", (o.FeesJson ?? "").Contains("\"gift\"") } };
+                { "at", Iso(o.CreatedAt) }, { "statusAt", Iso(o.StatusAt) }, { "dup", o.Dup }, { "seen", o.Seen }, { "channel", o.Channel }, { "note", o.Note ?? "" }, { "staff", o.StaffNote ?? "" }, { "coupon", o.Coupon ?? "" }, { "tracking", o.Tracking ?? "" }, { "pay", o.Pay }, { "ps", o.PayState ?? "" }, { "pick", o.Extras.ContainsKey("branch") }, { "gift", (o.FeesJson ?? "").Contains("\"gift\"") }, { "dday", ShopJson.Str(ShopJson.At(o.Extras, "day"), 10) }, { "dpart", ShopJson.Str(ShopJson.At(o.Extras, "dpart"), 4) } };
         }
         static Dictionary<string, object> Order(SqlConnection c, StoreInfo s, Shop sh, long id)
         {

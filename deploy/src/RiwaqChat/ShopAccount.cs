@@ -280,12 +280,12 @@ namespace RiwaqChat
             if (ShopGeo.Get(gov) == null || city.Length < 2 || ad.Length < 5) throw new ShopException("addr", T(x, "كمّل العنوان: المحافظة والمدينة والشارع.", "Complete the address: governorate, city and street."));
             if (p2raw.Length > 0 && p2 == null) throw new ShopException("phone2", T(x, "الرقم التاني مش صح", "The second number isn't valid"));
             decimal ship = o.Ship;
-            if (gov != o.Gov)
+            if (gov != o.Gov || ShopShipRate.CityMoves(x.Data, gov, o.City, city))
             {
                 // the delivery of the new place, worked out on the same items; what was free by a code or an offer stays free
-                var q = ShopPrice.Quote(c, x.Data, o.Items.Select(i => new ShopLine { VariantId = i.VariantId, Qty = i.Qty }).ToList(), null, gov, o.Phone, x.Now, false);
+                var q = ShopPrice.Quote(c, x.Data, o.Items.Select(i => new ShopLine { VariantId = i.VariantId, Qty = i.Qty }).ToList(), null, gov, o.Phone, x.Now, false, null, city);
                 if (q.Stop == "nodelivery") throw new ShopException("nodelivery", T(x, "للأسف مابنوصّلش لمحافظة " + ShopGeo.Name(gov) + " دلوقتي.", "Sorry, we don't deliver there right now."));
-                if (!o.Extras.ContainsKey("branch") && (o.Ship > 0 || ShopPrice.Quote(c, x.Data, o.Items.Select(i => new ShopLine { VariantId = i.VariantId, Qty = i.Qty }).ToList(), null, o.Gov, o.Phone, x.Now, false).Ship == 0)) ship = q.Ship;
+                if (!o.Extras.ContainsKey("branch") && (o.Ship > 0 || ShopPrice.Quote(c, x.Data, o.Items.Select(i => new ShopLine { VariantId = i.VariantId, Qty = i.Qty }).ToList(), null, o.Gov, o.Phone, x.Now, false, null, o.City).Ship == 0)) ship = q.Ship;
             }
             decimal total = o.Subtotal - o.Discount + ship + o.Fees; bool more = Math.Abs(total - o.Total) >= 1;
             if (more && !ShopJson.Bool(ShopJson.At(b, "ok"))) { Ok(res, "confirm", true, "ship", ship, "total", total); return; }   // the new total is shown first
