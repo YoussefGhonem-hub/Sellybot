@@ -1014,6 +1014,20 @@
   .tg-link .scope-box code{flex:1;min-width:0}
   .mt-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
   @media (max-width:860px){.mt-fields{grid-template-columns:minmax(0,1fr)}}
+  /* SellyChat (the «sellychat» tab) */
+  .mt-logo.sc-logo{background:linear-gradient(135deg,#e8774a,#f2a07d)}
+  .sc-chans{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .sc-chans span{font-size:12.5px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
+  .sc-team{display:grid;gap:8px;margin-top:12px}
+  .sc-agent{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  .sc-agent .who{flex:1;min-width:160px;display:grid;gap:2px}
+  .sc-agent .who small{color:var(--muted);font-size:12.5px;direction:ltr;text-align:end;unicode-bidi:isolate}
+  .sc-add{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;gap:8px;margin-top:12px;align-items:end}
+  .sc-add label{font-size:12.5px;color:var(--muted);margin:0 0 4px;display:block}
+  @media (max-width:700px){.sc-add{grid-template-columns:minmax(0,1fr)}}
+  .sc-pass{margin-top:12px;padding:14px;border-radius:14px;border:1px solid #f0c3a8;background:linear-gradient(135deg,rgba(232,119,74,.12),rgba(232,119,74,.03));display:grid;gap:8px}
+  .sc-pass b{font-size:14.5px}.sc-pass small{font-size:12.5px;color:var(--muted)}
+  .sc-pass .scope-box code{flex:1;min-width:0}
   #mtApp .scope-box code{flex:1;min-width:0}
   .mt-reel{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(232,119,74,.12),rgba(245,162,93,.06));color:var(--ink);text-decoration:none;transition:border-color .15s}
   .mt-reel:hover,.mt-reel:focus-visible{border-color:var(--brand);outline:none}
@@ -2012,6 +2026,8 @@
       <!-- «متجري» (SellyStore): its files are shop-admin/*.js, loaded when it opens; hidden until the admin opens it to this store (me.shop) -->
       <button data-tab="shop" id="shopTabBtn" hidden>🏪 متجري <span class="nb" id="shopNb" hidden></span></button>
       <button data-tab="customers" data-feat="crm">👥 زبايني</button>
+      <!-- SellyChat (SellyChat.cs): one inbox for every channel; hidden until the admin opens it (me.hide "sellychat") -->
+      <button data-tab="sellychat" data-feat="sellychat">💬 محادثاتي</button>
       <button data-tab="data">📚 داتا المتجر</button>
       <div class="dd">
         <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddChat">🤖 الشات <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -3563,6 +3579,45 @@
     <p class="hint" style="max-width:880px">على تيليجرام مفيش حد 24 ساعة زي فيسبوك، بس البوت مايقدرش يبدأ الكلام: الزبون هو اللي بيفتح البوت ويدوس «Start». البوت بيرد في المحادثات الخاصة بس، مش في الجروبات.</p>
   </section>
 
+  <!-- SellyChat («💬 محادثاتي», SellyChat.cs): Chatwoot with Sellybot's name. Every channel's messages are copied there and the team answers
+       from it; Sellybot sends the answers. Hidden until the admin opens it (me.hide "sellychat"). -->
+  <section data-panel="sellychat" data-feat="sellychat" hidden>
+    <div class="page-title"><div><h2>💬 محادثاتي <span class="new-tag">جديد</span></h2><p>كل رسايل زباينك من الواتساب والمسنجر والإنستجرام وتيليجرام في مكان واحد، وانت وفريقك تردّوا منه.</p></div></div>
+    <div class="msg mt-top" id="scTop" hidden></div>
+    <div class="card" style="max-width:880px;margin-bottom:16px">
+      <div class="why" style="margin:0">
+        <b>إزاي بيشتغل؟</b>
+        <ul>
+          <li><span>📥</span><div><b>كل القنوات في شاشة واحدة</b><small>الواتساب (كل أرقامك)، والمسنجر، والإنستجرام، وتيليجرام. جنب كل محادثة القناة اللي جاية منها.</small></div></li>
+          <li><span>🤖</span><div><b>المساعد بيرد زي ما هو</b><small>وردوده بتظهر قدامك. ولما انت أو حد من فريقك يرد على زبون، المساعد يسيبلكم المحادثة دي ساعتين.</small></div></li>
+          <li><span>👥</span><div><b>فريقك معاك</b><small>ضيف موظفينك وكل واحد يدخل بحسابه. وزّعوا المحادثات، واكتبوا ملاحظات داخلية الزبون مابيشوفهاش، وردود جاهزة.</small></div></li>
+          <li><span>🔗</span><div><b>من غير ربط جديد</b><small>بيشتغل بنفس الحسابات اللي ربطتها هنا، ومن غير أي رسوم زيادة من واتساب أو فيسبوك.</small></div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card mt-card" style="max-width:880px">
+      <div class="shop-head">
+        <div class="shop-logo mt-logo sc-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4 3v-3H6a2 2 0 0 1-2-2z"/><path d="M14.5 8.2c0-1-.9-1.7-2.3-1.7S9.8 7.2 9.8 8.4s1.1 1.6 2.4 1.9 2.5.8 2.5 2-1 2-2.6 2-2.4-.8-2.4-1.8"/></svg></div>
+        <div><h3 style="margin:0">SellyChat</h3>
+          <p class="sub" style="margin:2px 0 0">صندوق رسايل متجرك وفريقك.</p></div>
+      </div>
+      <div class="mt-body" id="scBody"></div>
+    </div>
+    <div class="card mt-card" id="scTeam" style="max-width:880px;margin-top:16px" hidden>
+      <h3 style="margin:0">👥 فريقك</h3>
+      <p class="sub" style="margin:4px 0 0">كل موظف بيدخل SellyChat بإيميله وباسورد بنعمله احنا، ويشوف المحادثات ويرد. انت بتدخل من هنا على طول.</p>
+      <div class="sc-team" id="scAgents"></div>
+      <div id="scPass"></div>
+      <form class="sc-add" id="scAdd" autocomplete="off">
+        <div><label for="scName">اسم الموظف</label><input type="text" id="scName" maxlength="60" placeholder="مثلًا: منى"></div>
+        <div><label for="scEmail">إيميله</label><input type="email" id="scEmail" maxlength="150" dir="ltr" placeholder="mona@example.com"></div>
+        <button class="btn" type="submit" id="scAddBtn">➕ ضيفه</button>
+      </form>
+      <p class="hint" id="scSeats"></p>
+    </div>
+    <p class="hint" style="max-width:880px">شات الموقع مش جوه SellyChat: الزبون على موقعك بيكلّم المساعد على طول. ولو عايز توقّف المساعد على قناة، اقفله من صفحتها في «🔗 ربط بحساباتك».</p>
+  </section>
+
   <!-- «فكّر معانا» (Council.cs): an idea -> seven advisors argue -> one verdict. Its own prepaid tokens. Hidden until the admin opens it (me.hide "council"). -->
   <section data-panel="council" data-feat="council" hidden>
     <div class="page-title"><div><h2>🧠 فكّر معانا <span class="new-tag">جديد</span></h2><p>محتار في قرار؟ اكتبه، و7 مستشارين بالذكاء الاصطناعي يتناقشوا فيه قدامك ويختلفوا، وتطلع برأي واضح وخطوات.</p></div></div>
@@ -4187,6 +4242,7 @@
     if (tab === "shop") openShop();
     if (tab === "council") loadCouncil();
     if (tab === "telegram") loadTg(); else tgStopPoll();
+    if (tab === "sellychat") loadSc();
     if (tab === "data" || tab === "look" || tab === "install") loadLocks();   // which features this store's plan doesn't include
     if (tab !== "wa") stopUpsell();
     showLiveChat(tab !== "look");   // the look tab has its own preview of the chat
@@ -4238,7 +4294,7 @@
     unmountHelpChat(); render(); loadItems(); mountLiveChat();
     var want = fresh && !/^#customers\/\d{8,15}$/.test(location.hash) ? "" : (location.hash || "").replace("#", ""), file = /^customers\/(\d{8,15})$/.exec(want);   // #customers/2010… = that customer's file
     if (file) want = "customers";
-    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) || (want === "customers" && hasF("crm")) || (want === "council" && hasF("council")) || (want === "shop" && me.shop) ? want : "home");
+    go(["home", "data", "look", "install", "wa", "offers", "settings", "plan", "support"].indexOf(want) >= 0 || (want === "admin" && me.isAdmin) || (want === "social" && !$("socialTabBtn").hidden) || (want === "telegram" && hasF("telegram")) || (want === "customers" && hasF("crm")) || (want === "council" && hasF("council")) || (want === "sellychat" && hasF("sellychat")) || (want === "shop" && me.shop) ? want : "home");
     if (file && current === "customers") crOpen(file[1]);
     setTimeout(showNews, 1200);   // what's new since this browser last looked
   }
@@ -6233,6 +6289,115 @@
   // ---------------- Telegram (api/telegram.ashx). «اعمل بوت متجرك» opens Sellybot's bot on Telegram with a one-time code; the owner
   // presses Start, then «🤖 اعمل بوت متجرك», then Create, and the new bot links itself. This page polls until it shows up. ----------------
   var tgSt = null, tgPollT = null, tgPollUntil = 0;
+  // ---------------- SellyChat («💬 محادثاتي», api/sellychat.ashx) ----------------
+  var scSt = null, scPw = null;   // scPw: an employee's new password, shown once
+  var SC_CH = { wa: "🟢 واتساب", fb: "💬 مسنجر", ig: "📸 إنستجرام", tg: "✈️ تيليجرام" };
+  async function loadSc() {
+    scPw = null;
+    try { scSt = await api("api/sellychat.ashx"); scTop("", true); } catch (e) { scSt = null; scTop(e.message, false); }
+    renderSc();
+  }
+  function scTop(text, ok) { var el = $("scTop"); el.hidden = !text; el.textContent = text || ""; el.className = "msg mt-top " + (ok ? "ok" : "err"); }
+  async function scPost(action, body, okText) {
+    try {
+      scSt = await api("api/sellychat.ashx?action=" + action, { method: "POST", json: body || {} });
+      if (scSt.password) scPw = { email: scSt["for"], password: scSt.password };
+      scTop("", true); renderSc(); if (okText) toast(okText); return true;
+    }
+    catch (e) { if (e.code === "plan_locked") openLock("sellychat"); else toast(e.message); return false; }
+  }
+  // SellyChat signed in, by a one-time link. The tab opens during the click itself, so popup blockers let it through.
+  async function scOpen(btn) {
+    var win = null; try { win = window.open("", "_blank"); } catch (e) { }
+    btn.disabled = true;
+    try {
+      var r = await api("api/sellychat.ashx?action=open", { method: "POST", json: {} });
+      if (win && !win.closed) win.location.href = r.url; else location.href = r.url;
+    } catch (e) { if (win && !win.closed) win.close(); toast(e.message); }
+    btn.disabled = false;
+  }
+  function renderSc() {
+    var body = $("scBody"); body.textContent = ""; $("scTeam").hidden = true;
+    if (!scSt) return;
+    var L = scSt.link;
+    if (!L) {
+      var ol = mtEl("ol", "mt-steps");
+      ["دوس «شغّل SellyChat»، وهنعملك حسابك هناك في ثواني.", "رسايل آخر يومين، وكل رسالة جديدة، بتظهر فيه لوحدها من كل القنوات اللي ربطتها.", "دوس «افتح SellyChat» وابدأ ترد، وضيف موظفينك من هنا."]
+        .forEach(function (s) { ol.appendChild(mtEl("li", "", s)); });
+      body.appendChild(ol);
+      var go = mtEl("button", "btn mt-go", "💬 شغّل SellyChat"); go.type = "button";
+      go.onclick = async function () {
+        go.disabled = true; go.textContent = "⏳ بنجهّز حسابك...";
+        if (!await scPost("start", {}, "✅ SellyChat جاهز")) { go.disabled = false; go.textContent = "💬 شغّل SellyChat"; }
+      };
+      body.appendChild(go);
+      return;
+    }
+    var acc = mtEl("div", "mt-acc");
+    acc.appendChild(mtEl("span", "ok-pill", "✅ شغال"));
+    acc.appendChild(mtEl("b", "", "SellyChat"));
+    body.appendChild(acc);
+    if (L.status) body.appendChild(mtEl("div", "wa-warn", L.status));
+    if (L.channels && L.channels.length) {
+      var ch = mtEl("div", "sc-chans");
+      L.channels.forEach(function (c) { if (SC_CH[c]) ch.appendChild(mtEl("span", "", SC_CH[c])); });
+      body.appendChild(ch);
+    }
+    var stx = [L.conversations ? fmt(L.conversations) + " محادثة فيه" : "لسه مفيش محادثات: أول رسالة من زبون هتظهر فيه"];
+    if (L.lastAt) stx.push("آخر رسالة اتنقلت: " + ago(L.lastAt));
+    body.appendChild(mtEl("div", "mt-stats", stx.join(" · ")));
+    var row = mtEl("div", "mt-row");
+    var open = mtEl("button", "btn", "💬 افتح SellyChat"); open.type = "button"; open.onclick = function () { scOpen(open); };
+    row.appendChild(open);
+    row.appendChild(mtEl("span", "space"));
+    var stop = mtEl("button", "btn ghost sm", "اقفل SellyChat"); stop.type = "button";
+    stop.onclick = function () {
+      if (confirm("متأكد؟ حساب SellyChat هيتقفل وفريقك مش هيقدر يدخل، والمحادثات اللي فيه هتتمسح من هناك. الرسايل نفسها بتفضل في Sellybot، والمساعد بيفضل يرد عادي. وتقدر تشغّله تاني في أي وقت.")) scPost("stop", {}, "SellyChat اتقفل");
+    };
+    row.appendChild(stop);
+    body.appendChild(row);
+    body.appendChild(mtEl("p", "hint", "على الموبايل: افتحه من هنا، وبعدين من قايمة المتصفح اختار «إضافة إلى الشاشة الرئيسية»، فيبقى زي التطبيق."));
+    renderScTeam();
+  }
+  function renderScTeam() {
+    $("scTeam").hidden = false;
+    var list = $("scAgents"); list.textContent = "";
+    var agents = scSt.agents || [];
+    if (!agents.length) list.appendChild(mtEl("p", "hint", "لسه مفيش موظفين. ضيف أول واحد تحت."));
+    agents.forEach(function (a) {
+      var r = mtEl("div", "sc-agent"), who = mtEl("div", "who");
+      who.appendChild(mtEl("b", "", a.name)); who.appendChild(mtEl("small", "", a.email));
+      r.appendChild(who);
+      var rs = mtEl("button", "btn ghost sm", "🔑 باسورد جديد"); rs.type = "button";
+      rs.onclick = function () { if (confirm("نعمل باسورد جديد لـ " + a.name + "؟ القديم هيبطل يشتغل.")) scPost("agent-reset", { id: a.id }, "اتعمل باسورد جديد"); };
+      var rm = mtEl("button", "btn ghost sm", "امسحه"); rm.type = "button";
+      rm.onclick = function () { if (confirm("نمسح " + a.name + " من SellyChat؟ مش هيقدر يدخل تاني.")) { scPw = null; scPost("agent-remove", { id: a.id }, "اتمسح"); } };
+      r.appendChild(rs); r.appendChild(rm); list.appendChild(r);
+    });
+    var pw = $("scPass"); pw.textContent = "";
+    if (scPw) {
+      var box = mtEl("div", "sc-pass");
+      box.appendChild(mtEl("b", "", "🔑 ابعت البيانات دي للموظف (مش هتظهر تاني):"));
+      var text = "ادخل SellyChat من " + (scSt.link.address || "") + "\nالإيميل: " + scPw.email + "\nالباسورد: " + scPw.password;
+      var sb = mtEl("span", "scope-box"), code = mtEl("code", "", text), cp = mtEl("button", "btn ghost sm", "نسخ"); cp.type = "button";
+      code.style.whiteSpace = "pre-wrap"; code.style.fontFamily = "inherit"; code.style.lineHeight = "1.8"; code.dir = "rtl";
+      cp.onclick = function () { copy(text); cp.textContent = "✓ اتنسخ"; setTimeout(function () { cp.textContent = "نسخ"; }, 1800); };
+      sb.appendChild(code); sb.appendChild(cp); box.appendChild(sb);
+      box.appendChild(mtEl("small", "", "ويقدر يغيّر الباسورد بعد ما يدخل، من إعدادات حسابه هناك."));
+      pw.appendChild(box);
+    }
+    $("scSeats").textContent = "تقدر تضيف لحد " + fmt(scSt.seats) + " موظفين.";
+  }
+  $("scAdd").onsubmit = async function (e) {
+    e.preventDefault();
+    var name = $("scName").value.trim(), email = $("scEmail").value.trim();
+    if (name.length < 2) { toast("اكتب اسم الموظف."); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) { toast("الإيميل شكله مش مظبوط."); return; }
+    $("scAddBtn").disabled = true;
+    if (await scPost("agent-add", { name: name, email: email }, "✅ اتضاف")) { $("scName").value = ""; $("scEmail").value = ""; }
+    $("scAddBtn").disabled = false;
+  };
+
   async function loadTg() {
     try { tgSt = await api("api/telegram.ashx"); tgTop("", true); } catch (e) { tgSt = null; tgTop(e.message, false); }
     renderTg();

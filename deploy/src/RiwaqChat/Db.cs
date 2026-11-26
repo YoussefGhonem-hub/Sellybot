@@ -1109,6 +1109,26 @@ BEGIN
     FROM dbo.Plans p WHERE p.IsDeleted = 0 AND p.IncludesWa = 0 AND p.Features NOT LIKE N'%تنبيه المرتجع%' AND p.Features NOT LIKE N'%كل مميزات المتقدمة%'
       AND (@advPlan IS NULL OR p.SortOrder >= (SELECT SortOrder FROM dbo.Plans WHERE Id = @advPlan));
   INSERT INTO dbo.Migrations(Name) VALUES ('crm');
-END";
+END
+-- SellyChat (SellyChat.cs): the store's account there (tokens kept protected; WaFrom / MetaFrom = the last message copied there),
+-- the inbox of each channel (wa<line> / fb / ig / tg), each customer's conversation, and the employees added from the dashboard
+IF OBJECT_ID('dbo.ScLinks') IS NULL
+  CREATE TABLE dbo.ScLinks(StoreId INT NOT NULL PRIMARY KEY REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    AccountId INT NOT NULL, OwnerUserId INT NOT NULL, OwnerBox NVARCHAR(500) NOT NULL,
+    BotId INT NOT NULL, BotBox NVARCHAR(500) NOT NULL, PhoneBotId INT NOT NULL, PhoneBotBox NVARCHAR(500) NOT NULL,
+    HookKey NVARCHAR(64) NOT NULL, Origin NVARCHAR(200) NULL, WaFrom BIGINT NOT NULL DEFAULT 0, MetaFrom BIGINT NOT NULL DEFAULT 0,
+    Status NVARCHAR(300) NULL, StatusAt DATETIME2 NULL, LastAt DATETIME2 NULL, CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+IF OBJECT_ID('dbo.ScInboxes') IS NULL
+  CREATE TABLE dbo.ScInboxes(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Chan NVARCHAR(10) NOT NULL,
+    InboxId INT NOT NULL, SecretBox NVARCHAR(300) NULL, PRIMARY KEY (StoreId, Chan));
+IF OBJECT_ID('dbo.ScConvs') IS NULL
+BEGIN
+  CREATE TABLE dbo.ScConvs(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Chan NVARCHAR(10) NOT NULL, ChatId NVARCHAR(100) NOT NULL,
+    ContactId INT NOT NULL, ConvId INT NOT NULL, PRIMARY KEY (StoreId, Chan, ChatId));
+  CREATE INDEX IX_ScConvs_Conv ON dbo.ScConvs(StoreId, ConvId);
+END
+IF OBJECT_ID('dbo.ScAgents') IS NULL
+  CREATE TABLE dbo.ScAgents(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, UserId INT NOT NULL,
+    Name NVARCHAR(100) NOT NULL, Email NVARCHAR(200) NOT NULL, CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), PRIMARY KEY (StoreId, UserId));";
     }
 }

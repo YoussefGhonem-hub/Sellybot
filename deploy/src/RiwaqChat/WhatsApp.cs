@@ -658,15 +658,18 @@ ELSE
                     "@md", media == null ? (object)DBNull.Value : (media.Length > 800 ? media.Substring(0, 800) : media), "@l", line))
                 {
                     var v = cmd.ExecuteScalar();
-                    return v == null || v == DBNull.Value ? (long?)null : Convert.ToInt64(v);
+                    if (v == null || v == DBNull.Value) return null;
+                    SellyChat.Kick(storeId);   // a copy to SellyChat, when the store has it
+                    return Convert.ToInt64(v);
                 }
             }
             catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { return null; }
         }
 
+        // what we sent ourselves: the assistant's replies, and the answers written in SellyChat (MsgId owner:cw-<id>)
         static bool IsOurs(SqlConnection c, int storeId, string chatKey, string text, int line)
         {
-            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=0 AND MsgId IS NULL AND Line=@l
+            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.WaMessages WHERE StoreId=@s AND ChatId=@c AND FromCustomer=0 AND (MsgId IS NULL OR MsgId LIKE 'owner:cw-%') AND Line=@l
                 AND CreatedAt > DATEADD(MINUTE,-30,SYSUTCDATETIME()) AND CHARINDEX(@t, Body) > 0", "@s", storeId, "@c", chatKey, "@t", text, "@l", line))
                 return (int)cmd.ExecuteScalar() > 0;
         }
