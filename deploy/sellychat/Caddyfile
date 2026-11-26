@@ -1,0 +1,5 @@
+# HTTPS for SellyChat: Caddy gets the certificate by itself (Let's Encrypt) for the address in .env (SC_DOMAIN).
+{$SC_DOMAIN} {
+	encode gzip
+	reverse_proxy rails:3000
+}

@@ -402,6 +402,7 @@ namespace RiwaqChat
                 {
                     rows = MetaBot.Recent(c, storeId, Tg.Ch, chat);
                     if (rows.Count == 0 || rows[0].Id != rowId) return;   // a newer message answers everything
+                    if (rows.Any(x => x.Owner && x.At > DateTime.UtcNow.AddHours(-WhatsAppBot.PauseHours))) return;   // someone answered from SellyChat
                     s = Db.StoreById(c, storeId);
                     link = Tg.Link(c, storeId);
                     if (s == null || s.Status != "active" || link == null || !link.Enabled || link.Token == null) return;

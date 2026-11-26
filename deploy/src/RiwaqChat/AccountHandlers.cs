@@ -23,7 +23,7 @@ namespace RiwaqChat
                 { "id", s.Id }, { "slug", s.Slug }, { "name", s.Name }, { "email", s.OwnerEmail }, { "isAdmin", s.IsAdmin },
                 { "shop", Shops.MeJson(c, s) },   // show «متجري» (SellyStore, Shop.cs): null = not open to this store
                 { "meta", MetaApp.Visible(c, s) },   // show the «مسنجر وإنستجرام» tab (Meta.cs)
-                { "hide", Council.Hide(c, s, PlanGate.Hidden(c, s)) },   // the features this store's plan doesn't include: the dashboard doesn't draw them
+                { "hide", SellyChat.Hide(c, s, Council.Hide(c, s, PlanGate.Hidden(c, s))) },   // the features this store's plan doesn't include: the dashboard doesn't draw them
                 { "status", s.Status }, { "botName", s.BotName }, { "welcome", s.Welcome ?? "" }, { "instructions", s.Instructions ?? "" },
                 { "allowedOrigins", s.AllowedOrigins ?? "" }, { "bubbleStyle", s.BubbleStyle }, { "brandColor", s.BrandColor }, { "chatTitle", s.ChatTitle ?? "" }, { "suggestions", s.Suggestions ?? "" },
                 { "logo", LogoHandler.Url(s) }, { "logoFit", LogoHandler.Fit(s) },   // the owner's logo as the chat bubble (StoreLogo.cs)

@@ -589,15 +589,18 @@ ELSE
                     "@m", (object)MetaApp.Cut(msgId, 150) ?? DBNull.Value, "@md", (object)MetaApp.Cut(media, 800) ?? DBNull.Value))
                 {
                     var v = cmd.ExecuteScalar();
-                    return v == null || v == DBNull.Value ? (long?)null : Convert.ToInt64(v);
+                    if (v == null || v == DBNull.Value) return null;
+                    SellyChat.Kick(storeId);   // a copy to SellyChat, when the store has it
+                    return Convert.ToInt64(v);
                 }
             }
             catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { return null; }
         }
 
+        // what we sent ourselves: the assistant's replies, and the answers written in SellyChat (MsgId owner:cw-<id>)
         static bool IsOurs(SqlConnection c, int storeId, string ch, string chat, string text)
         {
-            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.MetaMessages WHERE StoreId=@s AND Channel=@ch AND ChatId=@c AND FromCustomer=0 AND MsgId IS NULL
+            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.MetaMessages WHERE StoreId=@s AND Channel=@ch AND ChatId=@c AND FromCustomer=0 AND (MsgId IS NULL OR MsgId LIKE 'owner:cw-%')
                 AND CreatedAt > DATEADD(MINUTE,-30,SYSUTCDATETIME()) AND CHARINDEX(@t, Body) > 0", "@s", storeId, "@ch", ch, "@c", chat, "@t", text))
                 return (int)cmd.ExecuteScalar() > 0;
         }
