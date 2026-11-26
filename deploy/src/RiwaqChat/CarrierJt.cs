@@ -65,6 +65,8 @@ namespace RiwaqChat
         public static string Digest(string biz, string privateKey) { return Convert.ToBase64String(Md5(biz + privateKey)); }
         public static string Sign(CarrierLink k) { string pwd = string.Concat(Md5(k.Key + Word).Select(b => b.ToString("X2"))); return Convert.ToBase64String(Md5(k.Code + pwd + k.Private)); }
 
+        // success is code 1, but J&T Egypt's own getLocation example answers «code 10, msg success»: either counts
+        internal static bool Ok(bool good, string code, string msg) { return good && (code == "1" || (code.Length > 0 && string.Equals((msg ?? "").Trim(), "success", StringComparison.OrdinalIgnoreCase))); }
         async Task<Dictionary<string, object>> Call(CarrierLink k, string path, Dictionary<string, object> biz, bool signed = true)
         {
             if (Broken(k) != null) throw new CarrierException(NoKeys, "key", badKey: true);   // never sent unsigned
@@ -72,7 +74,7 @@ namespace RiwaqChat
             var q = new HttpRequestMessage(HttpMethod.Post, Base(k) + path) { Content = new StringContent("bizContent=" + Uri.EscapeDataString(json), Encoding.UTF8, "application/x-www-form-urlencoded") };
             q.Headers.TryAddWithoutValidation("apiAccount", k.Account); q.Headers.TryAddWithoutValidation("digest", Digest(json, k.Private)); q.Headers.TryAddWithoutValidation("timestamp", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture));
             var r = await Carriers.Send(Name, q); string code = ShopJson.Str(ShopJson.At(r.Body, "code"), 20), msg = ShopJson.Str(ShopJson.At(r.Body, "msg"), 200), ar;
-            if (r.Good && code == "1") return r.Body;
+            if (Ok(r.Good, code, msg)) return r.Body;
             if (r.Status >= 500 || (r.Good && code.Length == 0)) throw new CarrierException("J&T فيها مشكلة دلوقتي. جرّب كمان شوية.", "net", unsure: true);
             if (code == "145003030" || (code.Length > 0 && Regex.IsMatch(msg, "header.*sign|sign.*header|apiAccount", RegexOptions.IgnoreCase))) throw new CarrierException("J&T مش قابلة apiAccount أو privateKey. انسخهم تاني من Personal center على J&T Open Platform.", code, badKey: true);
             if (code == "145003031") throw new CarrierException("كود العميل أو الباسورد غلط. اسأل فرع J&T عنهم.", code, badKey: true);
