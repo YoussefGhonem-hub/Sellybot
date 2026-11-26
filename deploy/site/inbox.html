@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-sbl-wait="#login,#closed,#app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -184,6 +184,7 @@
 </style>
 </head>
 <body>
+<script src="sb-loader.js?v=1"></script><!-- Sellybot's loader: first in <body>, not deferred (sb-loader.js) -->
 <!-- an employee signs in here; the owner comes from the dashboard (their sign-in works here as it is) -->
 <div class="login" id="login" hidden>
   <form id="loginForm" autocomplete="on">
