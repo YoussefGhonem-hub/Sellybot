@@ -285,6 +285,83 @@
   table{width:100%;border-collapse:collapse;font-size:14px;min-width:760px}
   th{font-size:12px;color:var(--muted);font-weight:600;text-align:right;padding:12px 14px;background:var(--soft);border-bottom:1px solid var(--line);white-space:nowrap}
   td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  /* «المميزات حسب الباقة»: a row per feature, a column per plan; the lit band runs from the feature's first plan to the top one */
+  .gm-key{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--muted);margin:-2px 0 12px}
+  .gm-key span{display:inline-flex;align-items:center;gap:7px}
+  .gm-dot{display:inline-block;width:18px;height:12px;border-radius:4px}
+  .gm-dot.in{background:color-mix(in srgb,var(--brand) 18%,var(--card))}
+  .gm-dot.st{background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .gm-dot.out{border:1.5px dashed color-mix(in srgb,var(--muted) 55%,transparent)}
+  .gm-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+  .gm{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+  .gm th,.gm td{padding:0;border-bottom:1px solid var(--line);background:var(--card);white-space:normal;font-weight:400;color:var(--ink)}
+  .gm tbody tr:last-child>*{border-bottom:0}
+  .gm thead th{background:var(--soft);vertical-align:bottom}
+  .gm th.gm-f{position:sticky;inset-inline-start:0;z-index:1;text-align:start;padding:10px 14px;width:310px;min-width:210px;border-inline-end:1px solid var(--line)}
+  .gm thead th.gm-f{font-size:12px;color:var(--muted);font-weight:600;background:var(--soft)}
+  .gm .gm-h{padding:12px 6px 10px;text-align:center;min-width:92px}
+  .gm-h b{display:block;font-size:13.5px;font-weight:700}
+  .gm-h small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+  .gm-n{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;padding:1px 9px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--muted)}
+  .gm-z .gm-n{display:none}
+  .gm-off{display:block;font-style:normal;font-size:11px;color:var(--warn);font-weight:600}
+  .gm .gm-g>*{padding:18px 6px 6px;vertical-align:bottom}
+  .gm .gm-g th.gm-f{padding:18px 14px 6px;font-size:13px;font-weight:700}
+  .gm-g th small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+  .gm .gm-gl{text-align:center;font-size:11px;font-weight:600;color:var(--muted)}
+  .gm tbody tr.gm-g:first-child .gm-gl{visibility:hidden}
+  .gm-fi{display:flex;gap:10px;align-items:flex-start}
+  .gm-fi>div{min-width:0}
+  .gm-ic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--soft);border:1px solid var(--line);font-size:17px;line-height:1}
+  .gm-fi b{display:block;font-size:14px;font-weight:600;line-height:1.45}
+  .gm-s{display:block;font-size:12px;color:var(--brand);font-weight:600;line-height:1.5}
+  .gm-s.no{color:var(--err)}
+  .gm-fi small{display:block;font-size:11.5px;color:var(--muted);line-height:1.5}
+  .gm-note{display:block;font-style:normal;font-size:11.5px;color:var(--warn);font-weight:600;margin-top:3px;line-height:1.5}
+  .gm .gm-c{padding:8px 0;vertical-align:middle}
+  .gm-b{display:grid;place-items:center;width:100%;height:38px;border:0;margin:0;padding:0;cursor:pointer;background:none;font:inherit;
+    color:color-mix(in srgb,var(--muted) 60%,transparent);transition:background .15s,color .15s,box-shadow .15s}
+  .gm-b svg{width:19px;height:19px}
+  .gm-b.out svg{width:15px;height:15px}
+  .gm-b.out{border-radius:10px;margin-inline:8px;width:calc(100% - 16px);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--line) 70%,transparent)}
+  .gm-b.in{background:color-mix(in srgb,var(--brand) 16%,var(--card));color:var(--brand)}
+  .gm-b.st{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-start-start-radius:10px;border-end-start-radius:10px;margin-inline-start:8px;width:calc(100% - 8px)}
+  .gm-c:last-child .gm-b.in{border-start-end-radius:10px;border-end-end-radius:10px;width:calc(100% - 8px)}
+  .gm-c:last-child .gm-b.st{border-radius:10px;width:calc(100% - 16px)}
+  .gm-b.in.f{border-start-start-radius:10px;border-end-start-radius:10px;margin-inline-start:8px;width:calc(100% - 8px)}
+  .gm-c:last-child .gm-b.in.f{border-radius:10px;width:calc(100% - 16px)}
+  .gm-r.forced .gm-c{opacity:.4}
+  .gm-b.st.no{background:color-mix(in srgb,var(--err) 13%,var(--card));color:var(--err);border-radius:10px;width:calc(100% - 16px);margin-inline:8px}
+  .gm-t{font-size:11.5px;font-weight:700;white-space:nowrap}
+  .gm-b.na{cursor:default;color:var(--muted);box-shadow:none}
+  .gm-r td.gm-c:hover .gm-b.out,.gm-r td.gm-c:not(.gm-z):hover~td.gm-c .gm-b.out,.gm-r[data-zero=all] td.gm-z:hover~td.gm-c .gm-b.out,.gm-r[data-zero=open] td.gm-z:hover~td.gm-c .gm-b.out{background:color-mix(in srgb,var(--brand) 9%,var(--card));color:var(--brand);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--brand) 45%,transparent)}
+  .gm-r td.gm-c:hover .gm-b.in{background:color-mix(in srgb,var(--brand) 26%,var(--card))}
+  .gm-b:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+  .gm-r:hover>th,.gm-r:hover>td{background:var(--soft)}
+  .gm-r.busy{opacity:.5;pointer-events:none}
+  /* phones: each feature is a card, its plans in a row under it; the group heading names the columns */
+  @media (max-width:700px){
+    .gm-wrap{overflow:visible;border:0;border-radius:0;background:none}
+    .gm{display:block;min-width:0!important}
+    .gm thead{display:none}
+    .gm tbody{display:block}
+    .gm tr.gm-r,.gm tr.gm-g{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr))}
+    .gm tr>*{border-bottom:0;background:none}
+    .gm th.gm-f{position:static;grid-column:1/-1;width:auto;min-width:0;border-inline-end:0;padding:12px 2px 8px;background:none}
+    .gm tr.gm-r{border-bottom:1px solid var(--line);padding-bottom:12px}
+    .gm .gm-g>*{padding:6px 0 0}
+    .gm .gm-g th.gm-f{padding:20px 2px 4px}
+    .gm tbody tr.gm-g:first-child .gm-gl{visibility:visible}
+    .gm .gm-gl{font-size:10.5px;padding:0 1px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .gm .gm-c{padding:0}
+    .gm-b{height:36px}
+    .gm-b.out,.gm-b.st.no,.gm-c:last-child .gm-b.st,.gm-c:last-child .gm-b.in.f{margin-inline:3px;width:calc(100% - 6px)}
+    .gm-b.st,.gm-b.in.f{margin-inline-start:3px;width:calc(100% - 3px)}
+    .gm-c:last-child .gm-b.in{width:calc(100% - 3px)}
+    .gm-t{font-size:10.5px;white-space:normal;line-height:1.2}
+    .gm-r:hover>th,.gm-r:hover>td{background:none}
+    .gm-ic{width:30px;height:30px;font-size:15px;border-radius:9px}
+  }
   tr:last-child td{border-bottom:0}
   tbody tr{transition:background .15s;animation:fadeUp .4s both}
   tbody tr.click{cursor:pointer}
@@ -634,9 +711,10 @@
         <div class="plans" id="plansGrid"></div>
         <div class="card" style="margin-top:16px">
           <h3>🔒 المميزات حسب الباقة</h3>
-          <p class="sub">اختار أقل باقة فيها كل ميزة. المتجر اللي باقته أقل بيشوف كارت ترقية بدل الميزة، ولو كان بيستخدمها ونزل لباقة أقل، بتتقفل لحد ما يرقّي. «مفتوحة للكل» = زي ما كانت.</p>
-          <div id="gateRows" style="display:grid;gap:12px;max-width:520px"></div>
-          <div class="hint" style="margin-top:8px">الواتساب ليه إعداده في صفحة «الواتساب».</div>
+          <p class="sub">دوس على أول باقة الميزة تبدأ منها، والباقات اللي أعلى منها بتاخدها معاها. المتجر اللي باقته أقل مش بيشوف الميزة، ولو كان بيستخدمها ونزل لباقة أقل بتتقفل لحد ما يرقّي. التجربة المجانية فيها كل حاجة.</p>
+          <div class="gm-key"><span><i class="gm-dot in"></i>موجودة في الباقة</span><span><i class="gm-dot out"></i>مش موجودة</span><span><i class="gm-dot st"></i>أول باقة فيها</span></div>
+          <div class="gm-wrap" id="gateRows"><div class="skel" style="height:220px"></div></div>
+          <div class="hint" style="margin-top:8px">الواتساب نفسه ليه إعداده في صفحة «الواتساب».</div>
         </div>
       </section>
 
@@ -2343,18 +2421,74 @@
     if (!r.ok) throw new Error((data && data.message) || "حصلت مشكلة، جرّب تاني.");
     return data;
   }
+  // The table: a row per feature, a column per plan (cheapest first). The lit band starts at the feature's first plan and runs
+  // to the top one; tapping a column makes it the first. «للكل» = no plan picked, which means something per feature (f.zero):
+  // all = every plan · open = every store, plan or not · closed = nobody · follow = like Shopify · none = not offered.
+  // f.force: a switch elsewhere overrides the plan now (closed / all); the row says so and its cells dim. Returns key -> what the plan pick says.
   function renderGates(d) {
-    $("gateRows").innerHTML = d.features.map(function (f) {
-      return '<div><label for="gate_' + f.key + '">' + esc(f.name) + '</label><select id="gate_' + f.key + '" data-gate="' + f.key + '">' +
-        '<option value="0">مفتوحة للكل</option>' +
-        d.plans.map(function (p) { return '<option value="' + p.id + '"' + (p.id === f.minPlan ? " selected" : "") + '>من ' + esc(p.name) + " أو أعلى — " + money(p.price) + '</option>'; }).join("") +
-        '</select></div>';
+    var plans = d.plans, used = {};
+    d.features.forEach(function (f) { if (f.minPlan) used[f.minPlan] = 1; });
+    var cols = plans.map(function (p, i) { return { p: p, r: i }; }).filter(function (c) { return c.p.active || used[c.p.id]; });
+    function rank(id) { for (var i = 0; i < plans.length; i++) if (plans[i].id === id) return i; return -1; }
+    function zeroOn(f) { return !f.set && f.zero !== "none"; }
+    // the first plan rank that has it: -1 = every plan, Infinity = none
+    function from(f) { if (zeroOn(f) && f.zero === "closed") return Infinity; return f.minPlan ? rank(f.minPlan) : -1; }
+    function says(f, own) {
+      if (!own && f.force === "closed") return "مقفولة دلوقتي لكل المتاجر";
+      if (!own && f.force === "all") return "مفتوحة دلوقتي لكل الباقات والتجربة";
+      var s = from(f), first = null, last = cols[cols.length - 1];
+      cols.forEach(function (c) { if (!first && c.r >= s) first = c; });
+      var plan = s < 0 ? "في كل الباقات" : !first ? "مش في أي باقة" : first === last ? "في «" + first.p.name + "» بس" : "من «" + first.p.name + "» وأعلى";
+      if (zeroOn(f) && f.zero === "open") return "مفتوحة لكل متجر، بباقة أو من غير";
+      if (zeroOn(f) && f.zero === "closed") return "مقفولة لكل المتاجر لحد ما تختار باقة";
+      if (zeroOn(f) && f.zero === "follow") return "ماشية زي ربط Shopify: " + plan;
+      return plan;
+    }
+    var zeroTip = { all: "كل الباقات والتجربة", open: "كل متجر، بباقة أو من غير", closed: "مقفولة لكل المتاجر", follow: "زي ربط Shopify", none: "الميزة دي لازم تبدأ من باقة" };
+    var tick = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var lock = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
+    function has(f, r) { return f.force === "closed" ? false : f.force === "all" ? true : from(f) <= r; }
+    var count = cols.map(function (c) { return d.features.filter(function (f) { return has(f, c.r); }).length; });
+    var head = '<thead><tr><th class="gm-f">الميزة</th><th class="gm-h gm-z"><b>للكل</b><small>من غير باقة محددة</small></th>' + cols.map(function (c, i) {
+      return '<th class="gm-h"><b>' + esc(c.p.name) + '</b><small>' + money(c.p.price) + '</small>' + (c.p.active ? '' : '<em class="gm-off">مخفية</em>') +
+        '<span class="gm-n">' + fmt(count[i]) + ' من ' + fmt(d.features.length) + '</span></th>';
+    }).join("") + '</tr></thead>';
+    var body = d.groups.map(function (g) {
+      var list = d.features.filter(function (f) { return f.group === g.key; });
+      if (!list.length) return "";
+      // each group's heading repeats the column names, so a long table never loses which column is which
+      return '<tr class="gm-g"><th class="gm-f"><span>' + esc(g.name) + '</span>' + (g.hint ? '<small>' + esc(g.hint) + '</small>' : '') + '</th><td class="gm-gl">للكل</td>' +
+        cols.map(function (c) { return '<td class="gm-gl">' + esc(c.p.name) + '</td>'; }).join("") + '</tr>' +
+        list.map(function (f) {
+          var s = from(f), z = zeroOn(f), firstLit = true, prev = z && f.zero !== "closed";
+          var zc = f.zero === "none" ? '<td class="gm-c gm-z"><button type="button" class="gm-b na" disabled title="' + esc(zeroTip.none) + '">—</button></td>'
+            : '<td class="gm-c gm-z"><button type="button" class="gm-b ' + (z ? (f.zero === "closed" ? "st no" : "st") : "out") + '" data-k="' + f.key + '" data-p="0" aria-pressed="' + z + '" title="' + esc(zeroTip[f.zero] || "") + '">' +
+              (f.zero === "follow" ? '<span class="gm-t">زي Shopify</span>' : f.zero === "closed" ? (z ? '<span class="gm-t">مقفولة</span>' : lock) : z ? tick : lock) + '</button></td>';
+          if (z && f.zero !== "closed") firstLit = false;
+          var pc = cols.map(function (c) {
+            var on = s <= c.r, st = on && firstLit, f1 = on && !prev && !st;   // f1: a band that starts after a gap («زي Shopify»)
+            if (st) firstLit = false; prev = on;
+            return '<td class="gm-c"><button type="button" class="gm-b ' + (st ? "st" : on ? "in" + (f1 ? " f" : "") : "out") + '" data-k="' + f.key + '" data-p="' + c.p.id + '" aria-pressed="' + (st && !z) + '" title="' + esc("من «" + c.p.name + "» وأعلى") + '">' + (on ? tick : lock) + '</button></td>';
+          }).join("");
+          return '<tr class="gm-r' + (f.force ? " forced" : "") + '" data-row="' + f.key + '" data-zero="' + f.zero + '"><th class="gm-f"><div class="gm-fi"><span class="gm-ic">' + esc(f.icon) + '</span><div><b>' + esc(f.name) + '</b>' +
+            '<span class="gm-s' + (f.force === "closed" || (s === Infinity && f.force !== "all") ? " no" : "") + '">' + esc(says(f)) + '</span>' + (f.hint ? '<small>' + esc(f.hint) + '</small>' : '') +
+            (f.note ? '<em class="gm-note">⚠️ ' + esc(f.note) + '</em>' : '') + '</div></div></th>' + zc + pc + '</tr>';
+        }).join("");
     }).join("");
-    $("gateRows").querySelectorAll("[data-gate]").forEach(function (s) {
-      s.onchange = async function () {
-        try { renderGates(await gateApi({ feature: s.dataset.gate, minPlan: String(s.value) })); toast("اتحفظ ✓"); } catch (e) { toast(e.message, true); }
+    $("gateRows").innerHTML = '<table class="gm" style="--n:' + (cols.length + 1) + ';min-width:' + (300 + (cols.length + 1) * 92) + 'px">' + head + '<tbody>' + body + '</tbody></table>';
+    $("gateRows").querySelectorAll("button[data-k]").forEach(function (b) {
+      b.onclick = async function () {
+        if (b.getAttribute("aria-pressed") === "true") return;
+        var row = b.closest("tr"); row.classList.add("busy");
+        try {
+          var nd = await gateApi({ feature: b.dataset.k, minPlan: String(b.dataset.p) });
+          var said = renderGates(nd), f = nd.features.filter(function (x) { return x.key === b.dataset.k; })[0];
+          toast("اتحفظ ✓ " + (f ? f.name + ": " + said[f.key] : ""));
+        } catch (e) { row.classList.remove("busy"); toast(e.message, true); }
       };
     });
+    var said = {}; d.features.forEach(function (f) { said[f.key] = says(f, true); });
+    return said;
   }
   async function loadGates() { try { renderGates(await gateApi()); } catch (e) { toast(e.message, true); } }
   function discountText(p) { var d = p.discount; if (!d) return ""; return d.label || (d.type === "percent" ? "خصم " + fmt(d.value) + "%" : "خصم " + money(d.value)); }

@@ -247,17 +247,61 @@ namespace RiwaqChat
             return Task.CompletedTask;
         }
 
+        // The admin's «المميزات حسب الباقة» table (admin.html renderGates), drawn in this order: { group, key, icon, name, hint }
+        static readonly string[][] Groups = {
+            new[] { "store", "🛍️ ربط المتجر والطلبات", "" },
+            new[] { "bot", "🤖 المساعد وشكله", "" },
+            new[] { "wa", "📱 على الواتساب", "كلها محتاجة خدمة الواتساب كمان" },
+            new[] { "chan", "💬 قنوات تانية", "" },
+            new[] { "crm", "👥 الزباين", "" },
+            new[] { "shop", "📦 «متجري»", "" } };
+        static readonly string[][] Rows = {
+            new[] { "store", "shopify", "🛍️", "ربط Shopify", "" },
+            new[] { "store", "easyorders", "🧡", "ربط EasyOrders وتأكيد طلباته", "" },
+            new[] { "store", "bothstores", "🔗", "Shopify و EasyOrders مع بعض", "متجر واحد هو الطبيعي، والاتنين بياكلوا من الرصيد أكتر" },
+            new[] { "store", "chatorders", "🛒", "الطلب من الشات", "الزبون يطلب من جوه الشات (Shopify)" },
+            new[] { "store", "tracking", "📦", "تتبع الأوردرات في الشات", "«طلبي فين؟» من Shopify و EasyOrders" },
+            new[] { "bot", "files", "📄", "رفع ملفات PDF و Word و Excel", "الكتابة وملفات txt و csv مفتوحة للكل" },
+            new[] { "bot", "styles", "🎨", "أشكال الشات المميزة والألوان الخاصة واللوجو", "الأشكال العادية والدبدوب و١٢ لون مفتوحين للكل" },
+            new[] { "bot", "handoff", "🙋", "التحويل لصاحب المتجر", "لما الزبون يحتاج حد يكلّمه" },
+            new[] { "wa", "delivery", "📅", "رسالة يوم التوصيل", "" },
+            new[] { "wa", "carts", "🧺", "استرجاع السلة المتروكة", "" },
+            new[] { "wa", "waimages", "📷", "المساعد يفهم الصور", "" },
+            new[] { "wa", "restock", "🔔", "«بلّغني لما يرجع»", "" },
+            new[] { "wa", "report", "📊", "التقرير الأسبوعي", "" },
+            new[] { "wa", "broadcast", "📣", "«ابعت عرض»", "" },
+            new[] { "chan", "messenger", "💬", "المساعد على المسنجر", "" },
+            new[] { "chan", "instagram", "📸", "المساعد على الإنستجرام", "" },
+            new[] { "chan", "telegram", "✈️", "المساعد على تيليجرام", "" },
+            new[] { "chan", "inbox", "📥", "«محادثاتي» (SellyChat)", "رسايل كل القنوات والفريق في مكان واحد" },
+            new[] { "crm", "crm", "👥", "«زبايني»", "ملف لكل زبون" },
+            new[] { "crm", "crmgroups", "🎯", "مجموعات الزباين الجاهزة", "" },
+            new[] { "crm", "returns", "↩️", "تنبيه المرتجع", "" },
+            new[] { "shop", "carriers", "🚚", "شركات الشحن", "Bosta و ShipBlu و J&T و Aramex لطلبات «متجري»" } };
+
+        // What «no plan picked» (an empty MinPlan_<f>) means, per feature:
+        //   all = every plan (and the trial) · open = every store, plan or not (Carriers.On) · closed = nobody (Inbox.On)
+        //   follow = whatever Shopify's minimum is (MinPlanId) · none = the top active plan, so the table offers no «everyone» for it
+        static string Zero(string f) { return f == "carriers" ? "open" : f == "inbox" ? "closed" : f == "easyorders" ? "follow" : f == "bothstores" ? "none" : "all"; }
+
         static Dictionary<string, object> AdminState(SqlConnection c)
         {
-            var names = new Dictionary<string, string> { { "shopify", "🛍️ ربط Shopify" }, { "tracking", "📦 تتبع الأوردرات في الشات" }, { "files", "📄 رفع ملفات PDF و Word و Excel" }, { "styles", "🎨 أشكال الشات المميزة ولوجو متجرك والألوان الخاصة" }, { "chatorders", "🛒 الطلب من الشات (Shopify)" }, { "easyorders", "🧡 ربط EasyOrders وتأكيد طلباته" }, { "bothstores", "🔗 ربط Shopify و EasyOrders مع بعض" }, { "delivery", "🚚 رسالة يوم التوصيل على واتساب" },
-                { "carts", "🛒 استرجاع السلة المتروكة على واتساب" }, { "waimages", "📷 المساعد يفهم الصور على واتساب" }, { "restock", "🔔 «بلّغني لما يرجع»" },
-                { "report", "📊 التقرير الأسبوعي على واتساب" }, { "handoff", "🙋 التحويل لصاحب المتجر" },
-                { "messenger", "💬 المساعد على المسنجر" }, { "instagram", "📸 المساعد على الإنستجرام" }, { "broadcast", "📣 «ابعت عرض» على الواتساب" }, { "telegram", "✈️ المساعد على تيليجرام" },
-                { "crm", "👥 «زبايني»: ملف لكل زبون" }, { "crmgroups", "🎯 مجموعات الزباين الجاهزة" }, { "returns", "↩️ تنبيه المرتجع" }, { "carriers", "🚚 شركات الشحن (مقفولة لحد ما تختار باقة)" },
-                { "inbox", "💬 «محادثاتي» (SellyChat): رسايل كل القنوات والفريق في مكان واحد (مقفولة لحد ما تختار باقة)" } };
-            return new Dictionary<string, object> {
-                { "features", PlanGate.Features.Select(f => new Dictionary<string, object> { { "key", f }, { "name", names[f] }, { "minPlan", PlanGate.MinPlanId(c, f) } }).ToList() },
-                { "plans", Billing.Plans(c, false).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) } }).ToList() } };
+            var rows = Rows.Where(r => PlanGate.Features.Contains(r[1])).ToList();
+            foreach (var f in PlanGate.Features) if (!rows.Any(r => r[1] == f)) rows.Add(new[] { "other", f, "✨", f, "" });   // a feature added without a row here still shows
+            var features = rows.Select(r =>
+            {
+                string f = r[1], force = null, note = null;
+                // switches elsewhere that override this table: force = what really happens now, so a plan picked here never looks like it decides
+                if (f == "carriers" && Billing.Get(c, "CarriersOff") == "1") { force = "closed"; note = "اختيارك هنا بيرجع يشتغل لما تفتحها من كارت «شركات الشحن» في «المتاجر المؤجرة»"; }
+                if (f == "inbox" && Billing.Get(c, "InboxAll") == "1") { force = "all"; note = "اختيارك هنا مش بيفرق طول ما هي مفتوحة لكل المتاجر من كارت «محادثاتي»"; }
+                return new Dictionary<string, object> { { "key", f }, { "group", r[0] }, { "icon", r[2] }, { "name", r[3] }, { "hint", r[4] },
+                    { "minPlan", PlanGate.MinPlanId(c, f) }, { "set", !string.IsNullOrEmpty(Billing.Get(c, "MinPlan_" + f)) }, { "zero", Zero(f) }, { "force", force }, { "note", note } };
+            }).ToList();
+            var groups = Groups.Select(g => new Dictionary<string, object> { { "key", g[0] }, { "name", g[1] }, { "hint", g[2] } }).ToList();
+            if (rows.Any(r => r[0] == "other")) groups.Add(new Dictionary<string, object> { { "key", "other" }, { "name", "✨ تانية" }, { "hint", "" } });
+            // every plan in rank order (PlanGate.Check ranks hidden plans too); the page shows a hidden one only when a feature starts from it
+            return new Dictionary<string, object> { { "features", features }, { "groups", groups },
+                { "plans", Billing.Plans(c, true).Select(p => new Dictionary<string, object> { { "id", p.Id }, { "name", p.Name }, { "price", Billing.FinalPrice(p) }, { "active", p.IsActive } }).ToList() } };
         }
     }
 }
