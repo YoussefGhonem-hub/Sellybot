@@ -539,8 +539,8 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
         // ---------- labels ----------
         static Func<Task> LabelsFor(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
-            var ids = ShopJson.List(ShopJson.At(b, "ids")).Select(x => (long)ShopJson.Int(x)).Distinct().Take(200).ToList(); var l = ids.Select(i => OfOrder(c, s.Id, i)).Where(x => x != null && !string.IsNullOrEmpty(x.Tracking) && x.State != "off").ToList();
-            if (l.Count == 0) throw new ShopException("none", "الأوردرات دي لسه ماتبعتتش لشركة شحن."); if (!Web.Allow("ship-label:" + s.Id, 60, TimeSpan.FromMinutes(10))) throw new ShopException("too_many", "طلبات كتير. استنى شوية.");
+            var ids = ShopJson.List(ShopJson.At(b, "ids")).Select(x => (long)ShopJson.Int(x)).Distinct().Take(200).ToList(); var all = ids.Select(i => OfOrder(c, s.Id, i)).Where(x => x != null && !string.IsNullOrEmpty(x.Tracking)).ToList(); var l = all.Where(x => x.State == "live").ToList();   // a finished shipment has no waybill to print (and fails a whole Bosta batch)
+            if (l.Count == 0) throw new ShopException("none", all.Count > 0 ? "الأوردرات دي اتقفلت خلاص، مفيش بوليصة تتطبع." : "الأوردرات دي لسه ماتبعتتش لشركة شحن."); if (!Web.Allow("ship-label:" + s.Id, 60, TimeSpan.FromMinutes(10))) throw new ShopException("too_many", "طلبات كتير. استنى شوية.");
             var links = l.Select(x => x.Company).Distinct().ToDictionary(x => x, x => Link(c, s.Id, x));
             return async () =>
             {
