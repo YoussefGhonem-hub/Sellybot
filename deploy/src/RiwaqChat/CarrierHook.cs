@@ -68,12 +68,18 @@ namespace RiwaqChat
             if (!Web.Allow("ship-hook-jt:" + store, store == 0 ? 60000 : 6000, TimeSpan.FromHours(1))) { res.StatusCode = 429; return; }
             var list = biz.TrimStart().StartsWith("[", StringComparison.Ordinal) ? ShopJson.Arr(biz).OfType<Dictionary<string, object>>().ToList() : new List<Dictionary<string, object>> { ShopJson.Obj(biz) }; bool busy = false; int known = 0, all = 0;
             var fallback = new Dictionary<int, bool>(); var heard = new HashSet<int>();
-            foreach (var e in list.SelectMany(CarrierJt.Scans))
+            // only a trace push (its «details») proves the scans reach us: an order-status push alone (courier assigned, at the warehouse) still
+            // counts as an event, but the link keeps being asked, or a delivery would never arrive when the trace push isn't approved
+            foreach (var w in list)
             {
-                all++; var x = Carriers.ByTracking(c, store, "jt", e.Tracking, e.Ref); if (x == null || (!string.IsNullOrEmpty(e.Ref) && x.Ref != e.Ref)) continue;   // another program's waybill, or a number that isn't this order's
-                // the fallback address: only for a store whose link signs with the fallback keys
-                if (store == 0) { bool fb; if (!fallback.TryGetValue(x.StoreId, out fb)) { var lk = Carriers.Link(c, x.StoreId, "jt"); fallback[x.StoreId] = fb = lk != null && !lk.Own; } if (!fb) continue; }
-                known++; heard.Add(x.StoreId); if (!Carriers.Apply(c, x.StoreId, x.Id, e, "hook")) busy = true;
+                bool trace = ShopJson.List(ShopJson.At(w, "details")).Count > 0;
+                foreach (var e in CarrierJt.Scans(w))
+                {
+                    all++; var x = Carriers.ByTracking(c, store, "jt", e.Tracking, e.Ref); if (x == null || (!string.IsNullOrEmpty(e.Ref) && x.Ref != e.Ref)) continue;   // another program's waybill, or a number that isn't this order's
+                    // the fallback address: only for a store whose link signs with the fallback keys
+                    if (store == 0) { bool fb; if (!fallback.TryGetValue(x.StoreId, out fb)) { var lk = Carriers.Link(c, x.StoreId, "jt"); fallback[x.StoreId] = fb = lk != null && !lk.Own; } if (!fb) continue; }
+                    known++; if (trace) heard.Add(x.StoreId); if (!Carriers.Apply(c, x.StoreId, x.Id, e, "hook")) busy = true;
+                }
             }
             foreach (var sid in heard) Carriers.Heard(c, sid, "jt");
             if (busy) { res.StatusCode = 503; return; }
