@@ -350,6 +350,8 @@ namespace RiwaqChat
         static Func<Task> Label(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
             var x = Mine(c, s, b); if (string.IsNullOrEmpty(x.Tracking) || x.State == "off") throw new ShopException("none", "الشحنة دي مالهاش بوليصة."); var k = Need(c, s.Id, x.Company);
+            // Bosta prints no waybill for a return pickup (its docs: «CRP ... are not printable»): the courier brings it
+            if (x.Company == "bosta") { var bk = BackOf(c, x.Id); if (bk == null || bk.Kind != "exchange") throw new ShopException("none", "بوسطة مابتطبعش بوليصة لمندوب المرتجع: المندوب بيجيب البوليصة معاه."); }
             if (!Web.Allow("ship-label:" + s.Id, 60, TimeSpan.FromMinutes(10))) throw new ShopException("too_many", "طلبات كتير. استنى شوية.");
             return async () =>
             {
