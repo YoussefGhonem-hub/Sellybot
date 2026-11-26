@@ -63,6 +63,7 @@ namespace RiwaqChat
             sb.Append(ShopCard.BotNote(sh, d));   // paying by card / installments, digital products
             if (ShopPrice.Vacation(d, now)) sb.Append("المتجر واخد إجازة ومش بيستقبل طلبات دلوقتي.\n");
             sb.Append(ShopRew.BotPrompt(sh));   // gift cards, points, «هات صاحبك» when on
+            ShopSeasons.Bot(sh, sb);
             sb.Append("إزاي تستخدمه:\n")
               .Append("- السعر والمقاسات والألوان والكمية والعروض من أداة ").Append(TProducts).Append(" بس. استخدمها قبل ما ترد على أي سؤال عن منتج، حتى لو رديت عليه قبل كده، لأن السعر والكمية بيتغيّروا.\n")
               .Append("- سعر الشحن ومدة التوصيل والعروض والأكواد والسياسات والتواصل من أداة ").Append(TInfo).Append(".\n")

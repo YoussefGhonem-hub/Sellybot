@@ -39,7 +39,7 @@ namespace RiwaqChat
         Dictionary<string, object> set;
         public Dictionary<string, object> Settings { get { return set ?? (set = ShopJson.Obj(SettingsJson)); } }
         public Dictionary<string, object> Look(bool draft) { return ShopJson.Obj(draft ? (DraftJson ?? LiveJson) : LiveJson); }
-        public string Url { get { return Shops.Address(Slug); } }
+        public string Url { get { return ShopDomains.Url(this) ?? Shops.Address(Slug); } }   // the merchant's own domain once it's live (ShopDomains.cs)
     }
 
     // Reading the JSON kept in a column (JavaScriptSerializer gives Dictionary / ArrayList), never throwing on a missing key.
@@ -104,7 +104,7 @@ namespace RiwaqChat
         public static bool Ready;   // the tables are there (a failure here never stops the rest of the site)
         public static void Ensure(SqlConnection c)
         {
-            try { foreach (var sql in new[] { Schema, ShopMore.Schema, Carriers.Schema, ShopStaff.Schema, ShopBrands.Schema, ShopRew.Schema, ShopShip2.Schema, ShopCard.Schema, ShopGoods.Schema }) using (var cmd = new SqlCommand(sql, c)) { cmd.CommandTimeout = 120; cmd.ExecuteNonQuery(); } Ready = true; }
+            try { foreach (var sql in new[] { Schema, ShopMore.Schema, Carriers.Schema, ShopStaff.Schema, ShopBrands.Schema, ShopRew.Schema, ShopShip2.Schema, ShopCard.Schema, ShopGoods.Schema, ShopLookMore.Schema }) using (var cmd = new SqlCommand(sql, c)) { cmd.CommandTimeout = 120; cmd.ExecuteNonQuery(); } Ready = true; }
             catch (Exception ex) { Log.Error(ex); Ready = false; }
         }
 

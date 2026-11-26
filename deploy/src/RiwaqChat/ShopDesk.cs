@@ -51,6 +51,7 @@ namespace RiwaqChat
                 case "print": Print(c, s, sh, req, res); return true;
                 case "backup": Backup(c, sh, res); return true;
             }
+            if (ShopLookMore.Get(c, s, sh, a, req, res)) return true;
             if (ShopCard.Get(c, s, sh, a, req, res)) return true;   // paying by card, digital products
             if (ShopRew.Get(c, s, sh, a, req, res)) return true;
             return Carriers.Get(c, s, sh, a, req, res) || ShopShip2.Get(c, s, sh, a, req, res) || ShopGoods.Get(c, s, sh, a, id, req, res);
@@ -73,6 +74,7 @@ namespace RiwaqChat
                 case "sheet-try": later = ShopPay.Try(c, sh, b, res); return true;
                 case "ai-desc": later = ShopTranslate.Describe(c, s, sh, b, res); return true;
             }
+            if (ShopLookMore.Post(c, s, sh, a, b, res, out later)) return true;
             if (ShopCard.Post(c, s, sh, a, b, res, out later)) return true;   // paying by card, digital products
             if (ShopRew.Post(c, s, sh, a, b, res)) return true;
             return Carriers.Post(c, s, sh, a, b, res, out later) || ShopShip2.Post(c, s, sh, a, b, res, out later) || ShopGoods.Post(c, s, sh, a, b, res, out later);

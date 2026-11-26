@@ -67,6 +67,13 @@ Object.assign(t, {
 - Gift cards, points, «هات صاحبك» (`rew.js` + `rew.css`, loaded only when the owner turned one on; `BOOT.shop.rw`): the engine draws the pages `gift` and `r` (`url("gift")`, `go:gift`), `menuItems()` may end with `{t: "gift"}`, `totals()` carries the card's part and what is left, the code box comes after `formBits.coupon()`, and the account has `account/rew`. Their classes: `.rw-card .rwg .rwk .rwc .rwp .rwt .rwn .rwr .rwa .rwl .rwi .rwic .rwbal`.
 - Their classes (restyle, don't reuse): `.acc .acc-n .acc-b .sbg .lgk .lgc .tls .ork .stp .tmk .inf .rtk .rit .adc .cdc .str .rvk .rvs .rvl .pyb .cmk2 .blg .ctg .cth .upk .upi .brk .faqk .vdk .ugg .rvg .pcs .pca .optl .cdi .sts .rtl`.
 
+## Season looks, look B and the merchant's domain (the engine's: a template gets them with no code)
+
+- **Season look** (`season.js`, loaded by the engine only while `BOOT.look.season` can show): between its two days the announcement bar becomes `.annb.seab` (the greeting, a few inline SVG drawings, then the owner's own line), the products of the owner's chosen offer get `badge(p)` = `<em class="bdg sea">`, and when the owner typed no headline `BOOT.look.hero.title` holds the season's while it runs: read the headline from `BOOT.look.hero` as always. Colours are set on `#st`: `--sea-b` (the band), `--sea-f` (text on it, at 4.5 or more in both themes) and `--sea-d` (the drawings), with `#st[data-sea="<season>"]`.
+- **A template may restyle** `.seab` (height, font, corners, spacing, where the drawings sit) and `.bdg.sea` like its other badges, and may add one small touch of its own under `#st[data-sea]` (a border or a corner in `--sea-d`). It keeps the colours from `--sea-*`, never hides the greeting, never puts anything over products, prices or buttons, moves nothing when `still()`, and never adds a countdown or a promise (a countdown is only `cd(p.u)` of a real offer).
+- **Look B** («تجربة شكلين») is the same look with another hero, colour, order of `sections` or template: nothing to do, as long as the template reads `BOOT.look` when drawing (above).
+- **The merchant's domain**: links stay relative (`url()`); `BOOT.shop.url` is the store's address, the merchant's own domain once it's live. Never write `.sellystore.online` in a template.
+
 ## The rules
 
 1. **Money.** A price shown is `pr/lo/hi/old` of the server or `m(n)` of a sum of `lo`/variant prices. The cart's totals come from `bill()` / `totals()`. No template ever makes a discount, a "bundle price", a delivery price or a delivery date of its own. What the demo did as a bundle discount becomes "add them all" at their normal prices; a real discount is an offer the owner makes (it arrives as `old`, `OFFERS`, and lines in `bill().offs`).

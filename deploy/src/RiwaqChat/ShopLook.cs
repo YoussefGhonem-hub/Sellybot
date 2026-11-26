@@ -140,7 +140,7 @@ namespace RiwaqChat
                 "badges", D("sale", ShopJson.Bool(ShopJson.At(bad, "sale"), true), "new", ShopJson.Bool(ShopJson.At(bad, "new"), true), "best", ShopJson.Bool(ShopJson.At(bad, "best"), true), "low", ShopJson.Bool(ShopJson.At(bad, "low"), true),
                     "newDays", Math.Max(1, Math.Min(90, ShopJson.Int(ShopJson.At(bad, "newDays"), 14))), "lowAt", Math.Max(1, Math.Min(50, ShopJson.Int(ShopJson.At(bad, "lowAt"), 3)))),
                 "trust", ShopJson.List(g("trust")).OfType<Dictionary<string, object>>().Take(6).Select(t => (object)D("i", One(ShopJson.At(t, "i"), "check", "cash", "back", "truck", "shield", "gift", "star", "phone", "check"), "t", Pair(ShopJson.At(t, "t"), 60))).ToArray(),
-                "opts", opts);
+                "opts", opts, "season", ShopSeasons.Clean(g("season")));
         }
 
         static Dictionary<string, object> Section(Dictionary<string, object> s, int storeId)

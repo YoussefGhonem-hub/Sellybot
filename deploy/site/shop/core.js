@@ -47,12 +47,15 @@ const fit = (h, bg, want) => { let c = h, i = 0; const dk = lum(bg) < .2; while 
 const theme = W.theme = () => S.thm === "auto" ? (S.th || (W.matchMedia && matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light")) : S.thm;
 const FONTS = { a: ["Cairo", "family=Cairo:wght@400;600;700;800"], b: ["Tajawal", "family=Tajawal:wght@400;500;700;800"], c: ["Almarai", "family=Almarai:wght@400;700;800"] };
 const fontsFor = () => { const t = cur(), font = FONTS[LK.font] ? FONTS[LK.font][1] : t.f, u = "https://fonts.googleapis.com/css2?" + font + "&display=swap"; if (!font || D.querySelector(`link[href="${u}"]`)) return; const g = D.createElement("link"); g.rel = "stylesheet"; g.href = u; D.head.appendChild(g); };
+/* a season look over the template (season.js, the engine's): loaded once the look has one that can show; it draws nothing before */
+const sea = W.sea = () => { const s = LK.season; if (!s || !s.k || !(B.cday <= s.to) || !(B.preview || s.from <= B.cday) || W.SEA) return W.SEA || null; if (!sea.p) { sea.p = 1; const e = D.createElement("script"); e.src = "/_s/season.js?v=" + (B.a && B.a.sea || "1"); e.onload = () => R(true); e.onerror = () => { sea.p = 0; }; D.head.appendChild(e); } return null; };
 function tokens() {
   const t = cur(), th = theme(), k = { ...t.tk[th] }, st = $("st"); if (LK.color) k.ac = LK.color;
   k.ac = fit(k.ac, k.bg, 1.6); k.on = k.on && !LK.color ? k.on : (con(k.ac, "#ffffff") >= 4.3 ? "#ffffff" : "#15120f"); k.ai = fit(fit(k.ac, k.bg, 4.7), k.card && /^#/.test(k.card) ? k.card : k.bg, 4.7);
   st.removeAttribute("style"); for (const x in k) st.style.setProperty("--" + x, k[x]); const f = FONTS[LK.font];
   st.style.setProperty("--fd", f ? `${f[0]},sans-serif` : _(t.fd || ["inherit", "inherit"])); st.style.setProperty("--ft", f ? `${f[0]},Tahoma,sans-serif` : _(t.ft)); st.style.colorScheme = th; st.dataset.th = th; st.dataset.mo = LK.motion || "mid";
   st.className = "st t-" + t.id; st.dataset.dir = S.lang === "en" ? "ltr" : "rtl"; st.lang = S.lang; st.dir = st.dataset.dir; D.documentElement.lang = S.lang; D.documentElement.dir = st.dir; D.documentElement.style.background = k.bg;
+  if (W.SEA) W.SEA.tk(st, k, th); else sea();
 }
 /* ---- the catalog ---- */
 let CAT = null; const byId = {}, bySlug = {}, vars = {}, cats = {}; W.CATS = cats;
@@ -226,7 +229,7 @@ IN.sq = v => { S.sq = v; U("sr", sres()); clearTimeout(qLog); if (v.trim().lengt
 A.pick = id => { closeS(true); A.go("p", id); };
 /* ---- cards and sections any template can use ---- */
 W.BADGE = { sale: p => p.old > p.pr ? _(`خصم ${Math.round((1 - p.pr / p.old) * 100)}%`, `${Math.round((1 - p.pr / p.old) * 100)}% off`) : "", new: () => _("جديد", "New"), best: () => _("الأكتر طلبًا", "Best seller"), low: () => _("آخر قطع", "Last pieces") };
-const badge = W.badge = p => { if (!p.av) return `<em class="bdg out">${_("خلص", "Sold out")}</em>`; const o = W.OFFERS.find(x => x.i === p.of), l = o && o.lk && _(o.lk.badge || ["", ""]); if (l) return `<em class="bdg sale"${o.lk.bg ? ` style="background:${esc(o.lk.bg)};color:${esc(o.lk.fg || "#fff")}"` : ""}>${esc(l)}</em>`; const b = p.b[0]; return b && W.BADGE[b] && W.BADGE[b](p) ? `<em class="bdg ${b}">${W.BADGE[b](p)}</em>` : ""; };
+const badge = W.badge = p => { if (!p.av) return `<em class="bdg out">${_("خلص", "Sold out")}</em>`; const sb = W.SEA && W.SEA.badge(p); if (sb) return sb; const o = W.OFFERS.find(x => x.i === p.of), l = o && o.lk && _(o.lk.badge || ["", ""]); if (l) return `<em class="bdg sale"${o.lk.bg ? ` style="background:${esc(o.lk.bg)};color:${esc(o.lk.fg || "#fff")}"` : ""}>${esc(l)}</em>`; const b = p.b[0]; return b && W.BADGE[b] && W.BADGE[b](p) ? `<em class="bdg ${b}">${W.BADGE[b](p)}</em>` : ""; };
 const cd = W.cd = u => u > Date.now() / 1000 ? `<span class="cd" data-cd="${u}" role="timer"></span>` : "";
 const card = W.card = p => `<article class="cdk" data-p="${p.id}"><a class="ph" href="${url("p", p.id)}" data-a="go:p:${p.id}" aria-label="${esc(pnt(p))}">${im(p.im[0], pnt(p))}${p.im[1] ? `<span class="hv">${im(p.im[1], "")}</span>` : ""}${badge(p)}</a><button class="hk" data-a="fav:${p.id}" aria-pressed="${!!S.fav[p.id]}" aria-label="${_("المفضلة", "Favourite")}">${ico("heart")}</button><div class="tx"><h3><a href="${url("p", p.id)}" data-a="go:p:${p.id}">${pn(p)}</a></h3><p class="price">${pr(p)}</p>${cd(p.u)}${p.av ? `<button class="addk" data-a="add:${p.id}">${ico("plus")} ${_("ضيف", "Add")}</button>` : ""}</div></article>`;
 W.grid = l => `<div class="gdk">${l.map(card).join("")}</div>`;
@@ -262,7 +265,7 @@ IN.ba = (v, el) => { el.closest(".baw").style.setProperty("--x", v + "%"); };
 IN.bud = v => { S.ui.bud = +v; U("budv", mt(+v)); U("budg", W.grid(cur().P.filter(p => p.lo <= v && p.av).sort((a, b) => b.lo - a.lo).slice(0, 4))); };
 /* a running campaign's strip (Black Friday, Ramadan...) */
 const campaign = W.campaign = () => W.OFFERS.filter(o => o.lk && o.lk.banner).map(o => `<section class="cmk c-${esc(o.cp || "x")}"${o.lk.bg ? ` style="--cb:${esc(o.lk.bg)};--cf:${esc(o.lk.fg || "#ffffff")}"` : ""}>${o.lk.img ? `<span class="cmi">${im(o.lk.img, "", "", "100vw")}</span>` : ""}<div><h2>${E(_(o.lk.title) ? o.lk.title : o.n)}</h2>${_(o.lk.text || ["", ""]) ? `<p>${E(o.lk.text)}</p>` : ""}${o.cd && o.u ? cd(o.u) : ""}<a class="cta" href="${url("list", "sale")}" data-a="go:list:sale">${_("شوف العروض", "See the offers")}</a></div></section>`).join("");
-const annBar = () => { const a = LK.ann || {}; const t = a.on && _(a.text || ["", ""]); const v = SH.vacation ? (_(SH.vacation.msg || ["", ""]) || _("المتجر واخد إجازة، والطلبات هترجع قريب.", "The store is on a break. Orders will be back soon.")) : ""; return (v ? `<div class="annb vac">${esc(v)}</div>` : "") + (t ? (a.link ? `<a class="annb" ${link(a.link)}>${esc(t)}</a>` : `<div class="annb">${esc(t)}</div>`) : ""); };
+const annBar = () => { const a = LK.ann || {}; const t = a.on && _(a.text || ["", ""]); const v = SH.vacation ? (_(SH.vacation.msg || ["", ""]) || _("المتجر واخد إجازة، والطلبات هترجع قريب.", "The store is on a break. Orders will be back soon.")) : ""; return (v ? `<div class="annb vac">${esc(v)}</div>` : "") + ((W.SEA && W.SEA.ann(t, a)) || (t ? (a.link ? `<a class="annb" ${link(a.link)}>${esc(t)}</a>` : `<div class="annb">${esc(t)}</div>`) : "")); };
 const pvBar = () => `<div class="pvb">${_("معاينة خاصة: الزباين مش شايفين ده", "Private preview: customers don't see this")} <a href="/_preview-off">${_("اقفلها", "Close")}</a></div>`;
 /* ---- footer ---- */
 const wa = t => SH.contact.wa ? `https://wa.me/${SH.contact.wa}${t ? "?text=" + encodeURIComponent(t) : ""}` : "";

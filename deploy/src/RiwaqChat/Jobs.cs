@@ -134,6 +134,7 @@ namespace RiwaqChat
                     try { if (Web.Allow("shop-tidy", 1, TimeSpan.FromHours(20))) ShopAccount.Tidy(c); } catch (Exception ex) { Log.Error(ex); }
                     try { await ShopRent.Run(c, ct); } catch (Exception ex) { Log.Error(ex); }               // SellyStore: the rent's reminders, pictures to R2
                     try { await ShopRew.Due(c, ct); } catch (Exception ex) { Log.Error(ex); }                // SellyStore: gift cards at their time, friends' rewards
+                    try { await ShopDomains.Run(c, ct); } catch (Exception ex) { Log.Error(ex); }            // SellyStore: the merchants' own domains on Cloudflare
                 }
                 finally { Ended(c, row, took.ElapsedMilliseconds); Release(c); }   // the next run may start at once; the 4 minutes only cover a run that died half way
             }
