@@ -412,11 +412,15 @@ const dSetBy = el => { const L = dBtns(), b = el && L.includes(el) ? el : L.find
 const dBag = () => { const L = dBtns(), x = DR.byEl && DR.byEl.isConnected ? DR.byEl : DR.by ? (DR.by.id && $(DR.by.id)) || L[DR.by.i] : null; return seen1(x) && !x.closest("#cdd") ? x : L.find(seen1); };
 const dFit = () => { const p = $("cdd"); if (p && !p.hidden) p.style.setProperty("--cddmax", Math.max(240, W.innerHeight - Math.max(0, p.getBoundingClientRect().top) - 12) + "px"); };
 const dArm = ms => { clearTimeout(DR.tm); if (DR.on && DR.auto) DR.tm = setTimeout(() => { const p = $("cdd"); if (!DR.hov && !(p && p.contains(D.activeElement))) dClose(1); }, ms); };
+/* the pointer or the focus left it: 2 s more, but never sooner than the 4 s an add gives (a panel that opens under a resting pointer is "hovered" for a moment) */
+const dLeft = () => dArm(Math.max(2000, 4000 - (Date.now() - DR.t0)));
+/* the backdrop: an empty sibling right before the panel, shown and hidden with it (the template may style it; a press on it is an outside press) */
+const dBd = p => { const b = p && p.previousElementSibling; return b && b.classList.contains("cddb") ? b : null; };
 /* where its insides are scrolled: [class, top], null = the panel itself (kept as it scrolls, so a new panel after a redraw opens at the same place) */
 const dYs = p => [[null, p.scrollTop], ...$$("*", p).filter(e => e.scrollTop > 0).map(e => [e.getAttribute("class"), e.scrollTop])];
 const dWire = p => {
-  p.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") { DR.hov = 1; clearTimeout(DR.tm); } }); p.addEventListener("pointerleave", () => { if (DR.hov) { DR.hov = 0; dArm(2000); } });
-  p.addEventListener("focusin", () => clearTimeout(DR.tm)); p.addEventListener("focusout", e => { const x = e.relatedTarget; if (!x || p.contains(x)) return; if (x.closest('[data-a="bag"],.toast')) dArm(2000); else dClose(1); });
+  p.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") { DR.hov = 1; clearTimeout(DR.tm); } }); p.addEventListener("pointerleave", () => { if (DR.hov) { DR.hov = 0; dLeft(); } });
+  p.addEventListener("focusin", () => clearTimeout(DR.tm)); p.addEventListener("focusout", e => { const x = e.relatedTarget; if (!x || p.contains(x)) return; if (x.closest('[data-a="bag"],.toast')) dLeft(); else dClose(1); });
   p.addEventListener("click", e => { if (e.target.closest('a[href],[data-a^="go:"],[data-a="bagco"]')) dClose(1); }, true);   /* a way out of it: the page changes */
   p.addEventListener("scroll", () => { if (DR.on && p.isConnected) DR.ys = dYs(p); }, true);
 };
@@ -425,11 +429,11 @@ const dReset = () => { clearTimeout(DR.tm); DR.on = DR.auto = DR.hov = 0; S.drop
 /* after every drawing the panel goes back where it lives: the template's dropAt(), or the header of the first bag button.
    Open, it is drawn again there at once (no entrance), scrolled where it was, its timer going on; a page that changed under it closes it */
 const dMount = () => {
-  const p0 = $("cdd"); if (!dropM()) { if (DR.on || S.drop) dReset(); if (p0) p0.remove(); return; }
+  const p0 = $("cdd"); if (!dropM()) { if (DR.on || S.drop) dReset(); if (p0) { const d = dBd(p0); if (d) d.remove(); p0.remove(); } return; }
   if (DR.on && DR.v !== S.view + "|" + S.arg) dClose(1);
   const t = cur(), b = dBtns()[0], at = (t.dropAt && t.dropAt()) || (b && (b.closest("header") || b.parentElement)); let p = p0;
-  if (!at) { if (DR.on) dReset(); if (p) p.hidden = true; return; }
-  if (!p || p.parentElement !== at) { if (p) p.remove(); p = D.createElement("div"); p.id = "cdd"; p.className = "cdd"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", _("سلتك", "Your bag")); p.hidden = !DR.on; dWire(p); at.appendChild(p); if (DR.on) { p.style.animation = "none"; DR.h = ""; dDraw(); dFit(); } }
+  if (!at) { if (DR.on) dReset(); if (p) { p.hidden = true; if (dBd(p)) dBd(p).hidden = true; } return; }
+  if (!p || p.parentElement !== at) { if (p) { const d = dBd(p); if (d) d.remove(); p.remove(); } const bd = D.createElement("div"); bd.className = "cddb"; bd.hidden = !DR.on; p = D.createElement("div"); p.id = "cdd"; p.className = "cdd"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", _("سلتك", "Your bag")); p.hidden = !DR.on; dWire(p); at.append(bd, p); if (DR.on) { p.style.animation = bd.style.animation = "none"; DR.h = ""; dDraw(); dFit(); } }
   dAria(); };
 /* drawn again on every change while open, keeping where it was scrolled and the button in focus; the line just added is marked for a moment */
 const dDraw = () => { const p = $("cdd"); if (!DR.on) return; if (!p || !dropM()) return dReset(); const k = Date.now() - DR.t0 < 1500 ? DR.key : "", h = cur().dropH(k); if (h === DR.h) return; DR.h = h;
@@ -442,12 +446,12 @@ const dDraw = () => { const p = $("cdd"); if (!DR.on) return; if (!p || !dropM()
 const dOpen = W.dropOpen = (key, hand, by) => {
   if (!dropM() || (!hand && (S.view === "cart" || S.view === "co"))) return false; dMount(); const p = $("cdd"); if (!p) return false; const was = DR.on;
   clearTimeout(DR.tm); DR.key = key || ""; DR.t0 = Date.now(); DR.auto = hand || (was && !DR.auto) ? 0 : 1;
-  if (!was) { DR.on = 1; S.drop = true; DR.h = ""; DR.ys = null; DR.v = S.view + "|" + S.arg; dSetBy(by); p.style.animation = ""; p.classList.remove("out"); p.hidden = false; $("st").dataset.drop = "1"; dAria(); bubble(); }
+  if (!was) { DR.on = 1; S.drop = true; DR.h = ""; DR.ys = null; DR.v = S.view + "|" + S.arg; dSetBy(by); [p, dBd(p)].forEach(e => { if (e) { e.style.animation = ""; e.classList.remove("out"); e.inert = false; e.hidden = false; } }); $("st").dataset.drop = "1"; dAria(); bubble(); }
   dDraw(); dFit(); if (DR.auto) dArm(4000); else if (hand) { const f = p.querySelector('[data-a="bagx"],[data-a="bag"]') || p.querySelector("button,a[href]"); if (f) f.focus({ preventScroll: true }); } return true;
 };
 /* quiet: focus stays where it is (the page changed, it closed by itself, the customer pressed something that takes focus); otherwise it goes back to the bag that opened it */
 const dClose = W.dropClose = quiet => { if (!DR.on) { if (S.drop) dReset(); return; } const p = $("cdd"); dReset();
-  if (p) { const fin = () => { if (!DR.on) { p.hidden = true; p.classList.remove("out"); p.innerHTML = ""; } }; p.style.animation = ""; if (still() || !p.isConnected) fin(); else { p.classList.add("out"); setTimeout(fin, 180); } }
+  if (p) { const bd = dBd(p), L = [p, bd].filter(Boolean), fin = () => { if (!DR.on) { L.forEach(e => { e.hidden = true; e.classList.remove("out"); }); p.innerHTML = ""; } }; L.forEach(e => e.style.animation = ""); if (still() || !p.isConnected) fin(); else { L.forEach(e => { e.classList.add("out"); e.inert = true; }); setTimeout(fin, 180); } }   /* while it fades out, a press goes to what is under it */
   if (!quiet) { const b = dBag(); if (b) b.focus({ preventScroll: true }); } };
 A.bag = el => { if (!dropM()) return A.cart(); if (DR.on) dClose(); else dOpen("", 1, el && el.closest ? el.closest('[data-a="bag"]') : null); }; A.bagx = () => dClose();
 /* a press outside: closed; focus back to the bag unless the press lands on something that takes it (a field, a button, a link) */
