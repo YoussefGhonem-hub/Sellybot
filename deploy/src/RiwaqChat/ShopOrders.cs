@@ -132,7 +132,7 @@ namespace RiwaqChat
                         {
                             var l = g.First(); int n = g.Sum(x => x.Qty);
                             if (!l.P.Track) { took.Add(new object[] { l, n, null }); continue; }
-                            using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopVariants SET Stock=Stock-@n OUTPUT INSERTED.Stock WHERE Id=@v AND StoreId=@s AND Active=1 AND (Stock>=@n OR @free=1)", "@n", n, "@v", g.Key, "@s", row.StoreId, "@free", l.P.OutMode == "order" ? 1 : 0))
+                            using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopVariants SET Stock=Stock-@n OUTPUT INSERTED.Stock WHERE Id=@v AND StoreId=@s AND Active=1 AND (Stock>=@n OR @free=1)", "@n", n, "@v", g.Key, "@s", row.StoreId, "@free", l.P.OutMode == "order" || l.V.PreLeft > 0 ? 1 : 0))
                             {
                                 cmd.Transaction = tx; var left = cmd.ExecuteScalar();
                                 if (left == null)
@@ -202,8 +202,10 @@ namespace RiwaqChat
 
         public static void Stock(SqlConnection c, SqlTransaction tx, int storeId, int productId, int variantId, int delta, int after, string reason, long? orderId, string note)
         {
+            if (ShopGoods.Moving(c, tx, storeId, productId, variantId, ref delta, ref after, reason, orderId)) return;   // a pre-order's pieces never left the shelf (ShopPre.cs)
             using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopStock(StoreId, ProductId, VariantId, Delta, After_, Reason, OrderId, Note) VALUES(@s, @p, @v, @d, @a, @r, @o, @n)", "@s", storeId, "@p", productId, "@v", variantId, "@d", delta, "@a", after, "@r", reason, "@o", orderId.HasValue ? (object)orderId.Value : null, "@n", note))
             { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
+            ShopGoods.Moved(c, tx, storeId, productId, variantId, delta, after, reason, orderId);   // the places keep the total (ShopPlaces.cs)
         }
         public static void Log_(SqlConnection c, SqlTransaction tx, int storeId, long orderId, string who, string what)
         {
@@ -359,7 +361,7 @@ namespace RiwaqChat
                             ShopVar v; if (!d.Vars.TryGetValue(vid, out v)) { if (more > 0) { tx.Rollback(); return "فيه منتج مش موجود في المتجر."; } continue; }
                             var p = d.ById[v.ProductId];
                             if (p.Track)
-                                using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopVariants SET Stock=Stock-@n OUTPUT INSERTED.Stock WHERE Id=@v AND StoreId=@s AND (@n<0 OR Stock>=@n OR @free=1)", "@n", more, "@v", vid, "@s", row.StoreId, "@free", p.OutMode == "order" ? 1 : 0))
+                                using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopVariants SET Stock=Stock-@n OUTPUT INSERTED.Stock WHERE Id=@v AND StoreId=@s AND (@n<0 OR Stock>=@n OR @free=1)", "@n", more, "@v", vid, "@s", row.StoreId, "@free", p.OutMode == "order" || v.PreLeft > 0 ? 1 : 0))
                                 { cmd.Transaction = tx; var left = cmd.ExecuteScalar(); if (left == null) { tx.Rollback(); return "مفيش كمية كفاية من «" + p.Name + "»."; } Stock(c, tx, row.StoreId, p.Id, vid, -more, (int)left, "edit", id, null); }
                             using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopProducts SET Sold=CASE WHEN Sold+@n>0 THEN Sold+@n ELSE 0 END WHERE Id=@p AND StoreId=@s", "@n", more, "@p", p.Id, "@s", row.StoreId)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
                         }

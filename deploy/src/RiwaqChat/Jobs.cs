@@ -59,6 +59,8 @@ namespace RiwaqChat
             new Lane { Name = "sellychat", Work = (src, ct) => SellyChat.Run(ct) },
             // SellyStore's card payments: orders not paid in 30 minutes, «دفعك وصل», digital links that waited for the morning, refunds with no answer
             new Lane { Name = "card", Work = (src, ct) => ShopCard.Run(ct) },
+            // SellyStore's catalog: an import that stopped half way, the pre-orders' messages, replies to the owner held for the morning
+            new Lane { Name = "cat", Work = (src, ct) => ShopGoods.Run(ct) },
         };
 
         public static void Start()

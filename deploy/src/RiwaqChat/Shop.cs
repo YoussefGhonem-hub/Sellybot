@@ -104,7 +104,7 @@ namespace RiwaqChat
         public static bool Ready;   // the tables are there (a failure here never stops the rest of the site)
         public static void Ensure(SqlConnection c)
         {
-            try { foreach (var sql in new[] { Schema, ShopMore.Schema, Carriers.Schema, ShopStaff.Schema, ShopBrands.Schema, ShopRew.Schema, ShopShip2.Schema, ShopCard.Schema }) using (var cmd = new SqlCommand(sql, c)) { cmd.CommandTimeout = 120; cmd.ExecuteNonQuery(); } Ready = true; }
+            try { foreach (var sql in new[] { Schema, ShopMore.Schema, Carriers.Schema, ShopStaff.Schema, ShopBrands.Schema, ShopRew.Schema, ShopShip2.Schema, ShopCard.Schema, ShopGoods.Schema }) using (var cmd = new SqlCommand(sql, c)) { cmd.CommandTimeout = 120; cmd.ExecuteNonQuery(); } Ready = true; }
             catch (Exception ex) { Log.Error(ex); Ready = false; }
         }
 

@@ -42,7 +42,7 @@ namespace RiwaqChat
             if (!Web.Allow("shop-xls:" + sh.StoreId, 60, TimeSpan.FromHours(1))) { Web.Error(res, 429, "rate_limited", "ملفات كتير في ساعة، استنى شوية."); return; }
             string what = req.QueryString["what"] ?? "", name; byte[] data;
             if (what == "template") { name = "sellystore-products.xlsx"; data = Book("المنتجات", Head, new[] { new object[] { "عباية كريب", "عبايات > خروج", 890m, 1050m, 520m, 5, "AB-01", "أسود", "M", "كريب تقيل بتطريز على الكم", "Crepe abaya", "", "قطعة", "أيوه" }, new object[] { "عباية كريب", "عبايات > خروج", 890m, 1050m, 520m, 3, "AB-01", "أسود", "L", "", "", "", "", "" }, new object[] { "طرحة شيفون", "طرح", 180m, "", 90m, 20, "SC-01", "", "", "شيفون ناعم 180 × 70 سم", "Chiffon scarf", "", "قطعة", "أيوه" } }); }
-            else if (what == "products") { name = "products.xlsx"; data = Book("المنتجات", Head, ProductRows(ShopCache.Get(c, sh))); }
+            else if (what == "products") { name = "products.xlsx"; var d = ShopCache.Get(c, sh); data = Book("المنتجات", ShopPlaces.XlsHead(c, sh, Head), ShopPlaces.XlsRows(c, sh, d, ProductRows(d))); }   // a column per place (ShopPlaces.cs)
             else if (what == "leads")
             {
                 var l = new List<object[]>(); using (var cmd = Db.Cmd(c, "SELECT TOP 20000 Phone, Coupon, At FROM dbo.ShopLeads WHERE StoreId=@s ORDER BY Id DESC", "@s", sh.StoreId)) using (var r = cmd.ExecuteReader()) while (r.Read()) l.Add(new object[] { ShopOrders.Local((string)r[0]), r[1] as string ?? "", ((DateTime)r[2]).AddHours(2).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) });
@@ -101,6 +101,7 @@ namespace RiwaqChat
         {
             if (!Web.Allow("shop-imp:" + s.Id, 12, TimeSpan.FromHours(1))) throw new ShopException("many", "رفعت ملفات كتير في ساعة. استنى شوية.");
             var f = req.Files[0]; string ext = System.IO.Path.GetExtension(f.FileName ?? "").ToLowerInvariant();
+            if (req.Form["kind"] == "move") { ShopMove.Upload(c, s, sh, req, res); return; }   // «نقل منتجات من متجر قديم»
             if (req.Form["kind"] == "video") { if (f.ContentLength > ShopImages.MaxVideo) throw new ShopException("big", "الفيديو لازم يكون لحد 6 ميجا. قصّره أو صغّره وارفعه تاني."); byte[] vd; using (var ms = new MemoryStream()) { f.InputStream.CopyTo(ms); vd = ms.ToArray(); } Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "path", ShopImages.SaveVideo(c, s.Id, vd) } }); return; }
             if (ext != ".xlsx" && ext != ".csv") throw new ShopException("type", "ارفع ملف Excel (xlsx) أو CSV.");
             if (f.ContentLength > 5 * 1024 * 1024) throw new ShopException("big", "الملف كبير. أقصى حجم 5 ميجا.");
@@ -190,6 +191,7 @@ namespace RiwaqChat
                 catch (ShopException ex) { errors.Add("صف " + g.First().Line + " (" + g.Key + "): " + ex.Message); }
             }
             Shops.Bump(c, s.Id);
+            try { ShopPlaces.FromXls(c, sh, rows, head, cell); } catch (ShopException ex) { errors.Add(ex.Message); }   // a column per place
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "added", added }, { "updated", updated }, { "cats", cats }, { "errors", errors.Take(40).ToArray() }, { "errorCount", errors.Count } });
         }
         static string Num(string v) { return ShopJson.Digits(v ?? "").Replace(",", "").Replace("ج.م", "").Replace("جنيه", "").Replace("EGP", "").Replace("LE", "").Trim(); }

@@ -599,6 +599,7 @@ END", "@s", s.Id, "@sub", subject, "@b", body))
             if (WaLines.IsOwn(c, s, key)) return true;     // our own numbers: a team alert from one of them to another, never a customer
             string text = (m.Text ?? "").Trim();
             if (text.Length > 2000) text = text.Substring(0, 2000);
+            if (ShopWaAdd.Intercept(c, s, key, m, text)) return true;                   // SellyStore: the owner adding a product, never a customer
 
             if (m.FromMe)
             {

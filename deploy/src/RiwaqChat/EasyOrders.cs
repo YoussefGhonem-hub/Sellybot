@@ -165,6 +165,8 @@ namespace RiwaqChat
         }
 
         public static Task<JsonElement> GetOrder(Creds k, string orderId) { return Call(k, HttpMethod.Get, "/orders/" + Uri.EscapeDataString(orderId)); }
+        // a page of products with their pictures and codes, for «نقل منتجات» (ShopMove.cs)
+        public static Task<JsonElement> ProductsPage(Creds k, int page) { return Call(k, HttpMethod.Get, "/products?fields=" + Fields + ",thumb,images,sku&" + Joins + "&limit=" + PageSize + "&page=" + page); }
         static readonly HttpMethod Patch = new HttpMethod("PATCH");   // no HttpMethod.Patch on .NET Framework
         public static Task<JsonElement> SetOrderStatus(Creds k, string orderId, string status) { return Call(k, Patch, "/orders/" + Uri.EscapeDataString(orderId) + "/status", new { status }); }
 

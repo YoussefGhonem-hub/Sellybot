@@ -103,7 +103,7 @@ namespace RiwaqChat
                 { "draft", sh.Look(true) }, { "settings", sh.Settings }, { "templates", ShopTemplates.List(c) }, { "bizzes", ShopLook.Bizzes },
                 { "cats", d.Cats.Select(k => CatJson(k)).ToArray() }, { "pages", d.Pages.Select(PageJson).ToArray() }, { "zones", d.Zones.Values.Select(z => new Dictionary<string, object> { { "g", z.Gov }, { "f", z.Fee.HasValue ? (object)z.Fee.Value : null }, { "d", z.Days ?? "" }, { "m", z.MinSub.HasValue ? (object)z.MinSub.Value : null }, { "off", z.Off } }).ToArray() },
                 { "counts", new Dictionary<string, object> { { "products", d.Products.Count }, { "shown", d.Shown.Count() }, { "out", d.Products.Count(p => p.Status == "active" && !p.Available) }, { "orders", orders }, { "newOrders", newOrders }, { "offers", d.Offers.Count(o => o.Running(DateTime.UtcNow)) } } },
-                { "waiting", ShopDesk.Waiting(c, sh.StoreId) }, { "carriers", Carriers.StateJson(c, s) }, { "plans", new Dictionary<string, object> { { "carts", PlanGate.Allows(c, s, Carts.Feature) }, { "restock", PlanGate.Allows(c, s, Restock.Feature) } } },
+                { "waiting", ShopDesk.Waiting(c, sh.StoreId) }, { "carriers", Carriers.StateJson(c, s) }, { "cat", ShopGoods.StateJson(c, s, sh) }, { "plans", new Dictionary<string, object> { { "carts", PlanGate.Allows(c, s, Carts.Feature) }, { "restock", PlanGate.Allows(c, s, Restock.Feature) } } },
                 { "noEn", ShopTranslate.Missing(d) }, { "leads", Scalar(c, "SELECT COUNT(*) FROM dbo.ShopLeads WHERE StoreId=@s", "@s", sh.StoreId) },
                 { "limits", new Dictionary<string, object> { { "mb", Scalar(c, "SELECT ISNULL(SUM(CAST(Bytes AS BIGINT)),0)/1048576 FROM dbo.ShopImages WHERE StoreId=@s", "@s", sh.StoreId) }, { "maxMb", ShopImages.MaxStoreBytes / 1048576 }, { "products", Shops.MaxProducts }, { "images", Shops.MaxImages }, { "cats", Shops.MaxCategories }, { "variants", Shops.MaxVariants } } },
                 { "steps", Steps(c, s, sh, d) }, { "wa", new Dictionary<string, object> { { "linked", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) }, { "service", WaAccount.HasService(s) }, { "confirm", ShopHooks.ConfirmOn(c, s) } } }
@@ -226,7 +226,7 @@ namespace RiwaqChat
             d["log"] = log;
             var h = Crm.Of(c, sh.StoreId, o.Phone); d["risk"] = PlanGate.Allows(c, s, "returns") && h != null ? Crm.RiskLine(c, s, o.Phone) ?? "" : "";
             using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.ShopOrders WHERE StoreId=@s AND Phone=@p AND Id<>@i", "@s", sh.StoreId, "@p", o.Phone, "@i", id)) d["before"] = (int)cmd.ExecuteScalar();
-            d["confirm"] = ShopHooks.ConfirmOf(c, sh.StoreId, id); d["parcel"] = Carriers.OrderJson(c, s, o);
+            d["confirm"] = ShopHooks.ConfirmOf(c, sh.StoreId, id); d["parcel"] = Carriers.OrderJson(c, s, o); d["cat"] = ShopGoods.OrderJson(c, sh, o);
             return d;
         }
 
