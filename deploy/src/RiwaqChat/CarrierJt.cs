@@ -68,7 +68,8 @@ namespace RiwaqChat
 
         static byte[] Md5(string s) { using (var h = MD5.Create()) return h.ComputeHash(Encoding.UTF8.GetBytes(s)); }
         public static string Digest(string biz, string privateKey) { return Convert.ToBase64String(Md5(biz + privateKey)); }
-        public static string Sign(CarrierLink k) { string pwd = string.Concat(Md5(k.Key + Word).Select(b => b.ToString("X2"))); return Convert.ToBase64String(Md5(k.Code + pwd + k.Private)); }
+        // the password may come from the branch already hashed (32 hex characters, as J&T's samples and test tool take it): used as it is then
+        public static string Sign(CarrierLink k) { string pwd = Regex.IsMatch(k.Key ?? "", "^[0-9A-Fa-f]{32}$") ? k.Key.ToUpperInvariant() : string.Concat(Md5(k.Key + Word).Select(b => b.ToString("X2"))); return Convert.ToBase64String(Md5(k.Code + pwd + k.Private)); }
 
         // success is code 1, but J&T Egypt's own getLocation example answers «code 10, msg success»: either counts
         internal static bool Ok(bool good, string code, string msg) { return good && (code == "1" || (code.Length > 0 && string.Equals((msg ?? "").Trim(), "success", StringComparison.OrdinalIgnoreCase))); }
