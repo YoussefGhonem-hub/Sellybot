@@ -400,4 +400,10 @@ namespace RiwaqChat
             }
         }
     }
+
+    // a gift card order paid by card (ShopCard.AfterPaid): the card exists; an approved transfer already went through ShopRew.Reviewed
+    public static partial class ShopCard
+    {
+        static partial void OnPaidMore(SqlConnection c, int storeId, long orderId, string via) { if (via != "transfer") ShopGift.OnPaid(c, storeId, orderId); }
+    }
 }

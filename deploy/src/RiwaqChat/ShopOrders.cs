@@ -40,7 +40,7 @@ namespace RiwaqChat
             switch (s)
             {
                 case "new": return en ? "New" : "جديد"; case "noreply": return en ? "No answer" : "مردّش"; case "confirmed": return en ? "Confirmed" : "اتأكد"; case "shipped": return en ? "Shipped" : "اتشحن"; case "out": return en ? "Out for delivery" : "خرج للتوصيل";
-                case "delivered": return en ? "Delivered" : "اتسلّم"; case "cancelled": return en ? "Cancelled" : "ملغي"; case "returned": return en ? "Returned" : "رجع"; default: return s;
+                case "delivered": return en ? "Delivered" : "اتسلّم"; case "cancelled": return en ? "Cancelled" : "ملغي"; case "returned": return en ? "Returned" : "رجع"; case "unpaid": return en ? "Waiting for payment" : "مستني الدفع"; default: return s;
             }
         }
         static bool Back(string s) { return s == "cancelled" || s == "returned"; }
@@ -63,6 +63,7 @@ namespace RiwaqChat
             if (key != null && key.Length < 8) key = null;
             if (key != null) { var had = ByKey(c, row.StoreId, key); if (had != null) return new Placed { Order = had, Again = true }; }
 
+            bool digi = ShopDigital.Fill(c, row, o);   // digital lines only: no governorate, no address
             // the customer's details
             Func<string, int, string> cut = (t, n) => { t = Regex.Replace((t ?? "").Trim(), @"[\u0000-\u0008\u000B\u000C\u000E-\u001F]", ""); return t.Length > n ? t.Substring(0, n) : t; };
             string name = cut(o.Name, 80), address = cut(o.Address, 300), phone = Mobile(o.Phone), phone2 = string.IsNullOrWhiteSpace(o.Phone2) ? null : Mobile(o.Phone2);
@@ -74,7 +75,7 @@ namespace RiwaqChat
             if (pick) { var br = ShopPrice.Branch(row, o.How.Branch); if (ShopGeo.Get(o.Gov) == null) o.Gov = ShopJson.Int(ShopJson.At(br, "gov")); if (cut(o.City, 60).Length < 2) o.City = "استلام من المحل"; if (address.Length < 5) address = "استلام من المحل: " + ShopJson.Str(ShopJson.At(br, "n"), 60); }
             string recv = cut(o.RecvName, 80), recvPhone = string.IsNullOrWhiteSpace(o.RecvPhone) ? null : Mobile(o.RecvPhone);
             if (recv.Length > 0 && recvPhone == null) bad["recvPhone"] = "اكتب رقم موبايل المستلم";
-            if (ShopGeo.Get(o.Gov) == null) bad["gov"] = "اختار المحافظة";
+            if (ShopGeo.Get(o.Gov) == null && !digi) bad["gov"] = "اختار المحافظة";
             if (cut(o.City, 60).Length < 2 && !o.ByOwner) bad["city"] = "اختار المدينة أو المنطقة";
             if (address.Length < 5) bad["address"] = "اكتب العنوان بالتفصيل";
             if (!o.Agreed && !o.ByOwner) bad["agree"] = "وافق على الشروط الأول";
@@ -100,6 +101,7 @@ namespace RiwaqChat
                 if (q.Stop == "min") throw new ShopException("min", "أقل طلب " + q.Min.ToString("#,0.##", CultureInfo.InvariantCulture) + " ج.م.", ShopPrice.Json(q));
                 if (q.Stop == "empty" || q.Lines.Any(l => l.Err != null)) throw new ShopException("cart", "فيه حاجة في سلتك اتغيّرت. راجعها وأكّد تاني.", ShopPrice.Json(q));
                 if (!string.IsNullOrWhiteSpace(o.Coupon) && !q.CouponUsed) throw new ShopException("coupon", q.CouponErr ?? "الكود مش شغال.", ShopPrice.Json(q));
+                if (!o.ByOwner) ShopCard.Check(c, row, q, o.Lang);   // a digital line is paid first; installments above the owner's minimum
                 // the customer saw another total (a price, an offer or the shipping moved): show the new one first
                 if (o.Expected.HasValue && Math.Abs(o.Expected.Value - q.Total) >= 1) throw new ShopException("changed", "الإجمالي اتغيّر من آخر مرة شفته. راجع السعر الجديد وأكّد تاني.", ShopPrice.Json(q));
                 if (o.Test) return new Placed { Quote = q, Order = new ShopOrder { No = 0, Token = "", Total = q.Total, Subtotal = q.Sub, Discount = q.Discount, Ship = q.Ship, Fees = q.FeesSum, Pay = q.Pay, Deposit = q.Deposit, Name = name, Phone = phone, Gov = o.Gov, City = cut(o.City, 60), Address = address, Status = "new", CreatedAt = now, Test = true, Lang = o.Lang == "en" ? "en" : "ar" } };

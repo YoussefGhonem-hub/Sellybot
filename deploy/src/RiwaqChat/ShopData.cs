@@ -37,6 +37,7 @@ namespace RiwaqChat
         public string Video;
         public string Goes;   // ids of what goes with it, chosen by the owner
         public string AskJson;   // what the customer writes or sends with it (a name to engrave, a picture)
+        public string Digi;      // «منتج رقمي»: file / link / codes (ShopDigital.cs); null = a product that ships
         public Dictionary<string, int> Words;
 
         public decimal PriceOf(ShopVar v) { return v != null && v.Price.HasValue ? v.Price.Value : Price; }
@@ -287,6 +288,7 @@ namespace RiwaqChat
             using (var r = cmd.ExecuteReader())
                 while (r.Read()) d.Posts.Add(new ShopPost { Id = (int)r["Id"], Slug = S(r["Slug"]), Title = S(r["Title"]), TitleEn = S(r["TitleEn"]), Short = ShopPages.Plain(S(r["B"]), 160), ShortEn = ShopPages.Plain(S(r["BE"]), 160), Image = S(r["Image"]), Hidden = (bool)r["Hidden"], At = Dt(r["At"]).Value });
             ShopReviews.Load(c, d); ShopReviews.LoadPics(c, d);
+            ShopCard.Load(c, d);   // paying by card, digital products
 
             Count(d);
             Index(d);
@@ -378,6 +380,7 @@ namespace RiwaqChat
             if (used != null) { r["of"] = used.Id; if (used.EndsAt.HasValue && used.Countdown) r["u"] = Unix(used.EndsAt.Value); }
             if (!string.IsNullOrEmpty(p.SpecsJson)) r["sp"] = ShopJson.Arr(p.SpecsJson).Take(14);
             if (!string.IsNullOrEmpty(p.ExtraJson)) r["x"] = ShopJson.Obj(p.ExtraJson);
+            ShopDigital.Mark(d, p, r);
             return r;
         }
 
@@ -395,6 +398,7 @@ namespace RiwaqChat
             if (!string.IsNullOrEmpty(p.Video)) r["vd"] = p.Video;
             var guide = SizeGuide(d, p);
             if (guide != null) r["sg"] = guide;
+            ShopDigital.Mark(d, p, r);
             return r;
         }
         // the product's own size guide, or its category's (or the parent category's)

@@ -48,7 +48,7 @@ function toSite(request, url, env, name, site) {
 // what the visitor gets: the site's answer with our own caching and security headers
 function clean(r, extra) {
   const h = new Headers();
-  for (const k of ["content-type", "content-security-policy", "x-robots-tag", "location", "retry-after", "etag"]) { const v = r.headers.get(k); if (v) h.set(k, v); }
+  for (const k of ["content-type", "content-security-policy", "x-robots-tag", "location", "retry-after", "etag", "content-disposition"]) { const v = r.headers.get(k); if (v) h.set(k, v); }   // content-disposition: a digital product's file (/_dl/)
   const cookies = r.headers.getSetCookie ? r.headers.getSetCookie() : []; for (const c of cookies) if (c.startsWith("sbpv=")) h.append("set-cookie", c);
   h.set("x-content-type-options", "nosniff"); h.set("referrer-policy", "strict-origin-when-cross-origin"); h.set("strict-transport-security", "max-age=15552000");
   for (const k in extra || {}) h.set(k, extra[k]);

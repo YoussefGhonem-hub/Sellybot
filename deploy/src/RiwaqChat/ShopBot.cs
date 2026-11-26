@@ -60,6 +60,7 @@ namespace RiwaqChat
             if (offers.Count > 0) sb.Append("العروض الشغالة دلوقتي: ").Append(string.Join("، ", offers.Select(o => o.Name + (o.EndsAt.HasValue ? " (لحد " + ShopPromo.Local(o.EndsAt).Replace("T", " ") + ")" : "")))).Append("\n");
             var ways = ShopPrice.PayWays(sh).Select(w => ShopPay.WayName(ShopJson.Str(ShopJson.At(w, "k")))).ToList(); if (ShopPrice.Cod(sh)) ways.Insert(0, "كاش عند الاستلام"); var branches = ShopPrice.Branches(sh);
             sb.Append("الدفع: ").Append(string.Join("، ", ways)).Append(ways.Count == 1 ? " بس" : "").Append(". ").Append(branches.Count > 0 ? "الفروع: " + string.Join("، ", branches.Take(8).Select(b => ShopJson.Str(ShopJson.At(b, "n")) + " (" + ShopJson.Str(ShopJson.At(b, "ad")) + (ShopJson.Str(ShopJson.At(b, "hours")).Length > 0 ? "، " + ShopJson.Str(ShopJson.At(b, "hours")) : "") + (ShopJson.Bool(ShopJson.At(b, "pickup")) ? "، ينفع الاستلام منه" : "") + ")")) + ". " : "").Append("الاستبدال والاسترجاع: خلال ").Append(ShopJson.Int(ShopJson.At(set, "returnsDays"), 14)).Append(" يوم من الاستلام.\n");
+            sb.Append(ShopCard.BotNote(sh, d));   // paying by card / installments, digital products
             if (ShopPrice.Vacation(d, now)) sb.Append("المتجر واخد إجازة ومش بيستقبل طلبات دلوقتي.\n");
             sb.Append(ShopRew.BotPrompt(sh));   // gift cards, points, «هات صاحبك» when on
             sb.Append("إزاي تستخدمه:\n")
@@ -459,7 +460,7 @@ namespace RiwaqChat
         // the parts of an order the owner mustn't miss: how it's paid, pickup, gift, another recipient
         static string PayNote(ShopOrder o)
         {
-            var t = new StringBuilder(); if (o.Pay != "cod" || o.Deposit > 0) t.Append("💳 ").Append(ShopPay.WayName(o.Pay)).Append(o.Deposit > 0 && o.Deposit < o.Total ? "، عربون " + ShopOrders.Money(o.Deposit) : "").Append(o.PayState == "sent" ? " (صورة التحويل وصلت)" : o.Deposit > 0 ? " (لسه مابعتش صورة التحويل)" : "").Append("\n");
+            var t = new StringBuilder(); if (o.Pay != "cod" || o.Deposit > 0) t.Append("💳 ").Append(ShopPay.WayName(o.Pay)).Append(o.Deposit > 0 && o.Deposit < o.Total ? "، عربون " + ShopOrders.Money(o.Deposit) : "").Append(o.PayState == "paid" ? " (اتدفع ✅)" : o.PayState == "sent" ? " (صورة التحويل وصلت)" : o.Deposit > 0 ? " (لسه مابعتش صورة التحويل)" : "").Append("\n");
             if (Pickup(o) != null) t.Append("🛍️ استلام من: ").Append(Pickup(o)).Append("\n"); if (o.Extras.ContainsKey("gift")) t.Append("🎁 رسالة الهدية: ").Append(ShopJson.Str(o.Extras["gift"], 200)).Append("\n"); else if ((o.FeesJson ?? "").Contains("\"gift\"")) t.Append("🎁 تغليف هدية\n");
             t.Append(ShopShipDay.Line(o, false)); var rc = ShopJson.Sub(o.Extras, "recv"); if (rc.Count > 0) t.Append("👤 المستلم: ").Append(ShopJson.Str(ShopJson.At(rc, "n"))).Append(" · ").Append(ShopOrders.Local(ShopJson.Str(ShopJson.At(rc, "p")))).Append("\n");
             t.Append(ShopRew.PayNote(o));
@@ -503,6 +504,7 @@ namespace RiwaqChat
                     // the owner moved it on: stop waiting for the customer's answer
                     if (who != "customer") using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Status=@st, Note=@n WHERE StoreId=@s AND OrderId=@o AND Status='pending'", "@st", to == "confirmed" ? "confirmed" : to == "cancelled" ? "cancelled" : "skipped", "@n", "غيّرت حالته لـ «" + ShopOrders.StatusText(to) + "»", "@s", storeId, "@o", id)) if (to != "noreply") cmd.ExecuteNonQuery();
                     if (to == "cancelled" && who != "carrier") Carriers.OnCancelled(storeId, id);
+                    try { ShopDigital.OnStatus(c, storeId, id, to); } catch (Exception ex) { Log.Error(ex); }   // a cancel closes the digital links
                     if (to == "out") await Delivery.OnShop(c, s, o);
                     if (to == "shipped") { var sh = Shops.ByStore(c, storeId); if (sh != null) await ShopPay.Shipped(c, s, sh, o); }
                 }
