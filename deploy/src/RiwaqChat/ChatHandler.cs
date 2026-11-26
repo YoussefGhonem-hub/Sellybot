@@ -126,6 +126,7 @@ namespace RiwaqChat
 
                 int maxTokens;
                 if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
+                if (store != null && store.Slug == SiteBot.Slug) maxTokens = Math.Max(maxTokens, 3500);   // سيلّي explains a task step by step: a long how-to must not be cut in the middle
                 StoreIndex idx = null;
                 string system = store == null ? Claude.LegacyPrompt() : Claude.StorePrompt(conn, store, out idx);
                 var sysBlocks = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
@@ -251,6 +252,7 @@ namespace RiwaqChat
         {
             int maxTokens;
             if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
+            if (store != null && store.Slug == SiteBot.Slug) maxTokens = Math.Max(maxTokens, 3500);   // سيلّي: long step-by-step answers
             StoreIndex idx;
             string system = Claude.StorePrompt(conn, store, out idx);
             var sys = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
