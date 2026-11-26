@@ -2054,6 +2054,7 @@
         <div class="dd-menu" id="ddMore" role="menu" aria-label="المزيد">
           <button type="button" data-href="reels.html" role="menuitem"><span class="dd-ic">🎬</span><span><b>ريلز</b><small>فيديوهات بتشرح الموقع</small></span></button>
           <button type="button" data-href="about.html" role="menuitem"><span class="dd-ic">ℹ️</span><span><b>من نحن</b><small>مين إحنا وخدماتنا</small></span></button>
+          <button type="button" id="ddDesktop" role="menuitem"><span class="dd-ic">🖥️</span><span><b>برنامج الكمبيوتر</b><small>نزّل Sellybot على Windows، مجاني</small></span></button>
         </div>
       </div>
       <button data-tab="admin" id="adminTabBtn" hidden>🛡️ الأدمن</button>
@@ -4355,6 +4356,13 @@
   }
   function homeToApp() { go("home"); setTimeout(function () { $("hmApp").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }); }, 60); }
   $("menuDesktop").onclick = homeToApp;
+  // «المزيد» → برنامج الكمبيوتر: on Windows the installer starts downloading at once, and the home page shows how to open it;
+  // on a phone or a Mac the home page says it's for Windows (with a link to send to yourself). Not shown inside the app itself.
+  $("ddDesktop").hidden = /SellybotDesktop/.test(navigator.userAgent);
+  $("ddDesktop").onclick = function () {
+    if (homeWin()) { location.href = DL_EXE; homeToApp(); $("hmStarted").hidden = false; }
+    else homeToApp();
+  };
 
   function renderHome() {   // everything that comes from the store's data (called again after every change)
     if (!me) return;
