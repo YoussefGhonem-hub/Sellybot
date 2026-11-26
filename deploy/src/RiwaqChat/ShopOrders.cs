@@ -170,6 +170,7 @@ namespace RiwaqChat
                             using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopOrderItems(StoreId, OrderId, ProductId, VariantId, Name, Opts, Sku, Image, Qty, Price, Full_, Discount, Cost, Extra) VALUES(@s, @o, @p, @v, @n, @op, @sku, @im, @q, @pr, @f, @d, @c, @x)",
                                 "@s", row.StoreId, "@o", id, "@p", l.P.Id, "@v", l.VariantId, "@n", l.P.Name, "@op", Nz(l.V.Label), "@sku", Nz(l.V.Sku ?? l.P.Sku), "@im", Nz(l.V.Image ?? (l.P.Pics.Count > 0 ? l.P.Pics[0].Path : null)), "@q", l.Qty, "@pr", l.Unit, "@f", l.Full, "@d", l.Disc, "@c", l.P.CostOf(l.V).HasValue ? (object)l.P.CostOf(l.V).Value : null, "@x", Nz(cut(l.Extra, 600))))
                             { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
+                        ShopRew.Take(c, tx, row, id, q, phone, o.Lang, o.Ip);   // the gift card's balance, the points, the friend's gift: taken here or the order isn't made
                         foreach (var t in took)
                         {
                             var l = (ShopLine)t[0];
@@ -280,6 +281,7 @@ namespace RiwaqChat
                     // a cancelled order's coupon can be used again
                     if (to == "cancelled" && o.Coupon != null) using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopCoupons SET Uses=CASE WHEN Uses>0 THEN Uses-1 ELSE 0 END WHERE StoreId=@s AND Code=@k", "@s", storeId, "@k", o.Coupon)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
                     else if (o.Status == "cancelled" && o.Coupon != null) using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopCoupons SET Uses=Uses+1 WHERE StoreId=@s AND Code=@k", "@s", storeId, "@k", o.Coupon)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
+                    { var rw = ShopRew.OnStatus(c, tx, o, to); if (rw != null) { tx.Rollback(); return rw; } }   // gift cards, points, «هات صاحبك»
                     using (var cmd = Db.Cmd(c, @"UPDATE dbo.ShopOrders SET Status=@t, StatusAt=SYSUTCDATETIME(), Seen=1, CancelReason=CASE WHEN @t IN ('cancelled','returned') THEN @r ELSE NULL END,
                         ConfirmedAt=CASE WHEN @t='confirmed' AND ConfirmedAt IS NULL THEN SYSUTCDATETIME() ELSE ConfirmedAt END, ShippedAt=CASE WHEN @t IN ('shipped','out') AND ShippedAt IS NULL THEN SYSUTCDATETIME() ELSE ShippedAt END,
                         DeliveredAt=CASE WHEN @t='delivered' THEN SYSUTCDATETIME() WHEN @t IN ('returned') THEN DeliveredAt ELSE NULL END WHERE Id=@i AND StoreId=@s", "@t", to, "@r", Nz(reason), "@i", id, "@s", storeId)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
