@@ -79,11 +79,11 @@
   .burst{position:absolute;z-index:5;width:96px;height:96px;margin:-48px 0 0 -48px;pointer-events:none;color:#ff3b5c;animation:burst .9s ease-out forwards;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))}
   @keyframes burst{0%{transform:scale(.2) rotate(-12deg);opacity:0}15%{transform:scale(1.15) rotate(-12deg);opacity:1}30%{transform:scale(.95) rotate(-12deg)}70%{opacity:1;transform:scale(1) rotate(-12deg) translateY(0)}100%{opacity:0;transform:scale(1.1) rotate(-12deg) translateY(-70px)}}
 
-  /* sound off: a pill at the top of the reel until the visitor turns it on */
+  /* the browser kept the sound off (no tap yet): a pill at the top of the reel until the visitor touches the page */
   .unmute{position:absolute;top:calc(68px + env(safe-area-inset-top));inset-inline-start:50%;transform:translateX(50%);z-index:4;display:none;align-items:center;gap:7px;
     padding:8px 15px;border-radius:999px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:13.5px;font-weight:600;white-space:nowrap}
   .unmute svg{width:18px;height:18px}
-  .muted .unmute{display:inline-flex}
+  .blocked .muted .unmute{display:inline-flex}
 
   /* the actions column (left in RTL, like the Arabic apps) */
   .acts{position:absolute;inset-inline-end:8px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:5;display:flex;flex-direction:column;align-items:center;gap:16px}
@@ -445,7 +445,7 @@ if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
         '<video playsinline webkit-playsinline loop muted preload="none" poster="' + esc(r.poster + "?v=" + r.v) + '" aria-label="' + esc(r.title) + '"></video>' +
         '<div class="tap"></div>' +
         '<div class="mid"><span class="play">' + SVG.play + '</span><span class="spin"></span></div>' +
-        '<button type="button" class="unmute">' + SVG.sndOff.replace('class="off"', "") + 'دوس عشان تشغّل الصوت</button>' +
+        '<button type="button" class="unmute">' + SVG.sndOff.replace('class="off"', "") + 'دوس على الشاشة عشان تسمع الصوت</button>' +
         '<div class="info">' +
           '<div class="who"><span class="av">' + SVG.logo + '</span><b>Sellybot ' + SVG.ok + '</b>' +
             '<a class="cta" href="' + esc(r.cta.href) + '">' + esc(r.cta.label) + SVG.arrow + '</a></div>' +
@@ -486,8 +486,10 @@ if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
 
   var secs = [].slice.call(feed.querySelectorAll(".reel"));
   var vids = secs.slice(0, REELS.length).map(function (s) { return s.querySelector("video"); });
-  var cur = -1, wantSound = false, seen = {};
-  try { wantSound = sessionStorage.getItem("sb-reel-sound") === "1"; } catch (e) {}
+  // sound is on unless the visitor turned it off. Browsers allow it only after a tap (Chrome also when the page was
+  // opened by a click, e.g. «🎬 فيديو الشرح» in «متجري»); when refused, blocked = true until the first touch (wake below).
+  var cur = -1, wantSound = true, blocked = false, wokeAt = 0, seen = {};
+  try { wantSound = sessionStorage.getItem("sb-reel-sound") !== "0"; } catch (e) {}
 
   function toast(t) { var el = document.getElementById("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove("show"); }, 2000); }
   function attach(i, preload) {
@@ -495,19 +497,36 @@ if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
     if (!v.getAttribute("src")) v.src = REELS[i].src + "?v=" + REELS[i].v;
     if (preload === "auto" || v.preload === "none") v.preload = preload;
   }
-  function soundUI() { secs.forEach(function (s, i) { s.classList.toggle("muted", !vids[i] || vids[i].muted); }); }
+  function soundUI() {
+    secs.forEach(function (s, i) { s.classList.toggle("muted", !vids[i] || vids[i].muted); });
+    document.body.classList.toggle("blocked", blocked);
+  }
 
-  // play the reel on screen: with sound when allowed (or chosen), otherwise muted with the «شغّل الصوت» pill
+  // play the reel on screen: with sound, unless the visitor turned it off or the browser refuses it
+  // (then muted, with the «دوس على الشاشة» pill)
   function play(i) {
     var v = vids[i]; if (!v) return;
-    v.muted = !wantSound;
+    v.muted = !wantSound || blocked;
     var p = v.play();
-    if (p && p.catch) p.catch(function () {
-      if (!v.muted) { v.muted = true; soundUI(); v.play().catch(function () { secs[i].classList.add("paused"); }); }
+    if (p && p.catch) p.catch(function (e) {
+      if (i !== cur) return;   // swiped away before it started
+      if (!v.muted && e && e.name === "NotAllowedError") { blocked = true; v.muted = true; soundUI(); v.play().catch(function () { secs[i].classList.add("paused"); }); }
       else secs[i].classList.add("paused");
     });
     soundUI();
   }
+  // the browser kept the sound off: the visitor's first tap / click / key anywhere turns it on (a tap on the video
+  // then only turns the sound on, it doesn't pause it). Links leave the page, and the sound buttons do it themselves.
+  function wake(e) {
+    if (!blocked || !wantSound || cur < 0 || cur >= vids.length) return;
+    var t = e.target && e.target.closest ? e.target : document.body;
+    if (t.closest(".unmute,.snd,a[href]")) return;
+    if (e.type === "keydown" && (e.key === "Escape" || e.key === "m" || e.key === "M")) return;
+    wokeAt = Date.now();
+    setSound(true, t.closest(".bar") ? "seek" : "tap");
+  }
+  document.addEventListener("click", wake, true);
+  document.addEventListener("keydown", wake, true);
   function activate(i) {
     if (i === cur) return;
     cur = i;
@@ -547,6 +566,7 @@ if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
     // tap = pause / play, double tap = like (with a heart where you tapped)
     var tapT = null;
     s.querySelector(".tap").addEventListener("click", function (e) {
+      if (Date.now() - wokeAt < 400) return;   // that tap turned the sound on
       if (tapT) { clearTimeout(tapT); tapT = null; like(i, true, e); return; }
       tapT = setTimeout(function () { tapT = null; if (v.paused) { v.play().catch(function () {}); } else v.pause(); }, 230);
     });
@@ -582,18 +602,25 @@ if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
     requestAnimationFrame(tick);
   })();
 
-  function setSound(on) {
-    wantSound = on;
+  // how: "tap" = the first touch after the browser kept the sound off (no message if it's still refused),
+  // "seek" = that touch was on the progress bar (keep the spot it jumped to)
+  function setSound(on, how) {
+    // the first sound after the browser kept it off starts the reel over, so the voice is heard from the beginning
+    // (not after 20 s: they were following the captions)
+    var restart = on && blocked && how !== "seek";
+    blocked = false; wantSound = on;
     try { sessionStorage.setItem("sb-reel-sound", on ? "1" : "0"); } catch (e) {}
     vids.forEach(function (v) { v.muted = !on; });
     if (on && cur >= 0 && cur < vids.length) {
-      // the browser may refuse sound (or stop the video) without a real tap: then keep it playing muted and say so
+      // the browser may still refuse sound without a real tap: then keep it playing muted and say so
       var v = vids[cur];
+      if (restart && v.currentTime < 20) v.currentTime = 0;
       var p = v.play();
-      if (p && p.catch) p.catch(function () {
-        wantSound = false; v.muted = true; soundUI();
+      if (p && p.catch) p.catch(function (e) {
+        if (e && e.name !== "NotAllowedError") return;
+        blocked = true; v.muted = true; soundUI();
         v.play().catch(function () {});
-        toast("دوس على زرار الصوت تاني عشان يشتغل 🔊");
+        if (!how) toast("دوس على زرار الصوت تاني عشان يشتغل 🔊");
       });
     }
     soundUI();
@@ -623,7 +650,11 @@ if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
     if (e.target.closest && e.target.closest(".bar")) return;
     if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === "j") { go(cur + 1); e.preventDefault(); }
     else if (e.key === "ArrowUp" || e.key === "PageUp" || e.key === "k") { go(cur - 1); e.preventDefault(); }
-    else if (e.key === " " && cur < vids.length && !(e.target.closest && e.target.closest("button,a"))) { var v = vids[cur]; if (v.paused) v.play().catch(function () {}); else v.pause(); e.preventDefault(); }
+    else if (e.key === " " && cur < vids.length && !(e.target.closest && e.target.closest("button,a"))) {
+      var v = vids[cur];
+      if (Date.now() - wokeAt > 400) { if (v.paused) v.play().catch(function () {}); else v.pause(); }   // (not when that key just turned the sound on)
+      e.preventDefault();
+    }
     else if ((e.key === "m" || e.key === "M") && cur < vids.length) setSound(vids[cur].muted);
   });
   document.getElementById("prev").onclick = function () { go(cur - 1); };
