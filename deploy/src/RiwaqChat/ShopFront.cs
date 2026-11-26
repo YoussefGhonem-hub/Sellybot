@@ -143,6 +143,7 @@ namespace RiwaqChat
                 case "pic": ShopPay.Pic(c, x, b, res); return;
                 case "cart": ShopPay.Cart(c, x, b, res); return;
                 case "news": ShopPay.News(c, x, b, res); return;
+                case "ad": ShopAds.Event(c, x, b, res); return;
                 default: Web.Error(res, 404, "not_found"); return;
             }
         }
@@ -178,6 +179,7 @@ namespace RiwaqChat
             catch (ShopException) { throw; }
             catch (Exception ex) { ShopOrders.Fail(x.Row.StoreId, "order", ex.GetType().Name + ": " + ex.Message); throw; }
             if (!p.Again && !p.Order.Test) ShopHooks.OnPlaced(x.Store, p.Order.Id);
+            if (!p.Again && !p.Order.Test) ShopAds.Purchase(c, x, p.Order, b);   // «القياس من السيرفر» (nothing when it's off)
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "no", p.Order.No }, { "token", p.Order.Token }, { "total", p.Order.Total }, { "test", p.Order.Test }, { "again", p.Again }, { "dep", p.Order.Deposit }, { "pay", p.Order.Pay ?? "cod" }, { "ps", p.Order.PayState ?? "" } });
         }
 
@@ -400,6 +402,7 @@ namespace RiwaqChat
                 { "pixels", x.Preview ? null : new Dictionary<string, object> { { "tiktok", Px(set, "tiktok") }, { "snap", Px(set, "snap") }, { "ga", Px(set, "ga") } } },
                 { "pages", d.Pages.Where(p => !p.Hidden).Select(p => new Dictionary<string, object> { { "s", p.Slug }, { "k", p.Kind }, { "t", ShopView.Pair(p.Title, p.TitleEn) }, { "m", p.InMenu }, { "f", p.InFooter } }).ToArray() },
                 { "popup", Popup(c, x) },
+                { "capi", !x.Preview && ShopAds.On(c, x.Row) },   // «القياس من السيرفر»: the page gives its pixel calls an event id
                 { "chat", new Dictionary<string, object> { { "on", x.Store.Status == "active" }, { "store", x.Store.Slug }, { "v", (Load("~/widget.js") ?? new FileCopy { Tag = "1" }).Tag }, { "bot", x.Store.BotName ?? "" } } }
             };
         }
@@ -447,6 +450,7 @@ namespace RiwaqChat
             var page = new Dictionary<string, object> { { "t", p.T } };
             if (p.Cat != null) page["id"] = p.Cat.Id;
             if (p.Prod != null) { page["id"] = p.Prod.Id; page["d"] = ShopView.Detail(d, p.Prod, now); }
+            p.Page = ShopAds.Page(c, x.Row, p.Page);   // the privacy page says the ads are measured from the server too, while it's on
             if (p.Page != null) page["pg"] = new Dictionary<string, object> { { "s", p.Page.Slug }, { "k", p.Page.Kind }, { "t", ShopView.Pair(p.Page.Title, p.Page.TitleEn) }, { "b", ShopView.Pair(p.Page.Body, p.Page.BodyEn) } };
             if (p.Token != null) page["token"] = p.Token;
             if (p.Post != null) page["post"] = new Dictionary<string, object> { { "s", p.Post.Slug }, { "t", ShopView.Pair(p.Post.Title, p.Post.TitleEn) }, { "b", ShopView.Pair(p.PostBody, p.PostBodyEn) }, { "im", p.Post.Image ?? "" }, { "at", ShopView.Unix(p.Post.At) }, { "ps", (p.PostProducts ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) } };

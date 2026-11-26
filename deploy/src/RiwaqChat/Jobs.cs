@@ -55,6 +55,8 @@ namespace RiwaqChat
             new Lane { Name = "offers", Work = (src, ct) => Offers.SendDue(ct) },
             // shipping companies: the parcels that don't tell by themselves, their areas, the rescue messages that waited for the morning (claimed in the database)
             new Lane { Name = "ship", Work = (src, ct) => Carriers.Run(ct) },
+            // «ربط ببرامج تانية»: the webhooks and their retries, what changed in the products; «القياس من السيرفر»: the ad events in batches (claimed in the database)
+            new Lane { Name = "links", Work = (src, ct) => ShopApiHooks.Run(ct) },
         };
 
         public static void Start()

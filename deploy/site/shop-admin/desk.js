@@ -135,7 +135,7 @@ V.feat = {
       <section class="card"><h3>الفاتورة</h3>${SB.tog("tax.on", (s.tax || {}).on, "متسجّل في الضريبة", "الأسعار شاملة الضريبة، وبتتكتب في الفاتورة")}${fld("tax.pct", "نسبة الضريبة", (s.tax || {}).pct || 14, { mode: "decimal", suf: "%", x: "data-n" })}</section>
       <section class="card"><h3>نسخة من متجرك</h3><p class="sub">منتجاتك وأوردراتك وزباينك وإعداداتك في ملف واحد، تنزّله في أي وقت.</p><a class="btn ghost" href="${API}backup">نزّل النسخة</a></section>
       ${bar("fSave")}</form>`;
-    body.querySelector("[data-form]").addEventListener("input", mark);
+    body.querySelector("[data-form]").addEventListener("input", mark); if (SB.capiCard) SB.capiCard(body);   // «القياس من السيرفر» (api.js)
   },
   leave, acts: {
     fSave: b => run(b.tagName === "FORM" ? b.querySelector(".sm-save .btn") : b, async () => { const d = SB.read(SB.body().querySelector("[data-form]")); if (d.sheet.url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(d.sheet.url.trim())) throw new Error("لينك الشيت مش مظبوط. لازم يخلص بـ /exec."); d.abandon.delay = +d.abandon.delay; await post("settings", { settings: d }); dirty = false; say("اتحفظ ✅"); SB.show("feat"); }),

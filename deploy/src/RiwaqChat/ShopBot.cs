@@ -61,6 +61,7 @@ namespace RiwaqChat
             var ways = ShopPrice.PayWays(sh).Select(w => ShopPay.WayName(ShopJson.Str(ShopJson.At(w, "k")))).ToList(); if (ShopPrice.Cod(sh)) ways.Insert(0, "كاش عند الاستلام"); var branches = ShopPrice.Branches(sh);
             sb.Append("الدفع: ").Append(string.Join("، ", ways)).Append(ways.Count == 1 ? " بس" : "").Append(". ").Append(branches.Count > 0 ? "الفروع: " + string.Join("، ", branches.Take(8).Select(b => ShopJson.Str(ShopJson.At(b, "n")) + " (" + ShopJson.Str(ShopJson.At(b, "ad")) + (ShopJson.Str(ShopJson.At(b, "hours")).Length > 0 ? "، " + ShopJson.Str(ShopJson.At(b, "hours")) : "") + (ShopJson.Bool(ShopJson.At(b, "pickup")) ? "، ينفع الاستلام منه" : "") + ")")) + ". " : "").Append("الاستبدال والاسترجاع: خلال ").Append(ShopJson.Int(ShopJson.At(set, "returnsDays"), 14)).Append(" يوم من الاستلام.\n");
             if (ShopPrice.Vacation(d, now)) sb.Append("المتجر واخد إجازة ومش بيستقبل طلبات دلوقتي.\n");
+            sb.Append(ShopAds.BotLine(c, sh));
             sb.Append("إزاي تستخدمه:\n")
               .Append("- السعر والمقاسات والألوان والكمية والعروض من أداة ").Append(TProducts).Append(" بس. استخدمها قبل ما ترد على أي سؤال عن منتج، حتى لو رديت عليه قبل كده، لأن السعر والكمية بيتغيّروا.\n")
               .Append("- سعر الشحن ومدة التوصيل والعروض والأكواد والسياسات والتواصل من أداة ").Append(TInfo).Append(".\n")
@@ -406,7 +407,7 @@ namespace RiwaqChat
         // an order the owner wrote down: it enters «زبايني»; the customer gets the confirmation only when the owner asked for it
         public static void OnPlacedByOwner(StoreInfo s0, long orderId, bool tell)
         {
-            int storeId = s0.Id;
+            int storeId = s0.Id; ShopApiHooks.OnOrder(storeId, orderId, null, null);
             HostingEnvironment.QueueBackgroundWorkItem(async ct =>
             {
                 try
