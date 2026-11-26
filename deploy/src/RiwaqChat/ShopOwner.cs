@@ -126,7 +126,11 @@ namespace RiwaqChat
             add("social", "ضيف صفحتك على فيسبوك أو إنستجرام", ShopJson.Str(ShopJson.At(ShopJson.Sub(set, "social"), "fb")).Length > 0 || ShopJson.Str(ShopJson.At(ShopJson.Sub(set, "social"), "ig")).Length > 0, true, "info");
             add("returns", "راجع صفحة الاستبدال والاسترجاع", ShopJson.Bool(ShopJson.At(set, "returnsSeen")), true, "pages");
             add("wa", "اربط رقم واتساب المتجر (تأكيد الطلبات)", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber), false, "wa");
-            add("rent", "فعّل إيجار المتجر من «باقتي»", Shops.HasService(c, s, sh), true, "plan");
+            // the rent doesn't stop the first opening: it's free for Shops.FreeDays days, then the store closes to customers until it's paid
+            if (Shops.HasService(c, s, sh)) add("rent", "فعّل إيجار المتجر من «باقتي»", true, true, "plan");
+            else if (!sh.FreeUntil.HasValue) add("rent", "ادفع إيجار المتجر (أول يومين بعد الفتح ببلاش)", false, false, "plan");
+            else if (Shops.InFree(sh)) add("rent", "ادفع الإيجار قبل ما اليومين المجانيين يخلصوا", false, false, "plan");
+            else add("rent", "ادفع الإيجار عشان المتجر يرجع يفتح للزباين", false, true, "plan");
             return l;
         }
 
