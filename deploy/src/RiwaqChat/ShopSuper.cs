@@ -56,8 +56,8 @@ namespace RiwaqChat
             foreach (var sh in Shops.All(c))
             {
                 var s = Db.StoreById(c, sh.StoreId); if (s == null) continue; int[] o; int v, rp, pc; orders.TryGetValue(sh.StoreId, out o); visits.TryGetValue(sh.StoreId, out v); reports.TryGetValue(sh.StoreId, out rp); prods.TryGetValue(sh.StoreId, out pc); var until = Shops.Until(c, s, sh);
-                list.Add(new Dictionary<string, object> { { "id", sh.StoreId }, { "slug", sh.Slug }, { "name", sh.Name }, { "store", s.Name }, { "storeSlug", s.Slug }, { "email", s.OwnerEmail }, { "status", sh.Status }, { "url", sh.Url }, { "biz", sh.Biz ?? "" }, { "until", Iso(until) }, { "days", until.HasValue ? (int)Math.Ceiling((until.Value - DateTime.UtcNow).TotalDays) : 0 }, { "on", Shops.HasService(c, s, sh) }, { "open", Shops.Open(c, s, sh) }, { "inPlan", Shops.InPlan(c, s) },
-                    { "orders", o == null ? 0 : o[0] }, { "orders30", o == null ? 0 : o[1] }, { "visits30", v }, { "reports", rp }, { "products", pc }, { "submitted", Iso(sh.SubmittedAt) }, { "change", sh.ReviewChange }, { "pendSlug", sh.PendSlug ?? "" }, { "pendName", sh.PendName ?? "" }, { "note", sh.Status == "closed" ? sh.CloseNote ?? "" : sh.ReviewNote ?? "" }, { "created", Iso(sh.CreatedAt) }, { "tester", Shops.Tester(c, s) }, { "wipe", until.HasValue && until.Value.AddDays(Shops.KeepDays) < DateTime.UtcNow } });
+                list.Add(new Dictionary<string, object> { { "id", sh.StoreId }, { "slug", sh.Slug }, { "name", sh.Name }, { "store", s.Name }, { "storeSlug", s.Slug }, { "email", s.OwnerEmail }, { "status", sh.Status }, { "url", sh.Url }, { "biz", sh.Biz ?? "" }, { "until", Iso(until) }, { "days", until.HasValue ? (int)Math.Ceiling((until.Value - DateTime.UtcNow).TotalDays) : 0 }, { "on", Shops.HasService(c, s, sh) }, { "open", Shops.Open(c, s, sh) }, { "inPlan", Shops.InPlan(c, s) }, { "free", Iso(sh.FreeUntil) }, { "inFree", Shops.InFree(sh) },
+                    { "orders", o == null ? 0 : o[0] }, { "orders30", o == null ? 0 : o[1] }, { "visits30", v }, { "reports", rp }, { "products", pc }, { "submitted", Iso(sh.SubmittedAt) }, { "change", sh.ReviewChange }, { "pendSlug", sh.PendSlug ?? "" }, { "pendName", sh.PendName ?? "" }, { "note", sh.Status == "closed" ? sh.CloseNote ?? "" : sh.ReviewNote ?? "" }, { "created", Iso(sh.CreatedAt) }, { "tester", Shops.Tester(c, s) }, { "wipe", (until ?? sh.FreeUntil).HasValue && (until ?? sh.FreeUntil).Value.AddDays(Shops.KeepDays) < DateTime.UtcNow } });
             }
             var rep = new List<object>(); using (var cmd = Db.Cmd(c, "SELECT TOP 100 r.Id, r.StoreId, r.Reason, r.Text, r.Contact, r.Page, r.Status, r.At, s.Name, s.Slug FROM dbo.ShopReports r JOIN dbo.Shops s ON s.StoreId=r.StoreId ORDER BY CASE WHEN r.Status='new' THEN 0 ELSE 1 END, r.Id DESC")) using (var r = cmd.ExecuteReader())
                 while (r.Read()) rep.Add(new Dictionary<string, object> { { "id", (int)r[0] }, { "store", (int)r[1] }, { "reason", (string)r[2] }, { "text", r[3] as string ?? "" }, { "contact", r[4] as string ?? "" }, { "page", r[5] as string ?? "" }, { "status", (string)r[6] }, { "at", Iso(DateTime.SpecifyKind((DateTime)r[7], DateTimeKind.Utc)) }, { "name", (string)r[8] }, { "slug", (string)r[9] } });
@@ -117,10 +117,15 @@ namespace RiwaqChat
                     Web.Json(res, 200, All(c)); return;
                 case "approve":
                     if (sh.Status != "review") throw new ShopException("state", "المتجر ده مش مستني مراجعة.");
-                    if (!Shops.HasService(c, s, sh)) throw new ShopException("rent", "إيجار المتجر مش شغال. وافق على طلب الإيجار أو ادّيله أيام الأول.");
+                    // the first opening of a store that hasn't paid starts its free days; once they were used, the rent must run
+                    if (ShopRent.OpenFree(c, s, sh) == null) throw new ShopException("rent", "الأيام المجانية اتاخدت قبل كده، والإيجار مش شغال. وافق على طلب الإيجار أو ادّيله أيام الأول.");
                     ShopOwner.SaveVersion(c, id, sh.DraftJson, "أول نشر");
                     run("UPDATE dbo.Shops SET Status='live', Live=Draft, DraftAt=NULL, ApprovedAt=SYSUTCDATETIME(), PublishedAt=SYSUTCDATETIME(), ReviewNote=NULL, ReviewChange=0 WHERE StoreId=@s", new object[] { "@s", id }); Shops.Bump(c, id);
-                    Tell(s, "🎉 *متجرك «" + sh.Name + "» اتفتح!*\nلينكه: " + sh.Url + "\nانشره لزباينك، وكل أوردر هيوصلك هنا وفي «متجري».", "sb-shop-ok-" + id);
+                    {
+                        var opened = Shops.ByStore(c, id); bool freeDays = Shops.InFree(opened) && !Shops.HasService(c, s, opened); var rent = ShopRent.Price(c);
+                        Tell(s, "🎉 *متجرك «" + sh.Name + "» اتفتح!*\nلينكه: " + sh.Url + "\nانشره لزباينك، وكل أوردر هيوصلك هنا وفي «متجري»." +
+                            (freeDays ? "\n\n🎁 مفتوح ببلاش لحد " + ShopRent.When(opened.FreeUntil.Value) + "، وبعدها بيتقفل على الزباين لحد ما تدفع الإيجار" + (rent > 0 ? " (" + rent.ToString("0.##") + " ج في الشهر)" : "") + " من «متجري» ← «إيجار المتجر». الشهر بيبدأ بعد الأيام المجانية، فادفع بدري ومش هتخسر حاجة." : ""), "sb-shop-ok-" + id);
+                    }
                     Web.Json(res, 200, All(c)); return;
                 case "reject":
                     { var why = ShopJson.Str(ShopJson.At(b, "why"), 400); if (why.Length < 3) throw new ShopException("why", "اكتب السبب عشان صاحب المتجر يعدّله."); run("UPDATE dbo.Shops SET Status='draft', ReviewNote=@n WHERE StoreId=@s AND Status='review'", new object[] { "@n", why, "@s", id }); Tell(s, "📝 *متجرك «" + sh.Name + "» محتاج تعديل قبل ما يتفتح*\n" + why + "\n\nعدّله من «متجري» وابعته تاني.", "sb-shop-no-" + id + "-" + DateTime.UtcNow.Ticks); Web.Json(res, 200, All(c)); return; }
