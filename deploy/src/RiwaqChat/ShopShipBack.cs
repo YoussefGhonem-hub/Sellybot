@@ -85,7 +85,7 @@ namespace RiwaqChat
             var ev = new List<object>(); using (var cmd = Db.Cmd(c, "SELECT TOP 20 Text, Ours, At FROM dbo.ShipmentEvents WHERE ShipmentId=@i AND StoreId=@s ORDER BY At DESC, Id DESC", "@i", x.Id, "@s", x.StoreId)) using (var r = cmd.ExecuteReader()) while (r.Read()) ev.Add(ShopShip2.D("t", r[0] as string ?? "", "ours", (string)r[1], "at", ShopShip2.Iso(D(r[2]))));
             return ShopShip2.D("id", x.Id, "c", x.Company, "cName", Carriers.Of(x.Company) == null ? x.Company : Carriers.Of(x.Company).Name, "tracking", x.Tracking ?? "", "url", TrackUrl(x.Company, x.Tracking) ?? "", "state", x.State, "ours", x.Ours ?? "", "text", text, "why", x.ReasonText ?? "", "err", x.Error ?? "",
                 "collect", x.Cod, "kind", b == null ? "" : b.Kind, "told", ShopShip2.Iso(b == null ? null : b.ToldAt), "tellDue", ShopShip2.Iso(b == null ? null : b.TellDue), "tellNote", b == null ? "" : b.TellNote ?? "", "back", x.BackAt.HasValue, "got", x.GotAt.HasValue,
-                "canCancel", x.State == "live" && (x.Ours == "asked" || x.Ours == "made"), "events", ev);
+                "canCancel", x.State == "live" && (x.Ours == "asked" || x.Ours == "made") && (Carriers.Of(x.Company) == null || Carriers.Of(x.Company).CanCancel), "noCancel", Carriers.Of(x.Company) != null && !Carriers.Of(x.Company).CanCancel, "events", ev);
         }
 
         // ---------- the owner's calls ----------
@@ -269,7 +269,7 @@ namespace RiwaqChat
                 return "";
             }
             // ShipBlu: a return's status, or an exchange's «return|delivery» statuses
-            var two = code.Split('|'); string r = two[0], d = two.Length > 1 ? two[1] : "";
+            var two = (code ?? "").ToUpperInvariant().Split('|'); string r = two[0].Trim(), d = two.Length > 1 ? two[1].Trim() : "";   // small letters or capitals
             switch (r)
             {
                 case "PICKED_UP": return "took";
@@ -350,6 +350,8 @@ namespace RiwaqChat
         static Func<Task> Label(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
             var x = Mine(c, s, b); if (string.IsNullOrEmpty(x.Tracking) || x.State == "off") throw new ShopException("none", "الشحنة دي مالهاش بوليصة."); var k = Need(c, s.Id, x.Company);
+            // Bosta prints no waybill for a return pickup (its docs: «CRP ... are not printable»): the courier brings it
+            if (x.Company == "bosta") { var bk = BackOf(c, x.Id); if (bk == null || bk.Kind != "exchange") throw new ShopException("none", "بوسطة مابتطبعش بوليصة لمندوب المرتجع: المندوب بيجيب البوليصة معاه."); }
             if (!Web.Allow("ship-label:" + s.Id, 60, TimeSpan.FromMinutes(10))) throw new ShopException("too_many", "طلبات كتير. استنى شوية.");
             return async () =>
             {

@@ -24,6 +24,11 @@ namespace RiwaqChat
         public override string Id { get { return "jt"; } }
         public override string Name { get { return "J&T"; } }
         public override int PollMinutes { get { return 240; } }
+        // J&T refuses a second order with our reference itself (145002001 / 145003101), so a press with no answer is simply sent again; when it
+        // was there after all, the owner types its number from their J&T account (Carriers.Fix: getOrders isn't open to every account)
+        public override bool GuardsDup { get { return true; } }
+        public override bool TypesNumber { get { return true; } }
+        public override string NumberPattern { get { return @"^[A-Z0-9]{6,30}$"; } }
         public override int PollBatch { get { return 30; } }
         public override bool PickupCall { get { return false; } }   // the courier's window goes with the order
         static string Base(CarrierLink k) { return Web.Setting("JtBase", "https://openapi.jtjms-eg.com/webopenplatformapi/api").TrimEnd('/'); }
@@ -63,8 +68,11 @@ namespace RiwaqChat
 
         static byte[] Md5(string s) { using (var h = MD5.Create()) return h.ComputeHash(Encoding.UTF8.GetBytes(s)); }
         public static string Digest(string biz, string privateKey) { return Convert.ToBase64String(Md5(biz + privateKey)); }
-        public static string Sign(CarrierLink k) { string pwd = string.Concat(Md5(k.Key + Word).Select(b => b.ToString("X2"))); return Convert.ToBase64String(Md5(k.Code + pwd + k.Private)); }
+        // the password may come from the branch already hashed (32 hex characters, as J&T's samples and test tool take it): used as it is then
+        public static string Sign(CarrierLink k) { string pwd = Regex.IsMatch(k.Key ?? "", "^[0-9A-Fa-f]{32}$") ? k.Key.ToUpperInvariant() : string.Concat(Md5(k.Key + Word).Select(b => b.ToString("X2"))); return Convert.ToBase64String(Md5(k.Code + pwd + k.Private)); }
 
+        // success is code 1, but J&T Egypt's own getLocation example answers «code 10, msg success»: either counts
+        internal static bool Ok(bool good, string code, string msg) { return good && (code == "1" || (code.Length > 0 && string.Equals((msg ?? "").Trim(), "success", StringComparison.OrdinalIgnoreCase))); }
         async Task<Dictionary<string, object>> Call(CarrierLink k, string path, Dictionary<string, object> biz, bool signed = true)
         {
             if (Broken(k) != null) throw new CarrierException(NoKeys, "key", badKey: true);   // never sent unsigned
@@ -72,14 +80,15 @@ namespace RiwaqChat
             var q = new HttpRequestMessage(HttpMethod.Post, Base(k) + path) { Content = new StringContent("bizContent=" + Uri.EscapeDataString(json), Encoding.UTF8, "application/x-www-form-urlencoded") };
             q.Headers.TryAddWithoutValidation("apiAccount", k.Account); q.Headers.TryAddWithoutValidation("digest", Digest(json, k.Private)); q.Headers.TryAddWithoutValidation("timestamp", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture));
             var r = await Carriers.Send(Name, q); string code = ShopJson.Str(ShopJson.At(r.Body, "code"), 20), msg = ShopJson.Str(ShopJson.At(r.Body, "msg"), 200), ar;
-            if (r.Good && code == "1") return r.Body;
+            if (Ok(r.Good, code, msg)) return r.Body;
             if (r.Status >= 500 || (r.Good && code.Length == 0)) throw new CarrierException("J&T فيها مشكلة دلوقتي. جرّب كمان شوية.", "net", unsure: true);
             if (code == "145003030" || (code.Length > 0 && Regex.IsMatch(msg, "header.*sign|sign.*header|apiAccount", RegexOptions.IgnoreCase))) throw new CarrierException("J&T مش قابلة apiAccount أو privateKey. انسخهم تاني من Personal center على J&T Open Platform.", code, badKey: true);
             if (code == "145003031") throw new CarrierException("كود العميل أو الباسورد غلط. اسأل فرع J&T عنهم.", code, badKey: true);
-            if (code == "145002001" || code == "145003101") throw new CarrierException("الأوردر ده متسجّل عند J&T قبل كده.", "dup");
+            if (code == "145002001" || code == "145003101") throw new CarrierException("الأوردر ده متسجّل عند J&T قبل كده. دوّر عليه في حسابك على J&T برقم الأوردر، واكتب رقم الشحنة هنا تحت.", "dup");
             throw new CarrierException(Errors.TryGetValue(code, out ar) ? ar : "J&T رفضت: " + (msg.Length == 0 ? "رد " + r.Status : msg), code.Length == 0 ? "refused" : code);
         }
         static readonly Dictionary<string, string> Errors = new Dictionary<string, string> {
+            { "145003012", "حساب J&T Open Platform بتاعك لسه مافتحش الواجهة دي. من Open Platform جرّب كل الواجهات في الـ sandbox واطلب «发布上线» (التشغيل)، وبعد موافقتهم (يوم أو اتنين) اربط تاني." },   // «API account has no interface permissions»
             { "145003060", "J&T مش عارفة المنطقة دي. اختارها تاني." }, { "145003061", "J&T مش عارفة المدينة دي. اختار المنطقة تاني." }, { "145003062", "J&T مش عارفة المحافظة دي. اختار المنطقة تاني." }, { "145003083", "بيانات عنوان الاستلام ناقصة. كمّلها في إعدادات J&T." }, { "145003084", "بيانات الزبون ناقصة. راجع الأوردر." }, { "145003085", "الأوردر مفيهوش رقم موبايل." }, { "145003086", "العنوان ناقص. راجع الأوردر." }, { "145003088", "ميعاد الاستلام ناقص. راجعه في إعدادات J&T." }, { "145003092", "الوزن من 0.01 لـ 30 كيلو." }, { "145003109", "العنوان طويل على J&T. قصّره." }, { "145003110", "اسم الشارع طويل على J&T. قصّره." },
             { "145003112", "التحصيل عند الاستلام مش متفعّل على حسابك في J&T. كلّم الفرع يفعّله." }, { "145003113", "حسابك في J&T مش شهري. كلّم الفرع." }, { "145003201", "المندوب استلم الشحنة خلاص." }, { "145003202", "الشحنة دي ملغية عند J&T." }, { "121003006", "الشحنة دي مابتتطبعش في حالتها دلوقتي." } };
 
@@ -124,7 +133,7 @@ namespace RiwaqChat
             try { r = await Call(k, "/order/getOrders", new Dictionary<string, object> { { "command", 1 }, { "serialNumber", new[] { reference } } }); }
             catch (CarrierException ex) when (ex.Code == "145003064") { return null; }
             catch (CarrierException ex) when (!ex.Unsure && !ex.Down && !ex.BadKey) { throw new CarrierException("J&T مش بتسمح لنا ندوّر على الشحنة. دوّر عليها في حسابك برقم " + reference + ".", "nofind"); }
-            var x = ShopJson.List(ShopJson.At(r, "data")).OfType<Dictionary<string, object>>().FirstOrDefault(o => ShopJson.Str(ShopJson.At(o, "txlogisticId")) == reference && ShopJson.Str(ShopJson.At(o, "billCode")).Length > 0 && !Regex.IsMatch(ShopJson.Str(ShopJson.At(o, "orderStatus")), "cancel|取消", RegexOptions.IgnoreCase));
+            var x = ShopJson.List(ShopJson.At(r, "data")).OfType<Dictionary<string, object>>().FirstOrDefault(o => ShopJson.Str(ShopJson.At(o, "txlogisticId")) == reference && ShopJson.Str(ShopJson.At(o, "billCode")).Length > 0 && !Regex.IsMatch(ShopJson.Str(ShopJson.At(o, "orderStatus")), "cancel|取消", RegexOptions.IgnoreCase) && ShopJson.Str(ShopJson.At(o, "orderStatus")) != "104");
             return x == null ? null : new CarrierMade { Tracking = ShopJson.Str(ShopJson.At(x, "billCode"), 60), Id = reference };
         }
 

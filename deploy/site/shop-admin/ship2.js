@@ -16,10 +16,11 @@ const reTab = () => { if (SB.view() === "ship") SB.show("ship"); };
 
 /* ================= the part in «الشحن» ================= */
 SB.ship2Tab = body => {
-  const d = S2("dday"), r = S2("srate"), b = S2("sback"), c = S2("scash"), k = car(), e = D.createElement("section"); e.className = "card s2-tab";
+  const d = S2("dday"), r = S2("srate"), b = S2("sback"), c = S2("scash"), pk = S2("pick"), k = car(), e = D.createElement("section"); e.className = "card s2-tab";
   const card = (em, t, on, sub, btns) => `<div class="sh-c"><div class="row"><b>${em} ${t}</b><span class="space"></span><span class="sm-pill ${on ? "ok" : "g"}">${on ? "شغّال" : "مقفول"}</span></div><p class="sm-hint">${sub}</p><div class="row">${btns}</div></div>`;
   e.innerHTML = `<h3>مواعيد التوصيل وحساب الشحن</h3><p class="sub">كل حاجة هنا مقفولة لحد ما تفتحها، ولما تبقى مقفولة مفيش حاجة بتتغيّر عند الزبون.</p><div class="sh-g">
     ${card("📅", "ميعاد التوصيل", d.on, d.on ? `الزبون بيختار يوم من: ${(d.wd || []).map(i => WD[i]).join("، ") || "مفيش أيام"}` : "الزبون يختار يوم التوصيل وهو بيطلب، من الأيام اللي تحددها.", `<button type="button" class="btn sm" data-do="s2Day">الإعدادات</button>${d.on ? '<button type="button" class="btn ghost sm" data-do="s2Next">الأيام الجاية</button>' : ""}`)}
+    ${card("🚚", "الزبون يختار شركة الشحن", pk.on, pk.on ? "الزبون بيختار: " + esc(pickNames(pk).join("، ") || "مفيش طرق شغالة") : "لو بتوصّل بنفسك وبشركة شحن، أو بأكتر من شركة: كل واحدة بسعرها ومدتها، والزبون يختار.", '<button type="button" class="btn sm" data-do="s2Pick">الإعدادات</button>')}
     ${card("⚖️", "الشحن بالوزن أو المدينة", r.on, "سعر تاني لمدن معيّنة، وزيادة على كل كيلو فوق اللي السعر شامله.", '<button type="button" class="btn sm" data-do="s2Rate">الإعدادات</button><button type="button" class="btn ghost sm" data-do="s2W">أوزان المنتجات</button>')}
     ${k ? card("↩️", "المندوب يجيب المرتجع", b.on, "من طلب الاسترجاع أو الاستبدال، دوسة واحدة وشركة الشحن تبعت مندوب للزبون.", `<button type="button" class="btn ${b.on ? "ghost " : ""}sm" data-do="s2Back">${b.on ? "اقفلها" : "شغّلها"}</button>`) : ""}
     ${k ? card("💵", "مراجعة فلوس التحصيل", c.on, "اللي المندوب حصّله قصاد اللي الشركة حوّلتهولك، وإيه اللي ناقص.", `${c.on ? '<button type="button" class="btn sm" data-do="s2Cash">افتح المراجعة</button>' : ""}<button type="button" class="btn ${c.on ? "ghost " : ""}sm" data-do="s2CashSet">${c.on ? "الإعدادات" : "شغّلها"}</button>`) : ""}</div>`;
@@ -53,6 +54,60 @@ SB.dayTag = o => o.dday ? " · 📅 " + esc(dayT(o.dday) + partT(o.dpart)) : "";
 SB.dayPick = F => { if (SB.v.orders && SB.v.orders.ch) SB.v.orders.ch.dday = v => SB.ordersOn(v); return S2("dday").on || F.day ? `<label class="sm-dt">يوم التوصيل <input type="date" value="${esc(F.day || "")}" data-ch="dday"></label>` : ""; };
 SB.prepDays = r => r.days && r.days.length ? `<p class="sm-hint">📅 ${r.days.map(x => esc(x.t) + ": " + plural(x.n, "أوردر واحد", "أوردرين", "أوردرات", "أوردر")).join(" · ")}</p>` : "";
 SB.dayCard = o => o.ex && o.ex.day ? `<section class="card"><div class="row"><h3>📅 يوم التوصيل</h3><span class="space"></span><b>${esc(dayT(o.ex.day) + partT(o.ex.dpart))}</b></div><p class="sm-hint">الزبون اختاره وهو بيطلب، وبيظهر على البوليصة ورسالة التأكيد.</p></section>` : "";
+
+/* ---------- «الزبون يختار شركة الشحن» (ShopShipPick.cs): the store's own delivery and each linked company, each with its fee and days ---------- */
+const PKN = { self: "توصيل المتجر" }, pkName = (o, k) => (o.n && o.n[0]) || PKN[o.k] || ((k && k.list.find(x => x.id === o.k)) || {}).name || o.k;
+const pickNames = pk => (pk.opts || []).filter(o => o.on).map(o => pkName(o, car()));
+A.s2Pick = async () => {
+  const k = car(), ln = k ? k.list.filter(x => x.linked && !x.soon) : [], sh = (st().settings || {}).ship || {}, zs = st().zones || [], geo = await SB.geo().catch(() => []);
+  const s0 = S2("pick"), have = (s0.opts || []).map(o => ({ ...o, n: [...(o.n || ["", ""])] }));
+  [{ k: "self" }, ...ln.map(x => ({ k: x.id }))].forEach(w => { if (!have.some(o => o.k === w.k)) have.push({ k: w.k, on: false, n: ["", ""], pm: "gov", pa: 0, pf: 0, dm: "gov", d1: 1, d2: 3, free: true }); });
+  const s = { on: !!s0.on, opts: have }; let dirty = false;
+  const usable = o => o.k === "self" || ln.some(x => x.id === o.k);
+  /* the worked example: the owner's own fee and days (the first governorate they priced, else the store's fee) */
+  const z = sh.mode === "zones" ? zs.find(x => x.f != null && !x.off) : null, gName = z ? ((geo.find(g => g.id === z.g) || {}).ar || "المحافظة") : "أي محافظة", baseF = z ? +z.f : +(sh.fee || 0), baseD = (z && z.d) || sh.days || "";
+  const feeOf = o => o.pm === "flat" ? +o.pf || 0 : Math.max(0, baseF + (+o.pa || 0)), daysOf = o => o.dm === "own" ? (+o.d1 >= +o.d2 ? String(+o.d1) : o.d1 + "-" + o.d2) : baseD;
+  const row = (o, i) => {
+    const ok = usable(o), nm = pkName(o, k);
+    return `<div class="sh-c s2-pk"><div class="row"><b>${i + 1}. ${esc(nm)}</b><span class="space"></span>${ok ? "" : '<span class="sm-pill g">مش مربوطة</span>'}<button type="button" class="sm-ic sm" data-do="pkUp:${i}" aria-label="لفوق" ${i ? "" : "disabled"}>${ico("up")}</button><button type="button" class="sm-ic sm" data-do="pkDn:${i}" aria-label="لتحت" ${i < s.opts.length - 1 ? "" : "disabled"}>${ico("down")}</button></div>
+    ${SB.tog("on_" + i, o.on && ok, "الزبون يقدر يختارها", ok ? "" : "اربط الشركة الأول من «هتوصّل الأوردرات إزاي؟»", ok ? "" : "disabled")}
+    ${SB.two("n_" + i, "الاسم اللي الزبون يشوفه", o.n, { max: 40, ph: PKN[o.k] || ((k && k.list.find(x => x.id === o.k)) || {}).name || "" })}
+    <div class="sm-2"><div class="sm-f"><label>السعر</label>${SB.sel("pm_" + i, [["gov", "زي أسعار المحافظات"], ["flat", "سعر واحد لكل مكان"]], o.pm)}</div>${o.pm === "flat" ? fld("pf_" + i, "السعر", o.pf, { mode: "decimal", suf: "ج", x: "data-n" }) : fld("pa_" + i, "زيادة أو نقص على سعر المحافظة", o.pa, { mode: "decimal", suf: "ج", x: "data-n", hint: "10 = أغلى بـ 10، و-10 = أرخص بـ 10، و0 = نفس السعر" })}</div>
+    <div class="sm-2"><div class="sm-f"><label>المدة</label>${SB.sel("dm_" + i, [["gov", "زي أيام المحافظات"], ["own", "من كام لكام يوم"]], o.dm)}</div>${o.dm === "own" ? `<div class="sm-2">${fld("d1_" + i, "من", o.d1, { mode: "numeric", x: "data-n" })}${fld("d2_" + i, "لحد", o.d2, { mode: "numeric", x: "data-n" })}</div>` : ""}</div>
+    ${SB.tog("free_" + i, o.free !== false, "«شحن مجاني فوق» بيتطبّق عليها", "لو مقفولة، الزبون بيدفع شحنها حتى لو عدّى المبلغ")}
+    <p class="sm-hint">مثال من أسعارك: لـ${esc(gName)} الزبون يشوفها بـ <b>${mny(feeOf(o))}</b>${daysOf(o) ? " وبتوصل في " + esc(daysOf(o)) + " يوم" : ""}.</p></div>`;
+  };
+  const p = pane({
+    title: "الزبون يختار شركة الشحن", cls: "mid", dirty: () => dirty,
+    html: () => `<div class="sm-form">${SB.tog("on", s.on, "الزبون يختار هيستلم مع مين", "في صفحة الطلب، بعد المحافظة والمدينة، بيظهرله كل اختيار بسعره ومدته. بيظهر بس لو فيه اختيارين شغالين على الأقل.")}
+      <p class="sm-hint">الترتيب مهم: الأول بيبقى متعلّم عليه لوحده لحد ما الزبون يغيّره. اللي يختاره الزبون بيظهر في الأوردر، و«ابعت للشحن» بيبدأ بيه.</p>
+      <p class="sm-hint">سعر المحافظة هو اللي في «سعر الشحن» (${z ? esc(gName) + " " + mny(baseF) : "دلوقتي " + mny(baseF)}${baseD ? "، " + esc(baseD) + " يوم" : ""})، ومعاه حساب المدينة والوزن لو شغّال.</p>
+      ${s.opts.map(row).join("")}</div>`,
+    foot: () => '<button type="button" class="btn" data-do="go">احفظ</button>',
+    acts: {
+      pkUp: i => { keep(); i = +i; [s.opts[i - 1], s.opts[i]] = [s.opts[i], s.opts[i - 1]]; dirty = true; p.draw(); },
+      pkDn: i => { keep(); i = +i; [s.opts[i + 1], s.opts[i]] = [s.opts[i], s.opts[i + 1]]; dirty = true; p.draw(); },
+      go: b => run(b, async () => {
+        keep(); if (s.on && s.opts.filter(o => o.on && usable(o)).length < 2) throw new Error("شغّل اختيارين على الأقل، أو اقفل الخاصية.");
+        await saveSet("pick", { on: s.on, opts: s.opts.map(o => ({ k: o.k, on: !!o.on && usable(o), n: o.n, pm: o.pm, pa: +o.pa || 0, pf: +o.pf || 0, dm: o.dm, d1: +o.d1 || 0, d2: Math.max(+o.d1 || 0, +o.d2 || 0), free: o.free !== false })) });
+        dirty = false; p.close(true); say("اتحفظ ✅"); await SB.reload(); reTab();
+      })
+    }
+  });
+  p.el.addEventListener("input", () => { dirty = true; });
+  p.el.addEventListener("change", e => { dirty = true; if (/^(pm|dm|pa|pf|d1|d2)_\d+$/.test(e.target.dataset.k || "")) { keep(); p.draw(); } });
+  function keep() {
+    const v = SB.read(p.el); s.on = !!v.on;
+    s.opts.forEach((o, i) => {
+      if (v["on_" + i] !== undefined) o.on = v["on_" + i]; if (v["n_" + i]) o.n = [v["n_" + i][0] || "", v["n_" + i][1] || ""];
+      if (v["pm_" + i]) o.pm = v["pm_" + i]; if (v["dm_" + i]) o.dm = v["dm_" + i];
+      ["pa", "pf", "d1", "d2"].forEach(f => { if (v[f + "_" + i] !== undefined) o[f] = v[f + "_" + i]; }); if (v["free_" + i] !== undefined) o.free = v["free_" + i];
+    });
+  }
+};
+/* the order says which way the customer chose */
+const d0 = SB.dayTag; SB.dayTag = o => d0(o) + (o.car ? " · 🚚 " + esc(o.car) : "");
+const c0 = SB.dayCard; SB.dayCard = o => { const x = o.ex && o.ex.car; return c0(o) + (x && x.n && !(o.ex && o.ex.branch) ? `<section class="card"><div class="row"><h3>🚚 الزبون اختار</h3><span class="space"></span><b>${esc(x.n)}</b></div>${x.d ? `<p class="sm-hint">المدة اللي شافها: ${esc(x.d)} يوم</p>` : ""}</section>` : ""); };
 
 /* ---------- the fee by city or weight ---------- */
 A.s2Rate = async () => {
@@ -102,7 +157,7 @@ SB.retCard = r => {
   return `<div class="s2-rb"><div class="row"><b>🚚 ${esc(x.cName)}${x.tracking ? ` · <bdi dir="ltr">${esc(x.tracking)}</bdi>` : ""}</b><span class="space"></span><span class="sm-pill ${x.state === "unsure" ? "bad" : x.state === "off" ? "g" : TONE[x.ours] || "b"}">${esc(x.text)}</span></div>
     ${x.collect > 0 ? `<p class="sm-hint">المندوب بيحصّل الفرق: ${mny(x.collect)}</p>` : ""}${x.why ? `<p class="sm-hint">${esc(x.why)}</p>` : ""}${x.state === "unsure" ? `<p class="sm-risk">${esc(x.err)}</p>` : ""}
     ${x.told ? '<p class="sm-hint">الزبون عرف على الواتساب إن المندوب جاي.</p>' : x.tellDue ? `<p class="sm-hint">رسالة الزبون هتتبعت ${SB.when(x.tellDue)}.</p>` : x.tellNote ? `<p class="sh-w">${esc(x.tellNote)}</p>` : ""}
-    <div class="row">${x.back && !x.got ? `<button type="button" class="btn sm" data-do="rbGot:${x.id}:${r.id}">وصلتني</button>` : ""}${x.tracking && x.state !== "off" ? `<button type="button" class="btn ghost sm" data-do="rbLabel:${x.id}">البوليصة</button>` : ""}${x.url ? `<a class="btn ghost sm" href="${esc(x.url)}" target="_blank" rel="noopener">صفحة التتبع</a>` : ""}${x.state === "live" ? `<button type="button" class="btn ghost sm" data-do="rbAsk:${x.id}">حدّث الحالة</button>` : ""}${x.canCancel ? `<button type="button" class="btn danger sm" data-do="rbOff:${x.id}">الغيه</button>` : ""}</div>
+    <div class="row">${x.back && !x.got ? `<button type="button" class="btn sm" data-do="rbGot:${x.id}:${r.id}">وصلتني</button>` : ""}${x.tracking && x.state !== "off" && !(x.c === "bosta" && x.kind !== "exchange") ? `<button type="button" class="btn ghost sm" data-do="rbLabel:${x.id}">البوليصة</button>` : x.tracking && x.c === "bosta" && x.state === "live" ? '<span class="sm-hint">مندوب بوسطة بيجيب بوليصة المرتجع معاه.</span>' : ""}${x.url ? `<a class="btn ghost sm" href="${esc(x.url)}" target="_blank" rel="noopener">صفحة التتبع</a>` : ""}${x.state === "live" ? `<button type="button" class="btn ghost sm" data-do="rbAsk:${x.id}">حدّث الحالة</button>` : ""}${x.canCancel ? `<button type="button" class="btn danger sm" data-do="rbOff:${x.id}">الغيه</button>` : x.noCancel && x.state === "live" && (x.ours === "asked" || x.ours === "made") ? `<span class="sm-hint">الإلغاء من حسابك على ${esc(x.cName)}، وهنعرف لوحدنا خلال ساعة.</span>` : ""}</div>
     ${x.events.length ? `<details><summary>حركة الشحنة</summary><ol class="sm-log">${x.events.map(e => `<li><b>${esc(e.t)}</b><small>${SB.when(e.at)}</small></li>`).join("")}</ol></details>` : ""}</div>`;
 };
 const retFresh = () => SB.show("returns");

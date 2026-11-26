@@ -167,7 +167,7 @@ namespace RiwaqChat
             return list;
         }
 
-        static ShopHow How(Dictionary<string, object> b) { return new ShopHow { Pay = ShopJson.Str(ShopJson.At(b, "pay"), 6), Gift = ShopJson.Bool(ShopJson.At(b, "gift")), Branch = ShopJson.Str(ShopJson.At(b, "branch"), 20), Rw = ShopRewIn.Of(b) }; }
+        static ShopHow How(Dictionary<string, object> b) { return new ShopHow { Pay = ShopJson.Str(ShopJson.At(b, "pay"), 6), Gift = ShopJson.Bool(ShopJson.At(b, "gift")), Branch = ShopJson.Str(ShopJson.At(b, "branch"), 20), Carrier = ShopJson.Str(ShopJson.At(b, "car"), 10), Rw = ShopRewIn.Of(b) }; }
         static void Order(SqlConnection c, ShopFrontHandler.Ctx x, Dictionary<string, object> b, HttpResponse res)
         {
             if (!Web.Allow("shop-try:" + x.Ip, 40, TimeSpan.FromMinutes(10))) throw new ShopException("too_many", "حاولت كتير. استنى شوية وجرّب تاني.");

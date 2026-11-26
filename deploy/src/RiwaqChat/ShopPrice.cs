@@ -30,7 +30,7 @@ namespace RiwaqChat
     }
 
     // how the customer pays and receives: part of the sum
-    public class ShopHow { public string Pay = "cod"; public bool Gift; public string Branch; public ShopRewIn Rw; }
+    public class ShopHow { public string Pay = "cod"; public bool Gift; public string Branch, Carrier; public ShopRewIn Rw; }   // Carrier: «الزبون يختار شركة الشحن» (ShopShipPick)
     public class ShopFee { public string Kind, Name, NameEn; public decimal Amount; }
     public class ShopApplied { public int Id; public string Name, NameEn; public decimal Amount; }
 
@@ -42,6 +42,7 @@ namespace RiwaqChat
         public string Coupon, CouponErr, Days, Stop; public int CouponId; public List<ShopApplied> Offers = new List<ShopApplied>(); public bool Bad { get { return Lines.Any(l => l.Err != null) || Stop != null; } }
         public ShopRewQ Rw;   // gift card, points, a friend's gift (ShopRew.cs)
         public Dictionary<string, object> Cat;   // pre-orders in the cart, branches that don't hold it (ShopGoods.cs)
+        public List<ShopShipPick.Way> Ways; public string Car; public bool CarOk;   // «الزبون يختار شركة الشحن»: the ways, the one counted, whether the customer chose it
     }
 
     public class ShopCoupon { public int Id; public string Code, Type, ScopeJson, Who; public decimal Value; public decimal? MaxOff, MinSub; public DateTime? StartsAt, EndsAt; public int? MaxUses, PerPhone; public bool FirstOnly, PopupPhone, Active, Popup; public int Uses; }
@@ -179,6 +180,7 @@ namespace RiwaqChat
             q.FreeShip = (over >= 0 && after >= over && ok.Count > 0) || (cp != null && cp.Type == "ship" && q.CouponUsed);
             q.FreeLeft = over > 0 && !q.FreeShip ? over - after : 0;
             q.Ship = gov > 0 && !q.FreeShip ? fee : 0;
+            ShopShipPick.Quote(c, d, q, how, gov, fee, days, over, after, ok.Count > 0, cp != null && cp.Type == "ship" && q.CouponUsed);   // the customer picks the company: its fee and days (off: as it was)
             // taken from the shop: no delivery, wherever the customer lives
             if (how != null && !string.IsNullOrEmpty(how.Branch) && Branch(d.Row, how.Branch) != null) { q.Branch = how.Branch; q.Ship = 0; q.ShipFull = 0; q.FreeLeft = 0; off = false; q.Deliver = true; q.Days = ""; }
             if (how != null && ok.Count > 0)
@@ -396,7 +398,7 @@ namespace RiwaqChat
         // ---------- the sum for the browser ----------
         public static Dictionary<string, object> Json(ShopQuote q)
         {
-            return new Dictionary<string, object>
+            var j = new Dictionary<string, object>
             {
                 { "l", q.Lines.Select(l => new Dictionary<string, object> { { "v", l.VariantId }, { "g", l.Gift }, { "x", l.Extra ?? "" }, { "q", l.Qty }, { "u", l.Unit }, { "old", l.Old ?? 0 }, { "d", l.Disc }, { "t", l.Net }, { "e", l.Err ?? "" }, { "mx", l.Max },
                     { "p", l.P == null ? 0 : l.P.Id }, { "o", l.V == null ? "" : l.V.Label }, { "st", l.V == null ? 0 : Math.Max(0, l.V.Stock) } }).ToArray() },
@@ -406,6 +408,8 @@ namespace RiwaqChat
                 { "rw", ShopRew.Json(q) },
                 { "of", q.Offers.Select(o => new Dictionary<string, object> { { "i", o.Id }, { "n", ShopView.Pair(o.Name, o.NameEn) }, { "a", o.Amount } }).ToArray() }
             };
+            ShopShipPick.Json(q, j);   // the ways the customer picks from, only when there is a choice
+            return j;
         }
 
         // «حماية من الخسارة»: products whose price with this offer is under what they cost the owner

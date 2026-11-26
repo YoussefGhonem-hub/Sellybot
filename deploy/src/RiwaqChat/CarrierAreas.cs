@@ -142,6 +142,11 @@ namespace RiwaqChat
 
         // ---------- filling them again ----------
         static readonly ConcurrentDictionary<string, int> Busy = new ConcurrentDictionary<string, int>();
+        // the rows that fit dbo.CarrierAreas: an id longer than its column (40) would stop the whole load, so that one row is left out
+        internal static List<CarrierAreaRow> Usable(List<CarrierAreaRow> l)
+        {
+            return l == null ? null : l.Where(x => !string.IsNullOrEmpty(x.AreaId) && !string.IsNullOrEmpty(x.Area) && x.Key.Length <= 122 && (x.GovId ?? "").Length <= 40 && (x.CityId ?? "").Length <= 40 && x.AreaId.Length <= 40).GroupBy(x => x.Key).Select(x => x.First()).ToList();
+        }
         public static async Task Refresh(Carrier co, bool now, CancellationToken ct)
         {
             if (!Busy.TryAdd(co.Id, 1)) return;
@@ -159,7 +164,7 @@ namespace RiwaqChat
                 try { l = await co.Areas(k); } catch (CarrierException ex) { why = ex.Message; }
                 using (var c = Db.Open())
                 {
-                    int had = Carriers.Num(c, "SELECT COUNT(*) FROM dbo.CarrierAreas WHERE Company=@c", "@c", co.Id); l = l == null ? null : l.Where(x => !string.IsNullOrEmpty(x.AreaId) && !string.IsNullOrEmpty(x.Area) && x.Key.Length <= 122).GroupBy(x => x.Key).Select(x => x.First()).ToList();
+                    int had = Carriers.Num(c, "SELECT COUNT(*) FROM dbo.CarrierAreas WHERE Company=@c", "@c", co.Id); l = Usable(l);
                     // nothing, or a good part of them missing: the company's answer is broken, the old ones stay
                     if (l == null || l.Count == 0 || l.Count < had * .7)
                     {

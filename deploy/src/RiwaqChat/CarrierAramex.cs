@@ -94,11 +94,13 @@ namespace RiwaqChat
             if (Regex.IsMatch(all, @"e-?mail", RegexOptions.IgnoreCase)) return new CarrierException("أرامكس بتطلب إيميل. اكتبه في إعدادات أرامكس.", "email");
             var first = l.FirstOrDefault(x => x.Value.Length > 0); return new CarrierException("أرامكس رفضت: " + (first.Value == null ? "من غير سبب" : Carriers.Cut(first.Value, 180)), string.IsNullOrEmpty(first.Key) ? "refused" : first.Key);
         }
-        // their dates: /Date(ms)/ (JavaScriptSerializer writes a DateTime that way, and reads it back as one)
+        // their dates: /Date(ms)/ (JavaScriptSerializer writes a DateTime that way, and reads it back as one), else any written date (ISO)
         static DateTime? When(object v)
         {
             if (v is DateTime) return DateTime.SpecifyKind(((DateTime)v).ToUniversalTime(), DateTimeKind.Utc);
-            var m = Regex.Match(ShopJson.Str(v, 60), @"Date\((-?\d+)"); long ms; return m.Success && long.TryParse(m.Groups[1].Value, out ms) ? new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ms) : (DateTime?)null;
+            var t = ShopJson.Str(v, 60); var m = Regex.Match(t, @"Date\((-?\d+)"); long ms;
+            if (m.Success && long.TryParse(m.Groups[1].Value, out ms)) return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ms);
+            DateTime d; return t.Length > 0 && DateTime.TryParse(t, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out d) ? DateTime.SpecifyKind(d, DateTimeKind.Utc) : (DateTime?)null;
         }
 
         public override async Task Check(CarrierLink k)
@@ -130,13 +132,14 @@ namespace RiwaqChat
                 "Shipper", Party(k.M("n"), k.S("sn"), store, ShopOrders.Local(k.S("sp")), null, k.S("email"), from.AreaId, k.S("ss"), "EG"),
                 "Consignee", Party("", p.Name, p.Name, p.Phone, p.Phone2, p.Email, p.Area.AreaId, p.Address + (string.IsNullOrWhiteSpace(p.Landmark) ? "" : "، علامة مميزة: " + p.Landmark), "EG"),
                 "ThirdParty", null, "ShippingDateTime", now, "DueDate", now.AddDays(1), "Comments", Carriers.Cut(p.Note, 150), "PickupLocation", "", "OperationsInstructions", "", "AccountingInstrcutions", "", "Details", details, "Attachments", new object[0], "PickupGUID", "", "Number", null);
-            var r = await Call(k, "Shipping", "CreateShipments", D("Shipments", new[] { x }, "LabelInfo", D("ReportID", 9201, "ReportType", "URL")));
+            var r = await Call(k, "Shipping", "CreateShipments", D("Shipments", new[] { x }, "LabelInfo", D("ReportID", 9729, "ReportType", "URL")));
             var s = ShopJson.List(ShopJson.At(r, "Shipments")).OfType<Dictionary<string, object>>().FirstOrDefault(); string id = s == null ? "" : ShopJson.Str(ShopJson.At(s, "ID"), 60);
             return new CarrierMade { Tracking = id, Id = id };
         }
         public override Task<CarrierMade> Find(CarrierLink k, string reference) { throw new CarrierException("أرامكس مابتسمحش ندوّر على الشحنة برقم الأوردر. دوّر عليها في حسابك على أرامكس بالمرجع " + reference + "، ولو لقيتها اكتب رقمها في الأوردر.", "nofind"); }
         // the owner's number (Carriers.Fix): Aramex knows a shipment by it
-        public async Task<bool> Exists(CarrierLink k, string waybill)
+        public override bool TypesNumber { get { return true; } }
+        public override async Task<bool> Exists(CarrierLink k, string waybill)
         {
             var r = await Call(k, "Tracking", "TrackShipments", D("Shipments", new[] { waybill }, "GetLastTrackingUpdateOnly", true));
             return !ShopJson.List(ShopJson.At(r, "NonExistingWaybills")).Select(x => ShopJson.Str(x, 40)).Contains(waybill);
@@ -145,7 +148,7 @@ namespace RiwaqChat
         // ---------- the label: PrintLabel, the file itself in the answer (RPT) ----------
         public override async Task<byte[]> Labels(CarrierLink k, List<CarrierShip> l, string size)
         {
-            var r = await Call(k, "Shipping", "PrintLabel", D("ShipmentNumber", l[0].Tracking, "ProductGroup", "DOM", "OriginEntity", k.M("ent"), "LabelInfo", D("ReportID", 9201, "ReportType", "RPT")));
+            var r = await Call(k, "Shipping", "PrintLabel", D("ShipmentNumber", l[0].Tracking, "ProductGroup", "DOM", "OriginEntity", k.M("ent"), "LabelInfo", D("ReportID", 9729, "ReportType", "RPT")));
             var lb = ShopJson.Sub(r, "ShipmentLabel"); var f = ShopJson.At(lb, "LabelFileContents"); byte[] pdf = null;
             var nums = ShopJson.List(f); if (nums.Count > 60) try { pdf = nums.Select(x => (byte)ShopJson.Int(x)).ToArray(); } catch { pdf = null; }   // WCF writes a byte[] as numbers
             if (pdf == null || !(pdf.Length > 4 && pdf[0] == '%' && pdf[1] == 'P')) pdf = Carriers.PdfIn(new Carriers.Reply { Root = r, Bytes = new byte[0] });
@@ -165,13 +168,14 @@ namespace RiwaqChat
             Func<int, DateTime> at = h => Carriers.FromCairo(day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " " + h.ToString("00", CultureInfo.InvariantCulture) + ":00") ?? DateTime.UtcNow;
             var who = Party(k.M("n"), k.S("sn"), Store(k.StoreId), ShopOrders.Local(k.S("sp")), null, k.S("email"), from.AreaId, k.S("ss"), "EG"); decimal w = Kg(k, 0);
             var item = D("ProductGroup", "DOM", "ProductType", k.S("pt", "ONP"), "NumberOfShipments", parcels, "PackageType", "Box", "Payment", "P", "ShipmentWeight", D("Unit", "KG", "Value", w * parcels), "ShipmentVolume", D("Unit", "Cm3", "Value", 1),
-                "NumberOfPieces", parcels, "CashAmount", null, "ExtraCharges", null, "ShipmentDimensions", D("Length", 0, "Width", 0, "Height", 0, "Unit", "CM"), "Comments", "");
+                "NumberOfPieces", parcels, "CashAmount", null, "ExtraCharges", null, "ShipmentDimensions", null, "Comments", "");   // zeros are refused («less or equal zero»); their WooCommerce plugin sends none
             var pk = D("PickupAddress", ShopJson.Sub(who, "PartyAddress"), "PickupContact", ShopJson.Sub(who, "Contact"), "PickupLocation", "Reception", "PickupDate", at(h1), "ReadyTime", at(h1), "LastPickupTime", at(h2), "ClosingTime", at(h2), "Comments", Carriers.Cut(note, 150),
                 "Reference1", "", "Reference2", "", "Vehicle", "Car", "Shipments", null, "PickupItems", new[] { item }, "Status", "Ready",
                 "ExistingShipments", waiting.Count == 0 ? null : waiting.Where(x => !string.IsNullOrEmpty(x.Tracking)).Take(100).Select(x => D("Number", x.Tracking, "OriginEntity", k.M("ent"), "ProductGroup", "DOM")).ToArray(), "Branch", "", "RouteCode", "");
             var r = await Call(k, "Shipping", "CreatePickup", D("Pickup", pk, "LabelInfo", null));
             return ShopJson.Str(ShopJson.At(r, "ProcessedPickup", "ID"), 30);
         }
+        public override bool CanCancel { get { return false; } }
         public override Task Cancel(CarrierLink k, CarrierShip x) { throw new CarrierException("أرامكس مابتسمحش تلغي الشحنة من بره حسابها. الغيها من حسابك على أرامكس أو من مندوبها، وهنعرف لوحدنا خلال ساعة (أو دوس «حدّث الحالة»).", "nocancel"); }
 
         // ---------- what happened: TrackShipments, every update of each waybill ----------
@@ -199,7 +203,7 @@ namespace RiwaqChat
         {
             code = (code ?? "").Trim().ToUpperInvariant(); string ours, t = (said ?? "").ToLowerInvariant();
             if (!Codes.TryGetValue(code, out ours))
-                ours = Regex.IsMatch(t, "returned to shipper") ? "returned" : Regex.IsMatch(t, "to be returned|return to shipper") ? "returning" : Regex.IsMatch(t, "out for delivery") ? "out" : Regex.IsMatch(t, @"attempt|unable to deliver|not reach|rescheduled") ? "attempt"
+                ours = Regex.IsMatch(t, "returned to shipper") ? "returned" : Regex.IsMatch(t, "to be returned|return to shipper") ? "returning" : Regex.IsMatch(t, "out for delivery") ? "out" : Regex.IsMatch(t, @"attempt|unable to deliver|not reach|rescheduled|not delivered|undelivered|could not be delivered") ? "attempt"
                     : Regex.IsMatch(t, @"\bdelivered\b|collected by consignee") ? "delivered" : Regex.IsMatch(t, "picked up from shipper|pickup completed") ? "picked" : Regex.IsMatch(t, "cancel") ? "cancelled" : Regex.IsMatch(t, "on hold|held") ? "hold"
                     : Regex.IsMatch(t, "transit|departed|received at|forwarded|facility") ? "transit" : Regex.IsMatch(t, "record created|data received") ? "made" : "";
             var e = new CarrierEvent { Code = code.Length > 0 ? code : Carriers.Cut(said ?? "?", 30), Ours = ours, Loud = Loud.Contains(code) };
@@ -259,8 +263,8 @@ namespace RiwaqChat
         static Func<Task> Fix(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
             var x = ById(c, s.Id, Int(b, "id")); if (x == null || x.State != "unsure") throw new ShopException("state", "الشحنة دي مش محتاجة رقم.");
-            var co = Of(x.Company) as CarrierAramex; if (co == null) throw new ShopException("state", "الشحنة دي بنسأل عنها الشركة لوحدنا.");
-            string no = Regex.Replace(ShopJson.Digits(Str(b, "tracking", 40)), @"\s", ""); if (!Regex.IsMatch(no, @"^\d{6,20}$")) throw new ShopException("tracking", "اكتب رقم الشحنة زي ما هو في حسابك على " + co.Name + " (أرقام بس).");
+            var co = Of(x.Company); if (co == null || !co.TypesNumber) throw new ShopException("state", "الشحنة دي بنسأل عنها الشركة لوحدنا.");   // Aramex, J&T
+            string no = Regex.Replace(ShopJson.Digits(Str(b, "tracking", 40)), @"\s", "").ToUpperInvariant(); if (!Regex.IsMatch(no, co.NumberPattern)) throw new ShopException("tracking", "اكتب رقم الشحنة زي ما هو في حسابك على " + co.Name + (co.Id == "aramex" ? " (أرقام بس)." : "."));
             if (Num(c, "SELECT COUNT(*) FROM dbo.Shipments WHERE Company=@c AND Tracking=@t", "@c", x.Company, "@t", no) > 0) throw new ShopException("tracking", "الرقم ده متسجّل لشحنة تانية.");
             var k = Need(c, s.Id, x.Company); if (!Web.Allow("ship-fix:" + s.Id, 20, TimeSpan.FromHours(1))) throw new ShopException("too_many", "محاولات كتير. استنى شوية.");
             return async () =>

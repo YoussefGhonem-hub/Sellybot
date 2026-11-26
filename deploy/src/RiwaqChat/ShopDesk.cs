@@ -88,7 +88,7 @@ namespace RiwaqChat
         {
             var lines = ShopJson.List(ShopJson.At(b, "items")).OfType<Dictionary<string, object>>().Select(x => new ShopLine { VariantId = ShopJson.Int(ShopJson.At(x, "v")), Qty = Math.Max(0, Math.Min(999, ShopJson.Int(ShopJson.At(x, "q")))), Extra = Str(x, "x", 600).Length == 0 ? null : Str(x, "x", 600) }).Where(l => l.Qty > 0).ToList();
             var o = new ShopOrderIn { Lines = lines, Name = Str(b, "name", 80), Phone = Str(b, "phone", 24), Phone2 = Str(b, "phone2", 24), Gov = Int(b, "gov"), City = Str(b, "city", 60), Area = Str(b, "area", 80), Address = Str(b, "address", 300), Landmark = Str(b, "landmark", 120), Note = Str(b, "note", 400), Coupon = Str(b, "cpn", 30), ClientKey = Str(b, "ck", 60), Lang = "ar", Src = Str(b, "src", 60).Length == 0 ? "تليفون" : Str(b, "src", 60), Channel = "owner", ByOwner = true, Agreed = true,
-                How = new ShopHow { Pay = Str(b, "pay", 6).Length == 0 ? "cod" : Str(b, "pay", 6), Branch = Str(b, "branch", 20) } };
+                How = new ShopHow { Pay = Str(b, "pay", 6).Length == 0 ? "cod" : Str(b, "pay", 6), Branch = Str(b, "branch", 20), Carrier = Str(b, "car", 10) } };
             var p = ShopOrders.Place(c, s, sh, o); long oid = p.Order.Id;
             if (!p.Again)
             {

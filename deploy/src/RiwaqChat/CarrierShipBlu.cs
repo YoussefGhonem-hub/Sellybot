@@ -52,16 +52,19 @@ namespace RiwaqChat
             var who = new Dictionary<string, object> { { "full_name", p.Name }, { "phone", p.Phone }, { "address", new Dictionary<string, object> { { "line_1", p.Address }, { "line_2", string.IsNullOrWhiteSpace(p.Landmark) ? p.Area.Area : p.Landmark }, { "zone", zone } } } }; if (p.Phone2 != null) who["secondary_phone"] = p.Phone2; if (p.Email.Length > 0) who["email"] = p.Email;
             var b = new Dictionary<string, object> { { "customer", who }, { "packages", new[] { new Dictionary<string, object> { { "package_size", size }, { "description", p.Goods }, { "fragile", false } } } }, { "cash_amount", p.Cod }, { "merchant_order_reference", p.Ref }, { "is_customer_allowed_to_open_packages", k.B("open", false) } };
             if (p.Note.Length > 0) b["order_notes"] = p.Note; if (k.B("value", true) && p.Value > 0) b["declared_value"] = p.Value; if (p.Day != null) b["preferred_date"] = p.Day;
-            var r = await Call(k, HttpMethod.Post, "/delivery-orders/", b); return new CarrierMade { Tracking = T(r.Body, "tracking_number"), Id = T(r.Body, "id") };
+            var r = await Call(k, HttpMethod.Post, "/delivery-orders/", b); var made = new CarrierMade { Tracking = T(r.Body, "tracking_number"), Id = T(r.Body, "id") };
+            // their example answer has no tracking number: the order is read again by its id before anything is looked up by our reference
+            if (made.Tracking.Length == 0 && made.Id.Length > 0) try { var g = await Call(k, HttpMethod.Get, "/delivery-orders/" + Uri.EscapeDataString(made.Id) + "/"); made.Tracking = T(g.Body, "tracking_number"); } catch (CarrierException) { }
+            return made;
         }
 
-        // the list's filters aren't all written: whatever it gives is read for our reference, newest pages first
+        // the list's filters aren't all written («search» is): whatever it gives is read for our reference, newest pages first
         public override async Task<CarrierMade> Find(CarrierLink k, string reference)
         {
             for (int page = 0; page < 3; page++)
             {
-                var r = await Call(k, HttpMethod.Get, "/delivery-orders/?limit=100&offset=" + page * 100 + "&merchant_order_reference=" + Uri.EscapeDataString(reference)); var l = Rows(r);
-                var x = l.FirstOrDefault(o => T(o, "merchant_order_reference") == reference && T(o, "status") != "CANCELLED" && T(o, "tracking_number").Length > 0); if (x != null) return new CarrierMade { Tracking = T(x, "tracking_number"), Id = T(x, "id") };
+                var r = await Call(k, HttpMethod.Get, "/delivery-orders/?limit=100&offset=" + page * 100 + "&search=" + Uri.EscapeDataString(reference) + "&merchant_order_reference=" + Uri.EscapeDataString(reference)); var l = Rows(r);   // «search» is their written filter; the other is kept in case
+                var x = l.FirstOrDefault(o => T(o, "merchant_order_reference") == reference && !string.Equals(T(o, "status"), "CANCELLED", StringComparison.OrdinalIgnoreCase) && T(o, "tracking_number").Length > 0); if (x != null) return new CarrierMade { Tracking = T(x, "tracking_number"), Id = T(x, "id") };
                 if (l.Count < 100) break;
             }
             return null;
@@ -77,9 +80,20 @@ namespace RiwaqChat
         {
             if (waiting.Count == 0) throw new CarrierException("مفيش شحنات مستنية الاستلام. ابعت الأوردرات الأول.", "none");
             var b = new Dictionary<string, object> { { "tracking_numbers", waiting.Select(x => x.Tracking).ToArray() }, { "orders", waiting.Select(x => x.TheirId).Where(x => !string.IsNullOrEmpty(x)).Select(x => { int n; return int.TryParse(x, out n) ? (object)n : x; }).ToArray() }, { "pickup_date", day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) } };
-            await Call(k, HttpMethod.Post, "/delivery-orders/request-pickup/", b); return "";
+            // their docs write only the address, with no body and an empty answer: the numbers also go in the address (as the labels' do), and one
+            // order is read again after; still «created» = ShipBlu didn't take it, said to the owner instead of a plain ✅ (Carriers.AskPickup: «?» = a warning)
+            var tn = Uri.EscapeDataString(string.Join(",", waiting.Select(x => x.Tracking))).Replace("%2C", ",");
+            await Call(k, HttpMethod.Post, "/delivery-orders/request-pickup/?tracking_numbers=" + tn, b);
+            try
+            {
+                var one = waiting[0].Tracking; var d = Rows(await Call(k, HttpMethod.Get, "/delivery-orders/?tracking_number=" + Uri.EscapeDataString(one))).FirstOrDefault(y => T(y, "tracking_number") == one);
+                if (d != null && string.Equals(T(d, "status", 40), "CREATED", StringComparison.OrdinalIgnoreCase)) return "?ShipBlu لسه ماأكدتش طلب المندوب. لو ماجاش، اطلبه من حسابك على ShipBlu.";
+            }
+            catch (CarrierException) { }
+            return "";
         }
 
+        public override bool CanCancel { get { return false; } }
         public override Task Cancel(CarrierLink k, CarrierShip x) { throw new CarrierException("ShipBlu مابتسمحش بالإلغاء من بره حسابها. الغيها من حسابك على ShipBlu، وهنعرف لوحدنا خلال ساعة (أو دوس «حدّث الحالة»).", "nocancel"); }
 
         public override async Task<List<CarrierEvent>> Ask(CarrierLink k, List<CarrierShip> l)
@@ -115,18 +129,21 @@ namespace RiwaqChat
             return s;
         }
 
+        // their tutorial prints the statuses in capitals, their API and public clients send them in small letters: either is read
         public static CarrierEvent Map(string status)
         {
-            var e = new CarrierEvent { Code = status };
+            status = (status ?? "").Trim().ToUpperInvariant(); var e = new CarrierEvent { Code = status };
             switch (status)
             {
-                case "CREATED": case "PICKUP_REQUESTED": case "PICKUP_RESCHEDULED": e.Ours = "made"; break;
+                case "CREATED": case "PICKUP_REQUESTED": case "PICKUP_RESCHEDULED": case "OUT_FOR_PICKUP": e.Ours = "made"; break;
                 case "PICKED_UP": e.Ours = "picked"; break;
-                case "IN_TRANSIT": case "EN_ROUTE": e.Ours = "transit"; break;
+                case "IN_TRANSIT": case "EN_ROUTE": case "REATTEMPT_DELIVERY": e.Ours = "transit"; break;
+                case "ON_HOLD": case "OPS_DELAY": e.Ours = "hold"; break;
+                case "LOST": case "DAMAGED": e.Ours = "lost"; e.Text = status == "LOST" ? "ShipBlu سجّلتها مفقودة" : "ShipBlu سجّلتها متكسّرة"; break;
                 case "OUT_FOR_DELIVERY": e.Ours = "out"; break;
                 case "DELIVERY_ATTEMPTED": e.Ours = "attempt"; break;
                 case "DELIVERED": e.Ours = "delivered"; break;
-                case "RETURN_TO_ORIGIN": case "OUT_FOR_RETURN": e.Ours = "returning"; break;
+                case "RETURN_TO_ORIGIN": case "RETURNED_TO_ORIGIN": case "OUT_FOR_RETURN": e.Ours = "returning"; break;
                 case "RETURN_REFUSED": e.Ours = "hold"; e.Loud = true; e.Text = "رفضت استلام المرتجع"; break;
                 case "RETURN_POSTPONED": e.Ours = "hold"; e.Text = "المرتجع اتأجّل لبكرة"; break;
                 case "RETURNED": e.Ours = "returned"; break;

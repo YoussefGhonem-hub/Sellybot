@@ -104,6 +104,7 @@ namespace RiwaqChat
             // the rest of what the order says
             var notes = new List<string> { "<b>" + T("الدفع: ", "Payment: ") + "</b>" + H(ShopPay.WayName(o.Pay, en)) };
             string day = ShopJson.Str(ShopJson.At(o.Extras, "day"), 10), part = ShopJson.Str(ShopJson.At(o.Extras, "dpart"), 4); if (day.Length == 10) notes.Add("<b>" + T("يوم التوصيل: ", "Delivery day: ") + "</b>" + H(ShopShipDay.Text(day, en) + (part.Length > 0 ? " " + ShopShipDay.PartText(part, en) : "")));
+            var pk = ShopShipPick.NameOf(o, en); if (pk != null && string.IsNullOrEmpty(o.Carrier)) notes.Add("<b>" + T("هيوصل مع: ", "Delivered by: ") + "</b>" + H(pk));   // the company the customer chose
             var by = ShopJson.Sub(o.Extras, "by");
             if (!string.IsNullOrEmpty(o.Tracking) || !string.IsNullOrEmpty(o.Carrier)) notes.Add("<b>" + T("الشحن مع: ", "Shipped with: ") + "</b>" + B(o.Carrier ?? "") + (string.IsNullOrEmpty(o.Tracking) ? "" : " · " + T("رقم التتبع ", "tracking ") + "<span class=\"num\">" + H(o.Tracking) + "</span>"));
             else if (ShopJson.Str(ShopJson.At(by, "n")).Length > 0) notes.Add("<b>" + T("هيوصّله: ", "Delivered by: ") + "</b>" + B(ShopJson.Str(ShopJson.At(by, "n"), 40)) + " · <span class=\"num\">" + H(ShopJson.Str(ShopJson.At(by, "p"), 20)) + "</span>");

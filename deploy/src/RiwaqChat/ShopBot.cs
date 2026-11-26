@@ -237,7 +237,7 @@ namespace RiwaqChat
                         if (over > 0) sb.Append("الشحن مجاني للطلبات من ").Append(ShopOrders.Money(over)).Append(". ");
                         if (min > 0) sb.Append("أقل طلب ").Append(ShopOrders.Money(min)).Append(". ");
                         var blocked = d.Zones.Values.Where(z => z.Off).Select(z => ShopGeo.Name(z.Gov)).ToList(); if (blocked.Count > 0) sb.Append("مابنوصّلش لـ: ").Append(string.Join("، ", blocked)).Append(".");
-                        sb.Append(ShopShipRate.BotText(d, g == null ? 0 : g.Id)).Append(ShopShipDay.BotText(c, sh, g == null ? 0 : g.Id)).Append(ShopSelf.BotText(sh));
+                        sb.Append(ShopShipRate.BotText(d, g == null ? 0 : g.Id)).Append(ShopShipDay.BotText(c, sh, g == null ? 0 : g.Id)).Append(ShopSelf.BotText(sh)).Append(ShopShipPick.BotText(c, d, g == null ? 0 : g.Id, days, fee));
                         return sb.ToString().Trim();
                     }
                 case "offers":
@@ -466,7 +466,7 @@ namespace RiwaqChat
         {
             var t = new StringBuilder(); if (o.Pay != "cod" || o.Deposit > 0) t.Append("💳 ").Append(ShopPay.WayName(o.Pay)).Append(o.Deposit > 0 && o.Deposit < o.Total ? "، عربون " + ShopOrders.Money(o.Deposit) : "").Append(o.PayState == "paid" ? " (اتدفع ✅)" : o.PayState == "sent" ? " (صورة التحويل وصلت)" : o.Deposit > 0 ? " (لسه مابعتش صورة التحويل)" : "").Append("\n");
             if (Pickup(o) != null) t.Append("🛍️ استلام من: ").Append(Pickup(o)).Append("\n"); if (o.Extras.ContainsKey("gift")) t.Append("🎁 رسالة الهدية: ").Append(ShopJson.Str(o.Extras["gift"], 200)).Append("\n"); else if ((o.FeesJson ?? "").Contains("\"gift\"")) t.Append("🎁 تغليف هدية\n");
-            t.Append(ShopShipDay.Line(o, false)); var rc = ShopJson.Sub(o.Extras, "recv"); if (rc.Count > 0) t.Append("👤 المستلم: ").Append(ShopJson.Str(ShopJson.At(rc, "n"))).Append(" · ").Append(ShopOrders.Local(ShopJson.Str(ShopJson.At(rc, "p")))).Append("\n");
+            t.Append(ShopShipDay.Line(o, false)).Append(ShopShipPick.Line(o, false)); var rc = ShopJson.Sub(o.Extras, "recv"); if (rc.Count > 0) t.Append("👤 المستلم: ").Append(ShopJson.Str(ShopJson.At(rc, "n"))).Append(" · ").Append(ShopOrders.Local(ShopJson.Str(ShopJson.At(rc, "p")))).Append("\n");
             t.Append(ShopRew.PayNote(o));
             return t.ToString();
         }
@@ -478,7 +478,7 @@ namespace RiwaqChat
                 if (o.Discount > 0) e.Append("🏷️ Discount: ").Append(MoneyEn(o.Discount)).Append("\n");
                 foreach (var f in ShopJson.Arr(o.FeesJson).Select(ShopJson.List).Where(f => f.Count > 2)) e.Append("➕ ").Append(ShopJson.Str(ShopJson.List(f[1]).ElementAtOrDefault(1), 40)).Append(": ").Append(MoneyEn(ShopJson.Dec(f[2]))).Append("\n");
                 if (Pickup(o) != null) e.Append("🛍️ Pick up from: ").Append(Pickup(o)); else e.Append("🚚 Delivery: ").Append(o.Ship > 0 ? MoneyEn(o.Ship) : "free");
-                e.Append("\n💰 Total: *").Append(MoneyEn(o.Total)).Append("*\n💵 Payment: ").Append(ShopPay.WayName(o.Pay, true)).Append("\n"); if (Pickup(o) == null) e.Append("📍 To: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n"); e.Append(ShopShipDay.Line(o, true));
+                e.Append("\n💰 Total: *").Append(MoneyEn(o.Total)).Append("*\n💵 Payment: ").Append(ShopPay.WayName(o.Pay, true)).Append("\n"); if (Pickup(o) == null) e.Append("📍 To: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n"); e.Append(ShopShipDay.Line(o, true)).Append(ShopShipPick.Line(o, true));
                 e.Append(ShopRew.ConfirmNote(o, true));
                 if (o.Deposit > 0 && o.PayState != "paid" && o.PayState != "sent") e.Append("\n💳 Please send *").Append(MoneyEn(o.Deposit)).Append("* and its picture from here: ").Append(sh.Url).Append("/pay/").Append(o.Token).Append("\n");
                 e.Append("\n");
@@ -489,7 +489,7 @@ namespace RiwaqChat
             if (o.Discount > 0) sb.Append("🏷️ الخصم: ").Append(ShopOrders.Money(o.Discount)).Append("\n");
             foreach (var f in ShopJson.Arr(o.FeesJson).Select(ShopJson.List).Where(f => f.Count > 2)) sb.Append("➕ ").Append(ShopJson.Str(ShopJson.List(f[1]).ElementAtOrDefault(0), 40)).Append(": ").Append(ShopOrders.Money(ShopJson.Dec(f[2]))).Append("\n");
             if (Pickup(o) != null) sb.Append("🛍️ الاستلام من: ").Append(Pickup(o)); else sb.Append("🚚 الشحن: ").Append(o.Ship > 0 ? ShopOrders.Money(o.Ship) : "مجاني");
-            sb.Append("\n💰 الإجمالي: *").Append(ShopOrders.Money(o.Total)).Append("*\n💵 الدفع: ").Append(ShopPay.WayName(o.Pay)).Append("\n"); if (Pickup(o) == null) sb.Append("📍 التوصيل: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n"); sb.Append(ShopShipDay.Line(o, false));
+            sb.Append("\n💰 الإجمالي: *").Append(ShopOrders.Money(o.Total)).Append("*\n💵 الدفع: ").Append(ShopPay.WayName(o.Pay)).Append("\n"); if (Pickup(o) == null) sb.Append("📍 التوصيل: ").Append(Cut(ShopOrders.AddressText(o), 200)).Append("\n"); sb.Append(ShopShipDay.Line(o, false)).Append(ShopShipPick.Line(o, false));
             sb.Append(ShopRew.ConfirmNote(o, false));
             if (o.Deposit > 0 && o.PayState != "paid" && o.PayState != "sent") sb.Append("\n💳 محتاجين تحويل *").Append(ShopOrders.Money(o.Deposit)).Append("*، وابعت صورته من هنا: ").Append(sh.Url).Append("/pay/").Append(o.Token).Append("\n");
             sb.Append("\n");

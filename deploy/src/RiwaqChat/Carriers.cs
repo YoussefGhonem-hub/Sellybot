@@ -94,6 +94,13 @@ namespace RiwaqChat
         public virtual string Tail(CarrierLink k) { return k.Key.Length > 4 ? k.Key.Substring(k.Key.Length - 4) : ""; }
         // the company itself refuses a second shipment with our reference: a press without an answer is simply made again
         public virtual bool GuardsDup { get { return false; } }
+        // false = the company has no cancelling from outside its account (ShipBlu, Aramex): no button, the owner cancels there and we hear of it
+        public virtual bool CanCancel { get { return true; } }
+        // a shipment the company may hold without our knowing its number (a press with no answer, a refused duplicate): the owner types
+        // the number from their account (Carriers.Fix); Exists asks the company about it when it can
+        public virtual bool TypesNumber { get { return false; } }
+        public virtual string NumberPattern { get { return @"^\d{6,20}$"; } }
+        public virtual Task<bool> Exists(CarrierLink k, string waybill) { return Task.FromResult(true); }
         // after its first notification the company isn't asked any more (it tells us everything)
         public virtual bool QuietAfterPush { get { return false; } }
         // what the owner's card shows beyond the common fields
@@ -190,7 +197,7 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
                 var o = new Reply { Status = (int)r.StatusCode };
                 try { o.Bytes = await r.Content.ReadAsByteArrayAsync(); } catch (Exception) { throw new CarrierException(name + " قطعت في نص الرد. جرّب كمان شوية.", "net", unsure: true); }
                 var type = r.Content.Headers.ContentType == null ? "" : r.Content.Headers.ContentType.MediaType ?? "";
-                if (!type.Contains("pdf") && o.Bytes.Length < 8000000) { o.Text = Encoding.UTF8.GetString(o.Bytes); if (o.Text.Length > 0 && (o.Text[0] == '{' || o.Text[0] == '[' || o.Text[0] == '"')) try { o.Root = Web.Js.DeserializeObject(o.Text); } catch { } }
+                if (!type.Contains("pdf") && o.Bytes.Length < 8000000) { o.Text = Encoding.UTF8.GetString(o.Bytes).TrimStart('﻿'); /* Aramex's WCF pages start with a BOM */ if (o.Text.Length > 0 && (o.Text[0] == '{' || o.Text[0] == '[' || o.Text[0] == '"')) try { o.Root = Web.Js.DeserializeObject(o.Text); } catch { } }
                 return o;
             }
         }
@@ -266,6 +273,7 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
                     if (!update())
                         try { Exec(c2, "INSERT INTO dbo.Carriers(StoreId, Company, KeyBox, Code, Last4, AccName, HookId, HookBox, Places, MoreBox) VALUES(@s, @c, @k, @cd, @l, @n, @h, @hb, @p, @m)", "@s", s.Id, "@c", co.Id, "@k", Secrets.Protect(k.Key), "@cd", Nz(k.Code), "@l", last, "@n", Nz(Cut(k.AccName, 120)), "@h", Shops.Token(12), "@hb", Secrets.Protect(Shops.Token(24)), "@p", places, "@m", more); }
                         catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { update(); }
+                    ShopShipPick.Forget(s.Id);   // the checkout's companies see the new link at once
                     if (CarrierAreas.Count(c2, co.Id) == 0) HostingEnvironment.QueueBackgroundWorkItem(ct => CarrierAreas.Refresh(co, true, ct));
                     Web.Json(res, 200, Tab(c2, s));
                 }
@@ -337,7 +345,7 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
         {
             string ours = x.State == "making" ? "بتتبعت دلوقتي" : x.State == "unsure" ? "مش متأكدين إنها اتسجّلت" : x.State == "failed" ? "ماتبعتتش" : x.State == "off" ? "اتلغت" : x.Ours != null && OursText.ContainsKey(x.Ours) ? OursText[x.Ours] : "اتسجّلت عند الشركة";
             var d = D("id", x.Id, "order", x.OrderId, "name", x.OrderName, "c", x.Company, "cName", Of(x.Company) == null ? x.Company : Of(x.Company).Name, "ref", x.Ref, "tracking", x.Tracking ?? "", "state", x.State, "ours", x.Ours ?? "made", "text", ours, "status", x.Status ?? "", "why", x.ReasonText ?? "", "n", x.Attempts, "cod", x.Cod, "area", x.Area ?? "", "err", x.Error ?? "",
-                "at", Iso(x.CreatedAt), "last", Iso(x.LastEventAt), "printed", x.PrintedAt.HasValue, "back", x.BackAt.HasValue, "got", x.GotAt.HasValue, "canCancel", x.State == "live" && !x.Picked, "rescued", Iso(x.RescuedAt), "answered", Iso(x.AnsweredAt), "due", Iso(x.RescueDue));
+                "at", Iso(x.CreatedAt), "last", Iso(x.LastEventAt), "printed", x.PrintedAt.HasValue, "back", x.BackAt.HasValue, "got", x.GotAt.HasValue, "canCancel", x.State == "live" && !x.Picked && (Of(x.Company) == null || Of(x.Company).CanCancel), "noCancel", Of(x.Company) != null && !Of(x.Company).CanCancel, "rescued", Iso(x.RescuedAt), "answered", Iso(x.AnsweredAt), "due", Iso(x.RescueDue));
             if (!events) return d;
             var l = new List<object>(); using (var cmd = Db.Cmd(c, "SELECT TOP 60 Code, Ours, Text, At FROM dbo.ShipmentEvents WHERE ShipmentId=@i AND StoreId=@s ORDER BY At DESC, Id DESC", "@i", x.Id, "@s", x.StoreId)) using (var r = cmd.ExecuteReader()) while (r.Read()) { string o; l.Add(D("t", r[2] as string ?? (OursText.TryGetValue((string)r[1], out o) ? o : (string)r[0]), "ours", (string)r[1], "at", Iso(Dt(r[3])))); }
             d["events"] = l; return d;
@@ -374,8 +382,8 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
             later = null; if (!a.StartsWith("ship-", StringComparison.Ordinal) || !On(c, s)) return false;
             switch (a)
             {
-                case "ship-link": later = LinkUp(c, s, b, res); return true;
-                case "ship-unlink": Exec(c, "DELETE FROM dbo.Carriers WHERE StoreId=@s AND Company=@c", "@s", s.Id, "@c", Str(b, "c", 10)); Web.Json(res, 200, Tab(c, s)); return true;
+                case "ship-link": ShopShipPick.Forget(s.Id); later = LinkUp(c, s, b, res); return true;
+                case "ship-unlink": Exec(c, "DELETE FROM dbo.Carriers WHERE StoreId=@s AND Company=@c", "@s", s.Id, "@c", Str(b, "c", 10)); ShopShipPick.Forget(s.Id); Web.Json(res, 200, Tab(c, s)); return true;
                 case "ship-set": SaveSet(c, s, b); Web.Json(res, 200, Tab(c, s)); return true;
                 case "ship-check": CheckMany(c, s, sh, b, res); return true;
                 case "ship-send": later = SendMany(c, s, b, res); return true;
@@ -418,7 +426,7 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
                 var h = err != null || empty ? null : CarrierAreas.Match(c, s.Id, co.Id, o.Gov, o.City, o.Area); var warn = new List<string>();
                 if (o.Deposit > 0 && o.PayState != "paid") warn.Add(o.PayState == "sent" ? "راجع صورة التحويل الأول" : "لسه ماحوّلش، فالمندوب هيحصّل المبلغ كله"); if (Crm.Of(c, s.Id, o.Phone).Mark == "block") warn.Add("متعلّم «ماتشحنلوش»");
                 if (h != null && h.Row == null && h.Closed) warn.Add(co.Name + " مابتوصّلش للمنطقة دي");
-                return D("id", o.Id, "no", o.No, "name", o.Name, "place", string.Join("، ", new[] { ShopGeo.Name(o.Gov), o.City, o.Area }.Where(x => !string.IsNullOrWhiteSpace(x))), "addr", Cut(o.Address, 120), "gov", o.Gov, "cod", o.Due, "err", err ?? "", "warn", warn, "key", h != null && h.Sure ? h.Row.Key : "", "area", h != null && h.Sure ? h.Row.Label : "", "picked", h != null && h.Picked, "more", h == null ? new object[0] : h.More.Take(12).Select(x => (object)D("k", x.Key, "t", x.Label)).ToArray());
+                return D("id", o.Id, "no", o.No, "name", o.Name, "place", string.Join("، ", new[] { ShopGeo.Name(o.Gov), o.City, o.Area }.Where(x => !string.IsNullOrWhiteSpace(x))), "addr", Cut(o.Address, 120), "gov", o.Gov, "cod", o.Due, "err", err ?? "", "warn", warn, "pick", ShopShipPick.KeyOf(o), "key", h != null && h.Sure ? h.Row.Key : "", "area", h != null && h.Sure ? h.Row.Label : "", "picked", h != null && h.Picked, "more", h == null ? new object[0] : h.More.Take(12).Select(x => (object)D("k", x.Key, "t", x.Label)).ToArray());
             }).ToArray();
             Ok(res, "list", rows, "need", co.NotReady(k) ?? "", "empty", empty, "open", k.B("open", false));
         }
@@ -538,8 +546,8 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
         // ---------- labels ----------
         static Func<Task> LabelsFor(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
-            var ids = ShopJson.List(ShopJson.At(b, "ids")).Select(x => (long)ShopJson.Int(x)).Distinct().Take(200).ToList(); var l = ids.Select(i => OfOrder(c, s.Id, i)).Where(x => x != null && !string.IsNullOrEmpty(x.Tracking) && x.State != "off").ToList();
-            if (l.Count == 0) throw new ShopException("none", "الأوردرات دي لسه ماتبعتتش لشركة شحن."); if (!Web.Allow("ship-label:" + s.Id, 60, TimeSpan.FromMinutes(10))) throw new ShopException("too_many", "طلبات كتير. استنى شوية.");
+            var ids = ShopJson.List(ShopJson.At(b, "ids")).Select(x => (long)ShopJson.Int(x)).Distinct().Take(200).ToList(); var all = ids.Select(i => OfOrder(c, s.Id, i)).Where(x => x != null && !string.IsNullOrEmpty(x.Tracking)).ToList(); var l = all.Where(x => x.State == "live").ToList();   // a finished shipment has no waybill to print (and fails a whole Bosta batch)
+            if (l.Count == 0) throw new ShopException("none", all.Count > 0 ? "الأوردرات دي اتقفلت خلاص، مفيش بوليصة تتطبع." : "الأوردرات دي لسه ماتبعتتش لشركة شحن."); if (!Web.Allow("ship-label:" + s.Id, 60, TimeSpan.FromMinutes(10))) throw new ShopException("too_many", "طلبات كتير. استنى شوية.");
             var links = l.Select(x => x.Company).Distinct().ToDictionary(x => x, x => Link(c, s.Id, x));
             return async () =>
             {
@@ -566,15 +574,16 @@ IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABL
         static Func<Task> AskPickup(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
             var co = Of(Str(b, "c", 10)); var k = Need(c, s.Id, Str(b, "c", 10)); if (!co.PickupCall) throw new ShopException("pickup", "مندوب " + co.Name + " بييجي مع الأوردر نفسه، في الميعاد اللي في الإعدادات.");
-            DateTime day; if (!DateTime.TryParseExact(Str(b, "date", 10), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day) || day < Cairo(DateTime.UtcNow).Date || day > Cairo(DateTime.UtcNow).Date.AddDays(30)) throw new ShopException("date", "اختار يوم من النهارده لحد شهر قدام.");
+            DateTime day; if (!DateTime.TryParseExact(Str(b, "date", 10), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day) || day < Cairo(DateTime.UtcNow).Date || day > Cairo(DateTime.UtcNow).Date.AddDays(co.Id == "aramex" ? 7 : 30)) throw new ShopException("date", co.Id == "aramex" ? "أرامكس بتاخد طلب المندوب لحد 7 أيام قدام بس. اختار يوم أقرب." : "اختار يوم من النهارده لحد شهر قدام.");
             if (day.DayOfWeek == DayOfWeek.Friday) throw new ShopException("date", "مفيش استلام يوم الجمعة. اختار يوم تاني.");
             var wait = Ships(c, 100, "StoreId=@s AND Company=@c AND State='live' AND ISNULL(Ours,'made')='made' ORDER BY Id", "@s", s.Id, "@c", co.Id); int n = Math.Max(1, Math.Min(500, Int(b, "n", Math.Max(1, wait.Count)))); string place = Str(b, "place", 60), note = Str(b, "note", 200);
             if (!Web.Allow("ship-pick:" + s.Id, 20, TimeSpan.FromHours(1))) throw new ShopException("too_many", "طلبات كتير. استنى شوية.");
             return async () =>
             {
                 string no; try { no = await co.Pickup(k, day, n, place.Length == 0 ? k.S("place") : place, note, wait); } catch (CarrierException ex) { if (ex.BadKey) using (var c2 = Db.Open()) Fault(c2, k, ex.Message); throw Said(ex); }
+                string warn = no != null && no.StartsWith("?", StringComparison.Ordinal) ? no.Substring(1) : ""; if (warn.Length > 0) no = "";   // the company may not have taken it (ShipBlu)
                 using (var c2 = Db.Open()) { k.Set["pickup"] = D("date", day.ToString("yyyy-MM-dd"), "n", n, "no", no ?? ""); Exec(c2, "UPDATE dbo.Carriers SET Defaults=@d WHERE StoreId=@s AND Company=@c", "@d", ShopJson.Write(k.Set), "@s", s.Id, "@c", co.Id); }
-                Ok(res, "no", no ?? "");
+                Ok(res, "no", no ?? "", "warn", warn);
             };
         }
 
