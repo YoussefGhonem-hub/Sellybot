@@ -1019,7 +1019,8 @@ form{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line
 
   // ---------------------------------------------------------------- helpers
   function esc(s) { return s.replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function fmt(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>"); }
+  // a name in «» that the model closed with ** instead of » (or opened with **) goes back to «name», so no stray stars show
+  function fmt(s) { s = String(s).replace(/«([^«»*\n]{1,80})\*\*/g, "«$1»").replace(/\*\*([^«»*\n]{1,80})»/g, "«$1»"); return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>"); }
   // links the assistant sends ([text](https://...) or a bare https://...) open in a new tab; the rest is escaped text
   function inline(s) {
     s = s.replace(/\*\*(https?:\/\/[^\s*]+)\*\*/g, "$1");
