@@ -1070,7 +1070,7 @@
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/super.css?v=1"; document.head.appendChild(l);
       var s = document.createElement("script"); s.src = "shop-admin/super.js?v=2"; s.onload = ok; s.onerror = function () { spFile = null; no(new Error("الصفحة ماحمّلتش. جرّب تاني.")); }; document.body.appendChild(s);
     });
-    spFile.then(function () { SbShops.open($("shopsRoot"), { toast: toast, count: spBadge }); if (window.SbCarriers) SbCarriers.open($("shopsRoot"), toast); else { var s = document.createElement("script"); s.src = "shop-admin/ship-admin.js?v=1"; s.onload = function () { SbCarriers.open($("shopsRoot"), toast); }; document.body.appendChild(s); } }).catch(function (e) { toast(e.message, true); });
+    spFile.then(function () { SbShops.open($("shopsRoot"), { toast: toast, count: spBadge }); if (window.SbDomains) SbDomains.open($("shopsRoot"), toast); else { var sd = document.createElement("script"); sd.src = "shop-admin/domain-admin.js?v=1"; sd.onload = function () { SbDomains.open($("shopsRoot"), toast); }; document.body.appendChild(sd); } if (window.SbCarriers) SbCarriers.open($("shopsRoot"), toast); else { var s = document.createElement("script"); s.src = "shop-admin/ship-admin.js?v=1"; s.onload = function () { SbCarriers.open($("shopsRoot"), toast); }; document.body.appendChild(s); } }).catch(function (e) { toast(e.message, true); });
   }
 
   // ---------- Messenger + Instagram: one Meta app for every store ----------

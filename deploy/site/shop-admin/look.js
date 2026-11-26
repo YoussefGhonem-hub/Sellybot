@@ -122,4 +122,5 @@ async function tplPick(first) {
     acts: { use: (t, b) => run(b, async () => { if (sv) await save(); await post("template", { t }); cur = t; p.close(true); say(first === true ? "تمام ✅ كمّل الخطوات." : "القالب اتغيّر في المسودة ✅"); if (first === true) { SB.show("home"); return; } await SB.show("look"); const f = D.querySelector(".sm-lf iframe"); if (f) f.src = frame.url + "?f=1"; }) } });
 }
 SB.tplPick = tplPick;
+SB.lookX = { G, at, set, part, get open() { return open; }, cur: () => lk, frame };   /* seasons.js, abtest.js add their groups */
 })();

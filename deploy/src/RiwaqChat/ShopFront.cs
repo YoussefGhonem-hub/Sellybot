@@ -43,6 +43,7 @@ namespace RiwaqChat
             if (path.Length > 300 || path.Contains("..") || name.Length > 40) { res.StatusCode = 404; return; }
             try
             {
+                if (name == "_host") { ShopDomains.Lookup(path, res); return; }   // the Worker: which store is a merchant's own domain
                 if (name == "img") { ShopImages.Serve(path.TrimStart('/'), res, req.HttpMethod == "HEAD"); return; }
                 // the same files for every store (and the pictures of the domain's own page)
                 if (path.StartsWith("/_s/", StringComparison.Ordinal)) { ShopPages.Asset(path.Substring(4), req, res); return; }
@@ -78,6 +79,7 @@ namespace RiwaqChat
                     res.StatusCode = 404; ShopPages.Message(res, "مفيش متجر بالاسم ده", "اتأكد من اللينك واكتبه تاني."); return;
                 }
                 x.Store = Db.StoreById(c, x.Row.StoreId);
+                if (ShopDomains.Moved(x, req, res)) return;
                 // the owner's preview: a cookie, or (inside the dashboard, where some browsers keep no cookie for a frame) the token in the address
                 var pv = Regex.Match(req.Headers["X-Shop-Query"] ?? "", "[?&]_pv=([a-f0-9]{32})(&|$)"); x.Pv = pv.Success ? pv.Groups[1].Value : null;
                 string token = x.Pv ?? (req.Cookies["sbpv"] == null ? null : req.Cookies["sbpv"].Value);
@@ -92,6 +94,7 @@ namespace RiwaqChat
                 }
                 // «المنشور» inside the preview, to compare the two
                 x.Look = x.Row.Look(x.Preview && !(x.Row.LiveJson != null && Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]_lv=1(&|$)")));
+                ShopAb.Pick(c, x, req, res);   // «تجربة شكلين»: half the visitors see look B
                 if (!chat)
                 {
                     x.Data = ShopCache.Get(c, x.Row);
@@ -178,6 +181,7 @@ namespace RiwaqChat
             catch (ShopException) { throw; }
             catch (Exception ex) { ShopOrders.Fail(x.Row.StoreId, "order", ex.GetType().Name + ": " + ex.Message); throw; }
             if (!p.Again && !p.Order.Test) ShopHooks.OnPlaced(x.Store, p.Order.Id);
+            ShopAb.Placed(c, x, HttpContext.Current.Request, p);
             Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "no", p.Order.No }, { "token", p.Order.Token }, { "total", p.Order.Total }, { "test", p.Order.Test }, { "again", p.Again }, { "dep", p.Order.Deposit }, { "pay", p.Order.Pay ?? "cod" }, { "ps", p.Order.PayState ?? "" } });
         }
 
@@ -219,6 +223,7 @@ namespace RiwaqChat
             if (t.Length > 24) return;
             // one product: p<id> seen, a<id> put in the cart
             var one = Regex.Match(t, @"([pa])(\d{1,9})$"); if (one.Success) { int pid = int.Parse(one.Groups[2].Value); if (x.Data.ById.ContainsKey(pid)) ShopAccount.Seen(c, x.Row.StoreId, pid, one.Groups[1].Value == "p" ? "Views" : "Carts"); t = t.Substring(0, one.Index) + (one.Groups[1].Value == "p" ? "p" : ""); }
+            ShopAb.Hit(c, x, req, t);
             var cols = new Dictionary<char, string> { { 'v', "Visits" }, { 'd', "Visitors" }, { 'p', "Views" }, { 'c', "Carts" }, { 'k', "Checkouts" } };
             foreach (var ch in t.Distinct()) { string col; if (cols.TryGetValue(ch, out col)) ShopOrders.Daily(c, null, x.Row.StoreId, col, 1); }
         }
@@ -452,6 +457,7 @@ namespace RiwaqChat
             if (p.Post != null) page["post"] = new Dictionary<string, object> { { "s", p.Post.Slug }, { "t", ShopView.Pair(p.Post.Title, p.Post.TitleEn) }, { "b", ShopView.Pair(p.PostBody, p.PostBodyEn) }, { "im", p.Post.Image ?? "" }, { "at", ShopView.Unix(p.Post.At) }, { "ps", (p.PostProducts ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) } };
             var boot = new Dictionary<string, object> { { "shop", shop }, { "look", x.Look }, { "lang", lang }, { "pre", x.Prefix }, { "ver", ver }, { "page", page }, { "now", ShopView.Unix(now) }, { "preview", x.Preview }, { "dash", x.Preview ? Dash() : "" }, { "pv", x.Preview ? x.Pv ?? "" : "" },
                 { "a", new Dictionary<string, object> { { "core", Ver("core.js") }, { "more", Ver("more.js") }, { "geo", "1" } } } };
+            ShopSeasons.Boot(boot, x);
 
             var h = new StringBuilder(16000);
             h.Append("<!doctype html><html lang=\"").Append(lang).Append("\" dir=\"").Append(en ? "ltr" : "rtl").Append("\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover\">");
@@ -474,7 +480,7 @@ namespace RiwaqChat
             h.Append("</head><body><div id=\"app\"><div class=\"ssr\">");
             Ssr(h, x, p, shopName);
             h.Append("</div></div><script type=\"application/json\" id=\"boot\">").Append(Safe(Web.Js.Serialize(boot))).Append("</script>");
-            h.Append("<script src=\"/_s/core.js?v=").Append(Ver("core.js")).Append("\" defer></script><script src=\"/_s/t/").Append(tpl).Append(".js?v=").Append(Ver("t/" + tpl + ".js")).Append("\" defer></script><script src=\"/_s/run.js?v=").Append(Ver("run.js")).Append("\" defer></script></body></html>");
+            h.Append("<script src=\"/_s/core.js?v=").Append(Ver("core.js")).Append("\" defer></script><script src=\"/_s/t/").Append(tpl).Append(".js?v=").Append(Ver("t/" + tpl + ".js")).Append("\" defer></script>").Append(ShopSeasons.Script(x)).Append("<script src=\"/_s/run.js?v=").Append(Ver("run.js")).Append("\" defer></script></body></html>");
 
             res.ContentType = "text/html; charset=utf-8";
             Secure(res, x.Preview, set);

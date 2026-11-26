@@ -389,6 +389,7 @@ namespace RiwaqChat
                 object x, y; a.TryGetValue(kv.Key, out x); b.TryGetValue(kv.Key, out y);
                 if (ShopJson.Write(x) != ShopJson.Write(y)) l.Add(kv.Value);
             }
+            ShopSeasons.Diff(a, b, l);
             return l;
         }
 
