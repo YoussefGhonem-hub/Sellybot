@@ -93,6 +93,7 @@ namespace RiwaqChat
             return "";
         }
 
+        public override bool CanCancel { get { return false; } }
         public override Task Cancel(CarrierLink k, CarrierShip x) { throw new CarrierException("ShipBlu مابتسمحش بالإلغاء من بره حسابها. الغيها من حسابك على ShipBlu، وهنعرف لوحدنا خلال ساعة (أو دوس «حدّث الحالة»).", "nocancel"); }
 
         public override async Task<List<CarrierEvent>> Ask(CarrierLink k, List<CarrierShip> l)

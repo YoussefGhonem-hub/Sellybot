@@ -174,6 +174,7 @@ namespace RiwaqChat
             var r = await Call(k, "Shipping", "CreatePickup", D("Pickup", pk, "LabelInfo", null));
             return ShopJson.Str(ShopJson.At(r, "ProcessedPickup", "ID"), 30);
         }
+        public override bool CanCancel { get { return false; } }
         public override Task Cancel(CarrierLink k, CarrierShip x) { throw new CarrierException("أرامكس مابتسمحش تلغي الشحنة من بره حسابها. الغيها من حسابك على أرامكس أو من مندوبها، وهنعرف لوحدنا خلال ساعة (أو دوس «حدّث الحالة»).", "nocancel"); }
 
         // ---------- what happened: TrackShipments, every update of each waybill ----------

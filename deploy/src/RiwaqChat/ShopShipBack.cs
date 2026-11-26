@@ -85,7 +85,7 @@ namespace RiwaqChat
             var ev = new List<object>(); using (var cmd = Db.Cmd(c, "SELECT TOP 20 Text, Ours, At FROM dbo.ShipmentEvents WHERE ShipmentId=@i AND StoreId=@s ORDER BY At DESC, Id DESC", "@i", x.Id, "@s", x.StoreId)) using (var r = cmd.ExecuteReader()) while (r.Read()) ev.Add(ShopShip2.D("t", r[0] as string ?? "", "ours", (string)r[1], "at", ShopShip2.Iso(D(r[2]))));
             return ShopShip2.D("id", x.Id, "c", x.Company, "cName", Carriers.Of(x.Company) == null ? x.Company : Carriers.Of(x.Company).Name, "tracking", x.Tracking ?? "", "url", TrackUrl(x.Company, x.Tracking) ?? "", "state", x.State, "ours", x.Ours ?? "", "text", text, "why", x.ReasonText ?? "", "err", x.Error ?? "",
                 "collect", x.Cod, "kind", b == null ? "" : b.Kind, "told", ShopShip2.Iso(b == null ? null : b.ToldAt), "tellDue", ShopShip2.Iso(b == null ? null : b.TellDue), "tellNote", b == null ? "" : b.TellNote ?? "", "back", x.BackAt.HasValue, "got", x.GotAt.HasValue,
-                "canCancel", x.State == "live" && (x.Ours == "asked" || x.Ours == "made") && x.Company != "shipblu",   /* ShipBlu has no cancelling from outside its account */ "events", ev);
+                "canCancel", x.State == "live" && (x.Ours == "asked" || x.Ours == "made") && (Carriers.Of(x.Company) == null || Carriers.Of(x.Company).CanCancel), "noCancel", Carriers.Of(x.Company) != null && !Carriers.Of(x.Company).CanCancel, "events", ev);
         }
 
         // ---------- the owner's calls ----------
