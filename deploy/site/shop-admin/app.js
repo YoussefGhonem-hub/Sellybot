@@ -114,6 +114,7 @@ SB.sort = (box, sel, done) => {
 
 /* ---------- the frame ---------- */
 const TABS = [["home", "🏪", "المتجر"], ["orders", "🧾", "الأوردرات"], ["returns", "↩️", "المرتجعات"], ["products", "📦", "المنتجات"], ["cats", "🗂️", "الأقسام"], ["offers", "🏷️", "العروض"], ["reviews", "⭐", "التقييمات"], ["custs", "👥", "الزباين"], ["report", "📊", "التقارير"], ["look", "🎨", "الشكل"], ["ship", "🚚", "الشحن"], ["pay", "💳", "الدفع والفروع"], ["pages", "📄", "الصفحات"], ["blog", "✍️", "المدونة"], ["feat", "🧩", "المميزات"], ["info", "⚙️", "البيانات"], ["bot", "🤖", "البوت عارف إيه؟"]];
+SB.tabs = TABS;   /* team.js adds «الموظفين»; the staff page (staff/index.html) keeps only theirs */
 const WN = { orders: s => s.counts.newOrders, returns: s => s.waiting.returns, reviews: s => s.waiting.reviews, custs: s => s.waiting.wipes };
 const PILL = { draft: ["لسه ماتنشرش", "g"], review: ["الإدارة بتراجعه", "y"], live: ["شغال", "ok"], closed: ["مقفول من الإدارة", "bad"] };
 function head() {

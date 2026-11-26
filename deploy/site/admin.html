@@ -1070,6 +1070,7 @@
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/super.css?v=1"; document.head.appendChild(l);
       var s = document.createElement("script"); s.src = "shop-admin/super.js?v=2"; s.onload = ok; s.onerror = function () { spFile = null; no(new Error("الصفحة ماحمّلتش. جرّب تاني.")); }; document.body.appendChild(s);
     });
+    spFile.then(function () { var s = document.createElement("script"); s.src = "shop-admin/brands-admin.js?v=1"; s.onload = function () { SbBrands.open($("shopsRoot"), toast); }; if (!window.SbBrands) document.body.appendChild(s); else SbBrands.open($("shopsRoot"), toast); });   // «متجر جديد»: the switch and the groups
     spFile.then(function () { SbShops.open($("shopsRoot"), { toast: toast, count: spBadge }); if (window.SbCarriers) SbCarriers.open($("shopsRoot"), toast); else { var s = document.createElement("script"); s.src = "shop-admin/ship-admin.js?v=1"; s.onload = function () { SbCarriers.open($("shopsRoot"), toast); }; document.body.appendChild(s); } }).catch(function (e) { toast(e.message, true); });
   }
 
@@ -2061,14 +2062,18 @@
     if (f === "suspended") return s.status !== "active";
     return true;
   }
+  // a merchant's stores that belong together (ShopBrands.cs): «تبع» the main one, or how many it has
+  function grpOf(s) { return state.stores.filter(function (x) { return x.id === s.parentId; })[0] || null; }
+  function grpPill(s) { var k = state.stores.filter(function (x) { return x.parentId === s.id; }).length; return s.parentId ? ' <span class="pill info">🔗 تبع ' + esc(s.parentName || (grpOf(s) || {}).name || "") + '</span>' : k ? ' <span class="pill info">🔗 معاه ' + fmt(k) + (k === 1 ? ' متجر تاني' : ' متاجر تانية') + '</span>' : ''; }
+  function grpLine(s) { var kids = state.stores.filter(function (x) { return x.parentId === s.id; }), m = s.parentId ? grpOf(s) : null; return s.parentId ? '<div class="hint">🔗 متجر تاني لصاحب «' + esc(s.parentName) + '»' + (m ? ' (' + esc(m.email) + ')' : '') + '. مالوش تجربة مجانية، وصاحبه بيدخله من حساب متجره الأساسي.</div>' : kids.length ? '<div class="hint">🔗 متاجره التانية: ' + kids.map(function (x) { return esc(x.name) + ' (' + esc(x.slug) + ')'; }).join('، ') + '</div>' : ''; }
   function renderStores() {
     var list = state.stores.filter(storeMatches);
     $("stRows").innerHTML = list.length ? list.map(function (s, i) {
       var p = usePct(s);
       return '<tr class="click" data-id="' + s.id + '" style="animation-delay:' + Math.min(i * 0.03, 0.4) + 's">' +
         '<td><div class="row" style="flex-wrap:nowrap"><div class="mini-av">' + esc(initial(s.name)) + '</div><div style="min-width:0"><b>' + esc(s.name) + '</b>' +
-          (s.isAdmin ? ' <span class="pill brand">أدمن</span>' : '') + (s.openTickets ? ' <span class="pill info">🎧 ' + fmt(s.openTickets) + '</span>' : '') +
-          '<div class="hint ltr" style="text-align:right">' + esc(s.slug) + ' · ' + esc(s.email) + '</div></div></div></td>' +
+          (s.isAdmin ? ' <span class="pill brand">أدمن</span>' : '') + (s.openTickets ? ' <span class="pill info">🎧 ' + fmt(s.openTickets) + '</span>' : '') + grpPill(s) +
+          '<div class="hint ltr" style="text-align:right">' + esc(s.slug) + ' · ' + esc(s.parentId && grpOf(s) ? grpOf(s).email : s.email) + '</div></div></div></td>' +
         '<td>' + planPill(s) + '</td>' +
         '<td><div class="ubar' + (p >= 85 ? " hot" : "") + '"><i data-w="' + p + '"></i></div><div class="hint">' + p + '% من ' + fmt(s.limitUsd, 2) + '$</div></td>' +
         '<td>' + fmt(s.messages) + '</td><td>' + fmt(s.costEgp, 2) + ' ج.م</td>' +
@@ -2106,7 +2111,7 @@
     var m = modal(
       '<div class="d-head"><div class="mini-av" style="width:46px;height:46px;font-size:20px">' + esc(initial(s.name)) + '</div><div><h2>' + esc(s.name) + '</h2>' +
         '<div class="hint ltr" style="text-align:right">' + esc(s.slug) + ' · ' + esc(s.email) + '</div>' +
-        (s.phone ? '<div class="hint">📱 واتساب صاحب المتجر: <a class="ltr" dir="ltr" href="https://wa.me/' + esc(s.phone) + '" target="_blank" rel="noopener">+' + esc(s.phone) + '</a></div>' : '') +
+        grpLine(s) + (s.phone ? '<div class="hint">📱 واتساب صاحب المتجر: <a class="ltr" dir="ltr" href="https://wa.me/' + esc(s.phone) + '" target="_blank" rel="noopener">+' + esc(s.phone) + '</a></div>' : '') +
         '</div><button class="x" data-close aria-label="إغلاق">×</button></div>' +
       '<div class="row" style="margin-top:6px">' + planPill(s) + (s.status === "active" ? '<span class="pill ok">شغال</span>' : '<span class="pill err">موقوف</span>') +
         (s.shopify ? '<span class="pill info">🛍️ Shopify</span>' : '') + '<span class="space"></span>' +

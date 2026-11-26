@@ -201,6 +201,7 @@ namespace RiwaqChat
         }
         public static void Log_(SqlConnection c, SqlTransaction tx, int storeId, long orderId, string who, string what)
         {
+            who = ShopStaff.By(who);   // a staff member's change carries their name (ShopStaff.cs)
             using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopOrderLog(StoreId, OrderId, Who, What) VALUES(@s, @o, @w, @t)", "@s", storeId, "@o", orderId, "@w", who, "@t", what.Length > 300 ? what.Substring(0, 300) : what)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
         }
         // one of the day's numbers (Cairo's day)
