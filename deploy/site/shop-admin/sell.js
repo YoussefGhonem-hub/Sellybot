@@ -11,7 +11,7 @@ const NEXT = { "new": ["confirmed", "noreply", "cancelled"], noreply: ["confirme
 const DO = { confirmed: "أكّده", noreply: "مردّش", shipped: "اتشحن", out: "خرج للتوصيل", delivered: "اتسلم", cancelled: "الغيه", returned: "رجع", "new": "رجّعه جديد" };
 const SRC = { web: "من المتجر", chat: "من البوت", wa: "من واتساب", msgr: "من مسنجر", ig: "من إنستجرام", tg: "من تيليجرام", owner: "أوردر يدوي", gift: "كارت هدية" }, srcOf = c => SRC[c] || "من مكان تاني";   /* every Channel of ShopOrders: ShopFront, ShopChatOrder, ShopDesk (owner), ShopGift (gift) */
 let F = { st: "todo", q: "", from: "", to: "", page: 0 }, L = null, picked = new Set(), seq = 0, qT = 0;
-const pill = (s, o) => o && o.prep && s === "confirmed" ? '<span class="sm-pill b">بيتجهز</span>' : `<span class="sm-pill ${OS[s][1]}">${OS[s][0]}</span>`;   /* «بيتجهز»: a mark on a confirmed order (ShopTrack.cs) */
+const pill = (s, o) => o && o.prep && s === "confirmed" ? '<span class="sm-pill b">📦 بيتجهز</span>' : `<span class="sm-pill ${OS[s][1]}">${OS[s][0]}</span>`;   /* «بيتجهز»: a mark on a confirmed order (ShopTrack.cs) */
 async function load() { const n = ++seq, r = await get("orders", F); if (n !== seq || SB.view() !== "orders") return; L = r; list(); }
 function list() {
   const body = SB.body(), c = L.counts, sum = k => c[k] || 0, pages = Math.ceil(L.total / L.size);

@@ -62,7 +62,7 @@ namespace RiwaqChat
         }
 
         // the assistant, about one order
-        public static string BotLine(ShopOrder o) { var at = PrepAt(o); return o.Status == "confirmed" && at.HasValue ? "المتجر بيجهّز الطلب دلوقتي (من " + ShopPromo.Local(at.Value).Replace("T", " ") + ")، ولسه ماخرجش للتوصيل.\n" : ""; }
+        public static string BotLine(ShopOrder o) { var at = PrepAt(o); return o.Status == "confirmed" && at.HasValue ? "الطلب «بيتجهز» دلوقتي: المتجر بيجهّزه من " + ShopPromo.Local(at.Value).Replace("T", " ") + "، ولسه ماخرجش للتوصيل.\n" : ""; }
 
         // what the customer is told when the company has news, in their words (owner-side words like «راجعة ليك» never)
         static readonly Dictionary<string, string[]> Said = new Dictionary<string, string[]> {
