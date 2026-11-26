@@ -121,7 +121,7 @@
 <script>
 (function () {
   "use strict";
-  var $ = function (id) { return document.getElementById(id); }, V = "20261126u", slug = (new URLSearchParams(location.search).get("s") || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
+  var $ = function (id) { return document.getElementById(id); }, V = "20261126x", slug = (new URLSearchParams(location.search).get("s") || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
   // what each tick shows of «متجري» (ShopStaff.cs says what each one may do: the server checks every request)
   var VIEWS = { orders: ["orders"], products: ["products", "cats"], returns: ["returns", "reviews"], money: ["home", "report"], ship: ["orders", "ship"] };
   var tT = 0; function toast(t) { var e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(tT); tT = setTimeout(function () { e.classList.remove("show"); }, 3200); }
