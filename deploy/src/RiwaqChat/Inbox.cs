@@ -37,12 +37,23 @@ namespace RiwaqChat
 
         // ---------- who has it ----------
         public static bool Tester(SqlConnection c, StoreInfo s) { return s != null && (Billing.Get(c, "InboxTesters") ?? "").Split(new[] { ',', ' ', '\n', '،' }, StringSplitOptions.RemoveEmptyEntries).Contains(s.Slug, StringComparer.OrdinalIgnoreCase); }
-        // like Carriers.On, «no minimum» means closed: nothing shows until the admin picks the lowest plan (or names testers)
+        // InboxAll = "1": the admin's «مفتوحة لكل المتاجر» (the user 2026-11-26). Every store has it like a feature of every plan:
+        // it works on a running plan or the free trial, whatever minimum is picked, and an ended plan still sees the tab (to renew).
+        public static bool All(SqlConnection c) { return Billing.Get(c, "InboxAll") == "1"; }
+        // otherwise, like Carriers.On, «no minimum» means closed: nothing shows until the admin picks the lowest plan (or names testers)
         public static bool On(SqlConnection c, StoreInfo s)
         {
-            return s != null && (s.IsAdmin || Tester(c, s) || (!string.IsNullOrEmpty(Billing.Get(c, "MinPlan_" + Feature)) && PlanGate.Allows(c, s, Feature)));
+            if (s == null) return false;
+            if (s.IsAdmin || Tester(c, s)) return true;
+            if (All(c)) { PlanInfo o; return (Billing.OnTrial(s) && !Billing.TrialEnded(c, s)) || PlanGate.Check(c, s, 0, out o); }
+            return !string.IsNullOrEmpty(Billing.Get(c, "MinPlan_" + Feature)) && PlanGate.Allows(c, s, Feature);
         }
-        public static List<string> Hide(SqlConnection c, StoreInfo s, List<string> hidden) { if (!On(c, s) && !hidden.Contains(Feature)) hidden.Add(Feature); return hidden; }
+        public static List<string> Hide(SqlConnection c, StoreInfo s, List<string> hidden)
+        {
+            if (All(c)) hidden.Remove(Feature);
+            else if (!On(c, s) && !hidden.Contains(Feature)) hidden.Add(Feature);
+            return hidden;
+        }
         public static int Seats(SqlConnection c) { int n; return int.TryParse(Billing.Get(c, "InboxSeats") ?? "", out n) && n > 0 ? n : 5; }
 
         // ---------- channels: "wa<line>" (wa0 = the main number), "fb", "ig", "tg" ----------
@@ -608,6 +619,7 @@ WHEN NOT MATCHED AND @k = 1 THEN INSERT (StoreId, Chan, ChatId, LastAt, LastText
                     if (w == null) { Web.Error(res, 401, "not_logged_in"); return; }
                     if (!Inbox.On(c, w.Store))
                     {
+                        if (w.Owner && Inbox.All(c)) { Web.Error(res, 403, "plan_locked", "«💬 محادثاتي» بتشتغل لما يكون عندك باقة شغالة. اشترك أو جدّد من «باقتي»."); return; }
                         if (w.Owner && !string.IsNullOrEmpty(Billing.Get(c, "MinPlan_" + Inbox.Feature))) { PlanGate.Deny(res, c, w.Store, Inbox.Feature); return; }
                         Web.Error(res, 403, "closed", Inbox.Brand + " مش متاح لمتجرك دلوقتي."); return;
                     }
@@ -846,19 +858,20 @@ WHEN NOT MATCHED AND @k = 1 THEN INSERT (StoreId, Chan, ChatId, LastAt, LastText
                         var b = Web.Body(req, 4000);
                         Billing.Set(c, "InboxTesters", string.Join(", ", (Web.Str(b, "testers", 1000) ?? "").Split(new[] { ',', ' ', '\n', '،' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().ToLowerInvariant()).Distinct()));
                         Billing.Set(c, "InboxSeats", Math.Max(1, Math.Min(50, Web.Int(b, "seats") ?? 5)).ToString());
+                        if (b.ContainsKey("all")) Billing.Set(c, "InboxAll", ShopJson.Bool(ShopJson.At(b, "all")) ? "1" : "");
                     }
                     var stores = new List<Dictionary<string, object>>();
                     using (var cmd = Db.Cmd(c, @"SELECT TOP 300 s.Name, s.Slug, x.Chats, x.Waiting, x.LastAt, (SELECT COUNT(*) FROM dbo.InboxStaff t WHERE t.StoreId=s.Id) AS Staff
                         FROM (SELECT StoreId, COUNT(*) AS Chats, SUM(CASE WHEN Status='open' AND (LastFrom=1 OR NeedsHuman=1) THEN 1 ELSE 0 END) AS Waiting, MAX(LastAt) AS LastAt
                               FROM dbo.InboxChats GROUP BY StoreId) x JOIN dbo.Stores s ON s.Id = x.StoreId
-                        WHERE EXISTS (SELECT 1 FROM dbo.InboxStaff t WHERE t.StoreId=s.Id) OR s.IsAdmin=1 OR @t LIKE '%' + s.Slug + '%'
-                        ORDER BY x.LastAt DESC", "@t", "," + (Billing.Get(c, "InboxTesters") ?? "").Replace(" ", "") + ","))
+                        WHERE @a=1 OR EXISTS (SELECT 1 FROM dbo.InboxStaff t WHERE t.StoreId=s.Id) OR s.IsAdmin=1 OR @t LIKE '%,' + s.Slug + ',%'
+                        ORDER BY x.LastAt DESC", "@t", "," + (Billing.Get(c, "InboxTesters") ?? "").Replace(" ", "") + ",", "@a", Inbox.All(c) ? 1 : 0))
                     using (var r = cmd.ExecuteReader())
                         while (r.Read())
                             stores.Add(new Dictionary<string, object> { { "store", r["Name"] }, { "slug", r["Slug"] }, { "chats", r["Chats"] }, { "waiting", r["Waiting"] }, { "staff", r["Staff"] },
                                 { "lastAt", r["LastAt"] is DateTime ? Inbox.Iso((DateTime)r["LastAt"]) : null } });
                     Web.Json(res, 200, new Dictionary<string, object> {
-                        { "testers", Billing.Get(c, "InboxTesters") ?? "" }, { "seats", Inbox.Seats(c) }, { "minPlan", PlanGate.MinPlanId(c, Inbox.Feature) }, { "stores", stores } });
+                        { "testers", Billing.Get(c, "InboxTesters") ?? "" }, { "seats", Inbox.Seats(c) }, { "all", Inbox.All(c) }, { "minPlan", PlanGate.MinPlanId(c, Inbox.Feature) }, { "stores", stores } });
                 }
             }
             catch (BadRequestException ex) { Web.Error(res, 400, "bad_request", ex.Message); }

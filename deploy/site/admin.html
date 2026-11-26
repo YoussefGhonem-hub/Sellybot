@@ -847,7 +847,9 @@
           <form class="card anim" id="scForm" autocomplete="off">
             <h3>«💬 محادثاتي» (SellyChat)</h3>
             <p class="sub">صفحة جوه Sellybot بيرد منها التاجر وموظفينه على رسايل الواتساب والمسنجر والإنستجرام وتيليجرام من مكان واحد. شغالة على نفس سيرفر Sellybot، ومحتاجتش أي إعداد.</p>
-            <label for="scTesters">متاجر تجرّبها قبل الكل</label>
+            <label class="switch"><input type="checkbox" id="scAll"><span class="tg"></span>مفتوحة لكل المتاجر</label>
+            <div class="hint">أي متجر باقته شغالة أو لسه في التجربة المجانية يشوفها في لوحته، أيًّا كانت باقته.</div>
+            <label for="scTesters" style="margin-top:10px">متاجر تجرّبها قبل الكل</label>
             <input type="text" id="scTesters" class="ltr" maxlength="1000" placeholder="store-slug, another-slug">
             <div class="hint">اكتب اسم المتجر اللي في لينكه (اللي مكتوب رمادي جنب اسمه في «المتاجر»)، ولو أكتر من متجر حط بينهم فاصلة. متجر Sellybot نفسه بيشوفها دايمًا.</div>
             <label for="scSeatsN" style="margin-top:10px">أكبر عدد موظفين للمتجر</label>
@@ -1320,10 +1322,10 @@
     return data;
   }
   function renderScAdmin(d) {
-    $("scTesters").value = d.testers || ""; $("scSeatsN").value = d.seats;
+    $("scAll").checked = !!d.all; $("scTesters").value = d.testers || ""; $("scSeatsN").value = d.seats;
     var testers = (d.testers || "").split(/[,\s،]+/).filter(Boolean).length;
-    $("scWho").textContent = d.minPlan ? "الباقات من اللي اخترتها وأعلى" + (testers ? " + " + fmt(testers) + " متجر تجربة" : "") : testers ? fmt(testers) + " متجر تجربة + متجر Sellybot" : "متجر Sellybot بس";
-    $("scHint").textContent = d.minPlan ? "التجار اللي باقتهم فيها «محادثاتي» بيشوفوها في لوحتهم." : "مقفولة على التجار. عشان تفتحها: «الباقات والخصومات» ← المميزات ← «💬 محادثاتي»، واختار أقل باقة فيها.";
+    $("scWho").textContent = d.all ? "كل المتاجر" : d.minPlan ? "الباقات من اللي اخترتها وأعلى" + (testers ? " + " + fmt(testers) + " متجر تجربة" : "") : testers ? fmt(testers) + " متجر تجربة + متجر Sellybot" : "متجر Sellybot بس";
+    $("scHint").textContent = d.all ? "كل تاجر باقته شغالة أو في التجربة بيشوفها في لوحته. اللي باقته خلصت بيشوف التاب، ولما يفتحها بيطلع له إنه يجدّد." : d.minPlan ? "التجار اللي باقتهم فيها «محادثاتي» بيشوفوها في لوحتهم." : "مقفولة على التجار. عشان تفتحها لكل المتاجر شغّل «مفتوحة لكل المتاجر» فوق، أو من «الباقات والخصومات» ← المميزات ← «💬 محادثاتي» اختار أقل باقة فيها.";
     var rows = d.stores || [];
     $("scRows").innerHTML = rows.length ? rows.map(function (x) {
       return "<tr><td><b dir=\"auto\">" + esc(x.store) + '</b> <span class="hint ltr">' + esc(x.slug) + "</span></td><td>" + fmt(x.chats) + "</td><td>" + fmt(x.waiting) + "</td><td>" + fmt(x.staff) + "</td><td>" + (x.lastAt ? esc(ago(x.lastAt)) : "—") + "</td></tr>";
@@ -1334,7 +1336,7 @@
   $("scForm").onsubmit = async function (e) {
     e.preventDefault(); var b = $("scSave"); $("scMsg").textContent = ""; $("scMsg").className = "msg";
     busy(b, true);
-    try { renderScAdmin(await scApi("save", { testers: $("scTesters").value, seats: Number($("scSeatsN").value) || 5 })); toast("اتحفظ ✓"); }
+    try { renderScAdmin(await scApi("save", { all: $("scAll").checked, testers: $("scTesters").value, seats: Number($("scSeatsN").value) || 5 })); toast("اتحفظ ✓"); }
     catch (err) { $("scMsg").className = "msg err"; $("scMsg").textContent = err.message; }
     busy(b, false);
   };

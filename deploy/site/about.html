@@ -529,6 +529,8 @@
     { cat: "channels", ic: "✈️", t: "المساعد على تيليجرام", d: "بوت تيليجرام باسم متجرك، والمساعد يرد فيه على زباينك.", k: ["telegram"], isNew: true,
       li: ["البوت بيتعمل بضغطة من لوحتك وبيتربط لوحده، أو تربط بوتك بالتوكن", "بيرد في ثواني ويفهم صور المنتجات", "لينك البوت تحطه على صفحتك وفي البايو",
         "كل رد من نفس رصيد باقتك، من غير اشتراك زيادة"] },
+    { cat: "channels", ic: "📥", t: "«محادثاتي» (SellyChat)", d: "كل رسايل زباينك من الواتساب والمسنجر والإنستجرام وتيليجرام في صفحة واحدة، وانت وفريقك تردّوا منها.", k: [], isNew: true, inbox: true,
+      li: ["ردودك بتوصل للزبون من نفس الرقم أو الصفحة أو البوت اللي كلّمك عليه", "حساب لكل موظف، وتوزّع المحادثات عليهم", "«مستنية رد» بتوريك مين محدش رد عليه، ولما حد منكم يرد المساعد بيسكت في المحادثة دي", "ملاحظات للفريق وردود جاهزة، وتفتحها على الموبايل زي التطبيق", "من غير سعر زيادة"] },
     { cat: "channels", ic: "🔗", t: "لينك شات جاهز", d: "صفحة شات كاملة باسم متجرك، من غير موقع ولا كود.", k: [],
       li: ["حطه في بايو انستجرام وتيك توك وفيسبوك", "ابعته في الرد السريع على واتساب", "زرار «اسألنا» في إعلاناتك"] },
     { cat: "look", ic: "🎨", t: "شكل الشات على مقاس براندك", d: "الشات يبان كأنه جزء من متجرك.", k: ["styles"], part: "الأشكال المميزة والألوان الخاصة",
@@ -546,8 +548,8 @@
     { cat: "account", ic: "🎧", t: "دعم فني حقيقي", d: "ناس حقيقية بترد عليك.", k: [],
       li: ["تذاكر دعم من لوحة متجرك", "تواصل مباشر معانا على واتساب"] }
   ];
-  // «فكّر معانا» is listed once the admin opens it (plans.ashx "council")
-  var SVC_ALL = SERVICES; SERVICES = SVC_ALL.filter(function (s) { return !s.council; });
+  // «فكّر معانا» and «محادثاتي» are listed once the admin opens them (plans.ashx "council", "inbox")
+  var SVC_ALL = SERVICES; SERVICES = SVC_ALL.filter(function (s) { return !s.council && !s.inbox; });
 
   var plansData = null, current = "all";
   function catOf(id) { for (var i = 0; i < CATS.length; i++) if (CATS[i].id === id) return CATS[i]; return CATS[0]; }
@@ -602,7 +604,7 @@
   }
   setWa();
   fetch("api/plans.ashx", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
-    if (d.council) { SERVICES = SVC_ALL; renderChips(); }
+    if (d.council || d.inbox) { SERVICES = SVC_ALL.filter(function (s) { return (!s.council || d.council) && (!s.inbox || d.inbox); }); renderChips(); }
     plansData = d; if (d.wa) { WA = d.wa; setWa(); } renderGrid();
   }).catch(function () {});
   // already a customer: the way back to the dashboard

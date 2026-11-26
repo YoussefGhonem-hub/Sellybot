@@ -1720,6 +1720,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                         // «السعر القديم» while it's open: pay before the end of that day and the first months stay at today's price (null = off / over)
                         { "oldOffer", Billing.OldOfferJson(c) },
                         { "council", Council.On(c) },   // «فكّر معانا» is open (about.html lists it then)
+                        { "inbox", Inbox.All(c) },   // «💬 محادثاتي» is open to every store (about.html lists it then)
                     });
                 }
             }
