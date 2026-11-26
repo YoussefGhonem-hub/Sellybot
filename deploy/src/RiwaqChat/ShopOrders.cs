@@ -256,7 +256,7 @@ namespace RiwaqChat
             var d = new Dictionary<string, object>
             {
                 { "no", o.No }, { "status", o.Status }, { "at", ShopView.Unix(o.CreatedAt) }, { "statusAt", ShopView.Unix(o.StatusAt) }, { "total", o.Total }, { "sub", o.Subtotal }, { "off", o.Discount }, { "ship", o.Ship }, { "tracking", o.Tracking ?? "" }, { "carrier", o.Carrier ?? "" },
-                { "fees", ShopJson.Arr(o.FeesJson) }, { "pay", o.Pay }, { "dep", o.Deposit }, { "paid", o.Paid }, { "ps", o.PayState ?? "" }, { "ex", full ? o.Extras : o.Extras.Where(k => k.Key == "branch").ToDictionary(k => k.Key, k => k.Value) }, { "refund", o.Refund },
+                { "fees", ShopJson.Arr(o.FeesJson) }, { "pay", o.Pay }, { "dep", o.Deposit }, { "paid", o.Paid }, { "ps", o.PayState ?? "" }, { "ex", full ? o.Extras : o.Extras.Where(k => k.Key == "branch" || (k.Key == "by" && (o.Status == "shipped" || o.Status == "out"))).ToDictionary(k => k.Key, k => k.Value) }, { "refund", o.Refund },
                 { "gov", o.Gov }, { "city", o.City ?? "" }, { "name", o.Name.Split(' ')[0] },
                 { "items", o.Items.Select(i => new Dictionary<string, object> { { "p", i.ProductId }, { "n", i.Name }, { "o", i.Opts ?? "" }, { "q", i.Qty }, { "t", i.Sum }, { "im", i.Image ?? "" }, { "x", i.Extra ?? "" } }).ToArray() }
             };

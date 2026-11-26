@@ -21,7 +21,7 @@
 //   telegram: the assistant answering on the store's own Telegram bot (Telegram.cs); open to every plan until set
 //   crm: «زبايني», a file per customer (Crm.cs); open to every plan · crmgroups / returns: the ready-made groups and the returns alert,
 //        from «المتقدمة» (the crm migration set it; the super admin can change it)
-//   carriers: Bosta, ShipBlu, J&T for a rented store's orders (Carriers.cs): no minimum means closed to everyone (Carriers.On)
+//   carriers: Bosta, ShipBlu, J&T, Aramex for a rented store's orders (Carriers.cs): no minimum means open to every store (Carriers.On; the admin may close it)
 //   sellychat: SellyChat, one inbox where the owner and their team answer every channel (SellyChat.cs): closed too until a minimum (SellyChat.On)
 // The dashboard hides what the store's plan doesn't include (Hidden(), sent as "hide" in the store's data), and asks
 // api/locks.ashx which features are locked right now (an ended plan: the renew card).

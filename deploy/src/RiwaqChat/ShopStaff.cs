@@ -40,7 +40,7 @@ namespace RiwaqChat
             { "products", new[] { "cat-save", "cat-del", "cat-sort", "cat-products", "prod-save", "prod-del", "prod-dup", "prod-bulk", "prod-sort", "stock", "image", "image-del", "image-sort", "image-alt", "file" } },
             { "returns", new[] { "return-do", "review-do" } },
             { "money", new[] { "pay-review" } },
-            { "ship", new[] { "ship-check", "ship-send", "ship-labels", "ship-pickup", "ship-cancel", "ship-ask", "ship-drop", "ship-got", "order-ship" } } };
+            { "ship", new[] { "ship-check", "ship-send", "ship-labels", "ship-pickup", "ship-cancel", "ship-ask", "ship-drop", "ship-got", "order-ship", "ship-fix", "self-pick" } } };
         static readonly string[] Always = { "state", "geo" };   // the frame (a staff copy of it, StaffState) and the governorates
         // what the order's log already uses for "by": a staff member can't be called that
         static readonly HashSet<string> Taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "owner", "customer", "bot", "system", "carrier" };

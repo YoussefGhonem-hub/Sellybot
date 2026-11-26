@@ -124,6 +124,7 @@ namespace RiwaqChat
                 t.Append(en ? "📦 Your order " : "📦 أوردرك ").Append(o.NoText).Append(en ? " from *" : " من *").Append(name).Append(en ? "* has shipped." : "* اتشحن.");
                 if (!string.IsNullOrEmpty(o.Tracking)) t.Append("\n").Append(en ? "Tracking number: *" : "رقم التتبع: *").Append(o.Tracking).Append("*").Append(string.IsNullOrEmpty(o.Carrier) ? "" : " (" + o.Carrier + ")");
                 if (o.Due > 0 && o.Pay == "cod") t.Append("\n").Append(en ? "To pay the courier: *EGP " + o.Due.ToString("#,0.##", CultureInfo.InvariantCulture) + "*" : "هتدفع للمندوب: *" + ShopOrders.Money(o.Due) + "*");
+                var by = ShopSelf.Line(o, en); if (by.Length > 0) t.Append("\n").Append(by);   // «بوصّل بنفسي»
                 t.Append("\n").Append(en ? "Follow it: " : "تابعه من هنا: ").Append(sh.Url).Append("/track");
             }
             var why = await WaNotify.ToCustomer(c, s, o.Phone, t.ToString(), "sb-shop-ship-" + o.Id);

@@ -1,7 +1,9 @@
-// api/carrier-hook.ashx: what the companies tell us. Bosta: ?c=bosta&h=<the store's own address> with the store's secret in Authorization (both were
-// sent with the delivery). J&T: one address for Sellybot, ?c=jt&h=..., every push signed with our privateKey. Anything else is refused, and so is a
-// shipment that isn't that store's. ShipBlu doesn't notify (it's asked).
-// api/carriers-admin.ashx: the super admin's part: J&T's apiAccount and privateKey (kept encrypted, never shown again), the trial's merchants, the numbers.
+// ship-hook.ashx (and the older api/carrier-hook.ashx, still answering): what the companies tell us. Outside /api/, so the site's own limits there
+// never hold a company back. Bosta: ?c=bosta&h=<the store's own address> with the store's secret in Authorization (both were sent with the
+// delivery). J&T: ?c=jt&h=<the link's own address>, every push signed with that link's privateKey (the merchant's own, or the admin's fallback
+// for a link without its own); the admin's fallback address ?c=jt&h=<JtHook> takes only the waybills of links on the fallback keys. Anything
+// else is refused, and so is a shipment that isn't that store's. ShipBlu and Aramex don't notify (they're asked).
+// api/carriers-admin.ashx: the super admin's part: closing it, the lowest plan, the trial's merchants, the numbers, and (hidden) J&T's fallback keys.
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -48,23 +50,32 @@ namespace RiwaqChat
             var e = CarrierBosta.FromHook(ShopJson.Obj(Body(req))); if (e == null) { res.StatusCode = 400; return; }
             var x = Carriers.ByTracking(c, k.StoreId, "bosta", e.Tracking, e.Ref); if (x == null) { res.StatusCode = 404; return; }
             if (!Carriers.Apply(c, x.StoreId, x.Id, e, "hook")) { res.StatusCode = 503; return; }
+            Carriers.Heard(c, k.StoreId, "bosta");
             res.ContentType = "application/json"; res.Write("{\"success\":true}");
         }
 
         static void Jt(SqlConnection c, HttpRequest req, HttpResponse res, string h, string ip)
         {
-            string account = Secrets.Unprotect(Billing.Get(c, "JtAccountBox")), priv = Secrets.Unprotect(Billing.Get(c, "JtKeyBox"));
-            if (!Same(h, Billing.Get(c, "JtHook")) || string.IsNullOrEmpty(priv)) { Refuse(res, ip); return; }
+            // the link's own address, or the admin's fallback one (any store whose link has no keys of its own)
+            var k = Carriers.LinkByHook(c, h); string account, priv; int store = 0;
+            if (k != null && k.Company == "jt") { account = k.Account; priv = k.Private; store = k.StoreId; }
+            else if (CarrierJt.Ready(c) && Same(h, Billing.Get(c, "JtHook"))) { account = Secrets.Unprotect(Billing.Get(c, "JtAccountBox")); priv = Secrets.Unprotect(Billing.Get(c, "JtKeyBox")); }
+            else { Refuse(res, ip); return; }
+            if (string.IsNullOrEmpty(priv) || string.IsNullOrEmpty(account)) { Refuse(res, ip); return; }
             // a form field; parsed by hand, so a courier's free text never trips ASP.NET's request check
             string raw = Body(req), biz = null; foreach (var p in raw.Split('&')) if (p.StartsWith("bizContent=", StringComparison.Ordinal)) biz = HttpUtility.UrlDecode(p.Substring(11), Encoding.UTF8);
             if (biz == null || !Same(req.Headers["apiAccount"], account) || !Same(req.Headers["digest"], CarrierJt.Digest(biz, priv))) { Refuse(res, ip); return; }
-            if (!Web.Allow("ship-hook-jt", 60000, TimeSpan.FromHours(1))) { res.StatusCode = 429; return; }
+            if (!Web.Allow("ship-hook-jt:" + store, store == 0 ? 60000 : 6000, TimeSpan.FromHours(1))) { res.StatusCode = 429; return; }
             var list = biz.TrimStart().StartsWith("[", StringComparison.Ordinal) ? ShopJson.Arr(biz).OfType<Dictionary<string, object>>().ToList() : new List<Dictionary<string, object>> { ShopJson.Obj(biz) }; bool busy = false; int known = 0, all = 0;
+            var fallback = new Dictionary<int, bool>(); var heard = new HashSet<int>();
             foreach (var e in list.SelectMany(CarrierJt.Scans))
             {
-                all++; var x = Carriers.ByTracking(c, 0, "jt", e.Tracking, e.Ref); if (x == null || (!string.IsNullOrEmpty(e.Ref) && x.Ref != e.Ref)) continue;   // another program's waybill, or a number that isn't this order's
-                known++; if (!Carriers.Apply(c, x.StoreId, x.Id, e, "hook")) busy = true;
+                all++; var x = Carriers.ByTracking(c, store, "jt", e.Tracking, e.Ref); if (x == null || (!string.IsNullOrEmpty(e.Ref) && x.Ref != e.Ref)) continue;   // another program's waybill, or a number that isn't this order's
+                // the fallback address: only for a store whose link signs with the fallback keys
+                if (store == 0) { bool fb; if (!fallback.TryGetValue(x.StoreId, out fb)) { var lk = Carriers.Link(c, x.StoreId, "jt"); fallback[x.StoreId] = fb = lk != null && !lk.Own; } if (!fb) continue; }
+                known++; heard.Add(x.StoreId); if (!Carriers.Apply(c, x.StoreId, x.Id, e, "hook")) busy = true;
             }
+            foreach (var sid in heard) Carriers.Heard(c, sid, "jt");
             if (busy) { res.StatusCode = 503; return; }
             if (all > 0 && known == 0) { res.StatusCode = 404; return; }
             res.ContentType = "application/json; charset=utf-8"; res.Write("{\"code\":\"1\",\"msg\":\"success\",\"data\":\"SUCCESS\"}");
@@ -82,6 +93,8 @@ namespace RiwaqChat
             return x;
         }
         public static string JtHook(SqlConnection c) { var h = Billing.Get(c, "JtHook"); if (string.IsNullOrEmpty(h)) { h = Shops.Token(20); Billing.Set(c, "JtHook", h); } return h; }
+        // a notification for this store checked out (the first one stops J&T's 4-hour round for the link)
+        internal static void Heard(SqlConnection c, int storeId, string company) { Exec(c, "UPDATE dbo.Carriers SET HeardAt=SYSUTCDATETIME() WHERE StoreId=@s AND Company=@c AND HeardAt IS NULL", "@s", storeId, "@c", company); }
 
         public static Dictionary<string, object> AdminJson(SqlConnection c, HttpRequest req)
         {
@@ -92,17 +105,18 @@ namespace RiwaqChat
                 using (var cmd = Db.Cmd(c, "SELECT COUNT(*), ISNULL(SUM(CASE WHEN Ours='delivered' THEN 1 ELSE 0 END),0), ISNULL(SUM(CASE WHEN Ours='returned' THEN 1 ELSE 0 END),0), ISNULL(SUM(CASE WHEN State='unsure' THEN 1 ELSE 0 END),0) FROM dbo.Shipments WHERE Company=@c AND State<>'failed' AND CreatedAt>DATEADD(DAY,-30,SYSUTCDATETIME())", "@c", co.Id)) using (var r = cmd.ExecuteReader()) { r.Read(); l.Add(D("id", co.Id, "name", co.Name, "linked", linked, "broke", broke, "sent", (int)r[0], "delivered", (int)r[1], "returned", (int)r[2], "unsure", (int)r[3])); }
             }
             string min = Billing.Get(c, "MinPlan_" + Feature); int pid; var plan = int.TryParse(min ?? "", out pid) ? Billing.Plan(c, pid) : null; string last = Secrets.Unprotect(Billing.Get(c, "JtAccountBox")) ?? "";
-            return D("list", l, "areas", All.ToDictionary(x => x.Id, x => (object)CarrierAreas.Count(c, x.Id)), "testers", Billing.Get(c, "CarrierTesters") ?? "", "plan", plan == null ? "" : plan.Name, "jt", D("set", CarrierJt.Ready(c), "last4", last.Length > 4 ? last.Substring(last.Length - 4) : "", "demo", Billing.Get(c, "JtDemo") == "1", "hook", WaAccount.Origin(req) + "/api/carrier-hook.ashx?c=jt&h=" + JtHook(c)));
+            return D("list", l, "areas", All.ToDictionary(x => x.Id, x => (object)CarrierAreas.Count(c, x.Id)), "testers", Billing.Get(c, "CarrierTesters") ?? "", "plan", plan == null ? "" : plan.Name, "off", Billing.Get(c, "CarriersOff") == "1",
+                "jt", D("set", CarrierJt.Ready(c), "last4", last.Length > 4 ? last.Substring(last.Length - 4) : "", "hook", CarrierJt.Ready(c) ? WaAccount.Origin(req) + HookPath + "?c=jt&h=" + JtHook(c) : ""));
         }
         public static void AdminPost(SqlConnection c, Dictionary<string, object> b)
         {
             switch (Str(b, "a", 20))
             {
                 case "testers": Billing.Set(c, "CarrierTesters", string.Join(",", Str(b, "testers", 2000).Split(new[] { ',', ' ', '\n', '،' }, StringSplitOptions.RemoveEmptyEntries).Where(x => Web.SlugRx.IsMatch(x.ToLowerInvariant())).Select(x => x.ToLowerInvariant()).Distinct().Take(50))); return;
+                case "off": Billing.Set(c, "CarriersOff", ShopJson.Bool(ShopJson.At(b, "off")) ? "1" : ""); return;   // closed to every store but the testers
                 case "jt":
                     {
-                        string account = Str(b, "account", 60), key = Str(b, "key", 200); Billing.Set(c, "JtDemo", ShopJson.Bool(ShopJson.At(b, "demo")) ? "1" : "");
-                        if (account.Length == 0 && key.Length == 0) { if (!CarrierJt.Ready(c)) throw new ShopException("jt", "اكتب apiAccount و privateKey."); return; }   // only the switch
+                        string account = Str(b, "account", 60), key = Str(b, "key", 200);
                         if (!Regex.IsMatch(account, @"^\d{6,30}$") || !Regex.IsMatch(key, @"^[\x21-\x7e]{16,100}$")) throw new ShopException("jt", "راجع apiAccount و privateKey من Personal center في J&T Open Platform.");
                         Billing.Set(c, "JtAccountBox", Secrets.Protect(account)); Billing.Set(c, "JtKeyBox", Secrets.Protect(key)); return;
                     }

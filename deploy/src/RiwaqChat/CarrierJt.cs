@@ -1,7 +1,10 @@
 // J&T Express Egypt (the J&T Open Platform's own pages, open.jtjms-eg.com, read 2026-11-26). Two signatures: the header's is base64(md5(bizContent +
-// Sellybot's privateKey)); the customer's, inside bizContent, is base64(md5(customerCode + PWD + privateKey)), PWD = MD5(password + J&T's fixed word) in capitals.
-// Sellybot's apiAccount and privateKey come from the admin (encrypted) after J&T certifies the company: until then it's «قريب» and can't be linked.
-// J&T pushes every scan to one address of ours, and the open waybills are asked about every few hours as a second source.
+// privateKey)); the customer's, inside bizContent, is base64(md5(customerCode + PWD + privateKey)), PWD = MD5(password + J&T's fixed word) in capitals.
+// The keys are the merchant's own: apiAccount and privateKey from their J&T Open Platform account (Personal center, after J&T certifies them with
+// their own commercial register), with the customer code and password from their branch; all four encrypted (MoreBox / KeyBox). The admin's keys
+// (JtAccountBox, JtKeyBox) are an optional fallback, hidden: when set, a merchant may link with the code and password alone.
+// Each link has its own notification address (?c=jt&h=<HookId>), checked with that link's privateKey. Until its first notification checks out, its
+// open waybills are asked about every 4 hours; after it, J&T tells us everything and the round stops for that link.
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -23,12 +26,40 @@ namespace RiwaqChat
         public override int PollMinutes { get { return 240; } }
         public override int PollBatch { get { return 30; } }
         public override bool PickupCall { get { return false; } }   // the courier's window goes with the order
-        static string Base(CarrierLink k) { return Web.Setting("JtBase", k.Demo ? "https://demoopenapi.jtjms-eg.com/webopenplatformapi/api" : "https://openapi.jtjms-eg.com/webopenplatformapi/api").TrimEnd('/'); }
+        static string Base(CarrierLink k) { return Web.Setting("JtBase", "https://openapi.jtjms-eg.com/webopenplatformapi/api").TrimEnd('/'); }
+        // the admin's optional fallback keys
         public static bool Ready(SqlConnection c) { return !string.IsNullOrEmpty(Billing.Get(c, "JtAccountBox")) && !string.IsNullOrEmpty(Billing.Get(c, "JtKeyBox")); }
-        public override string Closed(SqlConnection c) { return Ready(c) ? null : "ربط J&T قريب: مستنيين اعتماد Sellybot عندهم."; }
-        public override void Prepare(SqlConnection c, CarrierLink k) { k.Account = Secrets.Unprotect(Billing.Get(c, "JtAccountBox")); k.Private = Secrets.Unprotect(Billing.Get(c, "JtKeyBox")); k.Demo = Billing.Get(c, "JtDemo") == "1"; }
-        public override string BadInput(CarrierLink k) { if (!Regex.IsMatch(k.Code ?? "", "^[A-Za-z0-9]{5,30}$")) return "اكتب كود العميل زي ما فرع J&T ادّهولك (زي J0086...)."; return k.Key.Length >= 4 && k.Key.Length <= 100 ? null : "اكتب الباسورد اللي فرع J&T ادّهولك."; }
+        public override bool QuietAfterPush { get { return true; } }
+        const string NoKeys = "ربط J&T محتاج apiAccount و privateKey بتوعك من J&T Open Platform. دوس «غيّر المفتاح» واكتبهم.";
+        public override void Take(CarrierLink k, Dictionary<string, object> b, CarrierLink old)
+        {
+            string acc = ShopJson.Str(ShopJson.At(b, "acc"), 40).Trim(), pk = ShopJson.Str(ShopJson.At(b, "pk"), 200).Trim();
+            if (acc.Length == 0 && pk.Length == 0 && old != null && old.M("acc").Length > 0) { acc = old.M("acc"); pk = old.M("pk"); }   // left empty: the keys saved before stay
+            if (acc.Length > 0 || pk.Length > 0) { k.More["acc"] = acc; k.More["pk"] = pk; }
+            k.Fresh = old == null || old.M("acc") != k.M("acc");
+        }
+        public override void Prepare(SqlConnection c, CarrierLink k)
+        {
+            if (k.M("acc").Length > 0) { k.Account = k.M("acc"); k.Private = k.M("pk"); k.Own = true; return; }
+            k.Account = Secrets.Unprotect(Billing.Get(c, "JtAccountBox")); k.Private = Secrets.Unprotect(Billing.Get(c, "JtKeyBox")); k.Own = false;
+        }
+        public override string Broken(CarrierLink k) { return string.IsNullOrEmpty(k.Account) || string.IsNullOrEmpty(k.Private) ? NoKeys : null; }
+        public override string BadInput(CarrierLink k)
+        {
+            if (k.More.Count > 0 && !Regex.IsMatch(k.M("acc"), @"^\d{6,30}$")) return "اكتب apiAccount زي ما هو في Personal center على J&T Open Platform (أرقام بس).";
+            if (k.More.Count > 0 && !Regex.IsMatch(k.M("pk"), @"^[\x21-\x7e]{16,100}$")) return "اكتب privateKey زي ما هو في Personal center على J&T Open Platform، من غير مسافات.";
+            if (Broken(k) != null) return "اكتب apiAccount و privateKey من Personal center على J&T Open Platform.";
+            if (!Regex.IsMatch(k.Code ?? "", "^[A-Za-z0-9]{5,30}$")) return "اكتب كود العميل زي ما فرع J&T ادّهولك (زي J0086...).";
+            return k.Key.Length >= 4 && k.Key.Length <= 100 ? null : "اكتب الباسورد اللي فرع J&T ادّهولك.";
+        }
         public override string NotReady(CarrierLink k) { return k.S("sn").Length < 2 || k.S("sp").Length == 0 || k.S("sa").Length == 0 || k.S("ss").Length < 3 ? "اكتب عنوان الاستلام (الاسم والموبايل والمنطقة والشارع) في إعدادات J&T الأول." : null; }
+        // the link's own notification address, whether one came, and the last four of the merchant's apiAccount (a fallback link shows none)
+        public override Dictionary<string, object> Card(SqlConnection c, CarrierLink k, string origin)
+        {
+            return new Dictionary<string, object> { { "own", k != null && k.Own }, { "keys", k != null && k.Own ? Last(k.M("acc")) : "" }, { "opt", Ready(c) }, { "heard", k != null && k.HeardAt.HasValue },
+                { "addr", k == null || string.IsNullOrEmpty(origin) ? "" : origin + Carriers.HookPath + "?c=jt&h=" + k.HookId } };
+        }
+        static string Last(string s) { return s.Length > 4 ? s.Substring(s.Length - 4) : ""; }
 
         static byte[] Md5(string s) { using (var h = MD5.Create()) return h.ComputeHash(Encoding.UTF8.GetBytes(s)); }
         public static string Digest(string biz, string privateKey) { return Convert.ToBase64String(Md5(biz + privateKey)); }
@@ -36,12 +67,14 @@ namespace RiwaqChat
 
         async Task<Dictionary<string, object>> Call(CarrierLink k, string path, Dictionary<string, object> biz, bool signed = true)
         {
+            if (Broken(k) != null) throw new CarrierException(NoKeys, "key", badKey: true);   // never sent unsigned
             if (signed) { biz["customerCode"] = k.Code; biz["digest"] = Sign(k); } string json = ShopJson.Write(biz);
             var q = new HttpRequestMessage(HttpMethod.Post, Base(k) + path) { Content = new StringContent("bizContent=" + Uri.EscapeDataString(json), Encoding.UTF8, "application/x-www-form-urlencoded") };
             q.Headers.TryAddWithoutValidation("apiAccount", k.Account); q.Headers.TryAddWithoutValidation("digest", Digest(json, k.Private)); q.Headers.TryAddWithoutValidation("timestamp", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture));
             var r = await Carriers.Send(Name, q); string code = ShopJson.Str(ShopJson.At(r.Body, "code"), 20), msg = ShopJson.Str(ShopJson.At(r.Body, "msg"), 200), ar;
             if (r.Good && code == "1") return r.Body;
             if (r.Status >= 500 || (r.Good && code.Length == 0)) throw new CarrierException("J&T فيها مشكلة دلوقتي. جرّب كمان شوية.", "net", unsure: true);
+            if (code == "145003030" || (code.Length > 0 && Regex.IsMatch(msg, "header.*sign|sign.*header|apiAccount", RegexOptions.IgnoreCase))) throw new CarrierException("J&T مش قابلة apiAccount أو privateKey. انسخهم تاني من Personal center على J&T Open Platform.", code, badKey: true);
             if (code == "145003031") throw new CarrierException("كود العميل أو الباسورد غلط. اسأل فرع J&T عنهم.", code, badKey: true);
             if (code == "145002001" || code == "145003101") throw new CarrierException("الأوردر ده متسجّل عند J&T قبل كده.", "dup");
             throw new CarrierException(Errors.TryGetValue(code, out ar) ? ar : "J&T رفضت: " + (msg.Length == 0 ? "رد " + r.Status : msg), code.Length == 0 ? "refused" : code);
@@ -50,9 +83,11 @@ namespace RiwaqChat
             { "145003060", "J&T مش عارفة المنطقة دي. اختارها تاني." }, { "145003061", "J&T مش عارفة المدينة دي. اختار المنطقة تاني." }, { "145003062", "J&T مش عارفة المحافظة دي. اختار المنطقة تاني." }, { "145003083", "بيانات عنوان الاستلام ناقصة. كمّلها في إعدادات J&T." }, { "145003084", "بيانات الزبون ناقصة. راجع الأوردر." }, { "145003085", "الأوردر مفيهوش رقم موبايل." }, { "145003086", "العنوان ناقص. راجع الأوردر." }, { "145003088", "ميعاد الاستلام ناقص. راجعه في إعدادات J&T." }, { "145003092", "الوزن من 0.01 لـ 30 كيلو." }, { "145003109", "العنوان طويل على J&T. قصّره." }, { "145003110", "اسم الشارع طويل على J&T. قصّره." },
             { "145003112", "التحصيل عند الاستلام مش متفعّل على حسابك في J&T. كلّم الفرع يفعّله." }, { "145003113", "حسابك في J&T مش شهري. كلّم الفرع." }, { "145003201", "المندوب استلم الشحنة خلاص." }, { "145003202", "الشحنة دي ملغية عند J&T." }, { "121003006", "الشحنة دي مابتتطبعش في حالتها دلوقتي." } };
 
-        // their own check of a code and password; when it isn't open to our account, a question that carries the same signature
+        // the keys first (the list of areas carries the header's signature alone), then their own check of a code and password; when that isn't
+        // open to the account, a question that carries the same signature
         public override async Task Check(CarrierLink k)
         {
+            await Call(k, "/location/getLocation", new Dictionary<string, object> { { "countryCode", "EGY" } }, false);
             try { await Call(k, "/vip/checkCusPwd", new Dictionary<string, object>()); }
             catch (CarrierException ex) when (!ex.BadKey && ex.Code != "net" && !ex.Down)
             {

@@ -1,12 +1,12 @@
-// Shipping companies (Bosta, ShipBlu, J&T Egypt): the merchant links their own account (prices and the cash on delivery stay between them and
-// the company), sends confirmed orders with a press, prints the company's labels, asks for the courier, and the status comes back by itself.
-//   CarrierBosta.cs / CarrierShipBlu.cs / CarrierJt.cs   each company's own calls      CarrierAreas.cs   our cities -> their areas
+// Shipping companies (Bosta, ShipBlu, J&T Egypt, Aramex): the merchant links their own account (prices and the cash on delivery stay between them
+// and the company), sends confirmed orders with a press, prints the company's labels, asks for the courier, and the status comes back by itself.
+//   CarrierBosta.cs / CarrierShipBlu.cs / CarrierJt.cs / CarrierAramex.cs   each company's own calls      CarrierAreas.cs   our cities -> theirs
 //   CarrierTrack.cs   what happens to a shipment (statuses, «إنقاذ الأوردر», jobs)      CarrierPdf.cs     several labels in one file
 //   CarrierHook.cs    the companies' notifications, and the admin's page              shop-admin/ship.js  the owner's side
 // This file: the tables, linking, sending, labels, pickup, cancelling.
 // One shipment per order, whatever happens: an order has one open row (a unique index), and a press that may have reached the company
 // without an answer is looked up by our reference before anything is created again. Today the orders are the rented stores' (Source 'shop').
-// Closed until the admin picks the lowest plan that has it (PlanGate "carriers"), or names a tester (AppSettings CarrierTesters).
+// Everything comes from the merchant (their keys, their account): open to every store by itself; the admin may pick a lowest plan or close it.
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -34,7 +34,11 @@ namespace RiwaqChat
     {
         public int StoreId; public string Company, Key, Code, Last4, AccName, HookId, HookSecret, LastError; public DateTime LinkedAt; public DateTime? LastErrorAt;
         public Dictionary<string, object> Set = new Dictionary<string, object>(); public List<object> Places = new List<object>();
-        public string Account, Private; public bool Demo;   // J&T: Sellybot's own account (the admin's)
+        public string Account, Private; public bool Demo;   // J&T: the keys a call is signed with (the merchant's own, or the admin's fallback)
+        // the merchant's other secrets (MoreBox, encrypted): J&T's apiAccount / privateKey, Aramex's API user. Own: signed with the merchant's own keys.
+        // Fresh: linked to another account, so «a notification came» starts again. HeardAt: the company's first notification that checked out.
+        public Dictionary<string, string> More = new Dictionary<string, string>(); public bool Own, Fresh; public DateTime? HeardAt;
+        public string M(string k) { string v; return More.TryGetValue(k, out v) ? v ?? "" : ""; }
         public string S(string k, string d = "") { var v = ShopJson.Str(ShopJson.At(Set, k), 300); return v.Length == 0 ? d : v; }
         public bool B(string k, bool d) { return ShopJson.Bool(ShopJson.At(Set, k), d); }
     }
@@ -83,12 +87,23 @@ namespace RiwaqChat
         public abstract Task<List<CarrierAreaRow>> Areas(CarrierLink k);
         // what must be in the settings before the first shipment; null = ready
         public virtual string NotReady(CarrierLink k) { return null; }
+        // the fields of the link form beyond key / code (old: the link there was, so a field left empty keeps what it had)
+        public virtual void Take(CarrierLink k, Dictionary<string, object> b, CarrierLink old) { }
+        // the link can't be used as it is (null = fine), and the last characters shown for it
+        public virtual string Broken(CarrierLink k) { return null; }
+        public virtual string Tail(CarrierLink k) { return k.Key.Length > 4 ? k.Key.Substring(k.Key.Length - 4) : ""; }
+        // the company itself refuses a second shipment with our reference: a press without an answer is simply made again
+        public virtual bool GuardsDup { get { return false; } }
+        // after its first notification the company isn't asked any more (it tells us everything)
+        public virtual bool QuietAfterPush { get { return false; } }
+        // what the owner's card shows beyond the common fields
+        public virtual Dictionary<string, object> Card(SqlConnection c, CarrierLink k, string origin) { return null; }
     }
 
     public static partial class Carriers
     {
         public const string Feature = "carriers";
-        public static readonly Carrier[] All = { new CarrierBosta(), new CarrierShipBlu(), new CarrierJt() };
+        public static readonly Carrier[] All = { new CarrierBosta(), new CarrierShipBlu(), new CarrierJt(), new CarrierAramex() };
         public static Carrier Of(string id) { return All.FirstOrDefault(x => x.Id == id); }
 
         public const string Schema = @"
@@ -127,6 +142,8 @@ END
 IF OBJECT_ID('dbo.CarrierPicks') IS NULL
   CREATE TABLE dbo.CarrierPicks(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Company NVARCHAR(10) NOT NULL, Gov INT NOT NULL, Place NVARCHAR(160) NOT NULL, GovId NVARCHAR(40) NOT NULL, CityId NVARCHAR(40) NOT NULL, AreaId NVARCHAR(40) NOT NULL, At DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     PRIMARY KEY(StoreId, Company, Gov, Place));
+-- the merchant's other secrets (encrypted), and when the company's first notification for this link checked out
+IF COL_LENGTH('dbo.Carriers', 'MoreBox') IS NULL EXEC sp_executesql N'ALTER TABLE dbo.Carriers ADD MoreBox NVARCHAR(MAX) NULL, HeardAt DATETIME2 NULL;';
 ";
 
         // ---------- small things ----------
@@ -195,8 +212,8 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
 
         // ---------- who sees it ----------
         public static bool Tester(SqlConnection c, StoreInfo s) { return (Billing.Get(c, "CarrierTesters") ?? "").Split(new[] { ',', ' ', '\n', '،' }, StringSplitOptions.RemoveEmptyEntries).Contains(s.Slug, StringComparer.OrdinalIgnoreCase); }
-        // unlike the other features «no minimum» means closed: nothing shows until the admin picks the lowest plan
-        public static bool On(SqlConnection c, StoreInfo s) { return Shops.Ready && s != null && (Tester(c, s) || (!string.IsNullOrEmpty(Billing.Get(c, "MinPlan_" + Feature)) && PlanGate.Allows(c, s, Feature))); }
+        // open to every store by itself (all it needs is the merchant's own account); the admin may pick a lowest plan, or close it (CarriersOff)
+        public static bool On(SqlConnection c, StoreInfo s) { return Shops.Ready && s != null && (Tester(c, s) || (Billing.Get(c, "CarriersOff") != "1" && (string.IsNullOrEmpty(Billing.Get(c, "MinPlan_" + Feature)) || PlanGate.Allows(c, s, Feature)))); }
 
         // ---------- the links ----------
         public static CarrierLink Link(SqlConnection c, int storeId, string company) { return Links(c, "StoreId=@a AND Company=@b", storeId, company).FirstOrDefault(); }
@@ -206,9 +223,14 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
         {
             var l = new List<CarrierLink>(); if (!Shops.Ready) return l;
             using (var cmd = Db.Cmd(c, "SELECT * FROM dbo.Carriers WHERE " + where + " ORDER BY LinkedAt", "@a", a, "@b", b)) using (var r = cmd.ExecuteReader())
-                while (r.Read()) l.Add(new CarrierLink { StoreId = (int)r["StoreId"], Company = (string)r["Company"], Key = Secrets.Unprotect((string)r["KeyBox"]), Code = r["Code"] as string, Last4 = (string)r["Last4"], AccName = r["AccName"] as string, HookId = (string)r["HookId"], HookSecret = Secrets.Unprotect((string)r["HookBox"]), LastError = r["LastError"] as string, LastErrorAt = Dt(r["LastErrorAt"]), LinkedAt = Dt(r["LinkedAt"]).Value, Set = ShopJson.Obj(r["Defaults"] as string), Places = ShopJson.Arr(r["Places"] as string) });
+                while (r.Read()) l.Add(new CarrierLink { StoreId = (int)r["StoreId"], Company = (string)r["Company"], Key = Secrets.Unprotect((string)r["KeyBox"]), Code = r["Code"] as string, Last4 = (string)r["Last4"], AccName = r["AccName"] as string, HookId = (string)r["HookId"], HookSecret = Secrets.Unprotect((string)r["HookBox"]), LastError = r["LastError"] as string, LastErrorAt = Dt(r["LastErrorAt"]), LinkedAt = Dt(r["LinkedAt"]).Value, Set = ShopJson.Obj(r["Defaults"] as string), Places = ShopJson.Arr(r["Places"] as string), More = Box(r["MoreBox"] as string), HeardAt = Dt(r["HeardAt"]) });
             foreach (var k in l) { var co = Of(k.Company); if (co != null) co.Prepare(c, k); }
             return l.Where(k => Of(k.Company) != null).ToList();
+        }
+        static Dictionary<string, string> Box(string box)
+        {
+            var d = new Dictionary<string, string>(); if (string.IsNullOrEmpty(box)) return d;
+            foreach (var kv in ShopJson.Obj(Secrets.Unprotect(box))) d[kv.Key] = ShopJson.Str(kv.Value, 300); return d;
         }
         // the key stopped working: shown in the tab, and said to the owner once a day
         internal static void Fault(SqlConnection c, CarrierLink k, string why)
@@ -221,6 +243,7 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
             var co = Of(company); if (co == null) throw new ShopException("company", "شركة الشحن دي مش موجودة.");
             var k = Link(c, storeId, company); if (k == null) throw new ShopException("link", "اربط حسابك على " + co.Name + " الأول من تبويب «الشحن».");
             var no = co.Closed(c); if (no != null) throw new ShopException("closed", no); if (string.IsNullOrEmpty(k.Key)) throw new ShopException("link", "مفتاح " + co.Name + " ماتقراش. اربطه تاني.");
+            var broke = co.Broken(k); if (broke != null) throw new ShopException("link", broke);
             return k;
         }
         static ShopException Said(CarrierException ex) { return new ShopException(ex.Code ?? "carrier", ex.Message); }
@@ -230,7 +253,7 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
             var co = Of(Str(b, "c", 10)); if (co == null) throw new ShopException("company", "شركة الشحن دي مش موجودة.");
             var no = co.Closed(c); if (no != null) throw new ShopException("closed", no);
             if (!Web.Allow("ship-link:" + s.Id, 30, TimeSpan.FromHours(1))) throw new ShopException("too_many", "محاولات كتير. استنى شوية وجرّب تاني.");
-            var k = new CarrierLink { StoreId = s.Id, Company = co.Id, Key = Str(b, "key", 600), Code = Str(b, "code", 40) }; co.Prepare(c, k);
+            var k = new CarrierLink { StoreId = s.Id, Company = co.Id, Key = Str(b, "key", 600), Code = Str(b, "code", 40) }; co.Take(k, b, Link(c, s.Id, co.Id)); co.Prepare(c, k);
             var bad = co.BadInput(k); if (bad != null) throw new ShopException("key", bad);
             return async () =>
             {
@@ -238,10 +261,10 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
                 using (var c2 = Db.Open())
                 {
                     // a new key keeps the settings, and the address the company already has for the shipments on their way
-                    string last = k.Key.Length > 4 ? k.Key.Substring(k.Key.Length - 4) : "", places = k.Places.Count == 0 ? null : ShopJson.Write(k.Places);
-                    Func<bool> update = () => { using (var cmd = Db.Cmd(c2, "UPDATE dbo.Carriers SET KeyBox=@k, Code=@cd, Last4=@l, AccName=@n, Places=@p, LinkedAt=SYSUTCDATETIME(), LastError=NULL, LastErrorAt=NULL WHERE StoreId=@s AND Company=@c", "@k", Secrets.Protect(k.Key), "@cd", Nz(k.Code), "@l", last, "@n", Nz(Cut(k.AccName, 120)), "@p", places, "@s", s.Id, "@c", co.Id)) return cmd.ExecuteNonQuery() > 0; };
+                    string last = co.Tail(k), places = k.Places.Count == 0 ? null : ShopJson.Write(k.Places), more = k.More.Count == 0 ? null : Secrets.Protect(ShopJson.Write(k.More.ToDictionary(x => x.Key, x => (object)x.Value)));
+                    Func<bool> update = () => { using (var cmd = Db.Cmd(c2, "UPDATE dbo.Carriers SET KeyBox=@k, Code=@cd, Last4=@l, AccName=@n, Places=@p, MoreBox=@m, HeardAt=CASE WHEN @f=1 THEN NULL ELSE HeardAt END, LinkedAt=SYSUTCDATETIME(), LastError=NULL, LastErrorAt=NULL WHERE StoreId=@s AND Company=@c", "@k", Secrets.Protect(k.Key), "@cd", Nz(k.Code), "@l", last, "@n", Nz(Cut(k.AccName, 120)), "@p", places, "@m", more, "@f", k.Fresh ? 1 : 0, "@s", s.Id, "@c", co.Id)) return cmd.ExecuteNonQuery() > 0; };
                     if (!update())
-                        try { Exec(c2, "INSERT INTO dbo.Carriers(StoreId, Company, KeyBox, Code, Last4, AccName, HookId, HookBox, Places) VALUES(@s, @c, @k, @cd, @l, @n, @h, @hb, @p)", "@s", s.Id, "@c", co.Id, "@k", Secrets.Protect(k.Key), "@cd", Nz(k.Code), "@l", last, "@n", Nz(Cut(k.AccName, 120)), "@h", Shops.Token(12), "@hb", Secrets.Protect(Shops.Token(24)), "@p", places); }
+                        try { Exec(c2, "INSERT INTO dbo.Carriers(StoreId, Company, KeyBox, Code, Last4, AccName, HookId, HookBox, Places, MoreBox) VALUES(@s, @c, @k, @cd, @l, @n, @h, @hb, @p, @m)", "@s", s.Id, "@c", co.Id, "@k", Secrets.Protect(k.Key), "@cd", Nz(k.Code), "@l", last, "@n", Nz(Cut(k.AccName, 120)), "@h", Shops.Token(12), "@hb", Secrets.Protect(Shops.Token(24)), "@p", places, "@m", more); }
                         catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { update(); }
                     if (CarrierAreas.Count(c2, co.Id) == 0) HostingEnvironment.QueueBackgroundWorkItem(ct => CarrierAreas.Refresh(co, true, ct));
                     Web.Json(res, 200, Tab(c2, s));
@@ -257,7 +280,7 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
             d["note"] = t("note", 150); d["label"] = t("label", 2) == "A6" ? "A6" : "A4"; d["place"] = t("place", 60); d["email"] = Web.ValidEmail(t("email", 120)) ? t("email", 120) : ""; d["goods"] = Regex.IsMatch(t("goods", 6), @"^ITN\d{1,2}$") ? t("goods", 6) : "";
             var w = ShopJson.Dec(ShopJson.At(v, "weight")); d["weight"] = w <= 0 ? 1 : Math.Max(0.01m, Math.Min(30, w));
             int from = ShopJson.Int(ShopJson.At(v, "from"), 10), to = ShopJson.Int(ShopJson.At(v, "to"), 18); if (from < 0 || from > 22 || to <= from || to > 23) { from = 10; to = 18; } d["from"] = from; d["to"] = to;
-            d["sn"] = t("sn", 50); d["sp"] = ShopOrders.Mobile(t("sp", 24)) ?? ""; d["ss"] = t("ss", 150);
+            d["sn"] = t("sn", 50); d["sp"] = ShopOrders.Mobile(t("sp", 24)) ?? ""; d["ss"] = t("ss", 150); d["pt"] = Regex.IsMatch(t("pt", 3), "^[A-Z]{3}$") ? t("pt", 3) : "";   // pt: Aramex's product
             string area = t("sa", 140); if (area.Length > 0 && CarrierAreas.ByKey(c, co.Id, area) == null) throw new ShopException("area", "اختار منطقة الاستلام من القايمة."); d["sa"] = area;
             if (t("sp", 24).Length > 0 && (string)d["sp"] == "") throw new ShopException("phone", "اكتب رقم موبايل مصري صح لعنوان الاستلام.");
             Exec(c, "UPDATE dbo.Carriers SET Defaults=@d WHERE StoreId=@s AND Company=@c", "@d", ShopJson.Write(d), "@s", s.Id, "@c", co.Id);
@@ -290,16 +313,20 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
         }
         static Dictionary<string, object> Tab(SqlConnection c, StoreInfo s)
         {
-            var l = Links(c, s.Id); var n = new Dictionary<string, int[]>();
+            var l = Links(c, s.Id); var n = new Dictionary<string, int[]>(); string origin = HookBase();
             using (var cmd = Db.Cmd(c, "SELECT Company, SUM(CASE WHEN State='live' THEN 1 ELSE 0 END), SUM(CASE WHEN State='live' AND ISNULL(Ours,'made')='made' THEN 1 ELSE 0 END) FROM dbo.Shipments WHERE StoreId=@s GROUP BY Company", "@s", s.Id)) using (var r = cmd.ExecuteReader()) while (r.Read()) n[(string)r[0]] = new[] { (int)r[1], (int)r[2] };
             return D("list", All.Select(co =>
             {
                 var k = l.FirstOrDefault(x => x.Company == co.Id); int[] m; n.TryGetValue(co.Id, out m); var soon = co.Closed(c);
                 var d = D("id", co.Id, "name", co.Name, "linked", k != null, "soon", soon ?? "", "open", m == null ? 0 : m[0], "wait", m == null ? 0 : m[1], "areas", CarrierAreas.Count(c, co.Id), "pickup", co.PickupCall, "maxCod", co.MaxCod);
-                if (k != null) { d["last4"] = k.Last4; d["code"] = k.Code ?? ""; d["acc"] = k.AccName ?? ""; d["at"] = Iso(k.LinkedAt); d["err"] = k.LastError ?? ""; d["set"] = k.Set; d["places"] = k.Places; d["need"] = co.NotReady(k) ?? ""; d["sender"] = AreaLabel(c, co.Id, k.S("sa")); }
+                if (k != null) { d["last4"] = k.Last4; d["code"] = k.Code ?? ""; d["acc"] = k.AccName ?? ""; d["at"] = Iso(k.LinkedAt); d["err"] = co.Broken(k) ?? k.LastError ?? ""; d["set"] = k.Set; d["places"] = k.Places; d["need"] = co.NotReady(k) ?? ""; d["sender"] = AreaLabel(c, co.Id, k.S("sa")); }
+                var x = co.Card(c, k, origin); if (x != null) d["x"] = x;
                 return d;
             }).ToArray(), "look", Num(c, "SELECT COUNT(*) FROM dbo.Shipments WHERE StoreId=@s AND " + NeedsLook, "@s", s.Id), "ok", true);
         }
+        // where the companies' notifications come (outside /api/, so the site's own limits there never hold a company back)
+        internal static string HookBase() { return Web.Setting("CarrierHookBase") ?? EasyOrders.Origin(HttpContext.Current == null ? null : HttpContext.Current.Request); }
+        public const string HookPath = "/ship-hook.ashx";
         static string AreaLabel(SqlConnection c, string company, string key) { if (key.Length == 0) return ""; var a = CarrierAreas.ByKey(c, company, key); return a == null ? "" : a.Label; }
         static Dictionary<string, object> List(SqlConnection c, StoreInfo s, string f, int page)
         {
@@ -357,6 +384,7 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
                 case "ship-cancel": later = CancelFor(c, s, b, res); return true;
                 case "ship-ask": later = AskNow(c, s, b, res); return true;
                 case "ship-drop": Drop(c, s, b, res); return true;
+                case "ship-fix": later = Fix(c, s, b, res); return true;   // CarrierAramex.cs: the number the owner found in their account
                 case "ship-got": Got(c, s, b, res); return true;
             }
             return false;
@@ -439,7 +467,7 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
             CarrierException why = null; CarrierMade made = null; bool maybe = look;
             try
             {
-                if (look) { made = await co.Find(k, row.Ref); maybe = made != null; }   // a press before this one got no answer
+                if (look && !co.GuardsDup) { made = await co.Find(k, row.Ref); maybe = made != null; }   // a press before this one got no answer
                 if (made == null)
                     try { made = await co.Create(k, p); maybe = true; }
                     catch (CarrierException ex) when (ex.Unsure || ex.Code == "dup") { maybe = true; try { made = await co.Find(k, row.Ref); } catch (CarrierException) { } if (made == null) throw; }
@@ -451,11 +479,11 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
             using (var c = Db.Open())
             {
                 if (why == null) { Made(c, row, made); return ById(c, sid, row.Id); }
-                string text = maybe ? why.Message + " مش متأكدين إن الشحنة اتسجّلت، فهنسأل الشركة عنها قبل أي محاولة تانية." : why.Message;
+                string text = maybe && !(co.GuardsDup && why.Code == "dup") ? why.Message + " مش متأكدين إن الشحنة اتسجّلت، فهنسأل الشركة عنها قبل أي محاولة تانية." : why.Message;
                 Exec(c, "UPDATE dbo.Shipments SET State=@st, Error=@e, ClaimedAt=SYSUTCDATETIME() WHERE Id=@i AND State='making'", "@st", maybe ? "unsure" : "failed", "@e", Cut(text, 300), "@i", row.Id);
                 ShopOrders.Log_(c, null, sid, oid, "system", Cut("ماتبعتش لـ " + co.Name + ": " + text, 290));
                 if (why.BadKey) Fault(c, k, why.Message);
-                throw new ShopException(why.BadKey ? "badkey" : why.Code == "net" ? "net" : "carrier", text);
+                throw new ShopException(why.BadKey ? "badkey" : why.Code == "net" || why.Code == "area" ? why.Code : "carrier", text);   // area: the owner's list asks for it again
             }
         }
         static CarrierShip Had(CarrierShip x) { x.State = "had"; return x; }
@@ -489,7 +517,7 @@ IF OBJECT_ID('dbo.CarrierPicks') IS NULL
             string note = string.Join(" - ", new[] { o.Note, k.S("note") }.Where(x => !string.IsNullOrWhiteSpace(x))), addr = string.Join("، ", new[] { o.City, o.Area, o.Address }.Where(x => !string.IsNullOrWhiteSpace(x)));
             return new CarrierParcel { Ref = reference, OrderNo = o.No.ToString(CultureInfo.InvariantCulture), Name = other ? ShopJson.Str(ShopJson.At(rc, "n"), 80) : o.Name, Phone = ShopOrders.Local(to), Phone2 = second == null || second == to ? null : ShopOrders.Local(second), Email = k.S("email"), Address = addr, Landmark = o.Landmark, Note = Regex.Replace(note, @"\s+", " "), Goods = GoodsText(o),
                 Items = o.Items.Sum(i => i.Qty), Cod = o.Due, Value = Math.Max(0, o.Subtotal - o.Discount), Area = area, Lines = o.Items, Pics = o.Items.Select(i => i.Image).Where(x => !string.IsNullOrEmpty(x)).Distinct().Take(10).Select(x => ShopImages.Url(x)).ToList(),
-                HookUrl = string.IsNullOrEmpty(origin) ? null : origin + "/api/carrier-hook.ashx?c=" + k.Company + "&h=" + k.HookId, HookSecret = k.HookSecret };
+                HookUrl = string.IsNullOrEmpty(origin) ? null : origin + HookPath + "?c=" + k.Company + "&h=" + k.HookId, HookSecret = k.HookSecret };
         }
 
         internal static void Made(SqlConnection c, CarrierShip x, CarrierMade m)

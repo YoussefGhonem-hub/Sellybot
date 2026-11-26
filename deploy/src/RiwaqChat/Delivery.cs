@@ -123,11 +123,11 @@ namespace RiwaqChat
             if (s == null || s.Status != "active") return;
             string id = o.Id.ToString(CultureInfo.InvariantCulture);
             if (Exists(c, s.Id, "shop", id)) return;
-            await Send(c, s, new Notice { Source = "shop", OrderId = id, Name = o.NoText, First = FirstName(o.Name), Phone = o.Phone, Due = o.Due <= 0 ? null : o.Lang == "en" ? "EGP " + o.Due.ToString("#,0.##", CultureInfo.InvariantCulture) : ShopOrders.Money(o.Due), Paid = o.Due <= 0, Today = true, En = o.Lang == "en", Part = ShopShipDay.Period(o) }, null, Feature);
+            await Send(c, s, new Notice { Source = "shop", OrderId = id, Name = o.NoText, First = FirstName(o.Name), Phone = o.Phone, Due = o.Due <= 0 ? null : o.Lang == "en" ? "EGP " + o.Due.ToString("#,0.##", CultureInfo.InvariantCulture) : ShopOrders.Money(o.Due), Paid = o.Due <= 0, Today = true, En = o.Lang == "en", Part = ShopShipDay.Period(o), Who = ShopSelf.Line(o, o.Lang == "en") }, null, Feature);
         }
 
         // ---------- the message ----------
-        class Notice { public string Source, OrderId, Name, First, Phone, Due, Part; public bool Paid, Today, En; }   // Part: the period the customer chose (ShopShipDay)
+        class Notice { public string Source, OrderId, Name, First, Phone, Due, Part, Who; public bool Paid, Today, En; }   // Part: the period the customer chose (ShopShipDay); Who: who delivers (ShopSelf)
 
         static async Task Send(SqlConnection c, StoreInfo s, Notice d, string skip, string storeFeature)
         {
@@ -156,12 +156,13 @@ namespace RiwaqChat
         static string Message(StoreInfo s, Notice d)
         {
             // the customer ordered from the store's English pages
-            if (d.En) return "Hello" + (string.IsNullOrWhiteSpace(d.First) ? "" : " " + d.First) + " 👋\nYour order *" + d.Name + "* from *" + s.Name + "* is out for delivery and arrives today" + (d.Part == "am" ? " in the morning, as you chose" : d.Part == "pm" ? " in the evening, as you chose" : "") + " 🚚\n\n" + (d.Due != null ? "💵 Please have *" + d.Due + "* in cash for the courier\n" : "") + "📱 Keep your phone near you and answer the courier's call\n\nIf you won't be there or need to change the address or the time, just reply here 🙏";
+            if (d.En) return "Hello" + (string.IsNullOrWhiteSpace(d.First) ? "" : " " + d.First) + " 👋\nYour order *" + d.Name + "* from *" + s.Name + "* is out for delivery and arrives today" + (d.Part == "am" ? " in the morning, as you chose" : d.Part == "pm" ? " in the evening, as you chose" : "") + " 🚚\n\n" + (string.IsNullOrEmpty(d.Who) ? "" : d.Who + "\n\n") + (d.Due != null ? "💵 Please have *" + d.Due + "* in cash for the courier\n" : "") + "📱 Keep your phone near you and answer the courier's call\n\nIf you won't be there or need to change the address or the time, just reply here 🙏";
             var sb = new StringBuilder();
             sb.Append("أهلًا").Append(string.IsNullOrWhiteSpace(d.First) ? "" : " " + d.First).Append(" 👋\n");
             // Shopify's "out for delivery" is today; EasyOrders' "in delivery" only says the shipping company has it
             if (d.Today) sb.Append("طلبك *").Append(d.Name).Append("* من *").Append(s.Name).Append("* خرج مع المندوب، وهيوصلك النهارده").Append(d.Part == "am" ? " الصبح زي ما اخترت" : d.Part == "pm" ? " بالليل زي ما اخترت" : "").Append(" 🚚\n\n");
             else sb.Append("طلبك *").Append(d.Name).Append("* من *").Append(s.Name).Append("* خرج مع شركة الشحن وفي الطريق ليك 🚚\n\n");
+            if (!string.IsNullOrEmpty(d.Who)) sb.Append(d.Who).Append("\n\n");   // «بوصّل بنفسي»: who it is, and the store's line
             if (d.Due != null) sb.Append("💵 جهّز *").Append(d.Due).Append("* كاش للمندوب\n");
             else if (d.Paid) sb.Append("💳 طلبك مدفوع، مش هتدفع حاجة للمندوب\n");
             sb.Append("📱 خلّي موبايلك جنبك ورد على المندوب لما يكلّمك\n\n");

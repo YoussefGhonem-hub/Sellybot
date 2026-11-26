@@ -236,7 +236,7 @@ namespace RiwaqChat
                         if (over > 0) sb.Append("الشحن مجاني للطلبات من ").Append(ShopOrders.Money(over)).Append(". ");
                         if (min > 0) sb.Append("أقل طلب ").Append(ShopOrders.Money(min)).Append(". ");
                         var blocked = d.Zones.Values.Where(z => z.Off).Select(z => ShopGeo.Name(z.Gov)).ToList(); if (blocked.Count > 0) sb.Append("مابنوصّلش لـ: ").Append(string.Join("، ", blocked)).Append(".");
-                        sb.Append(ShopShipRate.BotText(d, g == null ? 0 : g.Id)).Append(ShopShipDay.BotText(c, sh, g == null ? 0 : g.Id));
+                        sb.Append(ShopShipRate.BotText(d, g == null ? 0 : g.Id)).Append(ShopShipDay.BotText(c, sh, g == null ? 0 : g.Id)).Append(ShopSelf.BotText(sh));
                         return sb.ToString().Trim();
                     }
                 case "offers":
@@ -296,6 +296,7 @@ namespace RiwaqChat
         {
             var sb = new StringBuilder("طلب ").Append(o.NoText).Append(": حالته «").Append(ShopOrders.StatusText(o.Status)).Append("»، من ").Append(ShopPromo.Local(o.CreatedAt).Replace("T", " ")).Append("، الإجمالي ").Append(ShopOrders.Money(o.Total)).Append("\n").Append(ShopOrders.ItemsText(o, 8));
             if (!string.IsNullOrEmpty(o.Tracking)) sb.Append("رقم التتبع: ").Append(o.Tracking).Append(string.IsNullOrEmpty(o.Carrier) ? "" : " (" + o.Carrier + ")").Append("\n");
+            sb.Append(ShopSelf.BotLine(o));
             if (o.Status == "new" || o.Status == "noreply") sb.Append("مستني تأكيد الزبون: يرد 1 على رسالة الواتساب عشان يتأكد.\n");
             if (o.Status == "cancelled") sb.Append("الطلب ملغي.\n");
             return sb.ToString().Trim();
@@ -507,6 +508,7 @@ namespace RiwaqChat
                     if (who != "customer") using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Status=@st, Note=@n WHERE StoreId=@s AND OrderId=@o AND Status='pending'", "@st", to == "confirmed" ? "confirmed" : to == "cancelled" ? "cancelled" : "skipped", "@n", "غيّرت حالته لـ «" + ShopOrders.StatusText(to) + "»", "@s", storeId, "@o", id)) if (to != "noreply") cmd.ExecuteNonQuery();
                     if (to == "cancelled" && who != "carrier") Carriers.OnCancelled(storeId, id);
                     try { ShopDigital.OnStatus(c, storeId, id, to); } catch (Exception ex) { Log.Error(ex); }   // a cancel closes the digital links
+                    if (to == "shipped" || to == "out") ShopSelf.Stamp(c, storeId, o);   // «بوصّل بنفسي»: who delivers it, before the messages say so
                     if (to == "out") await Delivery.OnShop(c, s, o);
                     if (to == "shipped") { var sh = Shops.ByStore(c, storeId); if (sh != null) await ShopPay.Shipped(c, s, sh, o); }
                 }

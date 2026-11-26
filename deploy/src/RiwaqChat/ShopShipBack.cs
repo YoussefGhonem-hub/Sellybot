@@ -42,7 +42,7 @@ namespace RiwaqChat
         // the assistant: what a customer may ask about a return («المندوب هييجي ياخده؟»)
         public static string BotText(SqlConnection c, Shop sh)
         {
-            try { var s = Db.StoreById(c, sh.StoreId); return On(c, s, sh) && Carriers.Links(c, s.Id).Any(k => k.Company != "jt") ? "بعد ما المتجر يوافق على طلب الاسترجاع أو الاستبدال ممكن يبعت مندوب شركة الشحن ياخد المنتج من عند الزبون، والزبون بيوصله رقم التتبع على الواتساب. ماتوعدش بميعاد المندوب. " : ""; }
+            try { var s = Db.StoreById(c, sh.StoreId); return On(c, s, sh) && Carriers.Links(c, s.Id).Any(k => k.Company != "jt" && k.Company != "aramex") ?"بعد ما المتجر يوافق على طلب الاسترجاع أو الاستبدال ممكن يبعت مندوب شركة الشحن ياخد المنتج من عند الزبون، والزبون بيوصله رقم التتبع على الواتساب. ماتوعدش بميعاد المندوب. " : ""; }
             catch (Exception ex) { Log.Error(ex); return ""; }
         }
         static int UnsureWait { get { int v; return int.TryParse(Web.Setting("CarrierUnsureSec"), out v) && v >= 0 ? v : 60; } }
@@ -74,6 +74,7 @@ namespace RiwaqChat
         static string Why(string co, string kind, CarrierShip delivered)
         {
             if (co == "jt") return "المندوب يجيب المرتجع مش متاحة مع J&T.";
+            if (co == "aramex") return "المندوب يجيب المرتجع مش متاحة مع أرامكس: الربط بتاعهم مافيهوش شحنة مرتجع. اطلبها من مندوب أرامكس.";
             if (co == "shipblu" && kind == "exchange" && (delivered == null || delivered.Company != "shipblu" || delivered.Ours != "delivered" || string.IsNullOrEmpty(delivered.TheirId))) return "الاستبدال مع ShipBlu بيتعمل بس على أوردر اتسلّم معاهم.";
             return null;
         }
@@ -119,7 +120,7 @@ namespace RiwaqChat
             var delivered = Carriers.OfOrder(c, s.Id, o.Id); string cid = ShopShip2.Str(b, "c", 10);
             if (cid.Length == 0) cid = delivered != null && Carriers.Link(c, s.Id, delivered.Company) != null ? delivered.Company : Carriers.Links(c, s.Id).Select(k => k.Company).FirstOrDefault() ?? "";
             var co = Carriers.Of(cid); if (co == null) throw new ShopException("company", "اربط شركة شحن الأول من تبويب «الشحن».");
-            var why = Why(co.Id, q.Kind, delivered); if (why != null) throw new ShopException(co.Id == "jt" ? "jt" : "kind", why);
+            var why = Why(co.Id, q.Kind, delivered); if (why != null) throw new ShopException(co.Id == "jt" || co.Id == "aramex" ? co.Id : "kind", why);
             var k = Need(c, s.Id, co.Id); var need = co.NotReady(k); if (need != null) throw new ShopException("set", need);
             decimal collect = q.Kind == "exchange" ? ShopShip2.Clamp(ShopJson.Dec(ShopJson.At(b, "collect")), 0, co.MaxCod > 0 ? co.MaxCod : 30000) : 0;
             CarrierAreaRow area; string ak = ShopShip2.Str(b, "area", 140);
@@ -192,7 +193,7 @@ namespace RiwaqChat
             string notes = Regex.Replace(string.Join(" - ", new[] { (q.Kind == "exchange" ? "استبدال أوردر " : "مرتجع أوردر ") + o.NoText, note, k.S("note") }.Where(x => !string.IsNullOrWhiteSpace(x))), @"\s+", " ");
             return new CarrierParcel { Ref = reference, OrderNo = o.No.ToString(CultureInfo.InvariantCulture), Name = o.Name, Phone = ShopOrders.Local(o.Phone), Phone2 = o.Phone2 == null || o.Phone2 == o.Phone ? null : ShopOrders.Local(o.Phone2), Email = k.S("email"), Address = string.Join("، ", new[] { o.City, o.Area, o.Address }.Where(x => !string.IsNullOrWhiteSpace(x))),
                 Landmark = o.Landmark, Note = notes, Goods = goods, NewGoods = fresh, Items = Math.Max(1, q.Items.Sum(i => ShopJson.Int(ShopJson.At(i, "q")))), Cod = collect, Value = q.Items.Sum(i => ShopJson.Dec(ShopJson.At(i, "t"))), Area = area, Lines = o.Items,
-                HookUrl = string.IsNullOrEmpty(origin) ? null : origin + "/api/carrier-hook.ashx?c=" + k.Company + "&h=" + k.HookId, HookSecret = k.HookSecret };
+                HookUrl = string.IsNullOrEmpty(origin) ? null : origin + Carriers.HookPath + "?c=" + k.Company + "&h=" + k.HookId, HookSecret = k.HookSecret };
         }
         static Task<CarrierMade> Create(Carrier co, CarrierLink k, CarrierParcel p, bool exchange, string theirOrder)
         {

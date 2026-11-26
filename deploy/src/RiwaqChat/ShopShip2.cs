@@ -65,7 +65,7 @@ IF OBJECT_ID('dbo.ShipCashFiles') IS NULL
         {
             var bk = ShopJson.Sub(x, "sback"); var cs = ShopJson.Sub(x, "scash");
             return D("dday", ShopShipDay.Clean(ShopJson.Sub(x, "dday")), "srate", ShopShipRate.Clean(ShopJson.Sub(x, "srate")), "sback", D("on", ShopJson.Bool(ShopJson.At(bk, "on"))),
-                "scash", D("on", ShopJson.Bool(ShopJson.At(cs, "on")), "days", Clamp(ShopJson.Int(ShopJson.At(cs, "days"), 14), 3, 90)));
+                "scash", D("on", ShopJson.Bool(ShopJson.At(cs, "on")), "days", Clamp(ShopJson.Int(ShopJson.At(cs, "days"), 14), 3, 90)), "self", ShopSelf.Clean(ShopJson.Sub(x, "self")));
         }
 
         // BOOT.shop.ship2 (ShopFront.ShopJsonFor): null = nothing on, the page loads nothing more
@@ -107,7 +107,7 @@ IF OBJECT_ID('dbo.ShipCashFiles') IS NULL
             if (a.StartsWith("srate", StringComparison.Ordinal)) return ShopShipRate.Post(c, s, sh, a, b, res);
             if (a.StartsWith("scash", StringComparison.Ordinal)) return ShopShipCash.Post(c, s, sh, a, b, res);
             if (a.StartsWith("sback", StringComparison.Ordinal)) return ShopShipBack.Post(c, s, sh, a, b, res, out later);
-            return false;
+            return ShopSelf.Post(c, s, sh, a, b, res);   // «بوصّل بنفسي»: who delivers an order
         }
     }
 }
