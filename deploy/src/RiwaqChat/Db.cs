@@ -60,6 +60,7 @@ namespace RiwaqChat
         public int? NextPlanId;
         public string NextPlanName;
         public int NextDays;
+        public int? ParentId;   // a second store of the same merchant: its main store (ShopBrands.cs)
     }
 
     public class UsageInfo
@@ -289,6 +290,7 @@ namespace RiwaqChat
                 NextPlanId = r["NextPlanId"] is int ? (int)r["NextPlanId"] : (int?)null,
                 NextPlanName = r["NextPlanName"] as string,
                 NextDays = r["NextDays"] is int ? (int)r["NextDays"] : 0,
+                ParentId = ShopBrands.Parent(r),
             };
         }
 

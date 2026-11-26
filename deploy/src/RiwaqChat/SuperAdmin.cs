@@ -654,7 +654,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
         public static int FreeDays(SqlConnection c) { return Units(c, "FreeDays"); }
         // a store with no plan is on the free trial (the admin's own store keeps its unit limit)
         public static bool OnTrial(StoreInfo s) { return !s.PlanId.HasValue && !s.IsAdmin; }
-        public static DateTime TrialEnds(SqlConnection c, StoreInfo s) { return DateTime.SpecifyKind(s.CreatedAt, DateTimeKind.Utc).AddDays(FreeDays(c)); }
+        public static DateTime TrialEnds(SqlConnection c, StoreInfo s) { return DateTime.SpecifyKind(s.CreatedAt, DateTimeKind.Utc).AddDays(s.ParentId.HasValue ? 0 : FreeDays(c)); }   // a merchant's second store has no trial (ShopBrands.cs)
         public static bool TrialEnded(SqlConnection c, StoreInfo s) { return OnTrial(s) && DateTime.UtcNow >= TrialEnds(c, s); }
         // the trial's replies so far: every month since signing up (30 days can span two calendar months)
         public static int TrialUsed(SqlConnection c, StoreInfo s)
@@ -1056,7 +1056,8 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                 { "planExpired", hasPlan && ends.HasValue && ends.Value < DateTime.UtcNow },
                 // free trial: its allowance is a number of messages, not units
                 { "trial", trial }, { "msgLimit", trial ? freeMessages : 0 },
-                { "trialEnds", trial ? DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc).AddDays(freeDays).ToString("o") : "" },
+                { "trialEnds", trial ? DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc).AddDays(r["ParentId"] is int ? 0 : freeDays).ToString("o") : "" },
+                { "parentId", r["ParentId"] is int ? r["ParentId"] : null }, { "parentName", r["ParentName"] as string ?? "" },   // a merchant's second store and its main one (ShopBrands.cs)
                 { "messages", u.Messages }, { "used", u.Weighted }, { "costEgp", Math.Round(Billing.UsdForUnits(u.Weighted) * rate, 2) },
                 { "chars", Convert.ToInt64(r["Chars"]) }, { "openTickets", r["OpenTickets"] }, { "created", Billing.Iso(r["CreatedAt"]) },
                 { "shopify", !string.IsNullOrEmpty(r["ShopifyDomain"] as string) || !string.IsNullOrEmpty(r["ShopifyShop"] as string) },
@@ -1064,7 +1065,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
         }
 
         const string StoreSelect = @"SELECT s.Id, s.Slug, s.Name, s.OwnerEmail, s.Status, s.IsAdmin, s.MonthlyTokenLimit, s.PlanId, s.PlanName, s.PlanEndsAt, s.CreatedAt,
-  s.ShopifyDomain, s.ShopifyShop, s.AllowedOrigins, s.BubbleStyle, s.BrandColor, s.OwnerPhone,
+  s.ShopifyDomain, s.ShopifyShop, s.AllowedOrigins, s.BubbleStyle, s.BrandColor, s.OwnerPhone, s.ParentId, (SELECT p.Name FROM dbo.Stores p WHERE p.Id = s.ParentId) AS ParentName,
   ISNULL(u.Messages,0) AS Messages, ISNULL(u.InputTokens,0) AS I, ISNULL(u.CacheReadTokens,0) AS CR, ISNULL(u.CacheWriteTokens,0) AS CW, ISNULL(u.OutputTokens,0) AS O,
   (SELECT ISNULL(SUM(CAST(LEN(k.Content) AS BIGINT)),0) FROM dbo.KnowledgeItems k WHERE k.StoreId = s.Id) AS Chars,
   (SELECT COUNT(*) FROM dbo.Tickets t WHERE t.StoreId = s.Id AND t.Status = 'open') AS OpenTickets

@@ -2059,12 +2059,14 @@
         <button data-goto="support">🎧 الدعم الفني <span class="nb" id="supBadge" hidden></span></button>
         <a id="menuWa" target="_blank" rel="noopener">🟢 كلّمنا على واتساب ↗</a>
         <button type="button" id="menuDesktop" hidden>🖥️ نزّل البرنامج على الكمبيوتر</button>
+        <div id="sbBrands"></div><!-- the merchant's other stores and «متجر جديد» (shop-admin/brands.js) -->
         <div class="sep"></div>
         <button id="logoutBtn">↩️ تسجيل خروج</button>
       </div>
     </div>
   </div>
 </header>
+<script src="shop-admin/brands.js?v=20261126a" defer></script>
 
 <!-- ================= login / signup ================= -->
 <div class="auth-page" id="authView" hidden>
@@ -7266,11 +7268,11 @@
   }
 
   // ---------------- «متجري» (SellyStore): its own files, loaded once when the tab opens ----------------
-  var shopFiles = null, SHOP_V = "20261126e";
+  var shopFiles = null, SHOP_V = "20261126f";
   function shopLoad() {
     return shopFiles || (shopFiles = new Promise(function (ok, no) {
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/app.css?v=" + SHOP_V; document.head.appendChild(l);
-      var list = ["app", "qr", "catalog", "sell", "desk", "look", "ship"];
+      var list = ["app", "qr", "catalog", "sell", "desk", "look", "ship", "team"];
       (function next() {
         var n = list.shift(); if (!n) return ok();
         var s = document.createElement("script"); s.src = "shop-admin/" + n + ".js?v=" + SHOP_V; s.onload = next;

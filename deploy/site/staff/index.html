@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Sellybot · فريق المتجر</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='12 2 60 72'%3E%3Cpath d='M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15' fill='none' stroke='%23E8774A' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15' fill='none' stroke='%233a2a20' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  // the same light / dark choice as the dashboard (sb-theme), before the page paints
+  (function () {
+    var t = null; try { t = localStorage.getItem("sb-theme"); } catch (e) {}
+    function apply() { document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light"); }
+    apply(); window.sbTheme = function (v) { t = v; try { localStorage.setItem("sb-theme", v); } catch (e) {} apply(); };
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* the dashboard's base (dashboard.html), which the «متجري» screens are drawn on */
+  :root{color-scheme:light;--bg:#f7f4f0;--card:#ffffff;--ink:#221a14;--muted:#7f7266;--line:#ece4db;--soft:#fbf7f3;--brand:#e8774a;--brand2:#f5a25d;--ok:#2e9d5b;--err:#c0392b;--shadow:0 1px 2px rgba(40,25,10,.05),0 8px 24px rgba(40,25,10,.06);--lift:0 30px 80px rgba(60,35,15,.14)}
+  :root[data-theme=dark]{color-scheme:dark;--bg:#16110d;--card:#211a15;--ink:#f4ebe2;--muted:#b3a496;--line:#362b22;--soft:#2a211a;--ok:#4cc27e;--err:#ff8a7a;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);--lift:0 30px 80px rgba(0,0,0,.5)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+  button,input,textarea,select{font:inherit;color:inherit}
+  a{color:var(--brand)}
+  [hidden]{display:none!important}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+  .btn{border:0;border-radius:10px;padding:9px 16px;cursor:pointer;background:var(--brand);color:#fff;font-weight:600;transition:transform .15s,opacity .15s,box-shadow .15s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(232,119,74,.25)}
+  .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+  .btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--ink);font-weight:500}
+  .btn.ghost:hover{box-shadow:none;border-color:var(--brand)}
+  .btn.danger{background:none;border:1px solid var(--err);color:var(--err)}
+  .btn.sm{padding:6px 12px;font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 4px;font-size:16px}
+  .card .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+  input[type=text],input[type=email],input[type=password],input[type=number],input[type=tel],textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(232,119,74,.15)}
+  textarea{min-height:120px;resize:vertical}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .space{flex:1}
+  .msg{margin-top:10px;font-size:14px;min-height:1.4em}
+  .msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
+  .nb{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--brand);color:#fff;font-size:11px;font-weight:700;margin-inline-start:4px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;transition:transform .3s;z-index:70;max-width:90vw}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toggle{display:flex;align-items:flex-start;gap:10px;margin:8px 0 0;cursor:pointer;color:var(--ink);font-size:14px}
+  .toggle input{position:absolute;opacity:0;pointer-events:none}
+  .toggle .tg{flex:none;width:40px;height:22px;border-radius:999px;background:var(--line);position:relative;transition:background .2s;margin-top:2px}
+  .toggle .tg:after{content:"";position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+  .toggle input:checked+.tg{background:var(--ok)}
+  .toggle input:checked+.tg:after{transform:translateX(-18px)}
+  .toggle small{display:block;color:var(--muted);font-size:12.5px}
+  @media (max-width:760px){.wrap{padding:16px 12px 48px}.card{padding:14px}}
+
+  /* this page */
+  .st-top{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+  .st-top .in{max-width:1080px;margin:0 auto;padding:0 16px;height:60px;display:flex;align-items:center;gap:12px}
+  .st-logo{display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none;flex:none}
+  .st-logo svg{width:26px;height:32px}
+  .st-logo b{font-size:17px;direction:ltr}.st-logo b span{color:var(--brand)}
+  .st-logo small{display:block;font-size:11px;color:var(--muted);line-height:1.1}
+  .st-who{min-width:0;display:flex;flex-direction:column;line-height:1.2;text-align:start}
+  .st-who b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-who small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-ic{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+  .st-ic svg{width:18px;height:18px}
+  [data-theme=dark] .st-ic .sun,:root:not([data-theme=dark]) .st-ic .moon{display:none}
+  .st-in{max-width:420px;margin:40px auto 0}
+  .st-in h1{margin:0 0 6px;font-size:21px}
+  .st-in p{margin:0 0 4px;color:var(--muted);font-size:14px}
+  .st-in .btn{width:100%;margin-top:14px;padding:11px 16px}
+  .st-in input{font-size:17px;letter-spacing:.5px}
+  .st-in .lnk{background:none;border:0;color:var(--brand);cursor:pointer;padding:6px 0;font-size:14px}
+  .st-lock{max-width:520px;margin:40px auto 0;text-align:center}
+  @media (max-width:560px){.st-logo small,.st-logo b{display:none}.st-top .in{gap:8px;padding:0 12px}}
+
+  /* what a staff member never gets, whatever their ticks: the server refuses these anyway, the buttons just aren't drawn */
+  .sm-hb,.sm-steps,[data-do="fresh"],[data-do="merge"],[data-do="eOn"],[data-do="part"],[data-do="exp:orders"],[data-do="aiDesc"],[data-do="tr"],[data-do="cReady"],[data-do="xls"]{display:none!important}
+  body:not(.sf-money) .sm-pg>.space+span,body:not(.sf-money) [data-do="payOk"],body:not(.sf-money) [data-do="payNo"],body:not(.sf-money) .sm-proof{display:none!important}
+  body:not(.sf-orders) .sm-nx,body:not(.sf-orders) [data-do^="many:"],body:not(.sf-orders) [data-do="prt:invoice"],body:not(.sf-orders) [data-do="prep"],body:not(.sf-orders) .sm-od-a section.card:has(textarea[data-k="staff"]){display:none!important}
+  body:not(.sf-ship) [data-do="exp:shipping"],body:not(.sf-ship) .sm-od-b section.card:has([data-do="ship"]){display:none!important}
+  body:not(.sf-returns) [data-do="toRet"]{display:none!important}
+  .sm-body[data-v="ship"]>form{display:none!important}   /* «الشحن»: the store's shipping fees are the owner's; the companies part stays */
+</style>
+</head>
+<body>
+<header class="st-top"><div class="in">
+  <a class="st-logo" href="./" aria-label="Sellybot">
+    <svg viewBox="12 2 60 72" aria-hidden="true"><path d="M58 22c0-7-7-12-16-12S24 15 24 24s8 12 18 15" fill="none" stroke="#E8774A" stroke-width="9" stroke-linecap="round"/><path d="M26 54c0 7 7 12 16 12s18-5 18-14-8-12-18-15" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M58 22l8-6" stroke="#E8774A" stroke-width="5" stroke-linecap="round"/><path d="M26 54l-8 6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>
+    <span><b>Selly<span>bot</span></b><small>فريق المتجر</small></span>
+  </a>
+  <span class="space"></span>
+  <div class="st-who" id="who" hidden><b id="whoStore"></b><small id="whoName"></small></div>
+  <button type="button" class="st-ic" id="themeBtn" aria-label="الوضع الفاتح / الغامق"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+  <button type="button" class="btn ghost sm" id="outBtn" hidden>خروج</button>
+</div></header>
+
+<main class="wrap">
+  <form class="card st-in" id="signin" hidden autocomplete="on">
+    <h1>دخول فريق المتجر</h1>
+    <div id="step1"><p>اكتب رقم الواتساب اللي صاحب المتجر ضافك بيه، وهيوصلك عليه كود.</p>
+      <label for="phone">رقم الواتساب</label><input type="tel" id="phone" inputmode="tel" dir="ltr" maxlength="20" placeholder="01001234567" autocomplete="tel">
+      <button class="btn" type="submit" id="sendBtn">ابعتلي الكود</button></div>
+    <div id="step2" hidden><p id="sentTxt"></p>
+      <label for="code">الكود اللي وصلك</label><input type="text" id="code" inputmode="numeric" dir="ltr" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+      <button class="btn" type="submit" id="inBtn">ادخل</button>
+      <div class="row"><button type="button" class="lnk" id="backBtn">غيّر الرقم</button><span class="space"></span><button type="button" class="lnk" id="againBtn" disabled>ابعت كود تاني</button></div></div>
+    <div class="msg err" id="msg" role="alert"></div>
+  </form>
+  <div class="card st-lock" id="lock" hidden><h3 id="lockT"></h3><p class="sub" id="lockP"></p></div>
+  <div id="shopRoot" hidden></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); }, V = "20261126f", slug = (new URLSearchParams(location.search).get("s") || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
+  // what each tick shows of «متجري» (ShopStaff.cs says what each one may do: the server checks every request)
+  var VIEWS = { orders: ["orders"], products: ["products", "cats"], returns: ["returns", "reviews"], money: ["home", "report"], ship: ["orders", "ship"] };
+  var tT = 0; function toast(t) { var e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(tT); tT = setTimeout(function () { e.classList.remove("show"); }, 3200); }
+  async function call(a, body) {
+    var r = await fetch("api/shop.ashx" + (body ? "" : "?a=" + a), { method: body ? "POST" : "GET", credentials: "same-origin", headers: { "X-Requested-With": "fetch", "Content-Type": "application/json" }, body: body ? JSON.stringify(Object.assign({ a: a }, body)) : undefined });
+    var d = null; try { d = await r.json(); } catch (e) {} if (!r.ok) { var x = new Error(d && d.message || "حصلت مشكلة، جرّب تاني."); x.status = r.status; throw x; } return d;
+  }
+  $("themeBtn").onclick = function () { window.sbTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); };
+
+  // ---------- signing in ----------
+  var phone = "", againT = 0;
+  function showIn() { $("shopRoot").hidden = true; $("who").hidden = $("outBtn").hidden = true; $("lock").hidden = true; if (!slug) return lock("افتح لينك الدخول", "صاحب المتجر بيلاقي لينك دخول الفريق في «متجري» ← «الموظفين». افتحه من الرسالة اللي بعتهالك."); $("signin").hidden = false; $("step1").hidden = false; $("step2").hidden = true; $("phone").focus(); }
+  function lock(t, p) { $("signin").hidden = true; $("lock").hidden = false; $("lockT").textContent = t; $("lockP").textContent = p; }
+  function wait() { var n = 60; $("againBtn").disabled = true; clearInterval(againT); againT = setInterval(function () { n--; $("againBtn").textContent = n > 0 ? "ابعت كود تاني (" + n + ")" : "ابعت كود تاني"; if (n <= 0) { clearInterval(againT); $("againBtn").disabled = false; } }, 1000); }
+  async function send() { $("msg").textContent = ""; var r = await call("code", { s: slug, phone: phone }); $("step1").hidden = true; $("step2").hidden = false; $("sentTxt").textContent = r.message; $("code").value = ""; $("code").focus(); wait(); }
+  $("signin").onsubmit = async function (e) {
+    e.preventDefault(); var b = $("step2").hidden ? $("sendBtn") : $("inBtn"); if (b.disabled) return; b.disabled = true; $("msg").textContent = "";
+    try { if ($("step2").hidden) { phone = $("phone").value.trim(); await send(); } else { await call("login", { s: slug, phone: phone, code: $("code").value.trim() }); await start(); } }
+    catch (x) { $("msg").textContent = x.message; } finally { b.disabled = false; }
+  };
+  $("backBtn").onclick = function () { $("step2").hidden = true; $("step1").hidden = false; $("msg").textContent = ""; $("phone").focus(); };
+  $("againBtn").onclick = async function () { try { await send(); } catch (x) { $("msg").textContent = x.message; } };
+  $("outBtn").onclick = async function () { try { await call("logout", {}); } catch (e) {} location.reload(); };
+
+  // stopped by the owner, the team closed, the 12 hours over: the next answer says so, and the page goes back to signing in
+  var on = false, f0 = window.fetch.bind(window);
+  window.fetch = async function () { var r = await f0.apply(null, arguments); if (r.status === 401 && on) { on = false; toast("خرجت من حساب الفريق. ادخل تاني."); showIn(); } return r; };
+
+  // ---------- «متجري» with only their part ----------
+  var loaded = null;
+  function files() {
+    return loaded || (loaded = new Promise(function (ok, no) {
+      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "../shop-admin/app.css?v=" + V; document.head.appendChild(l);
+      var list = ["app", "qr", "catalog", "sell", "desk", "look", "ship"];
+      (function next() { var n = list.shift(); if (!n) return ok(); var s = document.createElement("script"); s.src = "../shop-admin/" + n + ".js?v=" + V; s.onload = next; s.onerror = function () { loaded = null; no(new Error("الصفحة ماحمّلتش. اتأكد من النت وجرّب تاني.")); }; document.body.appendChild(s); })();
+    }));
+  }
+  async function start() {
+    var me = await call("me"); on = true; $("signin").hidden = true; $("who").hidden = $("outBtn").hidden = false; $("whoStore").textContent = me.store; $("whoName").textContent = me.name;
+    if (!slug) { slug = me.slug; history.replaceState(null, "", "?s=" + encodeURIComponent(slug)); }
+    Object.keys(VIEWS).forEach(function (p) { document.body.classList.toggle("sf-" + p, me.perms.indexOf(p) >= 0); });
+    var st = await call("state"); if (!st.biz) return lock("المتجر لسه بيتجهز", "صاحب المتجر لسه بيجهّز «متجري». ارجع بعد ما يخلّص.");
+    await files(); var SB = window.SbShop, want = {};
+    me.perms.forEach(function (p) { (VIEWS[p] || []).forEach(function (v) { want[v] = 1; }); });
+    for (var i = SB.tabs.length - 1; i >= 0; i--) if (!want[SB.tabs[i][0]]) SB.tabs.splice(i, 1);
+    var first = SB.tabs.length ? SB.tabs[0][0] : "orders", last = null; try { last = sessionStorage.getItem("sm-view"); } catch (e) {}
+    // the order's note: the owner and the team see it, not only whoever writes it
+    new MutationObserver(function () { document.querySelectorAll('textarea[data-k="staff"]').forEach(function (x) { if (x.placeholder !== "صاحب المتجر والفريق بيشوفوها") x.placeholder = "صاحب المتجر والفريق بيشوفوها"; }); }).observe(document.body, { childList: true, subtree: true });
+    $("shopRoot").hidden = false;
+    SB.open($("shopRoot"), { toast: toast, me: null, go: function () { toast("الجزء ده مع صاحب المتجر."); }, view: want[last] ? last : first });
+  }
+  call("me").then(function () { start().catch(function (x) { toast(x.message); }); }).catch(showIn);
+})();
+</script>
+</body>
+</html>
