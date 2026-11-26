@@ -71,6 +71,7 @@ namespace RiwaqChat
                 case "order-new": OrderNew(c, s, sh, b, res); return true;
                 case "order-merge": Merge(c, sh, b, res); return true;
                 case "order-part": Part(c, sh, b, res); return true;
+                case "order-prep": return ShopTrack.Post(c, sh, a, b, res);   // «بيتجهز» (ShopTrack.cs)
                 case "wipe": { var why = ShopAccount.WipeNow(c, s.Id, ShopOrders.Mobile(Str(b, "phone", 24)) ?? ""); if (why != null) throw new ShopException("open", why); Ok(res); return true; }
                 case "sheet-try": later = ShopPay.Try(c, sh, b, res); return true;
                 case "ai-desc": later = ShopTranslate.Describe(c, s, sh, b, res); return true;

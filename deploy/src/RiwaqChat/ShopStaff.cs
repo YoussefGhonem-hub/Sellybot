@@ -36,7 +36,7 @@ namespace RiwaqChat
             { "money", new[] { "home", "report", "report-xls", "orders", "order" } },
             { "ship", new[] { "orders", "order", "ship", "ship-list", "ship-areas", "print:label", "export:shipping" } } };
         static readonly Dictionary<string, string[]> PostOk = new Dictionary<string, string[]> {
-            { "orders", new[] { "order-status", "order-note" } },
+            { "orders", new[] { "order-status", "order-note", "order-prep" } },
             { "products", new[] { "cat-save", "cat-del", "cat-sort", "cat-products", "prod-save", "prod-del", "prod-dup", "prod-bulk", "prod-sort", "stock", "image", "image-del", "image-sort", "image-alt", "file" } },
             { "returns", new[] { "return-do", "review-do" } },
             { "money", new[] { "pay-review" } },

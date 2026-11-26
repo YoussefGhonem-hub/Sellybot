@@ -427,7 +427,7 @@ namespace RiwaqChat
     public static partial class ShopHooks
     {
         public static void OnPlaced(StoreInfo s, long orderId, bool quiet = false) { int sid = s.Id; HostingEnvironment.QueueBackgroundWorkItem(ct => Placed(sid, orderId, quiet)); ShopApiHooks.OnOrder(sid, orderId, null, null); }
-        public static void OnStatus(SqlConnection c, int storeId, long id, string from, string to, string who) { HostingEnvironment.QueueBackgroundWorkItem(ct => Changed(storeId, id, from, to, who)); ShopApiHooks.OnOrder(storeId, id, from, to); }
+        public static void OnStatus(SqlConnection c, int storeId, long id, string from, string to, string who) { ShopTrack.Changed(c, storeId, id, to); HostingEnvironment.QueueBackgroundWorkItem(ct => Changed(storeId, id, from, to, who)); ShopApiHooks.OnOrder(storeId, id, from, to); }
         public static void OnEdit(SqlConnection c, int storeId, long id) { HostingEnvironment.QueueBackgroundWorkItem(ct => Edited(storeId, id)); }
     }
 }

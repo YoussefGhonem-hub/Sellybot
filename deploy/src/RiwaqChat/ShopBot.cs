@@ -297,7 +297,7 @@ namespace RiwaqChat
         {
             var sb = new StringBuilder("طلب ").Append(o.NoText).Append(": حالته «").Append(ShopOrders.StatusText(o.Status)).Append("»، من ").Append(ShopPromo.Local(o.CreatedAt).Replace("T", " ")).Append("، الإجمالي ").Append(ShopOrders.Money(o.Total)).Append("\n").Append(ShopOrders.ItemsText(o, 8));
             if (!string.IsNullOrEmpty(o.Tracking)) sb.Append("رقم التتبع: ").Append(o.Tracking).Append(string.IsNullOrEmpty(o.Carrier) ? "" : " (" + o.Carrier + ")").Append("\n");
-            sb.Append(ShopSelf.BotLine(o));
+            sb.Append(ShopSelf.BotLine(o)).Append(ShopTrack.BotLine(o));
             if (o.Status == "new" || o.Status == "noreply") sb.Append("مستني تأكيد الزبون: يرد 1 على رسالة الواتساب عشان يتأكد.\n");
             if (o.Status == "cancelled") sb.Append("الطلب ملغي.\n");
             return sb.ToString().Trim();

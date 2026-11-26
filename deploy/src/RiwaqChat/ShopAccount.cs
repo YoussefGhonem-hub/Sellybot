@@ -252,7 +252,7 @@ namespace RiwaqChat
         public static bool CanReturn(Shop sh, ShopOrder o) { return ReturnsOn(sh) && o.Status == "delivered" && o.DeliveredAt.HasValue && (DateTime.UtcNow - o.DeliveredAt.Value).TotalDays <= ReturnDays(sh); }
         static Dictionary<string, object> OrderJson(SqlConnection c, ShopFrontHandler.Ctx x, ShopOrder o)
         {
-            var d = ShopOrders.CustomerJson(o, true);
+            var d = ShopOrders.CustomerJson(o, true); d["trk"] = ShopTrack.Of(c, x.Row, o);
             d["tok"] = o.Token; d["area"] = o.Area ?? ""; d["lm"] = o.Landmark ?? ""; d["note"] = o.Note ?? ""; d["phone2"] = o.Phone2 == null ? "" : ShopOrders.Local(o.Phone2); d["fullName"] = o.Name; d["coupon"] = o.Coupon ?? ""; d["reason"] = o.CancelReason ?? "";
             d["log"] = new Dictionary<string, object> { { "confirmed", o.ConfirmedAt.HasValue ? ShopView.Unix(o.ConfirmedAt.Value) : 0 }, { "shipped", o.ShippedAt.HasValue ? ShopView.Unix(o.ShippedAt.Value) : 0 }, { "delivered", o.DeliveredAt.HasValue ? ShopView.Unix(o.DeliveredAt.Value) : 0 } };
             d["can"] = new Dictionary<string, object> { { "cancel", CancelOn(x.Row) && Early(o.Status) }, { "edit", CancelOn(x.Row) && Early(o.Status) }, { "ret", CanReturn(x.Row, o) && ShopReturns.Left(c, o).Count > 0 }, { "review", ReviewsOn(x.Row) && o.Status == "delivered" } };

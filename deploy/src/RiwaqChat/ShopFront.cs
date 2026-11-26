@@ -136,7 +136,7 @@ namespace RiwaqChat
                     {
                         var o = ShopOrders.ByToken(c, x.Row.StoreId, Regex.Replace(ShopJson.Str(ShopJson.At(b, "t"), 40), "[^a-f0-9]", ""));
                         if (o == null || (DateTime.UtcNow - o.CreatedAt).TotalDays > 60) { Web.Error(res, 404, "not_found"); return; }
-                        Web.Json(res, 200, ShopOrders.CustomerJson(o, true)); return;
+                        var oj = ShopOrders.CustomerJson(o, true); oj["trk"] = ShopTrack.Of(c, x.Row, o); Web.Json(res, 200, oj); return;
                     }
                 case "report": Report(c, x, b, res); return;
                 case "lead": Lead(c, x, b, res); return;
@@ -198,7 +198,7 @@ namespace RiwaqChat
             int no = ShopJson.Int(Regex.Replace(ShopJson.Digits(ShopJson.Str(ShopJson.At(b, "no"), 20)), @"\D", "")); var phone = ShopOrders.Mobile(ShopJson.Str(ShopJson.At(b, "phone"), 24));
             var o = no > 0 && phone != null ? ShopOrders.ByNo(c, x.Row.StoreId, no) : null;
             if (o == null || (o.Phone != phone && o.Phone2 != phone)) throw new ShopException("nomatch", x.Lang == "en" ? "No order matches this number and phone." : "مفيش طلب بالرقم والموبايل دول. راجعهم وجرّب تاني.");
-            Web.Json(res, 200, ShopOrders.CustomerJson(o, false));
+            var d = ShopOrders.CustomerJson(o, false); d["trk"] = ShopTrack.Of(c, x.Row, o); Web.Json(res, 200, d);
         }
 
         // «نافذة عرض»: the visitor's mobile for the code
