@@ -96,6 +96,11 @@ namespace RiwaqChat
         public virtual bool GuardsDup { get { return false; } }
         // false = the company has no cancelling from outside its account (ShipBlu, Aramex): no button, the owner cancels there and we hear of it
         public virtual bool CanCancel { get { return true; } }
+        // a shipment the company may hold without our knowing its number (a press with no answer, a refused duplicate): the owner types
+        // the number from their account (Carriers.Fix); Exists asks the company about it when it can
+        public virtual bool TypesNumber { get { return false; } }
+        public virtual string NumberPattern { get { return @"^\d{6,20}$"; } }
+        public virtual Task<bool> Exists(CarrierLink k, string waybill) { return Task.FromResult(true); }
         // after its first notification the company isn't asked any more (it tells us everything)
         public virtual bool QuietAfterPush { get { return false; } }
         // what the owner's card shows beyond the common fields

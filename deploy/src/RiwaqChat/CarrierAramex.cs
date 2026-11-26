@@ -138,7 +138,8 @@ namespace RiwaqChat
         }
         public override Task<CarrierMade> Find(CarrierLink k, string reference) { throw new CarrierException("أرامكس مابتسمحش ندوّر على الشحنة برقم الأوردر. دوّر عليها في حسابك على أرامكس بالمرجع " + reference + "، ولو لقيتها اكتب رقمها في الأوردر.", "nofind"); }
         // the owner's number (Carriers.Fix): Aramex knows a shipment by it
-        public async Task<bool> Exists(CarrierLink k, string waybill)
+        public override bool TypesNumber { get { return true; } }
+        public override async Task<bool> Exists(CarrierLink k, string waybill)
         {
             var r = await Call(k, "Tracking", "TrackShipments", D("Shipments", new[] { waybill }, "GetLastTrackingUpdateOnly", true));
             return !ShopJson.List(ShopJson.At(r, "NonExistingWaybills")).Select(x => ShopJson.Str(x, 40)).Contains(waybill);
@@ -262,8 +263,8 @@ namespace RiwaqChat
         static Func<Task> Fix(SqlConnection c, StoreInfo s, Dictionary<string, object> b, HttpResponse res)
         {
             var x = ById(c, s.Id, Int(b, "id")); if (x == null || x.State != "unsure") throw new ShopException("state", "الشحنة دي مش محتاجة رقم.");
-            var co = Of(x.Company) as CarrierAramex; if (co == null) throw new ShopException("state", "الشحنة دي بنسأل عنها الشركة لوحدنا.");
-            string no = Regex.Replace(ShopJson.Digits(Str(b, "tracking", 40)), @"\s", ""); if (!Regex.IsMatch(no, @"^\d{6,20}$")) throw new ShopException("tracking", "اكتب رقم الشحنة زي ما هو في حسابك على " + co.Name + " (أرقام بس).");
+            var co = Of(x.Company); if (co == null || !co.TypesNumber) throw new ShopException("state", "الشحنة دي بنسأل عنها الشركة لوحدنا.");   // Aramex, J&T
+            string no = Regex.Replace(ShopJson.Digits(Str(b, "tracking", 40)), @"\s", "").ToUpperInvariant(); if (!Regex.IsMatch(no, co.NumberPattern)) throw new ShopException("tracking", "اكتب رقم الشحنة زي ما هو في حسابك على " + co.Name + (co.Id == "aramex" ? " (أرقام بس)." : "."));
             if (Num(c, "SELECT COUNT(*) FROM dbo.Shipments WHERE Company=@c AND Tracking=@t", "@c", x.Company, "@t", no) > 0) throw new ShopException("tracking", "الرقم ده متسجّل لشحنة تانية.");
             var k = Need(c, s.Id, x.Company); if (!Web.Allow("ship-fix:" + s.Id, 20, TimeSpan.FromHours(1))) throw new ShopException("too_many", "محاولات كتير. استنى شوية.");
             return async () =>

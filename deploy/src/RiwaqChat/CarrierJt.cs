@@ -24,6 +24,11 @@ namespace RiwaqChat
         public override string Id { get { return "jt"; } }
         public override string Name { get { return "J&T"; } }
         public override int PollMinutes { get { return 240; } }
+        // J&T refuses a second order with our reference itself (145002001 / 145003101), so a press with no answer is simply sent again; when it
+        // was there after all, the owner types its number from their J&T account (Carriers.Fix: getOrders isn't open to every account)
+        public override bool GuardsDup { get { return true; } }
+        public override bool TypesNumber { get { return true; } }
+        public override string NumberPattern { get { return @"^[A-Z0-9]{6,30}$"; } }
         public override int PollBatch { get { return 30; } }
         public override bool PickupCall { get { return false; } }   // the courier's window goes with the order
         static string Base(CarrierLink k) { return Web.Setting("JtBase", "https://openapi.jtjms-eg.com/webopenplatformapi/api").TrimEnd('/'); }
@@ -78,7 +83,7 @@ namespace RiwaqChat
             if (r.Status >= 500 || (r.Good && code.Length == 0)) throw new CarrierException("J&T فيها مشكلة دلوقتي. جرّب كمان شوية.", "net", unsure: true);
             if (code == "145003030" || (code.Length > 0 && Regex.IsMatch(msg, "header.*sign|sign.*header|apiAccount", RegexOptions.IgnoreCase))) throw new CarrierException("J&T مش قابلة apiAccount أو privateKey. انسخهم تاني من Personal center على J&T Open Platform.", code, badKey: true);
             if (code == "145003031") throw new CarrierException("كود العميل أو الباسورد غلط. اسأل فرع J&T عنهم.", code, badKey: true);
-            if (code == "145002001" || code == "145003101") throw new CarrierException("الأوردر ده متسجّل عند J&T قبل كده.", "dup");
+            if (code == "145002001" || code == "145003101") throw new CarrierException("الأوردر ده متسجّل عند J&T قبل كده. دوّر عليه في حسابك على J&T برقم الأوردر، واكتب رقم الشحنة هنا تحت.", "dup");
             throw new CarrierException(Errors.TryGetValue(code, out ar) ? ar : "J&T رفضت: " + (msg.Length == 0 ? "رد " + r.Status : msg), code.Length == 0 ? "refused" : code);
         }
         static readonly Dictionary<string, string> Errors = new Dictionary<string, string> {
