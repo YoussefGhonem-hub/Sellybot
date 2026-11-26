@@ -7872,7 +7872,7 @@
   };
 
   // what's new: an entry about a feature (n.feature: a key or a list) shows only when the plan has it
-  function newsVisible(n) { return !n.feature || anyF([].concat(n.feature).join(" ")); }
+  function newsVisible(n) { return (!n.shop || !!(me && me.shop)) && (!n.feature || anyF([].concat(n.feature).join(" "))); }   // shop: only stores that have «متجري»
   var FREE_STYLES = ["classic", "pill", "agent", "minimal", "orb", "duo", "wave", "mail", "phone", "bear"];
   var BUB_EMO = ["🐻", "🐱", "🐼", "🤖", "🐧", "🦉", "🦊", "👻", "🐸", "🐰", "🎁", "💎", "⭐", "🎂", "☕", "🛒"], BUB_COL = ["#e8774a", "#9b5de5", "#1a73e8", "#0ea5a4", "#e84a8a", "#2f8f5b", "#d64545", "#1f3a5f"];
   var locks = {}, lockTimers = {};

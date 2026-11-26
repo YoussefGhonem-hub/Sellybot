@@ -5,6 +5,7 @@
 //   link (optional): { tab: "look", label: "جرّبه" } opens a dashboard tab · { href: "download.html", label: "..." } opens a page
 //   feature (optional): the plan feature it is about ("styles", or a list ["carts", "report"]): the dashboard shows it only to
 //     stores whose plan has it (PlanGate keys; each store sees only its own plan's features)
+//   shop: true (optional): a SellyStore («متجري») feature: shown only to stores «متجري» is open to (me.shop)
 //
 // How it reaches them:
 // - An open dashboard (or the desktop app) re-reads this file every 10 minutes and whenever its window comes back to the front.
@@ -12,7 +13,7 @@
 // - After loading, the entries this browser hasn't seen yet open once in the "الجديد في Sellybot" window.
 window.SB_NEWS = [
   {
-    id: "2026-11-26-order-prep", date: "2026-11-26", icon: "📦",
+    id: "2026-11-26-order-prep", date: "2026-11-26", icon: "📦", shop: true,
     title: "«بيتجهز»: زبونك يعرف طلبه وصل لفين",
     text: "لو عندك متجر على SellyStore: علّم الأوردر المتأكد «بيتجهز»، والزبون يشوفها لما يدوّر على طلبه في «طلبي فين؟».",
     items: ["زرار «📦 بيتجهز» في الأوردر المتأكد، أو علّمهم كلهم مرة واحدة من «قايمة التجهيز»",
