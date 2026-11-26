@@ -52,15 +52,18 @@ namespace RiwaqChat
             var who = new Dictionary<string, object> { { "full_name", p.Name }, { "phone", p.Phone }, { "address", new Dictionary<string, object> { { "line_1", p.Address }, { "line_2", string.IsNullOrWhiteSpace(p.Landmark) ? p.Area.Area : p.Landmark }, { "zone", zone } } } }; if (p.Phone2 != null) who["secondary_phone"] = p.Phone2; if (p.Email.Length > 0) who["email"] = p.Email;
             var b = new Dictionary<string, object> { { "customer", who }, { "packages", new[] { new Dictionary<string, object> { { "package_size", size }, { "description", p.Goods }, { "fragile", false } } } }, { "cash_amount", p.Cod }, { "merchant_order_reference", p.Ref }, { "is_customer_allowed_to_open_packages", k.B("open", false) } };
             if (p.Note.Length > 0) b["order_notes"] = p.Note; if (k.B("value", true) && p.Value > 0) b["declared_value"] = p.Value; if (p.Day != null) b["preferred_date"] = p.Day;
-            var r = await Call(k, HttpMethod.Post, "/delivery-orders/", b); return new CarrierMade { Tracking = T(r.Body, "tracking_number"), Id = T(r.Body, "id") };
+            var r = await Call(k, HttpMethod.Post, "/delivery-orders/", b); var made = new CarrierMade { Tracking = T(r.Body, "tracking_number"), Id = T(r.Body, "id") };
+            // their example answer has no tracking number: the order is read again by its id before anything is looked up by our reference
+            if (made.Tracking.Length == 0 && made.Id.Length > 0) try { var g = await Call(k, HttpMethod.Get, "/delivery-orders/" + Uri.EscapeDataString(made.Id) + "/"); made.Tracking = T(g.Body, "tracking_number"); } catch (CarrierException) { }
+            return made;
         }
 
-        // the list's filters aren't all written: whatever it gives is read for our reference, newest pages first
+        // the list's filters aren't all written («search» is): whatever it gives is read for our reference, newest pages first
         public override async Task<CarrierMade> Find(CarrierLink k, string reference)
         {
             for (int page = 0; page < 3; page++)
             {
-                var r = await Call(k, HttpMethod.Get, "/delivery-orders/?limit=100&offset=" + page * 100 + "&merchant_order_reference=" + Uri.EscapeDataString(reference)); var l = Rows(r);
+                var r = await Call(k, HttpMethod.Get, "/delivery-orders/?limit=100&offset=" + page * 100 + "&search=" + Uri.EscapeDataString(reference) + "&merchant_order_reference=" + Uri.EscapeDataString(reference)); var l = Rows(r);   // «search» is their written filter; the other is kept in case
                 var x = l.FirstOrDefault(o => T(o, "merchant_order_reference") == reference && !string.Equals(T(o, "status"), "CANCELLED", StringComparison.OrdinalIgnoreCase) && T(o, "tracking_number").Length > 0); if (x != null) return new CarrierMade { Tracking = T(x, "tracking_number"), Id = T(x, "id") };
                 if (l.Count < 100) break;
             }

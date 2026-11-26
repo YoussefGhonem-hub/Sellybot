@@ -232,8 +232,9 @@ namespace RiwaqChat
             using (var c = Db.Open())
             {
                 if (m != null) { if (!string.IsNullOrEmpty(m.Tracking)) Made(c, x, m); return; }
-                // surely not there (and long enough after the press): the order is free to be sent again
-                if (DateTime.UtcNow - x.ClaimedAt > TimeSpan.FromMinutes(5)) Exec(c, "UPDATE dbo.Shipments SET State='failed', Error=@e WHERE Id=@i AND State='unsure'", "@e", "الشحنة ماتسجّلتش عند " + Of(x.Company).Name + ". ابعتها تاني.", "@i", x.Id);
+                // surely not there (and long enough after the press): the order is free to be sent again. Not ShipBlu: finding by our reference
+                // isn't written in its docs, so a miss doesn't prove the parcel isn't there; the owner looks and says («اتأكدت إنها مش عندهم»)
+                if (x.Company != "shipblu" && DateTime.UtcNow - x.ClaimedAt > TimeSpan.FromMinutes(5)) Exec(c, "UPDATE dbo.Shipments SET State='failed', Error=@e WHERE Id=@i AND State='unsure'", "@e", "الشحنة ماتسجّلتش عند " + Of(x.Company).Name + ". ابعتها تاني.", "@i", x.Id);
             }
         }
 
