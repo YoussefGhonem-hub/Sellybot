@@ -32,6 +32,7 @@ namespace RiwaqChat
         public int StoreId, Ver, OrderNo;
         public string Slug, Name, NameEn, Biz, Status, ReviewNote, CloseNote, PendSlug, PendName;
         public DateTime? RentUntil, SubmittedAt, ApprovedAt, PublishedAt, ClosedAt, DraftAt;
+        public DateTime? FreeUntil;   // the free days after the first opening (Shops.FreeDays); set once, never again
         public DateTime CreatedAt;
         public string DraftJson, LiveJson, SettingsJson;
         public bool ReviewChange;   // a live store whose name / link / logo change waits for the admin
@@ -99,12 +100,14 @@ namespace RiwaqChat
     {
         public const string Feature = "shop";
         public const int GraceDays = 3, KeepDays = 90, RentDays = 30;
+        // a store that hasn't paid opens free for this many days from the admin's first approval, then closes to customers until the rent is paid (no grace)
+        public const int FreeDays = 2;
         public const string ServiceName = "متجر SellyStore";
 
         public static bool Ready;   // the tables are there (a failure here never stops the rest of the site)
         public static void Ensure(SqlConnection c)
         {
-            try { foreach (var sql in new[] { Schema, ShopMore.Schema, Carriers.Schema, ShopStaff.Schema, ShopBrands.Schema, ShopRew.Schema, ShopShip2.Schema, ShopCard.Schema, ShopGoods.Schema, ShopLookMore.Schema }) using (var cmd = new SqlCommand(sql, c)) { cmd.CommandTimeout = 120; cmd.ExecuteNonQuery(); } Ready = true; }
+            try { foreach (var sql in new[] { Schema, ShopMore.Schema, Carriers.Schema, ShopStaff.Schema, ShopBrands.Schema, ShopRew.Schema, ShopShip2.Schema, ShopCard.Schema, ShopGoods.Schema, ShopLookMore.Schema, ShopApi.Schema, ShopAds.Schema }) using (var cmd = new SqlCommand(sql, c)) { cmd.CommandTimeout = 120; cmd.ExecuteNonQuery(); } Ready = true; }
             catch (Exception ex) { Log.Error(ex); Ready = false; }
         }
 
@@ -171,10 +174,12 @@ namespace RiwaqChat
             var u = Until(c, s, sh); var now = DateTime.UtcNow;
             return u.HasValue && u.Value <= now && u.Value.AddDays(GraceDays) > now;
         }
+        // the free days after the first opening are still running
+        public static bool InFree(Shop sh) { return sh != null && sh.FreeUntil.HasValue && sh.FreeUntil.Value > DateTime.UtcNow; }
         // customers can open it
         public static bool Open(SqlConnection c, StoreInfo s, Shop sh)
         {
-            return sh != null && s != null && sh.Status == "live" && s.Status == "active" && (HasService(c, s, sh) || InGrace(c, s, sh));
+            return sh != null && s != null && sh.Status == "live" && s.Status == "active" && (HasService(c, s, sh) || InGrace(c, s, sh) || InFree(sh));
         }
 
         // ---------- the Worker's secret ----------
@@ -269,6 +274,7 @@ namespace RiwaqChat
                 ReviewNote = r["ReviewNote"] as string, CloseNote = r["CloseNote"] as string, PendSlug = r["PendSlug"] as string, PendName = r["PendName"] as string,
                 ReviewChange = (bool)r["ReviewChange"], DraftAt = Dt(r["DraftAt"]),
                 CreatedAt = DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc), SubmittedAt = Dt(r["SubmittedAt"]), ApprovedAt = Dt(r["ApprovedAt"]), PublishedAt = Dt(r["PublishedAt"]), ClosedAt = Dt(r["ClosedAt"]),
+                FreeUntil = Dt(r["FreeUntil"]),
             };
         }
 
@@ -501,6 +507,8 @@ BEGIN
   CREATE UNIQUE INDEX UX_ShopLeads_Phone ON dbo.ShopLeads(StoreId, Phone);
 END
 IF COL_LENGTH('dbo.Plans', 'IncludesShop') IS NULL ALTER TABLE dbo.Plans ADD IncludesShop BIT NOT NULL CONSTRAINT DF_Plans_IncludesShop DEFAULT 0;
+-- the free days after the first opening (Shops.FreeDays)
+IF COL_LENGTH('dbo.Shops', 'FreeUntil') IS NULL ALTER TABLE dbo.Shops ADD FreeUntil DATETIME2 NULL;
 ";
     }
 }

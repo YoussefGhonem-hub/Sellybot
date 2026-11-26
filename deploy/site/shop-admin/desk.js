@@ -137,6 +137,7 @@ V.feat = {
       ${bar("fSave")}</form>`;
     body.querySelector("[data-form]").addEventListener("input", mark);
     if (SB.catFeat) SB.catFeat(body);   // cat.js: moving products, WhatsApp, pre-orders, warehouses
+    if (SB.capiCard) SB.capiCard(body);   // «القياس من السيرفر» (api.js)
   },
   leave, acts: {
     fSave: b => run(b.tagName === "FORM" ? b.querySelector(".sm-save .btn") : b, async () => { const d = SB.read(SB.body().querySelector("[data-form]")); if (d.sheet.url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(d.sheet.url.trim())) throw new Error("لينك الشيت مش مظبوط. لازم يخلص بـ /exec."); d.abandon.delay = +d.abandon.delay; await post("settings", { settings: d }); dirty = false; say("اتحفظ ✅"); SB.show("feat"); }),

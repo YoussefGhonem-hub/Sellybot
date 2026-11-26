@@ -76,6 +76,7 @@ namespace RiwaqChat
                         "@s", s.Id, "@ch", channel, "@k", Cut(chatKey, 100), "@p", phone, "@r", Cut((reason.Length > 0 ? reason + " — " : "") + summary, 400),
                         "@l", channel == "wa" ? (object)line : DBNull.Value))
                         id = Convert.ToInt64(cmd.ExecuteScalar());
+                    if (channel != "web") Inbox.Flag(c, s.Id, channel == "wa" ? Inbox.WaChan(line) : channel, chatKey);   // SellyChat: waiting for someone
                     // which of the store's numbers the customer wrote to, when it has more than one
                     string wroteTo = null;
                     if (channel == "wa")

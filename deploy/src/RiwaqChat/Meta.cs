@@ -543,6 +543,7 @@ namespace RiwaqChat
                 // (from the Page inbox / the Instagram app): the bot steps aside in this chat for a while.
                 if (!string.IsNullOrEmpty(m.AppId) && m.AppId == appId) return;
                 if (text.Length > 0 && IsOurs(c, s.Id, ch, chat, text)) return;
+                if (text.Length == 0 && m.HasMedia && Inbox.SentPicture(c, s.Id, ch, chat)) return;   // a picture sent from SellyChat
                 Save(c, s.Id, ch, chat, false, text.Length > 0 ? text : "[ملف/صورة من المتجر]", "owner:" + (m.Mid ?? Guid.NewGuid().ToString("N")));
                 return;
             }
@@ -590,17 +591,17 @@ ELSE
                 {
                     var v = cmd.ExecuteScalar();
                     if (v == null || v == DBNull.Value) return null;
-                    SellyChat.Kick(storeId);   // a copy to SellyChat, when the store has it
+                    Inbox.Touch(c, storeId, ch, chat, fromCustomer, body, msgId);   // SellyChat's list of chats
                     return Convert.ToInt64(v);
                 }
             }
             catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { return null; }
         }
 
-        // what we sent ourselves: the assistant's replies, and the answers written in SellyChat (MsgId owner:cw-<id>)
+        // what we sent ourselves: the assistant's replies, and the answers written in SellyChat (MsgId owner:in-<staff>-<random>)
         static bool IsOurs(SqlConnection c, int storeId, string ch, string chat, string text)
         {
-            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.MetaMessages WHERE StoreId=@s AND Channel=@ch AND ChatId=@c AND FromCustomer=0 AND (MsgId IS NULL OR MsgId LIKE 'owner:cw-%')
+            using (var cmd = Db.Cmd(c, @"SELECT COUNT(*) FROM dbo.MetaMessages WHERE StoreId=@s AND Channel=@ch AND ChatId=@c AND FromCustomer=0 AND (MsgId IS NULL OR MsgId LIKE 'owner:in-%')
                 AND CreatedAt > DATEADD(MINUTE,-30,SYSUTCDATETIME()) AND CHARINDEX(@t, Body) > 0", "@s", storeId, "@ch", ch, "@c", chat, "@t", text))
                 return (int)cmd.ExecuteScalar() > 0;
         }
@@ -636,6 +637,7 @@ ELSE
                             Owner = (r["MsgId"] as string ?? "").StartsWith("owner:"), At = DateTime.SpecifyKind((DateTime)r["CreatedAt"], DateTimeKind.Utc) });
                     if (rows.Count == 0 || rows[0].Id != rowId) return;                                           // a newer message answers everything
                     if (rows.Any(x => x.Owner && x.At > DateTime.UtcNow.AddHours(-WhatsAppBot.PauseHours))) return;   // the owner is talking to them
+                    if (Inbox.Quiet(c, storeId, ch, chat)) return;   // «وقّف المساعد هنا» in SellyChat
 
                     s = Db.StoreById(c, storeId);
                     link = MetaApp.Link(c, storeId, ch);

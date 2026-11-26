@@ -64,6 +64,7 @@ namespace RiwaqChat
             if (ShopPrice.Vacation(d, now)) sb.Append("المتجر واخد إجازة ومش بيستقبل طلبات دلوقتي.\n");
             sb.Append(ShopRew.BotPrompt(sh));   // gift cards, points, «هات صاحبك» when on
             ShopSeasons.Bot(sh, sb);
+            sb.Append(ShopAds.BotLine(c, sh));
             sb.Append("إزاي تستخدمه:\n")
               .Append("- السعر والمقاسات والألوان والكمية والعروض من أداة ").Append(TProducts).Append(" بس. استخدمها قبل ما ترد على أي سؤال عن منتج، حتى لو رديت عليه قبل كده، لأن السعر والكمية بيتغيّروا.\n")
               .Append("- سعر الشحن ومدة التوصيل والعروض والأكواد والسياسات والتواصل من أداة ").Append(TInfo).Append(".\n")
@@ -413,7 +414,7 @@ namespace RiwaqChat
         // an order the owner wrote down: it enters «زبايني»; the customer gets the confirmation only when the owner asked for it
         public static void OnPlacedByOwner(StoreInfo s0, long orderId, bool tell)
         {
-            int storeId = s0.Id;
+            int storeId = s0.Id; ShopApiHooks.OnOrder(storeId, orderId, null, null);
             HostingEnvironment.QueueBackgroundWorkItem(async ct =>
             {
                 try

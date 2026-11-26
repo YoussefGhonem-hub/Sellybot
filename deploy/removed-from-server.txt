@@ -4,3 +4,8 @@
 # 2026-11-21: the ad «واتساب ومسنجر وإنستجرام», replaced by reels/16-one-place
 reels/15-all-channels.mp4
 reels/15-all-channels.jpg
+
+# 2026-11-26: the first SellyChat (Chatwoot on its own server), replaced by inbox.html / api/inbox*.ashx
+api/sellychat.ashx
+api/sellychat-hook.ashx
+api/sellychat-admin.ashx

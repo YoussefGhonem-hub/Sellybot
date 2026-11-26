@@ -1114,25 +1114,62 @@ BEGIN
       AND (@advPlan IS NULL OR p.SortOrder >= (SELECT SortOrder FROM dbo.Plans WHERE Id = @advPlan));
   INSERT INTO dbo.Migrations(Name) VALUES ('crm');
 END
--- SellyChat (SellyChat.cs): the store's account there (tokens kept protected; WaFrom / MetaFrom = the last message copied there),
--- the inbox of each channel (wa<line> / fb / ig / tg), each customer's conversation, and the employees added from the dashboard
-IF OBJECT_ID('dbo.ScLinks') IS NULL
-  CREATE TABLE dbo.ScLinks(StoreId INT NOT NULL PRIMARY KEY REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
-    AccountId INT NOT NULL, OwnerUserId INT NOT NULL, OwnerBox NVARCHAR(500) NOT NULL,
-    BotId INT NOT NULL, BotBox NVARCHAR(500) NOT NULL, PhoneBotId INT NOT NULL, PhoneBotBox NVARCHAR(500) NOT NULL,
-    HookKey NVARCHAR(64) NOT NULL, Origin NVARCHAR(200) NULL, WaFrom BIGINT NOT NULL DEFAULT 0, MetaFrom BIGINT NOT NULL DEFAULT 0,
-    Status NVARCHAR(300) NULL, StatusAt DATETIME2 NULL, LastAt DATETIME2 NULL, CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
-IF OBJECT_ID('dbo.ScInboxes') IS NULL
-  CREATE TABLE dbo.ScInboxes(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Chan NVARCHAR(10) NOT NULL,
-    InboxId INT NOT NULL, SecretBox NVARCHAR(300) NULL, PRIMARY KEY (StoreId, Chan));
-IF OBJECT_ID('dbo.ScConvs') IS NULL
+-- SellyChat («💬 محادثاتي», Inbox.cs): a row per customer chat on any channel (kept up to date as messages are saved), the team's
+-- private notes, the employees (their own sign-in), saved replies, and the pictures the team sends (kept 30 days).
+-- The first try (Chatwoot on its own server, 2026-11-26) left four empty tables: dropped once.
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'inbox-drop-chatwoot')
 BEGIN
-  CREATE TABLE dbo.ScConvs(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Chan NVARCHAR(10) NOT NULL, ChatId NVARCHAR(100) NOT NULL,
-    ContactId INT NOT NULL, ConvId INT NOT NULL, PRIMARY KEY (StoreId, Chan, ChatId));
-  CREATE INDEX IX_ScConvs_Conv ON dbo.ScConvs(StoreId, ConvId);
+  IF OBJECT_ID('dbo.ScConvs') IS NOT NULL DROP TABLE dbo.ScConvs;
+  IF OBJECT_ID('dbo.ScInboxes') IS NOT NULL DROP TABLE dbo.ScInboxes;
+  IF OBJECT_ID('dbo.ScAgents') IS NOT NULL DROP TABLE dbo.ScAgents;
+  IF OBJECT_ID('dbo.ScLinks') IS NOT NULL DROP TABLE dbo.ScLinks;
+  INSERT INTO dbo.Migrations(Name) VALUES ('inbox-drop-chatwoot');
 END
-IF OBJECT_ID('dbo.ScAgents') IS NULL
-  CREATE TABLE dbo.ScAgents(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, UserId INT NOT NULL,
-    Name NVARCHAR(100) NOT NULL, Email NVARCHAR(200) NOT NULL, CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), PRIMARY KEY (StoreId, UserId));";
+IF OBJECT_ID('dbo.InboxChats') IS NULL
+BEGIN
+  CREATE TABLE dbo.InboxChats(StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE, Chan NVARCHAR(10) NOT NULL, ChatId NVARCHAR(100) NOT NULL,
+    Name NVARCHAR(100) NULL, LastAt DATETIME2 NOT NULL, LastText NVARCHAR(200) NULL, LastFrom TINYINT NOT NULL, LastCustomerAt DATETIME2 NULL,
+    Unread INT NOT NULL DEFAULT 0, Status NVARCHAR(8) NOT NULL DEFAULT 'open', AssignedTo INT NULL, BotOff BIT NOT NULL DEFAULT 0, NeedsHuman BIT NOT NULL DEFAULT 0,
+    PRIMARY KEY (StoreId, Chan, ChatId));
+  CREATE INDEX IX_InboxChats_Last ON dbo.InboxChats(StoreId, Status, LastAt DESC);
+END
+IF OBJECT_ID('dbo.InboxStaff') IS NULL
+BEGIN
+  CREATE TABLE dbo.InboxStaff(Id INT IDENTITY(1,1) PRIMARY KEY, StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Name NVARCHAR(60) NOT NULL, Email NVARCHAR(150) NOT NULL, PasswordHash NVARCHAR(200) NOT NULL, Ver INT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(), LastAt DATETIME2 NULL);
+  CREATE UNIQUE INDEX UX_InboxStaff_Email ON dbo.InboxStaff(Email);
+END
+IF OBJECT_ID('dbo.InboxNotes') IS NULL
+BEGIN
+  CREATE TABLE dbo.InboxNotes(Id BIGINT IDENTITY(1,1) PRIMARY KEY, StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Chan NVARCHAR(10) NOT NULL, ChatId NVARCHAR(100) NOT NULL, StaffId INT NOT NULL, Text NVARCHAR(1000) NOT NULL, CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+  CREATE INDEX IX_InboxNotes_Chat ON dbo.InboxNotes(StoreId, Chan, ChatId, Id);
+END
+IF OBJECT_ID('dbo.InboxSnippets') IS NULL
+  CREATE TABLE dbo.InboxSnippets(Id INT IDENTITY(1,1) PRIMARY KEY, StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Title NVARCHAR(40) NOT NULL, Body NVARCHAR(1000) NOT NULL, CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+IF OBJECT_ID('dbo.InboxFiles') IS NULL
+  CREATE TABLE dbo.InboxFiles(K NVARCHAR(40) NOT NULL PRIMARY KEY, StoreId INT NOT NULL REFERENCES dbo.Stores(Id) ON DELETE CASCADE,
+    Mime NVARCHAR(40) NOT NULL, Data VARBINARY(MAX) NOT NULL, CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME());
+-- once: the chats of the last 14 days that have a customer message, so the list isn't empty on the first day
+IF NOT EXISTS (SELECT 1 FROM dbo.Migrations WHERE Name = 'inbox')
+BEGIN
+  BEGIN TRY
+  INSERT INTO dbo.InboxChats(StoreId, Chan, ChatId, LastAt, LastText, LastFrom, LastCustomerAt, Unread)
+    SELECT x.StoreId, 'wa' + CAST(x.Line AS NVARCHAR(6)), x.ChatId, x.CreatedAt, LEFT(x.Body, 140), CASE WHEN x.FromCustomer = 1 THEN 1 WHEN x.MsgId LIKE 'owner:%' THEN 3 ELSE 2 END, x.LastCust, 0
+    FROM (SELECT m.StoreId, m.Line, m.ChatId, m.CreatedAt, m.Body, m.FromCustomer, m.MsgId, ROW_NUMBER() OVER (PARTITION BY m.StoreId, m.Line, m.ChatId ORDER BY m.Id DESC) AS N,
+            MAX(CASE WHEN m.FromCustomer = 1 THEN m.CreatedAt END) OVER (PARTITION BY m.StoreId, m.Line, m.ChatId) AS LastCust
+          FROM dbo.WaMessages m WHERE m.CreatedAt > DATEADD(DAY,-14,SYSUTCDATETIME())) x
+    WHERE x.N = 1 AND x.LastCust IS NOT NULL;
+  INSERT INTO dbo.InboxChats(StoreId, Chan, ChatId, LastAt, LastText, LastFrom, LastCustomerAt, Unread)
+    SELECT x.StoreId, x.Channel, x.ChatId, x.CreatedAt, LEFT(x.Body, 140), CASE WHEN x.FromCustomer = 1 THEN 1 WHEN x.MsgId LIKE 'owner:%' THEN 3 ELSE 2 END, x.LastCust, 0
+    FROM (SELECT m.StoreId, m.Channel, m.ChatId, m.CreatedAt, m.Body, m.FromCustomer, m.MsgId, ROW_NUMBER() OVER (PARTITION BY m.StoreId, m.Channel, m.ChatId ORDER BY m.Id DESC) AS N,
+            MAX(CASE WHEN m.FromCustomer = 1 THEN m.CreatedAt END) OVER (PARTITION BY m.StoreId, m.Channel, m.ChatId) AS LastCust
+          FROM dbo.MetaMessages m WHERE m.CreatedAt > DATEADD(DAY,-14,SYSUTCDATETIME()) AND m.Channel IN ('fb','ig','tg')) x
+    WHERE x.N = 1 AND x.LastCust IS NOT NULL;
+  END TRY BEGIN CATCH END CATCH
+  INSERT INTO dbo.Migrations(Name) VALUES ('inbox');
+END";
     }
 }
