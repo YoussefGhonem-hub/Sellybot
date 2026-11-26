@@ -130,6 +130,7 @@ namespace RiwaqChat
             if (Shops.HasService(c, s, sh)) add("rent", "فعّل إيجار المتجر من «باقتي»", true, true, "plan");
             else if (!sh.FreeUntil.HasValue) add("rent", "ادفع إيجار المتجر (أول يومين بعد الفتح ببلاش)", false, false, "plan");
             else if (Shops.InFree(sh)) add("rent", "ادفع الإيجار قبل ما اليومين المجانيين يخلصوا", false, false, "plan");
+            else if (Shops.InGrace(c, s, sh)) add("rent", "جدّد الإيجار قبل ما أيام السماح تخلص والمتجر يقفل", false, true, "plan");   // still open to customers
             else add("rent", "ادفع الإيجار عشان المتجر يرجع يفتح للزباين", false, true, "plan");
             return l;
         }
@@ -190,21 +191,28 @@ namespace RiwaqChat
         }
 
         // ---------- orders ----------
-        static Dictionary<string, object> Orders(SqlConnection c, Shop sh, HttpRequest req)
+        // the list's filter (a tab, the dates, the delivery day, the search): the list and its Excel files (ShopExcel.Orders) use this one rule. tab = null: the one in ?st=
+        public static string OrderWhere(Shop sh, HttpRequest req, List<object> args, string tab = null)
         {
-            string st = req.QueryString["st"] ?? "", q = (req.QueryString["q"] ?? "").Trim(), from = req.QueryString["from"] ?? "", to = req.QueryString["to"] ?? ""; int page; int.TryParse(req.QueryString["page"], out page); page = Math.Max(0, page); if (q.Length > 80) q = q.Substring(0, 80);
-            string where = "StoreId=@s"; var args = new List<object> { "@s", sh.StoreId };
+            Func<string, string> qs = k => req == null ? "" : req.QueryString[k] ?? "";
+            string st = tab ?? qs("st"), q = qs("q").Trim(), from = qs("from"), to = qs("to"); if (q.Length > 80) q = q.Substring(0, 80);
+            string where = "StoreId=@s"; args.Add("@s"); args.Add(sh.StoreId);
             if (ShopOrders.Statuses.Contains(st)) { where += " AND Status=@st"; args.Add("@st"); args.Add(st); } else if (st == "todo") where += " AND Status IN ('new','noreply')"; else if (st == "ship") where += " AND Status='confirmed'"; else if (st == "pay") where += " AND PayState='sent' AND Status NOT IN ('cancelled','returned')";
             DateTime dt;
             if (DateTime.TryParseExact(from, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt>=@f"; args.Add("@f"); args.Add(dt.AddHours(-2)); }
             if (DateTime.TryParseExact(to, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt<@t"; args.Add("@t"); args.Add(dt.AddDays(1).AddHours(-2)); }
-            where += ShopShipDay.Filter(req, args);   // ?day=: the delivery day the customer chose
+            if (req != null) where += ShopShipDay.Filter(req, args);   // ?day=: the delivery day the customer chose
             if (q.Length > 0)
             {
                 var digits = Regex.Replace(ShopJson.Digits(q), @"\D", ""); int no; int.TryParse(digits.Length < 9 ? digits : "", out no);
                 where += " AND (No=@no OR Name LIKE @q OR (@d<>'' AND Phone LIKE @dq) OR EXISTS (SELECT 1 FROM dbo.ShopOrderItems i WHERE i.OrderId=dbo.ShopOrders.Id AND i.Name LIKE @q))";
                 args.AddRange(new object[] { "@no", no, "@q", "%" + q.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%", "@d", digits.Length >= 4 ? digits : "", "@dq", "%" + digits.TrimStart('0') + "%" });
             }
+            return where;
+        }
+        static Dictionary<string, object> Orders(SqlConnection c, Shop sh, HttpRequest req)
+        {
+            int page; int.TryParse(req.QueryString["page"], out page); page = Math.Max(0, page); var args = new List<object>(); string where = OrderWhere(sh, req, args);
             int total; decimal sum; using (var cmd = Db.Cmd(c, "SELECT COUNT(*), ISNULL(SUM(Total),0) FROM dbo.ShopOrders WHERE " + where, args.ToArray())) using (var r = cmd.ExecuteReader()) { r.Read(); total = (int)r[0]; sum = (decimal)r[1]; }
             var list = new List<long>(); var rows = new List<ShopOrder>();
             args.Add("@o"); args.Add(page * 30);
@@ -287,6 +295,7 @@ namespace RiwaqChat
                 case "diff": Ok(res, "list", Diff(sh)); return null;
                 case "publish": Publish(c, s, sh, Str(b, "note", 200)); Ok(res, "state", State(c, s, Shops.ByStore(c, s.Id))); return null;
                 case "submit": Submit(c, s, sh, res); return null;
+                case "note-ok": Exec(c, null, "UPDATE dbo.Shops SET ReviewNote=NULL WHERE StoreId=@s AND Status='live'", "@s", s.Id); Ok(res, "state", State(c, s, Shops.ByStore(c, s.Id))); return null;   // the admin refused a change: the owner read why
                 case "unsubmit": if (sh.Status == "review") Exec(c, null, "UPDATE dbo.Shops SET Status='draft' WHERE StoreId=@s", "@s", s.Id); Ok(res, "state", State(c, s, Shops.ByStore(c, s.Id))); return null;
                 case "restore": Restore(c, sh, id); Ok(res, "state", State(c, s, Shops.ByStore(c, s.Id))); return null;
                 case "preview": Preview(c, sh, Bool(b, "share"), res); return null;
@@ -356,7 +365,7 @@ namespace RiwaqChat
             bool live = sh.Status == "live";
             // a store customers already know: its name and link change after the admin agrees
             string pendSlug = live && slug != sh.Slug ? slug : null, pendName = live && name != sh.Name ? name : null;
-            if (live) Exec(c, null, "UPDATE dbo.Shops SET NameEn=@en, Biz=@b, PendSlug=@ps, PendName=@pn, ReviewChange=CASE WHEN @ps IS NOT NULL OR @pn IS NOT NULL THEN 1 ELSE ReviewChange END WHERE StoreId=@s", "@en", Nz(en), "@b", Nz(biz), "@ps", pendSlug, "@pn", pendName, "@s", s.Id);
+            if (live) Exec(c, null, "UPDATE dbo.Shops SET NameEn=@en, Biz=@b, PendSlug=@ps, PendName=@pn, ReviewChange=CASE WHEN @ps IS NOT NULL OR @pn IS NOT NULL THEN 1 ELSE ReviewChange END, ReviewNote=CASE WHEN @ps IS NOT NULL OR @pn IS NOT NULL THEN NULL ELSE ReviewNote END WHERE StoreId=@s", "@en", Nz(en), "@b", Nz(biz), "@ps", pendSlug, "@pn", pendName, "@s", s.Id);
             else Exec(c, null, "UPDATE dbo.Shops SET Name=@n, NameEn=@en, Slug=@sl, Biz=@b WHERE StoreId=@s", "@n", name, "@en", Nz(en), "@sl", slug, "@b", Nz(biz), "@s", s.Id);
             Shops.Bump(c, s.Id);
         }
@@ -408,7 +417,7 @@ namespace RiwaqChat
             if (logo && !s.IsAdmin) { draft["logo"] = ShopJson.At(live, "logo"); }
             var json = ShopJson.Write(draft);
             SaveVersion(c, s.Id, json, note);
-            Exec(c, null, "UPDATE dbo.Shops SET Live=@l, DraftAt=CASE WHEN @logo=1 THEN DraftAt ELSE NULL END, PublishedAt=SYSUTCDATETIME(), ReviewChange=CASE WHEN @logo=1 THEN 1 ELSE ReviewChange END WHERE StoreId=@s", "@l", json, "@logo", logo && !s.IsAdmin, "@s", s.Id);
+            Exec(c, null, "UPDATE dbo.Shops SET Live=@l, DraftAt=CASE WHEN @logo=1 THEN DraftAt ELSE NULL END, PublishedAt=SYSUTCDATETIME(), ReviewChange=CASE WHEN @logo=1 THEN 1 ELSE ReviewChange END, ReviewNote=CASE WHEN @logo=1 THEN NULL ELSE ReviewNote END WHERE StoreId=@s", "@l", json, "@logo", logo && !s.IsAdmin, "@s", s.Id);
             Shops.Bump(c, s.Id);
         }
         public static void SaveVersion(SqlConnection c, int storeId, string look, string note)

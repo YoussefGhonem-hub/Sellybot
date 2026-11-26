@@ -125,16 +125,13 @@ namespace RiwaqChat
 
         static byte[] Orders(SqlConnection c, Shop sh, HttpRequest req, bool ship)
         {
-            string where = "StoreId=@s"; var args = new List<object> { "@s", sh.StoreId }; DateTime dt; Func<string, string> qs = k => req == null ? "" : req.QueryString[k] ?? ""; string st = qs("st");
-            if (ship) where += " AND Status='confirmed'"; else if (ShopOrders.Statuses.Contains(st)) { where += " AND Status=@st"; args.Add("@st"); args.Add(st); }
-            if (DateTime.TryParseExact(qs("from"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt>=@f"; args.Add("@f"); args.Add(dt.AddHours(-2)); }
-            if (DateTime.TryParseExact(qs("to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)) { where += " AND CreatedAt<@t"; args.Add("@t"); args.Add(dt.AddDays(1).AddHours(-2)); }
+            var args = new List<object>(); string where = ShopOwner.OrderWhere(sh, req, args, ship ? "ship" : null);   // what the list shows under the same filter; «شيت الشحن» = its confirmed orders
             var ids = new List<long>(); using (var cmd = Db.Cmd(c, "SELECT TOP 5000 Id FROM dbo.ShopOrders WHERE " + where + " ORDER BY Id DESC", args.ToArray())) using (var r = cmd.ExecuteReader()) while (r.Read()) ids.Add(Convert.ToInt64(r[0]));
             var rows = new List<object[]>();
             foreach (var id in ids)
             {
                 var o = ShopOrders.ById(c, sh.StoreId, id); string items = string.Join(" + ", o.Items.Select(i => i.Name + (string.IsNullOrEmpty(i.Opts) ? "" : " (" + i.Opts + ")") + (i.Qty > 1 ? " × " + i.Qty : "")));
-                rows.Add(ship ? new object[] { o.NoText, o.Name, ShopOrders.Local(o.Phone), ShopOrders.Local(o.Phone2) ?? "", ShopGeo.Name(o.Gov), o.City ?? "", string.Join("، ", new[] { o.Area, o.Address, o.Landmark }.Where(x => !string.IsNullOrEmpty(x))), o.Total, items, o.Items.Sum(i => i.Qty), o.Note ?? "" }
+                rows.Add(ship ? new object[] { o.NoText, o.Name, ShopOrders.Local(o.Phone), ShopOrders.Local(o.Phone2) ?? "", ShopGeo.Name(o.Gov), o.City ?? "", string.Join("، ", new[] { o.Area, o.Address, o.Landmark }.Where(x => !string.IsNullOrEmpty(x))), o.Due, items, o.Items.Sum(i => i.Qty), o.Note ?? "" }
                     : new object[] { o.NoText, ShopPromo.Local(o.CreatedAt).Replace("T", " "), ShopOrders.StatusText(o.Status), o.Name, ShopOrders.Local(o.Phone), ShopOrders.Local(o.Phone2) ?? "", ShopGeo.Name(o.Gov), o.City ?? "", string.Join("، ", new[] { o.Area, o.Address, o.Landmark }.Where(x => !string.IsNullOrEmpty(x))), items, o.Items.Sum(i => i.Qty), o.Subtotal, o.Discount, o.Ship, o.Total, o.Coupon ?? "", o.Note ?? "", o.Tracking ?? "" });
             }
             return ship ? Book("للشحن", new[] { "رقم الطلب", "الاسم", "الموبايل", "موبايل تاني", "المحافظة", "المدينة", "العنوان", "المطلوب تحصيله", "المحتوى", "عدد القطع", "ملاحظات" }, rows)

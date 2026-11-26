@@ -121,7 +121,7 @@
 <script>
 (function () {
   "use strict";
-  var $ = function (id) { return document.getElementById(id); }, V = "20261126s", slug = (new URLSearchParams(location.search).get("s") || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
+  var $ = function (id) { return document.getElementById(id); }, V = "20261126u", slug = (new URLSearchParams(location.search).get("s") || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
   // what each tick shows of «متجري» (ShopStaff.cs says what each one may do: the server checks every request)
   var VIEWS = { orders: ["orders"], products: ["products", "cats"], returns: ["returns", "reviews"], money: ["home", "report"], ship: ["orders", "ship"] };
   var tT = 0; function toast(t) { var e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(tT); tT = setTimeout(function () { e.classList.remove("show"); }, 3200); }
@@ -151,12 +151,18 @@
   window.fetch = async function () { var r = await f0.apply(null, arguments); if (r.status === 401 && on) { on = false; toast("خرجت من حساب الفريق. ادخل تاني."); showIn(); } return r; };
 
   // ---------- «متجري» with only their part ----------
-  var loaded = null;
+  // the files download together and run in this order (async=false); kept a week, so V changes with them (see dashboard.html SHOP_V)
+  var loaded = null, css = false, got = 0, done = [], LIST = ["app", "qr", "catalog", "sell", "desk", "look", "ship"];
   function files() {
     return loaded || (loaded = new Promise(function (ok, no) {
-      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "../shop-admin/app.css?v=" + V; document.head.appendChild(l);
-      var list = ["app", "qr", "catalog", "sell", "desk", "look", "ship"];
-      (function next() { var n = list.shift(); if (!n) return ok(); var s = document.createElement("script"); s.src = "../shop-admin/" + n + ".js?v=" + V; s.onload = next; s.onerror = function () { loaded = null; no(new Error("الصفحة ماحمّلتش. اتأكد من النت وجرّب تاني.")); }; document.body.appendChild(s); })();
+      if (!css) { css = true; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "../shop-admin/app.css?v=" + V; document.head.appendChild(l); }
+      var from = got, left = LIST.length - from, bad = false; if (!left) return ok();
+      LIST.slice(from).forEach(function (n, i) {
+        var s = document.createElement("script"); s.src = "../shop-admin/" + n + ".js?v=" + V; s.async = false;
+        s.onload = function () { done[from + i] = true; while (done[got]) got++; if (!bad && --left === 0) ok(); };
+        s.onerror = function () { if (bad) return; bad = true; loaded = null; no(new Error("الصفحة ماحمّلتش. اتأكد من النت وجرّب تاني.")); };
+        document.body.appendChild(s);
+      });
     }));
   }
   async function start() {

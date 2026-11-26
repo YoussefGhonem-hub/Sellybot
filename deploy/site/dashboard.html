@@ -7390,18 +7390,37 @@
   }
 
   // ---------------- «متجري» (SellyStore): its own files, loaded once when the tab opens ----------------
-  var shopFiles = null, SHOP_V = "20261126s";
+  // They download all together and run in this order (async=false): one after the other took ~0.7 s each on the live site.
+  // Browsers and Cloudflare keep shop-admin/ a week (web.template.config), so a change needs a new SHOP_V. The deploy
+  // (ci-deploy.ps1) also adds the files' own fingerprint to SHOP_V, so a forgotten bump can't leave anyone on old files.
+  var shopFiles = null, SHOP_V = "20261126u", shopCss = false, shopGot = 0, shopDone = [];
+  var SHOP_JS = ["app", "qr", "catalog", "sell", "desk", "look", "ship", "deliver", "team", "rew", "ship2", "card", "cat", "seasons", "abtest", "domain", "api"];
+  function shopUrl(f) { return "shop-admin/" + f + "?v=" + SHOP_V; }
   function shopLoad() {
     return shopFiles || (shopFiles = new Promise(function (ok, no) {
-      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/app.css?v=" + SHOP_V; document.head.appendChild(l);
-      var list = ["app", "qr", "catalog", "sell", "desk", "look", "ship", "deliver", "team", "rew", "ship2", "card", "cat", "seasons", "abtest", "domain", "api"];
-      (function next() {
-        var n = list.shift(); if (!n) return ok();
-        var s = document.createElement("script"); s.src = "shop-admin/" + n + ".js?v=" + SHOP_V; s.onload = next;
-        s.onerror = function () { shopFiles = null; no(new Error("ماقدرناش نفتح «متجري». اتأكد من النت وجرّب تاني.")); };
+      if (!shopCss) { shopCss = true; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = shopUrl("app.css"); document.head.appendChild(l); }
+      var from = shopGot, left = SHOP_JS.length - from, bad = false;   // after a failed try: only from the first file that didn't come
+      if (!left) return ok();
+      SHOP_JS.slice(from).forEach(function (n, i) {
+        var s = document.createElement("script"); s.src = shopUrl(n + ".js"); s.async = false;
+        s.onload = function () { shopDone[from + i] = true; while (shopDone[shopGot]) shopGot++; if (!bad && --left === 0) ok(); };
+        s.onerror = function () { if (bad) return; bad = true; shopFiles = null; no(new Error("ماقدرناش نفتح «متجري». اتأكد من النت وجرّب تاني.")); };
         document.body.appendChild(s);
-      })();
+      });
     }));
+  }
+  // while the owner is on another tab, the files go to the browser's cache, so «متجري» opens at once
+  var shopWarmed = false;
+  function shopWarm() {
+    if (shopWarmed || shopFiles) return; shopWarmed = true;
+    setTimeout(function () {
+      (window.requestIdleCallback || function (f) { f(); })(function () {
+        if (shopFiles) return;
+        ["app.css"].concat(SHOP_JS.map(function (n) { return n + ".js"; })).forEach(function (f) {
+          var l = document.createElement("link"); l.rel = "prefetch"; l.href = shopUrl(f); document.head.appendChild(l);
+        });
+      }, { timeout: 6000 });
+    }, 2500);
   }
   async function openShop(view) {
     try { await shopLoad(); if (current === "shop") SbShop.open($("shopRoot"), { toast: toast, me: me, go: go, view: view }); }
@@ -7430,6 +7449,7 @@
     document.querySelectorAll(".sty").forEach(function (c) { c.classList.toggle("pv-off", !allStyles && FREE_STYLES.indexOf(c.dataset.style) < 0); });
     $("socialTabBtn").hidden = !me.meta || !anyF("messenger instagram");
     $("shopTabBtn").hidden = !me.shop; $("shopNb").hidden = !me.shop || !me.shop.n; $("shopNb").textContent = me.shop ? fmt(me.shop.n) : "";
+    if (me.shop) shopWarm();
     navFit();
   }
   // the shape and color the customers see now: one the plan doesn't have shows as the default (PlanGate.Apply), and comes back on upgrade
