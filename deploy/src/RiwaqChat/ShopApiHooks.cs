@@ -162,7 +162,8 @@ namespace RiwaqChat
                     string sig = Sig(p), lows = Lows(p, at); string[] o; var pp = p;
                     if (!rows.TryGetValue(p.Id, out o))
                     {
-                        try { Exec(c, "INSERT INTO dbo.ShopApiSeen(StoreId, ProductId, Sig, Lows, ChangedAt) VALUES(@s, @p, @g, @l, @t)", "@s", sh.StoreId, "@p", p.Id, "@g", sig, "@l", lows, "@t", first ? p.UpdatedAt : DateTime.UtcNow); }
+                        // the database's clock, like server_time (the site's own clock is another machine's)
+                        try { Exec(c, "INSERT INTO dbo.ShopApiSeen(StoreId, ProductId, Sig, Lows, ChangedAt) VALUES(@s, @p, @g, @l, CASE WHEN @f=1 THEN @t ELSE SYSUTCDATETIME() END)", "@s", sh.StoreId, "@p", p.Id, "@g", sig, "@l", lows, "@f", first, "@t", p.UpdatedAt); }
                         catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627) { continue; }
                         if (first) continue;
                         if (wantP) Emit(c, sh.StoreId, "product.changed", "p" + p.Id + "-" + sig, () => D("product", ShopApi.ProdJson(d, pp, DateTime.UtcNow), "created", true));
