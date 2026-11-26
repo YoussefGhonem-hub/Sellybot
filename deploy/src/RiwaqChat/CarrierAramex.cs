@@ -201,7 +201,7 @@ namespace RiwaqChat
         {
             code = (code ?? "").Trim().ToUpperInvariant(); string ours, t = (said ?? "").ToLowerInvariant();
             if (!Codes.TryGetValue(code, out ours))
-                ours = Regex.IsMatch(t, "returned to shipper") ? "returned" : Regex.IsMatch(t, "to be returned|return to shipper") ? "returning" : Regex.IsMatch(t, "out for delivery") ? "out" : Regex.IsMatch(t, @"attempt|unable to deliver|not reach|rescheduled") ? "attempt"
+                ours = Regex.IsMatch(t, "returned to shipper") ? "returned" : Regex.IsMatch(t, "to be returned|return to shipper") ? "returning" : Regex.IsMatch(t, "out for delivery") ? "out" : Regex.IsMatch(t, @"attempt|unable to deliver|not reach|rescheduled|not delivered|undelivered|could not be delivered") ? "attempt"
                     : Regex.IsMatch(t, @"\bdelivered\b|collected by consignee") ? "delivered" : Regex.IsMatch(t, "picked up from shipper|pickup completed") ? "picked" : Regex.IsMatch(t, "cancel") ? "cancelled" : Regex.IsMatch(t, "on hold|held") ? "hold"
                     : Regex.IsMatch(t, "transit|departed|received at|forwarded|facility") ? "transit" : Regex.IsMatch(t, "record created|data received") ? "made" : "";
             var e = new CarrierEvent { Code = code.Length > 0 ? code : Carriers.Cut(said ?? "?", 30), Ours = ours, Loud = Loud.Contains(code) };
