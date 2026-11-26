@@ -295,3 +295,12 @@ div.sm-ol{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1
 .sm-box{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;margin-top:10px}.sm-ol2{margin:8px 0;padding-inline-start:20px;line-height:1.9}.sm-tot2{text-align:end;margin:8px 0 0}.sm-lnk{border:0;background:none;padding:0;color:var(--brand3,var(--brand));text-decoration:underline;cursor:pointer;font:inherit}
 @media(min-width:900px){.sm-nav{flex-wrap:wrap;overflow:visible;row-gap:0}}
 .sm-vid{width:180px;max-height:240px;border-radius:12px;background:#000}
+/* the videos that explain «متجري» (reels.html?list=matjari): the button on top of every tab, and the card for a new store */
+.sm-hb .sm-vb{text-decoration:none;color:var(--ink)}
+.sm-vh{display:flex;align-items:center;gap:12px;margin:12px 0 2px;padding:10px 12px;border:1px dashed color-mix(in srgb,var(--brand) 45%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--brand) 6%,var(--card));color:var(--ink);text-decoration:none;transition:background .15s}
+.sm-vh:hover{background:color-mix(in srgb,var(--brand) 12%,var(--card))}
+.sm-vh:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.sm-vh-i{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--brand) 16%,var(--card));font-size:20px}
+.sm-vh>span:nth-child(2){flex:1;min-width:0;display:grid;gap:2px}
+.sm-vh small{color:var(--muted);font-size:12.5px;line-height:1.5}
+.sm-vh>.sm-i{flex:none;width:18px;height:18px;color:var(--brand)}

@@ -159,7 +159,9 @@
     .more,.who .cta{display:none}
     .cta.big{display:inline-flex;margin-top:16px;padding:10px 18px;font-size:14px}
   }
-  @media (max-width:380px){.start{padding:7px 11px;font-size:12.5px}.sep,.top h1 span{display:none}}
+  @media (max-width:380px){.start{padding:7px 11px;font-size:12.5px}.top:not(.lst) .sep,.top:not(.lst) h1 span{display:none}}
+  .top h1 span{white-space:nowrap}
+  @media (max-width:440px){.top.lst .logo b,.top.lst .sep{display:none}}   /* ?list=…: the series' name needs the room on a phone */
   @media (prefers-reduced-motion:reduce){.feed{scroll-behavior:auto}*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -320,9 +322,100 @@ var REELS = [
     title: "«دعوة تاجر»: كل تاجر يشترك من لينكك = شهر بخصم 50%",
     text: "افتح «💎 باقتي» وانزل لكارت «🎁 دعوة تاجر». انسخ اللينك، أو دوس «ابعته على واتساب» وهتلاقي رسالة جاهزة تبعتها لأي تاجر تعرفه. كل تاجر يسجّل من لينكك ويشترك في أي باقة = شهر بخصم 50% ليك، والباقي بيستنى للشهور اللي بعده: 10 اشتركوا = 10 شهور بنص السعر. في نفس الكارت بتتابع كام واحد سجّل وكام اشترك، وحالة كل تاجر، وكام شهر خصم مستنيك. ولما تبعت طلب التجديد، المبلغ بيظهرلك بعد الخصم على طول. الخصم على الباقة بس، مش على الواتساب ولا الرسايل الإضافية ولا فرق الترقية. بيتحسب لما صاحبك يدفع أول باقة، مش بالتسجيل بس، ولو انت لسه في التجربة المجانية، الخصم بيستناك لحد أول باقة تدفعها. صاحبك بيشوف اسمه وحالته بس عندك، ومينفعش تدعي نفسك.",
     cta: { label: "خد لينكك", href: "dashboard.html#plan" }
+  },
+  // «متجري» explained, one tab per video (list: "matjari"). «متجري» opens them with reels.html?list=matjari#mj-…, which shows
+  // only this series (shop-admin/app.js VID). Made in OpenMontage (projects/sellybot-matjari/renders); 13-16 (الشحن، الدفع
+  // والفروع، المميزات، البرامج والبوت والموظفين) aren't made yet. A video's CTA opens its own tab of «متجري» (dashboard.html#shop/<view>).
+  {
+    id: "mj-start", list: "matjari", src: "reels/20-mj-start.mp4", poster: "reels/20-mj-start.jpg", v: 1,
+    series: "شرح «متجري» · ابدأ متجرك", ep: "الحلقة 1",
+    title: "متجرك أونلاين في دقيقة، من غير مبرمج ولا مصمم",
+    text: "من لوحة Sellybot افتح «متجري»: اختار نشاطك، واكتب اسم متجرك واختار لينكه، ودوس «يلا نبدأ». اختار شكله من القوالب، ومتجرك بيبدأ جاهز: أقسام على حسب نشاطك، وسعر شحن مبدئي، و7 صفحات مكتوبة. وفي «خطوات تجهيز المتجر» كل خطوة بدوسة بتوديك مكانها، ولما المطلوب يخلص دوس «ابعته للمراجعة»، والإدارة يا تفتحه يا ترجّعهولك بملاحظات. أول ما يتفتح، أول يومين ببلاش. وفوق في كل الشاشات لينك متجرك: انسخه وابعته على الواتساب وصفحتك، ونزّل الـ QR واطبعه على الكيس والكارت.",
+    cta: { label: "ابدأ متجرك", href: "dashboard.html#shop/home" }
+  },
+  {
+    id: "mj-home", list: "matjari", src: "reels/21-mj-home.mp4", poster: "reels/21-mj-home.jpg", v: 1,
+    series: "شرح «متجري» · شاشة المتجر", ep: "الحلقة 2",
+    title: "شاشة «المتجر»: إيه اللي مستنيك، ومتجرك ماشي إزاي",
+    text: "شاشة «المتجر» بتقولك كل يوم إيه اللي مستنيك: صور تحويل، وطلبات استرجاع، وأوردرات جديدة تأكدها، وكل واحدة بدوسة بتوديك مكانها. وتحتها «أرقام المتجر»: الأوردرات والمبيعات والزوار ومن كل 100 زائر كام طلبوا، ورحلة الزبون عشان تعرف زباينك بيقفوا فين، ورسم آخر 30 يوم، والأكتر مبيعًا، وقرّب يخلص. ومن «معاينة خاصة» تشوف متجرك على الموبايل والكمبيوتر قبل الزباين، أو تبعت «لينك لحد تاني» شغال 24 ساعة. والمنتجات والأسعار بتنزل أول ما تحفظها، أما الشكل فبيفضل مسودة لحد ما تدوس «انشر التعديلات».",
+    cta: { label: "افتح «المتجر»", href: "dashboard.html#shop/home" }
+  },
+  {
+    id: "mj-orders", list: "matjari", src: "reels/22-mj-orders.mp4", poster: "reels/22-mj-orders.jpg", v: 1,
+    series: "شرح «متجري» · الأوردرات", ep: "الحلقة 3",
+    title: "الأوردرات: من أول ما ييجي لحد ما يتسلّم",
+    text: "كل أوردراتك في «الأوردرات»: من متجرك، أو من البوت في الشات والواتساب والمسنجر، أو أوردر بتسجّله بإيدك. ولو واتساب متجرك مربوط، الزبون بيكتب 1 يأكد أو 2 يلغي والأوردر بيتغيّر لوحده، واللي مابيردش بيوصلك تنبيه تكلّمه. علّم على كذا أوردر وأكّدهم أو اشحنهم أو اطبعهم مرة واحدة، وادمج أوردرين لنفس الزبون، وجهّز البضاعة من «قايمة التجهيز». وجوه الأوردر: زرار الخطوة الجاية، وتحذير للأوردر المتكرر والزبون اللي بيرجّع كتير، و«عدّل الأوردر» و«تسليم جزئي» والمخزون بيتظبط لوحده، وكل اللي حصل في الأوردر، وواتساب واتصال بدوسة.",
+    cta: { label: "افتح الأوردرات", href: "dashboard.html#shop/orders" }
+  },
+  {
+    id: "mj-money", list: "matjari", src: "reels/23-mj-money.mp4", poster: "reels/23-mj-money.jpg", v: 1,
+    series: "شرح «متجري» · فلوس الأوردر", ep: "الحلقة 4",
+    title: "فلوس الأوردر والطباعة والشحن",
+    text: "الزبون بعت صورة تحويل أو عربون؟ افتح الأوردر ودوس «التحويل وصل» أو «مش مظبوط»، والزبون بيعرف على الواتساب، و«الباقي عليه» بيتحسب لوحده ويتكتب على البوليصة. والدفع بالكارت بيأكد الأوردر لوحده، واللي مادفعش خلال نص ساعة بيتلغي. اطبع «بوليصة» 10×15 بباركود، و«فاتورة» بلوجو متجرك وبلغة الزبون، أو نزّلهم صورة أو PDF، أو اطبع كتير مرة واحدة. ونزّل الأوردرات Excel أو «شيت الشحن». ولو شركات الشحن متاحة لحسابك، ابعت الأوردر لشركتك برقم تتبع، ولو بتوصّل بنفسك اختار «مين هيوصّله؟».",
+    cta: { label: "افتح الأوردرات", href: "dashboard.html#shop/orders" }
+  },
+  {
+    id: "mj-products", list: "matjari", src: "reels/24-mj-products.mp4", poster: "reels/24-mj-products.jpg", v: 1,
+    series: "شرح «متجري» · ضيف منتجاتك", ep: "الحلقة 5",
+    title: "ضيف منتجاتك: 4 طرق، وصفحة منتج كاملة",
+    text: "من «المنتجات»: «منتج جديد» لو منتجاتك قليلة، أو «Excel» بالملف الجاهز لحد 5000 سطر، أو «نقل من متجر قديم» من Shopify أو WooCommerce أو EasyOrders بأسعارها ومقاساتها وصورها، أو من الموبايل بـ «إضافة منتج من واتساب». وفي صفحة المنتج: لحد 8 صور وفيديو قصير، وتحدد أهم حتة في الصورة، والسعر وقبل الخصم والتكلفة عليك، ومكسبك في القطعة بيظهر على طول. ودوس «ألوان» و«مقاسات» والنظام بيعمل كل التركيبات بكمياتها وأسعارها. ودوس «احفظ المنتج»، والبوت يعرفه في نفس اللحظة.",
+    cta: { label: "افتح المنتجات", href: "dashboard.html#shop/products" }
+  },
+  {
+    id: "mj-stock", list: "matjari", src: "reels/25-mj-stock.mp4", poster: "reels/25-mj-stock.jpg", v: 1,
+    series: "شرح «متجري» · المخزون", ep: "الحلقة 6",
+    title: "المخزون، ومزايا بتزوّد البيع",
+    text: "سيب «عدّ الكمية» شغالة: الكمية بتنقص مع كل أوردر وترجع لو اتلغى، واختار المنتج يعمل إيه لما يخلص: «خلص» أو يختفي أو «بالطلب». دوس «اكتبهولي من الصورة» والمساعد يكتب الوصف. وزوّد البيع بـ «منتجات بتكمّله» وجدول المقاسات وQR للمنتج. علّم على كذا منتج وغيّر السعر أو الكمية أو القسم مرة واحدة، واطبع «تيكت وباركود»، والفلاتر بتقولك تجيب إيه وتصوّر إيه. ومن «المميزات»: حجز مسبق، وأكتر من مخزن، والمنتجات الرقمية، و«بلّغني لما يرجع» على الواتساب.",
+    cta: { label: "افتح المنتجات", href: "dashboard.html#shop/products" }
+  },
+  {
+    id: "mj-customers", list: "matjari", src: "reels/26-mj-customers.mp4", poster: "reels/26-mj-customers.jpg", v: 1,
+    series: "شرح «متجري» · الزباين والتقارير", ep: "الحلقة 7",
+    title: "زباينك وأرقامك: بتكسب فعلًا ولا بتبيع وبس؟",
+    text: "في «الزباين» كل اللي طلب منك برقمه: أوردراته، واستلم كام ورجّع كام، واشترى بكام فعلًا، وعلامة على اللي بيرجّع كتير، وواتساب أو اتصال بدوسة، ونزّلهم Excel بعمود «اشترى إيه». وفي «التقارير» اختار الفترة: المبيعات، واتسلّم فعلًا، ومكسبك بعد سعر الشرا، والملغي والمرتجع بنسبتهم. وأرقام كل منتج وقسم ومحافظة، والأوردرات جاية منين، ورحلة الشراء، والكلمات اللي دوّروا عليها ومالقوش حاجة. وكل جدول بينزل Excel.",
+    cta: { label: "افتح الزباين", href: "dashboard.html#shop/custs" }
+  },
+  {
+    id: "mj-offers", list: "matjari", src: "reels/27-mj-offers.mp4", poster: "reels/27-mj-offers.jpg", v: 1,
+    series: "شرح «متجري» · العروض", ep: "الحلقة 8",
+    title: "8 أنواع عروض، والمتجر بيحسبها بدالك",
+    text: "من «البيع» ← «العروض» ← «عرض جديد»: خصم على منتجات، واشتري وخد، وكل ما تزود توفر، وشحن مجاني، وبكدج، وهدية مع الطلب، وعرض في السلة. بيكتبلك مثال بالسعر الجديد، وفي «المواعيد» تحدد يبدأ ويخلص إمتى مع عدّاد تنازلي، وتختار شكل موسم جاهز. ولو العرض هينزّل منتج تحت سعر شراه بيحذّرك، ولو فيه أكتر من عرض المتجر بيحسب للزبون الأوفر. وكود الخصم: لأول طلب، أو عدد مرات لكل رقم، أو لزباين معيّنين، ويظهر للزوار في نافذة صغيرة، وممكن بعد ما يكتبوا رقمهم فالأرقام تتجمّع عندك.",
+    cta: { label: "افتح العروض", href: "dashboard.html#shop/offers" }
+  },
+  {
+    id: "mj-ads", list: "matjari", src: "reels/28-mj-ads.mp4", poster: "reels/28-mj-ads.jpg", v: 1,
+    series: "شرح «متجري» · إعلانك", ep: "الحلقة 9",
+    title: "اعمل إعلانك بنفسك، من غير مصمم",
+    text: "من «العروض» دوس «إعلان جاهز»: اختار المنتج والصورة بتتعمل لوحدها بصورته واسمه وسعره، واختار «بوست» أو «ستوري» أو «إعلان» والشكل واللون، ودوس «نزّل الصورة». ودوس «اكتبلي الكلام» والمساعد يكتبلك 3 نصوص من بيانات المنتج بس. وعندك عرض شغال؟ «ابعته لزباينك» بيفتح «ابعت عرض» برسالة جاهزة، وبيتبعت من رقم متجرك رسالة رسالة. و«النتيجة» بتقولك العرض جاب كام أوردر وباع بكام. ولو هتعمل إعلان مموّل، حط رقم البيكسل في «قياس الإعلانات» من «المميزات».",
+    cta: { label: "اعمل إعلانك", href: "dashboard.html#shop/offers" }
+  },
+  {
+    id: "mj-reviews", list: "matjari", src: "reels/29-mj-reviews.mp4", poster: "reels/29-mj-reviews.jpg", v: 1,
+    series: "شرح «متجري» · التقييمات والمرتجعات", ep: "الحلقة 10",
+    title: "التقييمات والمرتجعات والهدايا: زبون بيرجعلك تاني",
+    text: "التقييم من زبون استلم بس: بعد الاستلام بيومين بتوصله رسالة واتساب يقيّم منها. اللي فيه صور أو لينك بيستنى مراجعتك، وتقدر ترد عليه أو تخفيه، والتقييم بنجمة أو اتنين بيوصلك على الواتساب. والمرتجع: الزبون بيطلبه بنفسه بسببه وصوره، وإنت «وافق» أو «ارفض»، ولما القطعة توصلك «وصلتني» والكمية ترجع المخزن، وتشوف أكتر أسباب المرتجع. ومن «الهدايا والنقط»: كروت هدايا، ونقط الزباين، و«هات صاحبك».",
+    cta: { label: "افتح التقييمات", href: "dashboard.html#shop/reviews" }
+  },
+  {
+    id: "mj-look", list: "matjari", src: "reels/30-mj-look.mp4", poster: "reels/30-mj-look.jpg", v: 1,
+    series: "شرح «متجري» · الشكل", ep: "الحلقة 11",
+    title: "شكل متجرك بنفسك، ومن غير مصمم",
+    text: "من «واجهة المتجر» ← «الشكل»: 9 خطوات، وكل تعديل بيتحفظ مسودة. اختار القالب، وخد اللون من اللوجو، والخط والفاتح أو الغامق، واللغة. اكتب الشريط اللي فوق وحط صورة كبيرة، ورتّب أجزاء الصفحة الرئيسية بالسحب من 19 نوع، والجزء الناقص مابيظهرش للزبون. واختار قالب موسم زي «الجمعة البيضاء» يظهر في أيامه بس، وجرّب شكلين على الزوار والمتجر يقولك أنهي باع أكتر. وفي الآخر «راجع وانشر»، وتقدر ترجع لأي نسخة من آخر 10.",
+    cta: { label: "افتح الشكل", href: "dashboard.html#shop/look" }
+  },
+  {
+    id: "mj-pages", list: "matjari", src: "reels/31-mj-pages.mp4", poster: "reels/31-mj-pages.jpg", v: 1,
+    series: "شرح «متجري» · الأقسام والصفحات", ep: "الحلقة 12",
+    title: "الأقسام والصفحات والمدونة",
+    text: "من «الأقسام»: متجرك بيبدأ بأقسام نشاطك، رئيسي وفرعي، رتّبهم بالسحب وحط لكل قسم صورة ووصف، والقسم الفاضي مابيظهرش للزبون. وفيه قسم بموعد أو بلينك بس تحطه في إعلانك، وجدول مقاسات للقسم كله. ومن «الصفحات»: 7 صفحات مكتوبة جاهزة زي «من نحن» و«الشحن والتوصيل» و«الاستبدال والاسترجاع»، عدّلها على شغلك. ومن «المدونة» اكتب مقالات تجيبلك زباين من جوجل، وتحت كل مقال لحد 12 منتج.",
+    cta: { label: "افتح الأقسام", href: "dashboard.html#shop/cats" }
   }
 ];
 REELS = REELS.filter(function (r) { return !r.hidden; });   // a reel with hidden: true stays in the list but isn't shown
+// ?list=matjari: only that series (opened from «متجري»), with its own closing screen
+var LIST = (new URLSearchParams(location.search).get("list") || "").toLowerCase(), LISTS = { matjari: { name: "شرح «متجري»", back: "dashboard.html#shop", backLabel: "ارجع لمتجري", soon: "الشحن، والدفع والفروع، والمميزات، والموظفين" } };
+if (!LISTS[LIST] || !REELS.some(function (r) { return r.list === LIST; })) LIST = "";
+if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
 
 (function () {
   var feed = document.getElementById("feed");
@@ -370,16 +463,25 @@ REELS = REELS.filter(function (r) { return !r.hidden; });   // a reel with hidde
       '</div>';
     feed.appendChild(s);
   });
-  var end = document.createElement("section");
+  var end = document.createElement("section"), L = LIST && LISTS[LIST];
   end.className = "reel end"; end.dataset.i = REELS.length; end.id = "r-end";
   end.innerHTML =
     '<div class="bg" aria-hidden="true" style="--poster:url(' + REELS[REELS.length - 1].poster + ')"></div>' +
     '<div class="card"><span class="av">' + SVG.logo + '</span>' +
-    '<h2>شفت كل حلقات «خطوة بخطوة» 🎉</h2>' +
-    '<p>جرّب اللي اتعلمته على متجرك دلوقتي، شهر كامل ببلاش ومن غير كارت.</p>' +
-    '<div class="soon"><span class="n" aria-hidden="true">🎬</span><span><b>حلقات جديدة قريب</b><small>تابعها هنا في الريلز</small></span></div>' +
-    '<a class="cta" href="dashboard.html?signup=1">ابدأ تجربتك المجانية' + SVG.arrow + '</a>' +
+    (L ? '<h2>شفت كل فيديوهات ' + esc(L.name) + ' 🎉</h2>' +
+      '<p>جرّب اللي اتعلمته على متجرك دلوقتي، ولو محتار في حاجة اسأل سيلّي في اللوحة.</p>' +
+      '<div class="soon"><span class="n" aria-hidden="true">🎬</span><span><b>فيديوهات جديدة قريب</b><small>' + esc(L.soon) + '</small></span></div>' +
+      '<a class="cta" href="' + esc(L.back) + '">' + esc(L.backLabel) + SVG.arrow + '</a>'
+    : '<h2>شفت كل حلقات «خطوة بخطوة» 🎉</h2>' +
+      '<p>جرّب اللي اتعلمته على متجرك دلوقتي، شهر كامل ببلاش ومن غير كارت.</p>' +
+      '<div class="soon"><span class="n" aria-hidden="true">🎬</span><span><b>حلقات جديدة قريب</b><small>تابعها هنا في الريلز</small></span></div>' +
+      '<a class="cta" href="dashboard.html?signup=1">ابدأ تجربتك المجانية' + SVG.arrow + '</a>') +
     '<button type="button" class="again" id="again">شوف من الأول</button></div>';
+  if (L) {   // the header: the series' name, and the way back to «متجري» instead of «ابدأ مجانًا»
+    document.querySelector(".top").classList.add("lst"); document.querySelector(".top h1 span").textContent = L.name;
+    var st = document.querySelector(".top .start"); st.textContent = L.backLabel; st.href = L.back;
+    document.title = L.name + " · ريلز Sellybot";
+  }
   feed.appendChild(end);
 
   var secs = [].slice.call(feed.querySelectorAll(".reel"));
@@ -509,7 +611,7 @@ REELS = REELS.filter(function (r) { return !r.hidden; });   // a reel with hidde
     b.querySelector(".ic").innerHTML = on ? SVG.heart : SVG.heartO;
   }
   function share(r) {
-    var url = location.origin + location.pathname + "#" + r.id;
+    var url = location.origin + location.pathname + location.search + "#" + r.id;
     if (navigator.share) { navigator.share({ title: r.title, text: r.title + " · Sellybot", url: url }).catch(function () {}); return; }
     var done = function () { toast("اتنسخ لينك الريل ✅"); };
     if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { prompt("انسخ اللينك:", url); });
