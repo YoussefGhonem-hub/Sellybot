@@ -324,8 +324,8 @@ var REELS = [
     cta: { label: "خد لينكك", href: "dashboard.html#plan" }
   },
   // «متجري» explained, one tab per video (list: "matjari"). «متجري» opens them with reels.html?list=matjari#mj-…, which shows
-  // only this series (shop-admin/app.js VID). Made in OpenMontage (projects/sellybot-matjari/renders); 13-16 (الشحن، الدفع
-  // والفروع، المميزات، البرامج والبوت والموظفين) aren't made yet. A video's CTA opens its own tab of «متجري» (dashboard.html#shop/<view>).
+  // only this series (shop-admin/app.js VID). Made in OpenMontage (projects/sellybot-matjari/renders): 01-12, then 13-16 with
+  // 15 in two (15a المميزات, 15b قياس الإعلانات), so 17 videos. A video's CTA opens its own tab of «متجري» (dashboard.html#shop/<view>).
   {
     id: "mj-start", list: "matjari", src: "reels/20-mj-start.mp4", poster: "reels/20-mj-start.jpg", v: 1,
     series: "شرح «متجري» · ابدأ متجرك", ep: "الحلقة 1",
@@ -409,11 +409,46 @@ var REELS = [
     title: "الأقسام والصفحات والمدونة",
     text: "من «الأقسام»: متجرك بيبدأ بأقسام نشاطك، رئيسي وفرعي، رتّبهم بالسحب وحط لكل قسم صورة ووصف، والقسم الفاضي مابيظهرش للزبون. وفيه قسم بموعد أو بلينك بس تحطه في إعلانك، وجدول مقاسات للقسم كله. ومن «الصفحات»: 7 صفحات مكتوبة جاهزة زي «من نحن» و«الشحن والتوصيل» و«الاستبدال والاسترجاع»، عدّلها على شغلك. ومن «المدونة» اكتب مقالات تجيبلك زباين من جوجل، وتحت كل مقال لحد 12 منتج.",
     cta: { label: "افتح الأقسام", href: "dashboard.html#shop/cats" }
+  },
+  {
+    id: "mj-ship", list: "matjari", src: "reels/32-mj-ship.mp4", poster: "reels/32-mj-ship.jpg", v: 1,
+    series: "شرح «متجري» · الشحن", ep: "الحلقة 13",
+    title: "الشحن: بنفسك أو بشركة، والمتجر بينقذ الأوردر",
+    text: "من «الإعدادات» دوس «الشحن». بتوصّل بنفسك؟ دوس «مين بيوصّل؟» واكتب الاسم والموبايل لحد 10 أشخاص، والزبون بيعرف مين جايله ورقمه. ومع شركة شحن، لو متاحة لحسابك: بوسطة وشيب بلو وJ&T وأرامكس، بتربط حسابك إنت عندهم، والشركة بتحوّلك الفلوس على طول. في «سعر الشحن»: سعر واحد لكل مصر أو لكل محافظة سعرها ومدتها، و«شحن مجاني فوق» مبلغ. وبعد الربط: «ابعت للشحن» و«بوليصات الشركة» و«اطلب مندوب»، والحالة بتتحدّث لوحدها. ولما محاولة تفشل، «إنقاذ الأوردر» بيبعت للزبون رسالة تناسب السبب. وفيه 4 مزايا زيادة: «ميعاد التوصيل»، و«الشحن بالوزن أو المدينة»، و«المندوب يجيب المرتجع»، و«مراجعة فلوس التحصيل».",
+    cta: { label: "افتح الشحن", href: "dashboard.html#shop/ship" }
+  },
+  {
+    id: "mj-pay", list: "matjari", src: "reels/33-mj-pay.mp4", poster: "reels/33-mj-pay.jpg", v: 1,
+    series: "شرح «متجري» · الدفع والفروع والبيانات", ep: "الحلقة 14",
+    title: "كاش ولا كارت ولا تقسيط؟ الفلوس توصلك إنت",
+    text: "من «الإعدادات» دوس «الدفع والفروع»: «كاش عند الاستلام» شغال من الأول، وفعّل إنستا باي أو المحفظة أو التحويل البنكي برقمك، والفلوس بتوصلك إنت على طول. شغّل «عربون قبل التجهيز» للأوردرات اللي بترجع، و«تغليف هدية ورسالة»، والفروع والاستلام من المحل لحد 20 فرع. واربط حسابك على باي موب للكارت والمحفظة والتقسيط، والأوردر بيتأكد لوحده لما الزبون يدفع. ومن «البيانات»: اسم المتجر ولينكه، والتواصل، و«بيانات البايع» اللي القانون بيطلبها، وأقل قيمة للطلب، وأيام الاسترجاع من 14 لحد 90، و«المتجر في إجازة».",
+    cta: { label: "افتح الدفع والفروع", href: "dashboard.html#shop/pay" }
+  },
+  {
+    id: "mj-feat", list: "matjari", src: "reels/34-mj-feat.mp4", poster: "reels/34-mj-feat.jpg", v: 1,
+    series: "شرح «متجري» · المميزات", ep: "الحلقة 15أ",
+    title: "أوردرات وهمية؟ سلة متسابة؟ كل مشكلة ليها مفتاح",
+    text: "من «الإعدادات» دوس «المميزات»، وأغلب المفاتيح شغالة من الأول. «حساب الزبون» برقمه وكود على الواتساب من غير باسورد. و«كود تأكيد على الواتساب قبل الطلب» ضد الطلبات الوهمية، واللي معلّم عليه «ماتشحنلوش» مايقدرش يطلب. و«السلة المتروكة»: اللي كتب رقمه وماكمّلش توصله رسالة بلينك سلّته، ومعاها كود خصم لو عايز. و«بلّغني لما يرجع»، و«أخبار المتجر»، وتنبيهاتك على الواتساب. و«الأوردرات على جوجل شيتس»، والضريبة على الفاتورة، و«نسخة من متجرك» في ملف واحد.",
+    cta: { label: "افتح المميزات", href: "dashboard.html#shop/feat" }
+  },
+  {
+    id: "mj-pixel", list: "matjari", src: "reels/35-mj-pixel.mp4", poster: "reels/35-mj-pixel.jpg", v: 1,
+    series: "شرح «متجري» · قياس الإعلانات", ep: "الحلقة 15ب",
+    title: "بتصرف على إعلانات؟ اتأكد إن البيع بيتعدّ",
+    text: "من «المميزات» انزل لكارت «قياس الإعلانات»: Meta Pixel وTikTok Pixel وSnapchat Pixel وGoogle Analytics، والزق الرقم في خانته ودوس «احفظ». وتحتها «كتالوج المنتجات»: لينك لفيسبوك وإنستجرام ولينك لجوجل شوبينج، بيتحدّثوا لوحدهم بأسعارك. والآيفون وبرامج منع الإعلانات ساعات بتمنع البيكسل، فالحل «القياس من السيرفر»: افتح «إزاي تجيب التوكن» وامشي على الخطوات، والزق التوكن، ودوس «جرّب». والشراء بيتحسب مرة واحدة بس، و«آخر 24 ساعة» بتقولك كام حدث اتبعت.",
+    cta: { label: "افتح المميزات", href: "dashboard.html#shop/feat" }
+  },
+  {
+    id: "mj-team", list: "matjari", src: "reels/36-mj-team.mp4", poster: "reels/36-mj-team.jpg", v: 1,
+    series: "شرح «متجري» · الموظفين والبوت والبرامج", ep: "الحلقة 16",
+    title: "موظفينك بصلاحيات، وبوت فاهم متجرك، وبرنامج حساباتك مربوط",
+    text: "من «الإعدادات» دوس «الموظفين» وشغّل «فريق المتجر»: لحد 10 موظفين باسمهم ورقم الواتساب ودور جاهز من 5 أدوار، والموظف بيدخل برقمه وكود على الواتساب من غير باسوردك، ومايقدرش يغيّر إعدادات المتجر ولا الباقة، وكل اللي بيعمله بيتسجّل باسمه في «مين عمل إيه». وفي «البوت عارف إيه؟» دوس «ابدأ الاختبار»: 10 أسئلة زي الزباين وتشوف كل رد صح ولا غلط. ولو عندك برنامج حسابات: من «ربط ببرامج تانية» دوس «مفتاح جديد»، واختار البرنامج يقدر يعمل إيه، وابعته للمبرمج مع «صفحة الشرح للمبرمج».",
+    cta: { label: "افتح الموظفين", href: "dashboard.html#shop/team" }
   }
 ];
 REELS = REELS.filter(function (r) { return !r.hidden; });   // a reel with hidden: true stays in the list but isn't shown
 // ?list=matjari: only that series (opened from «متجري»), with its own closing screen
-var LIST = (new URLSearchParams(location.search).get("list") || "").toLowerCase(), LISTS = { matjari: { name: "شرح «متجري»", back: "dashboard.html#shop", backLabel: "ارجع لمتجري", soon: "الشحن، والدفع والفروع، والمميزات، والموظفين" } };
+var LIST = (new URLSearchParams(location.search).get("list") || "").toLowerCase(), LISTS = { matjari: { name: "شرح «متجري»", back: "dashboard.html#shop", backLabel: "ارجع لمتجري", soon: "" } };   // soon: the topics still coming, shown on the closing screen (none now)
 if (!LISTS[LIST] || !REELS.some(function (r) { return r.list === LIST; })) LIST = "";
 if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
 
@@ -470,7 +505,7 @@ if (LIST) REELS = REELS.filter(function (r) { return r.list === LIST; });
     '<div class="card"><span class="av">' + SVG.logo + '</span>' +
     (L ? '<h2>شفت كل فيديوهات ' + esc(L.name) + ' 🎉</h2>' +
       '<p>جرّب اللي اتعلمته على متجرك دلوقتي، ولو محتار في حاجة اسأل سيلّي في اللوحة.</p>' +
-      '<div class="soon"><span class="n" aria-hidden="true">🎬</span><span><b>فيديوهات جديدة قريب</b><small>' + esc(L.soon) + '</small></span></div>' +
+      (L.soon ? '<div class="soon"><span class="n" aria-hidden="true">🎬</span><span><b>فيديوهات جديدة قريب</b><small>' + esc(L.soon) + '</small></span></div>' : '') +
       '<a class="cta" href="' + esc(L.back) + '">' + esc(L.backLabel) + SVG.arrow + '</a>'
     : '<h2>شفت كل حلقات «خطوة بخطوة» 🎉</h2>' +
       '<p>جرّب اللي اتعلمته على متجرك دلوقتي، شهر كامل ببلاش ومن غير كارت.</p>' +

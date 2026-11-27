@@ -169,8 +169,8 @@ function navSync() {
 }
 SB.navSync = navSync;
 /* the videos that explain «متجري» (reels.html, list "matjari"): each tab opens the one about it, in a new tab. A tab with no
-   video of its own yet opens the series from the start. */
-const VID = { home: "mj-home", orders: "mj-orders", products: "mj-products", custs: "mj-customers", report: "mj-customers", offers: "mj-offers", reviews: "mj-reviews", returns: "mj-reviews", rew: "mj-reviews", look: "mj-look", cats: "mj-pages", pages: "mj-pages", blog: "mj-pages" };
+   video of its own (a new one) opens the series from the start. */
+const VID = { home: "mj-home", orders: "mj-orders", products: "mj-products", custs: "mj-customers", report: "mj-customers", offers: "mj-offers", reviews: "mj-reviews", returns: "mj-reviews", rew: "mj-reviews", look: "mj-look", cats: "mj-pages", pages: "mj-pages", blog: "mj-pages", ship: "mj-ship", pay: "mj-pay", info: "mj-pay", feat: "mj-feat", api: "mj-team", bot: "mj-team", team: "mj-team" };
 const vidUrl = id => "/reels.html?list=matjari#" + id;
 const vidBtn = () => { const id = view === "home" && st.status !== "live" ? "mj-start" : VID[view]; return `<a class="btn ghost sm-vb" href="${vidUrl(id || "mj-start")}" target="_blank" rel="noopener" title="${id ? "فيديو بيشرح الصفحة دي خطوة بخطوة" : "فيديوهات بتشرح «متجري» خطوة بخطوة"}"><span aria-hidden="true">🎬</span> ${id ? "فيديو الشرح" : "فيديوهات الشرح"}</a>`; };
 function head() {
