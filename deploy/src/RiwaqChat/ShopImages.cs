@@ -32,7 +32,7 @@ namespace RiwaqChat
             return b + "/" + (small ? Small(path) : path);
         }
         public static string Small(string path) { int i = path.LastIndexOf('.'); return i < 0 ? path : path.Substring(0, i) + "-s" + path.Substring(i); }
-        static string Dir { get { return Web.Setting("ShopImgDir") ?? HostingEnvironment.MapPath("~/App_Data/shopimg"); } }
+        internal static string Dir { get { return Web.Setting("ShopImgDir") ?? HostingEnvironment.MapPath("~/App_Data/shopimg"); } }
         static string File_(string path) { return Path.Combine(Dir, path.Replace('/', Path.DirectorySeparatorChar)); }
 
         public static string Sniff(byte[] d)

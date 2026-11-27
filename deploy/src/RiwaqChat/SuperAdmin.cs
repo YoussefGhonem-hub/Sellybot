@@ -876,6 +876,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                         case "store-update": if (!post) break; StoreUpdate(c, b, res); return;
                         case "store-password": if (!post) break; StorePassword(c, b, res); return;
                         case "store-delete": if (!post) break; StoreDelete(c, b, res); return;
+                        case "store-wipe": { var ws = Web.Int(b, "id") is int wi ? Db.StoreById(c, wi) : null; if (ws == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; } Web.Json(res, 200, StoreWipe.Info(c, ws)); return; }   // what «حذف المتجر» takes with it
                         case "store-login": if (!post) break; StoreLogin(ctx, c, b, res); return;
                         case "subscribe": if (!post) break; Subscribe(c, b, res); return;
                         case "subscription-cancel": if (!post) break; SubscriptionCancel(c, b, res); return;
@@ -1195,9 +1196,9 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
             var s = id.HasValue ? Db.StoreById(c, id.Value) : null;
             if (s == null) { Web.Error(res, 404, "not_found", "المتجر مش موجود."); return; }
             if (confirm != s.Slug) { Web.Error(res, 400, "confirm", "اكتب معرّف المتجر بالظبط عشان تأكد الحذف."); return; }
-            // data, usage, subscriptions and tickets go with it (ON DELETE CASCADE)
-            using (var cmd = Db.Cmd(c, "DELETE FROM dbo.Referrals WHERE ReferrerId=@id; DELETE FROM dbo.Stores WHERE Id=@id", "@id", s.Id)) cmd.ExecuteNonQuery();
-            Web.Json(res, 200, new { ok = true });
+            var no = StoreWipe.Refuse(s); if (no != null) { Web.Error(res, 400, "protected", no); return; }
+            // every row, its rented store with its files and domain, its links outside, and its linked stores (StoreWipe.cs)
+            Web.Json(res, 200, StoreWipe.Delete(c, s));
         }
 
         // Open the store owner's dashboard as that store (to help with support).

@@ -156,7 +156,7 @@ namespace RiwaqChat
         }
 
         // the pages Cloudflare keeps for a closed store go at once (the Worker forgets them when it's told)
-        static void Purge(SqlConnection c, string slug)
+        internal static void Purge(SqlConnection c, string slug)
         {
             try { var key = Shops.Key(c); if (key == null) return; using (var m = new HttpRequestMessage(HttpMethod.Post, Shops.Address(slug) + "/_purge")) { m.Headers.TryAddWithoutValidation("X-Shop-Key", key); Http.SendAsync(m); } } catch (Exception ex) { Log.Error(ex); }
         }

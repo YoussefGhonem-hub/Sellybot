@@ -28,7 +28,7 @@ namespace RiwaqChat
     {
         public const long MaxFile = 50L * 1024 * 1024; public const int Chunk = 1500000, MaxCodes = 5000;
         public static long MaxStoreBytes { get { long mb; return long.TryParse(Web.Setting("DigiStoreMb"), out mb) && mb > 0 ? mb * 1048576 : 300L * 1048576; } }
-        static string Dir { get { return Web.Setting("ShopFileDir") ?? HostingEnvironment.MapPath("~/App_Data/shop-files"); } }
+        internal static string Dir { get { return Web.Setting("ShopFileDir") ?? HostingEnvironment.MapPath("~/App_Data/shop-files"); } }
         static string PathOf(int storeId, string key) { return Path.Combine(Dir, storeId.ToString(CultureInfo.InvariantCulture), key); }
         static string Sha(string s) { using (var h = SHA256.Create()) return string.Concat(h.ComputeHash(Encoding.UTF8.GetBytes(s)).Select(b => b.ToString("x2"))); }
         static void Exec(SqlConnection c, string sql, params object[] a) { ShopCard.Exec(c, sql, a); }

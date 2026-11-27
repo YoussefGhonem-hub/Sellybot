@@ -436,6 +436,8 @@
   .tabpane{animation:fadeUp .3s both}
   .danger-zone{border:1px solid color-mix(in srgb,var(--err) 40%,var(--line));border-radius:14px;padding:14px;margin-top:18px}
   .danger-zone h4{margin:0 0 4px;color:var(--err)}
+  .btn.del-open{color:var(--err)} .btn.del-open:hover{border-color:var(--err);color:var(--err)}
+  #wpBody .calc .r{gap:14px} #wpBody .calc .r>span{flex:none} #wpBody .calc .r>b{text-align:end}
   /* ---------- plan requests: a card per request, coloured by its type ---------- */
   .rq-types{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
   .rq-types button{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer;transition:transform .15s,box-shadow .2s,border-color .2s}
@@ -2280,7 +2282,7 @@
       '<div class="row" style="margin-top:6px">' + planPill(s) + (s.status === "active" ? '<span class="pill ok">شغال</span>' : '<span class="pill err">موقوف</span>') +
         (s.shopify ? '<span class="pill info">🛍️ Shopify</span>' : '') + '<span class="space"></span>' +
         '<a class="btn ghost sm" href="index.html?store=' + encodeURIComponent(s.slug) + '" target="_blank" rel="noopener">💬 افتح الشات ↗</a>' +
-        '<button class="btn ghost sm" id="asStore">🔑 ادخل كصاحب المتجر</button></div>' +
+        '<button class="btn ghost sm" id="asStore">🔑 ادخل كصاحب المتجر</button><button class="btn ghost sm del-open" type="button" data-del>🗑️ حذف المتجر</button></div>' +
       '<div class="tabs" id="sdTabs"><button data-t="sub" class="on">💎 الاشتراك</button><button data-t="usage">📊 الاستهلاك</button><button data-t="hist">🧾 السجل (' + fmt(d.subscriptions.length + ((d.store.requests || []).length)) + ')</button><button data-t="edit">✏️ البيانات</button><button data-t="tk">🎧 التذاكر (' + fmt(d.tickets.length) + ')</button></div>' +
       // subscription
       '<div class="tabpane" data-p="sub">' +
@@ -2328,8 +2330,8 @@
         '<label class="switch"><input type="checkbox" id="edActive"' + (s.status === "active" ? " checked" : "") + '><span class="tg"></span>المتجر شغال (لو اتقفل، الشات بيختفي من موقعه)</label>' +
         '<div class="msg" id="edMsg"></div><div class="row" style="margin-top:14px"><button class="btn" id="edBtn">حفظ</button></div></form>' +
         '<form id="pwF" style="margin-top:18px"><h3>باسورد جديد لصاحب المتجر</h3><div class="row"><input type="text" id="edPass" class="ltr" minlength="8" placeholder="8 حروف على الأقل" style="flex:1;min-width:200px" required><button class="btn ghost" id="edPassBtn">تغيير</button></div><div class="msg" id="pwMsg"></div></form>' +
-        '<div class="danger-zone"><h4>حذف المتجر نهائيًا</h4><p class="hint">هيتمسح المتجر وكل داتاته واستهلاكه واشتراكاته وتذاكره، ومش هينفع ترجعه. اكتب المعرّف <b class="ltr">' + esc(s.slug) + '</b> للتأكيد.</p>' +
-          '<div class="row"><input type="text" id="delConfirm" class="ltr" style="flex:1;min-width:200px"><button class="btn danger" id="delBtn">حذف نهائي</button></div><div class="msg" id="delMsg"></div></div>' +
+        '<div class="danger-zone"><h4>حذف المتجر نهائيًا</h4><p class="hint">المتجر وكل داتاته، ومتجره المؤجر بصوره ودومينه، وربط الواتساب والماسنجر والتليجرام. هتشوف كل اللي هيتمسح قبل ما تأكد.</p>' +
+          '<button class="btn danger" type="button" data-del>🗑️ حذف المتجر…</button></div>' +
       '</div>' +
       // tickets
       '<div class="tabpane" data-p="tk" hidden><div class="list">' + (d.tickets.length ? d.tickets.map(function (t) {
@@ -2422,10 +2424,53 @@
       catch (err) { setMsg(m.querySelector("#pwMsg"), err.message); }
       finally { busy(btn, false); }
     };
-    m.querySelector("#delBtn").onclick = async function () {
-      var btn = this; busy(btn, true);
-      try { await api("store-delete", { id: s.id, confirm: m.querySelector("#delConfirm").value.trim() }); closeModal(); toast("اتمسح المتجر"); loadStores(); }
-      catch (err) { setMsg(m.querySelector("#delMsg"), err.message); busy(btn, false); }
+    m.querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { openDelete(s); }; });
+  }
+
+  // «🗑️ حذف المتجر»: everything that goes with it (StoreWipe.cs), then the store's id typed to confirm
+  async function openDelete(s) {
+    var m = modal('<div class="d-head"><div><h2>🗑️ حذف «' + esc(s.name) + '» نهائيًا</h2><div class="hint ltr" style="text-align:right">' + esc(s.slug) + ' · ' + esc(s.email) + '</div></div><button class="x" data-close aria-label="إغلاق">×</button></div>' +
+      '<div id="wpBody"><div class="skel"></div><div class="skel" style="width:70%;margin-top:10px"></div></div>');
+    var w;
+    try { w = await api("store-wipe", { id: s.id }); } catch (e) { m.querySelector("#wpBody").innerHTML = '<div class="msg err">' + esc(e.message) + '</div>'; return; }
+    if (w.refuse) { m.querySelector("#wpBody").innerHTML = '<p class="hint">' + esc(w.refuse) + '</p><div class="row" style="margin-top:14px"><button class="btn ghost" data-close>تمام</button></div>'; m.querySelector("#wpBody [data-close]").onclick = closeModal; return; }
+    var ST = { draft: "لسه بيتجهز", review: "مستني المراجعة", live: "شغال", closed: "مقفول" };
+    function n(v, one, many) { return v ? fmt(v) + " " + (v === 1 ? one : many) : ""; }
+    function row(label, val) { return val ? '<div class="r"><span>' + label + '</span><b>' + val + '</b></div>' : ""; }
+    var things = [n(w.products, "منتج", "منتج"), n(w.orders, "أوردر", "أوردر"), n(w.customers, "عميل", "عميل"), n(w.images, "صورة", "صورة")].filter(Boolean).join(" · ");
+    var links = [w.wa ? "📱 واتساب (" + fmt(w.wa) + ")" : "", w.meta ? "💬 ماسنجر / إنستجرام (" + fmt(w.meta) + ")" : "", w.tg ? "✈️ تليجرام" : ""].filter(Boolean).join(" · ");
+    m.querySelector("#wpBody").innerHTML =
+      '<p style="margin:4px 0 10px">هيتمسح كل ده ومش هينفع يرجع:</p>' +
+      (w.shops.length ? w.shops.map(function (sh) {
+        return '<div class="calc" style="margin:0 0 10px"><div class="r"><span>🏪 متجره المؤجر</span><b>' + esc(sh.name) + ' <span class="pill">' + esc(ST[sh.status] || sh.status) + '</span></b></div>' +
+          '<div class="r"><span>العنوان</span><b><a class="ltr" dir="ltr" href="' + esc(sh.url) + '" target="_blank" rel="noopener">' + esc(sh.url.replace(/^https?:\/\//, "")) + ' ↗</a>' + (sh.domain ? ' · <span class="ltr" dir="ltr">' + esc(sh.domain) + '</span>' : '') + '</b></div>' +
+          (w.shops.length > 1 ? '<div class="r"><span>تبع</span><b>' + esc(sh.store) + '</b></div>' : '') + '</div>';
+      }).join("") : "") +
+      '<div class="calc" style="margin:0 0 10px">' +
+        row("📦 المتجر المؤجر", things) +
+        row("🧠 داتا المساعد", n(w.knowledge, "حاجة", "حاجة")) +
+        row("💬 المحادثات", n(w.chats, "محادثة", "محادثة")) +
+        row("💎 الاشتراكات", w.subscriptions ? n(w.subscriptions, "اشتراك", "اشتراك") + (w.paidEgp ? " · " + money(w.paidEgp) + " هتتشال من حساب الإيرادات" : "") : "") +
+        row("🎧 التذاكر", n(w.tickets, "تذكرة", "تذكرة")) +
+        row("🔗 الربط اللي هيتفك", links) +
+        '<div class="r"><span>⚙️ الحساب</span><b>الإيميل والباسورد والاستهلاك والإعدادات</b></div>' +
+      '</div>' +
+      (w.linked.length ? '<div class="warn-bar" style="margin:0 0 10px;display:block">🔗 <b>متاجره التانية هتتمسح معاه:</b> ' + w.linked.map(function (x) { return esc(x.name) + ' (<span class="ltr" dir="ltr">' + esc(x.slug) + '</span>)'; }).join("، ") + '. بتتفتح من حساب المتجر ده بس، فمش هيبقى ليها صاحب.</div>' : '') +
+      (w.shops.length ? '<p class="hint" style="margin:0 0 10px">الصور والملفات بتتمسح من السيرفر على طول، ونسخ الصفحات المتخزنة بتتشال، والدومين الخاص بيتشال من Cloudflare خلال دقايق.</p>' : '') +
+      '<label for="wpConfirm">اكتب المعرّف <b class="ltr" dir="ltr">' + esc(s.slug) + '</b> عشان تأكد</label>' +
+      '<div class="row"><input type="text" id="wpConfirm" class="ltr" dir="ltr" autocomplete="off" spellcheck="false" style="flex:1;min-width:200px"><button class="btn danger" id="wpBtn" disabled>🗑️ امسح نهائيًا</button><button class="btn ghost" type="button" data-close>إلغاء</button></div>' +
+      '<div class="msg" id="wpMsg"></div>';
+    m.querySelector("#wpBody [data-close]").onclick = closeModal;
+    var inp = m.querySelector("#wpConfirm"), btn = m.querySelector("#wpBtn");
+    inp.oninput = function () { btn.disabled = inp.value.trim().toLowerCase() !== s.slug.toLowerCase(); };
+    inp.onkeydown = function (e) { if (e.key === "Enter" && !btn.disabled) btn.click(); };
+    setTimeout(function () { inp.focus(); }, 60);
+    btn.onclick = async function () {
+      busy(btn, true);
+      try {
+        var r = await api("store-delete", { id: s.id, confirm: inp.value.trim().toLowerCase() });
+        closeModal(); toast("اتمسح «" + s.name + "»" + (r.stores && r.stores.length > 1 ? " ومعاه " + fmt(r.stores.length - 1) + (r.stores.length === 2 ? " متجر تاني" : " متاجر تانية") : "") + " ✓"); loadStores();
+      } catch (err) { setMsg(m.querySelector("#wpMsg"), err.message); busy(btn, false); }
     };
   }
 

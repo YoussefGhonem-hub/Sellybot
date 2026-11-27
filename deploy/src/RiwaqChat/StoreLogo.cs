@@ -26,7 +26,7 @@ namespace RiwaqChat
         public static string Url(StoreInfo s) { return s != null && s.LogoVer > 0 ? "api/logo.ashx?store=" + s.Slug + "&v=" + s.LogoVer : null; }
         public static string Fit(StoreInfo s) { return s != null && s.LogoFit == "cover" ? "cover" : "contain"; }
 
-        static void Forget(string slug)
+        internal static void Forget(string slug)
         {
             Pic p;
             if (slug != null && Cache.TryRemove(slug, out p)) Interlocked.Add(ref cachedBytes, -p.Data.Length);
