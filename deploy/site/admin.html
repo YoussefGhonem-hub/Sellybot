@@ -155,7 +155,9 @@
   .me{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 12px 4px 4px;font-size:13px}
   .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
   .menu-btn{display:none}
-  .content{padding:22px 24px 60px;max-width:1280px;width:100%}
+  /* big screens: the page grows up to 1680px and sits in the middle; the top bar lines up with it */
+  .content{padding:22px 24px 60px;max-width:1680px;width:100%;margin-inline:auto}
+  .top{padding-inline:max(24px,calc((100% - 1680px) / 2 + 24px))}
   @media (max-width:900px){
     .shell{grid-template-columns:1fr}
     .side{position:fixed;inset:0 0 0 auto;width:260px;z-index:60;transform:translateX(110%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
