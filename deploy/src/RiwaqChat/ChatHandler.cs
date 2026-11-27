@@ -128,13 +128,14 @@ namespace RiwaqChat
                 if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
                 if (store != null && store.Slug == SiteBot.Slug) maxTokens = Math.Max(maxTokens, 3500);   // سيلّي explains a task step by step: a long how-to must not be cut in the middle
                 StoreIndex idx = null;
-                string system = store == null ? Claude.LegacyPrompt() : Claude.StorePrompt(conn, store, out idx);
-                var sysBlocks = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
-                // ordering from the chat: its instructions + this chat's order so far, after the cached prompt
-                var octx = store == null ? null : ChatOrders.ForChannel(conn, store, chatSid, Web.Ip(req));
-                if (octx != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
-                // the store's own page (SellyStore): its products, shipping, offers and orders, read when asked (ShopBot.cs)
+                // the store's own page (SellyStore): its products, shipping, offers and orders, read when asked (ShopBot.cs).
+                // While it's open it is THE store: no Shopify / EasyOrders data, ordering or order tracking next to it (Claude.StorePrompt).
                 var shop = ShopBot.For(conn, store, shopCtx != null && shopCtx.Preview);
+                string system = store == null ? Claude.LegacyPrompt() : Claude.StorePrompt(conn, store, out idx, shop != null);
+                var sysBlocks = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
+                // ordering from the chat (Shopify): its instructions + this chat's order so far, after the cached prompt
+                var octx = store == null || shop != null ? null : ChatOrders.ForChannel(conn, store, chatSid, Web.Ip(req));
+                if (octx != null) sysBlocks.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
                 if (shop != null)
                 {
                     var sd = ShopCache.Get(conn, shop);
@@ -156,7 +157,7 @@ namespace RiwaqChat
                     System = sysBlocks,
                     Messages = messages,
                 };
-                bool orderTool = store != null && OrderTracking.On(store);   // Shopify or EasyOrders
+                bool orderTool = store != null && shop == null && OrderTracking.On(store);   // Shopify or EasyOrders (never next to the store's own)
 
                 // Everything the reply needs from the database is read: the connection goes back to the pool before Claude writes.
                 // A reply takes seconds, and holding a connection for it let ~100 chats at once empty the pool and stop the whole
@@ -254,15 +255,16 @@ namespace RiwaqChat
             if (!int.TryParse(Web.Setting("MaxReplyTokens", "1500"), out maxTokens)) maxTokens = 1500;
             if (store != null && store.Slug == SiteBot.Slug) maxTokens = Math.Max(maxTokens, 3500);   // سيلّي: long step-by-step answers
             StoreIndex idx;
-            string system = Claude.StorePrompt(conn, store, out idx);
+            // the store's own page (SellyStore), on every channel: ShopBot.cs. While it's open it is THE store: no Shopify /
+            // EasyOrders data, ordering or order tracking next to it (Claude.StorePrompt, and the callers leave out their own tools)
+            var shop = ShopBot.For(conn, store, shopPreview);
+            string system = Claude.StorePrompt(conn, store, out idx, shop != null);
             var sys = new List<TextBlockParam> { new TextBlockParam { Text = system, CacheControl = new CacheControlEphemeral() } };
             if (extra != null && extra.Count > 0) channelNote = (channelNote ?? "") + string.Concat(extra.Select(x => x.Prompt ?? ""));
             if (!string.IsNullOrEmpty(channelNote)) sys.Add(new TextBlockParam { Text = channelNote });
-            // WhatsApp ("wa:<chat>"): the chat is the customer's own number, so ordering needs no extra code
-            var octx = ip != null && ip.StartsWith("wa:") ? ChatOrders.ForChannel(conn, store, ip, ip) : null;
+            // WhatsApp ("wa:<chat>"): the chat is the customer's own number, so ordering (Shopify) needs no extra code
+            var octx = shop == null && ip != null && ip.StartsWith("wa:") ? ChatOrders.ForChannel(conn, store, ip, ip) : null;
             if (octx != null) sys.Add(new TextBlockParam { Text = ChatOrders.PromptPart(store) + "\n\n" + ChatOrders.StateNote(octx) });
-            // the store's own page (SellyStore), on every channel: ShopBot.cs
-            var shop = ShopBot.For(conn, store, shopPreview);
             if (shop != null)
             {
                 string own = ip != null && ip.StartsWith("wa:") ? WaChat.Digits(ip.Substring(3)) : null;
@@ -272,7 +274,7 @@ namespace RiwaqChat
             }
             else if (octx == null) sys.Add(new TextBlockParam { Text = ChatOrders.NoOrderNote(store) });   // where the order is really made
             var parameters = new MessageCreateParams { Model = Claude.Model, MaxTokens = maxTokens, System = sys, Messages = messages };
-            bool orderTool = OrderTracking.On(store);   // Shopify or EasyOrders
+            bool orderTool = shop == null && OrderTracking.On(store);   // Shopify or EasyOrders (never next to the store's own)
             return new Prepared { Params = parameters, Messages = messages, Idx = idx, OrderStore = orderTool ? store : null, Ip = ip, Octx = octx, Extra = extra };
         }
 

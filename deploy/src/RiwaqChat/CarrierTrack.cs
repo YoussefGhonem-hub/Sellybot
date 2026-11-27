@@ -64,6 +64,10 @@ namespace RiwaqChat
             string to = Next(ours, o.Status);
             if (to != null && moves)
             {
+                // the company's first word is «خرج للتوصيل» (or a failed attempt): pass by «اتشحن» first, so the customer still gets that
+                // message with the tracking number and the «تابعه من هنا» link (the delivery-day message has neither)
+                if (to == "out" && (o.Status == "new" || o.Status == "noreply" || o.Status == "confirmed") && ShopOrders.SetStatus(c, storeId, oid, "shipped", "carrier", null, false) == null)
+                    o = ShopOrders.ById(c, storeId, oid);
                 string no = null; for (int i = 0; i < 3; i++) { no = ShopOrders.SetStatus(c, storeId, oid, to, "carrier", to == "returned" ? "رجع من " + co.Name + (string.IsNullOrEmpty(x.ReasonText) ? "" : " (" + x.ReasonText + ")") : null, false); if (no == null) break; o = ShopOrders.ById(c, storeId, oid); to = Next(ours, o.Status); if (to == null) break; }
                 if (no != null && to != null) ShopOrders.Log_(c, null, storeId, oid, "system", Cut(co.Name + " قالت «" + OursText[ours] + "» والأوردر ماتحرّكش: " + no, 290));
             }

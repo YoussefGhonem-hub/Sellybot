@@ -135,44 +135,7 @@ namespace RiwaqChat
         static string Body(string text) { int i = text.IndexOf("\nاكتب *1*", StringComparison.Ordinal); return i > 0 ? text.Substring(0, i).TrimEnd() : text; }
 
         // ---------- 2. the customer's answer ----------
-        // Called for every text a customer sends to the store's number, before the assistant. True = handled here.
-        public static bool Intercept(SqlConnection c, StoreInfo s, string chatKey, string chat, string text, long rowId)
-        {
-            bool? yes = Decide(text);
-            if (yes == null) return false;
-            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.OrderConfirms WHERE StoreId=@s AND Status='pending' AND CreatedAt > DATEADD(DAY,-@d,SYSUTCDATETIME())", "@s", s.Id, "@d", AnswerDays))
-                if ((int)cmd.ExecuteScalar() == 0) return false;
-
-            int storeId = s.Id;
-            string phone = WaChat.Digits(chatKey);
-            if (phone != null)
-            {
-                long? oc = Pending(c, storeId, phone);
-                if (oc == null) return false;
-                if (!Claim(c, oc.Value, yes.Value)) return false;
-                HostingEnvironment.QueueBackgroundWorkItem(ct => Act(storeId, oc.Value, yes.Value, chat, phone));
-                return true;
-            }
-            // "...@lid": ask Wapilot for the number behind it, then either answer the order or let the assistant reply
-            HostingEnvironment.QueueBackgroundWorkItem(async ct =>
-            {
-                try
-                {
-                    long? oc = null; string num = null;
-                    using (var c2 = Db.Open())
-                    {
-                        var s2 = Db.StoreById(c2, storeId);
-                        var token = s2 == null ? null : WaAccount.Token(c2, s2);
-                        if (token != null && !string.IsNullOrEmpty(s2.WaInstance)) num = await Wapilot.LidPhone(token, s2.WaInstance, chat);
-                        if (num != null) { oc = Pending(c2, storeId, num); if (oc != null && !Claim(c2, oc.Value, yes.Value)) oc = null; }
-                    }
-                    if (oc != null) await Act(storeId, oc.Value, yes.Value, chat, chatKey);
-                    else await WhatsAppBot.Reply(storeId, chatKey, chat, rowId, ct);
-                }
-                catch (Exception ex) { Log.Error(ex); }
-            });
-            return true;
-        }
+        // The answer itself is routed by ConfirmAnswers (OrderConfirm.cs), with the other systems' confirmations: these find, claim and act.
 
         static long? Pending(SqlConnection c, int storeId, string phone)
         {
@@ -186,14 +149,14 @@ namespace RiwaqChat
         }
 
         // only one answer wins, even when the customer sends "1" twice
-        static bool Claim(SqlConnection c, long id, bool yes)
+        internal static bool Claim(SqlConnection c, long id, bool yes)
         {
             using (var cmd = Db.Cmd(c, "UPDATE dbo.OrderConfirms SET Status=@st, AnsweredAt=SYSUTCDATETIME() WHERE Id=@id AND Status='pending'",
                 "@st", yes ? "confirmed" : "cancelled", "@id", id))
                 return cmd.ExecuteNonQuery() == 1;
         }
 
-        static async Task Act(int storeId, long id, bool yes, string chat, string chatKey)
+        internal static async Task Act(int storeId, long id, bool yes, string chat, string chatKey)   // ConfirmAnswers
         {
             try
             {
@@ -355,6 +318,72 @@ namespace RiwaqChat
             if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty(name, out v)) return null;
             if (v.ValueKind == JsonValueKind.String) return v.GetString();
             if (v.ValueKind == JsonValueKind.Number) return v.GetRawText();
+            return null;
+        }
+    }
+    // "1" / "2" on WhatsApp answers the NEWEST confirmation waiting for this customer, whichever system its order is from:
+    // Shopify (OrderConfirms), EasyOrders (EoConfirms) or the store's own page (ShopConfirms). One place decides, so an older
+    // confirmation in another system never takes the answer, and a hidden number ("…@lid") is looked up once for all three
+    // (before, the first system with anything pending, from any customer, kept the answer and the store's own order waited).
+    // Works with the bot off too; nothing waiting for this number = the message goes on to the assistant.
+    public static class ConfirmAnswers
+    {
+        const int AnswerDays = 7;   // an answer older than this no longer confirms or cancels anything
+
+        static string Waiting(bool shop, bool forPhone)
+        {
+            var p = new List<string> { "sh:OrderConfirms", "eo:EoConfirms" }; if (shop) p.Add("st:ShopConfirms");
+            return string.Join(" UNION ALL ", p.Select(x => "SELECT '" + x.Substring(0, 2) + "' AS k, Id, CreatedAt FROM dbo." + x.Substring(3) +
+                " WHERE StoreId=@s AND Status='pending' AND CreatedAt > DATEADD(DAY,-@d,SYSUTCDATETIME())" + (forPhone ? " AND Phone IS NOT NULL AND RIGHT(Phone, 9) = @t" : "")));
+        }
+
+        public static bool Intercept(SqlConnection c, StoreInfo s, string chatKey, string chat, string text, long rowId)
+        {
+            bool? yes = OrderConfirm.Decide(text);
+            if (yes == null) return false;
+            bool shop = Shops.Ready; int sid = s.Id;
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM (" + Waiting(shop, false) + ") x", "@s", sid, "@d", AnswerDays))
+                if ((int)cmd.ExecuteScalar() == 0) return false;
+            string phone = WaChat.Digits(chatKey);
+            if (phone != null)
+            {
+                var act = Take(c, sid, phone, yes.Value, shop); if (act == null) return false;
+                HostingEnvironment.QueueBackgroundWorkItem(ct => act(chat, phone));
+                return true;
+            }
+            // "...@lid": ask Wapilot for the number behind it, then either answer that order or let the assistant reply
+            HostingEnvironment.QueueBackgroundWorkItem(async ct =>
+            {
+                try
+                {
+                    Func<string, string, Task> act = null;
+                    using (var c2 = Db.Open())
+                    {
+                        var s2 = Db.StoreById(c2, sid); var token = s2 == null ? null : WaAccount.Token(c2, s2);
+                        string num = token != null && !string.IsNullOrEmpty(s2.WaInstance) ? await Wapilot.LidPhone(token, s2.WaInstance, chat) : null;
+                        if (num != null) act = Take(c2, sid, num, yes.Value, shop);
+                    }
+                    if (act != null) await act(chat, chatKey); else await WhatsAppBot.Reply(sid, chatKey, chat, rowId, ct);
+                }
+                catch (Exception ex) { Log.Error(ex); }
+            });
+            return true;
+        }
+
+        // the newest confirmation waiting for this number, claimed for this answer: what then answers it (null = none waiting)
+        static Func<string, string, Task> Take(SqlConnection c, int storeId, string phone, bool yes, bool shop)
+        {
+            string tail = phone.Length > 9 ? phone.Substring(phone.Length - 9) : phone;
+            for (int tries = 0; tries < 3; tries++)   // another message claimed it a moment before: the next one waiting
+            {
+                string k = null; long id = 0;
+                using (var cmd = Db.Cmd(c, "SELECT TOP 1 k, Id FROM (" + Waiting(shop, true) + ") x ORDER BY CreatedAt DESC, Id DESC", "@s", storeId, "@d", AnswerDays, "@t", tail))
+                using (var r = cmd.ExecuteReader()) if (r.Read()) { k = (string)r["k"]; id = Convert.ToInt64(r["Id"]); }
+                if (k == null) return null;
+                if (k == "sh" && OrderConfirm.Claim(c, id, yes)) return (chat, key) => OrderConfirm.Act(storeId, id, yes, chat, key);
+                if (k == "eo" && EoConfirm.Claim(c, id, yes)) return (chat, key) => EoConfirm.Act(storeId, id, yes, chat, key);
+                if (k == "st" && ShopHooks.Claim(c, id, yes)) return (chat, key) => ShopHooks.Act(storeId, id, yes, chat, key);
+            }
             return null;
         }
     }

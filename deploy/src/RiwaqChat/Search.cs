@@ -34,14 +34,16 @@ namespace RiwaqChat
         const int ChunkChars = 1200;
         static readonly ConcurrentDictionary<int, StoreIndex> Cache = new ConcurrentDictionary<int, StoreIndex>();
 
-        public static StoreIndex For(SqlConnection c, StoreInfo s)
+        // ownStore: the merchant's own store (SellyStore) is open, so it is the one source of products, prices and stock:
+        // the parts synced from Shopify / EasyOrders are left out (kept apart in the cache, under -storeId)
+        public static StoreIndex For(SqlConnection c, StoreInfo s, bool ownStore = false)
         {
-            StoreIndex hit;
-            if (Cache.TryGetValue(s.Id, out hit) && hit.Version == s.DataVersion) return hit;
+            StoreIndex hit; int key = ownStore ? -s.Id : s.Id;
+            if (Cache.TryGetValue(key, out hit) && hit.Version == s.DataVersion) return hit;
 
             var idx = new StoreIndex { Version = s.DataVersion };
             var full = new StringBuilder();
-            using (var cmd = Db.Cmd(c, "SELECT Title, Content, UpdatedAt FROM dbo.KnowledgeItems WHERE StoreId=@s ORDER BY Id", "@s", s.Id))
+            using (var cmd = Db.Cmd(c, "SELECT Title, Content, UpdatedAt FROM dbo.KnowledgeItems WHERE StoreId=@s" + (ownStore ? " AND SourceType NOT IN ('" + Shopify.SourceType + "','" + EasyOrders.SourceType + "')" : "") + " ORDER BY Id", "@s", s.Id))
             using (var r = cmd.ExecuteReader())
             {
                 while (r.Read())
@@ -68,7 +70,7 @@ namespace RiwaqChat
                 foreach (var w in ch.Tf.Keys) { int n; idx.Df[w] = idx.Df.TryGetValue(w, out n) ? n + 1 : 1; }
             }
             idx.AvgLen = idx.Chunks.Count == 0 ? 1 : (double)totalLen / idx.Chunks.Count;
-            Cache[s.Id] = idx;
+            Cache[key] = idx;
             return idx;
         }
 

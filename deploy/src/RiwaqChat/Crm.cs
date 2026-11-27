@@ -725,7 +725,7 @@ ELSE SELECT 0;";
                 { "watch", returns ? (object)Watch(c, s, all) : new object[0] },
                 { "returns", new Dictionary<string, object> { { "delivered", del60 }, { "returned", ret60 } } },
                 { "orders", orders }, { "noPhone", noPhone }, { "avgOrder", Math.Round(avg) }, { "avgCurrency", cur ?? "" },   // the guide's example
-                { "shopify", shop }, { "shopifyScope", scope }, { "shopAt", Iso(shopAt) }, { "pulling", IsPulling(s.Id) || (shop && scope && shopAt == null) }, { "eo", eo },
+                { "shopify", shop }, { "own", Shops.Ready && Shops.ByStore(c, s.Id) != null }, { "shopifyScope", scope }, { "shopAt", Iso(shopAt) }, { "pulling", IsPulling(s.Id) || (shop && scope && shopAt == null) }, { "eo", eo },
                 { "whatsapp", !string.IsNullOrEmpty(s.WaInstance) && !string.IsNullOrEmpty(s.WaNumber) }, { "service", WaAccount.HasService(s) },
                 { "alert", new Dictionary<string, object> { { "on", AlertOn(c, s.Id) }, { "team", team.Select(m => m.Name).ToList() }, { "owner", s.OwnerPhone ?? "" }, { "cant", WaNotify.CantSend(c, s) ?? "" } } } };
         }

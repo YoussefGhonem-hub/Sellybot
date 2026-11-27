@@ -505,8 +505,9 @@ namespace RiwaqChat
                 {
                     var s = Db.StoreById(c, storeId); var o = ShopOrders.ById(c, storeId, id); if (s == null || o == null) return;
                     Crm.SetStatus(c, storeId, "shop", id.ToString(CultureInfo.InvariantCulture), CrmStatus(to));
-                    // the owner moved it on: stop waiting for the customer's answer
-                    if (who != "customer") using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Status=@st, Note=@n WHERE StoreId=@s AND OrderId=@o AND Status='pending'", "@st", to == "confirmed" ? "confirmed" : to == "cancelled" ? "cancelled" : "skipped", "@n", "غيّرت حالته لـ «" + ShopOrders.StatusText(to) + "»", "@s", storeId, "@o", id)) if (to != "noreply") cmd.ExecuteNonQuery();
+                    // the owner moved it on, or the customer cancelled it themselves (their account page): stop waiting for their answer
+                    // (an answer on WhatsApp already closed it before this runs, so it is never overwritten)
+                    if (who != "customer" || to == "cancelled") using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Status=@st, Note=@n WHERE StoreId=@s AND OrderId=@o AND Status='pending'", "@st", to == "confirmed" ? "confirmed" : to == "cancelled" ? "cancelled" : "skipped", "@n", "غيّرت حالته لـ «" + ShopOrders.StatusText(to) + "»", "@s", storeId, "@o", id)) if (to != "noreply") cmd.ExecuteNonQuery();
                     if (to == "cancelled" && who != "carrier") Carriers.OnCancelled(storeId, id);
                     try { ShopDigital.OnStatus(c, storeId, id, to); } catch (Exception ex) { Log.Error(ex); }   // a cancel closes the digital links
                     if (to == "shipped" || to == "out") ShopSelf.Stamp(c, storeId, o);   // «بوصّل بنفسي»: who delivers it, before the messages say so
@@ -546,36 +547,13 @@ namespace RiwaqChat
             }
         }
 
-        // ---------- the customer's answer on WhatsApp («1» / «2»): before the assistant, like the other stores' orders ----------
-        public static bool Intercept(SqlConnection c, StoreInfo s, string chatKey, string chat, string text, long rowId)
-        {
-            bool? yes = OrderConfirm.Decide(text);
-            if (yes == null || !Shops.Ready) return false;
-            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.ShopConfirms WHERE StoreId=@s AND Status='pending' AND CreatedAt > DATEADD(DAY,-@d,SYSUTCDATETIME())", "@s", s.Id, "@d", AnswerDays)) if ((int)cmd.ExecuteScalar() == 0) return false;
-            int sid = s.Id; string phone = WaChat.Digits(chatKey);
-            if (phone != null)
-            {
-                long? id = Pending(c, sid, phone); if (id == null || !Claim(c, id.Value, yes.Value)) return false;
-                HostingEnvironment.QueueBackgroundWorkItem(ct => Act(sid, id.Value, yes.Value, chat, phone)); return true;
-            }
-            HostingEnvironment.QueueBackgroundWorkItem(async ct =>
-            {
-                try
-                {
-                    long? id = null; string num = null;
-                    using (var c2 = Db.Open()) { var s2 = Db.StoreById(c2, sid); var token = s2 == null ? null : WaAccount.Token(c2, s2); if (token != null && !string.IsNullOrEmpty(s2.WaInstance)) num = await Wapilot.LidPhone(token, s2.WaInstance, chat); if (num != null) { id = Pending(c2, sid, num); if (id != null && !Claim(c2, id.Value, yes.Value)) id = null; } }
-                    if (id != null) await Act(sid, id.Value, yes.Value, chat, chatKey); else await WhatsAppBot.Reply(sid, chatKey, chat, rowId, ct);
-                }
-                catch (Exception ex) { Log.Error(ex); }
-            });
-            return true;
-        }
+        // ---------- the customer's answer on WhatsApp («1» / «2»): routed by ConfirmAnswers (OrderConfirm.cs) with the other systems' ----------
         static long? Pending(SqlConnection c, int storeId, string phone)
         {
             using (var cmd = Db.Cmd(c, "SELECT TOP 1 Id FROM dbo.ShopConfirms WHERE StoreId=@s AND Status='pending' AND Phone IS NOT NULL AND RIGHT(Phone, 9) = @t AND CreatedAt > DATEADD(DAY,-@d,SYSUTCDATETIME()) ORDER BY Id DESC", "@s", storeId, "@t", phone.Length > 9 ? phone.Substring(phone.Length - 9) : phone, "@d", AnswerDays)) { var v = cmd.ExecuteScalar(); return v == null || v == DBNull.Value ? (long?)null : Convert.ToInt64(v); }
         }
-        static bool Claim(SqlConnection c, long id, bool yes) { using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Status=@st, AnsweredAt=SYSUTCDATETIME() WHERE Id=@i AND Status='pending'", "@st", yes ? "confirmed" : "cancelled", "@i", id)) return cmd.ExecuteNonQuery() == 1; }
-        static async Task Act(int storeId, long id, bool yes, string chat, string chatKey)
+        internal static bool Claim(SqlConnection c, long id, bool yes) { using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopConfirms SET Status=@st, AnsweredAt=SYSUTCDATETIME() WHERE Id=@i AND Status='pending'", "@st", yes ? "confirmed" : "cancelled", "@i", id)) return cmd.ExecuteNonQuery() == 1; }
+        internal static async Task Act(int storeId, long id, bool yes, string chat, string chatKey)   // ConfirmAnswers
         {
             try
             {
@@ -583,7 +561,9 @@ namespace RiwaqChat
                 {
                     var s = Db.StoreById(c, storeId); if (s == null) return; long orderId; using (var cmd = Db.Cmd(c, "SELECT OrderId FROM dbo.ShopConfirms WHERE Id=@i", "@i", id)) orderId = Convert.ToInt64(cmd.ExecuteScalar());
                     var o = ShopOrders.ById(c, storeId, orderId); if (o == null) return; var sh = Shops.ByStore(c, storeId); string reply;
-                    if (yes)
+                    if (yes && (o.Status == "cancelled" || o.Status == "returned"))   // a late «1» for an order that was cancelled meanwhile: never «اتأكد»
+                        reply = En("طلبك " + o.NoText + " اتلغى قبل كده، فمش هنجهّزه. لو حابب تطلب تاني: " + sh.Url, "Order " + o.NoText + " was cancelled earlier, so we won't prepare it. To order again: " + sh.Url, o);
+                    else if (yes)
                     {
                         if (o.Status == "new" || o.Status == "noreply") ShopOrders.SetStatus(c, storeId, orderId, "confirmed", "customer");
                         reply = En("تمام ✅ طلبك " + o.NoText + " اتأكد، وهنبدأ نجهّزه على طول. شكرًا لثقتك في *" + sh.Name + "* 🙏", "Done ✅ Order " + o.NoText + " is confirmed and we are preparing it. Thank you for choosing *" + sh.Name + "* 🙏", o);

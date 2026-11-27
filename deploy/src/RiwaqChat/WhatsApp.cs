@@ -633,9 +633,7 @@ END", "@s", s.Id, "@sub", subject, "@b", body))
             if (row == null) return true;                                                // duplicate delivery
             Carriers.Answered(c, s, key, m.Chat, text);                                  // the answer to «إنقاذ الأوردر»: the owner hears of it
             Offers.Seen(c, s.Id, key);                                                   // «ابعت عرض»: everyone who wrote to the store's number
-            if (OrderConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;   // "1"/"2" answering an order confirmation (works with the bot off too)
-            if (EoConfirm.Intercept(c, s, key, m.Chat, text, row.Value)) return true;      // the same for EasyOrders orders
-            if (ShopHooks.Intercept(c, s, key, m.Chat, text, row.Value)) return true;      // and for orders from the store's own page (SellyStore)
+            if (ConfirmAnswers.Intercept(c, s, key, m.Chat, text, row.Value)) return true; // "1"/"2" answering an order confirmation: Shopify, EasyOrders or the store's own page (works with the bot off too)
             if (WaOptOut.Intercept(c, s, key, m.Chat, text)) return true;                  // «وقف» after an abandoned-cart / back-in-stock message
             if (!s.WaEnabled) return true;                                               // the bot is switched off (the message is still kept as context)
             long rowId = row.Value; int storeId = s.Id; string chat = m.Chat;
@@ -689,7 +687,7 @@ ELSE
                 // The database is used in short steps, never while waiting on the network: read -> pictures -> the reply's data ->
                 // (Claude writes) -> save -> (Wapilot sends) -> status. A reply takes seconds, and holding one connection for all of
                 // it let many chats at once empty the connection pool and stop the whole site.
-                List<Row> rows; StoreInfo s; string token, pending, from; List<ChatHandler.ExtraTool> extra;
+                List<Row> rows; StoreInfo s; string token, pending, from; List<ChatHandler.ExtraTool> extra; bool ownStore;
                 using (var c = Db.Open())
                 {
                     rows = new List<Row>();
@@ -723,7 +721,9 @@ ELSE
                     // tools the growth features add to this chat («بلّغني لما يرجع», handoff to the owner)
                     extra = new List<ChatHandler.ExtraTool>();
                     var custPhone = WaChat.Digits(chatKey);
-                    if (custPhone != null && Restock.On(c, s)) extra.Add(Restock.Tool(s, custPhone));
+                    // «بلّغني لما يرجع» reads Shopify / EasyOrders stock: not while the store's own page is open (it is the stock then)
+                    ownStore = ShopBot.For(c, s) != null;
+                    if (custPhone != null && !ownStore && Restock.On(c, s)) extra.Add(Restock.Tool(s, custPhone));
                     if (custPhone != null && Handoff.On(c, s)) extra.Add(Handoff.Tool(s, "wa", chatKey, line));
                     pending = OrderConfirm.PendingNote(c, s.Id, chatKey) + EoConfirm.PendingNote(c, s.Id, chatKey) + ShopHooks.PendingNote(c, s.Id, chatKey) + Delivery.Note(c, s.Id, chatKey) + Carriers.Note(c, s.Id, chatKey)
                         + Carts.Note(c, s.Id, chatKey) + Handoff.Note(c, s.Id, chatKey);
@@ -742,7 +742,7 @@ ELSE
                 {
                     ChatHandler.Prepared prep;
                     using (var c = Db.Open())
-                        prep = ChatHandler.Prepare(c, s, History(rows, imgs), "wa:" + chatKey, ChannelNote(s, chatKey) + (imgs.Count > 0 ? WaImages.Note : "") + pending, extra);
+                        prep = ChatHandler.Prepare(c, s, History(rows, imgs), "wa:" + chatKey, ChannelNote(s, chatKey, ownStore) + (imgs.Count > 0 ? WaImages.Note : "") + pending, extra);
                     res = await ChatHandler.Run(prep);
                 }
                 catch (Exception ex)
@@ -812,7 +812,7 @@ ELSE
             return list;
         }
 
-        static string ChannelNote(StoreInfo s, string chatKey)
+        static string ChannelNote(StoreInfo s, string chatKey, bool ownStore)
         {
             var sb = new StringBuilder("المحادثة دي على واتساب (رقم المتجر)، مش على الموقع:\n")
                 .Append("- خلي ردودك قصيرة زي رسايل الواتساب العادية.\n")
@@ -820,7 +820,7 @@ ELSE
                 .Append("- اكتب اللينكات كاملة (https://...) مش [نص](لينك).\n")
                 .Append("- لو فيه رسايل في المحادثة من المتجر نفسه (صاحب المتجر رد بنفسه)، كمّل على كلامه وماتناقضهوش.");
             var phone = WaChat.Digits(chatKey);
-            if (phone != null && OrderTracking.On(s))
+            if (phone != null && !ownStore && OrderTracking.On(s))   // the Shopify / EasyOrders order tool (the store's own tells ShopBot.Prompt)
                 sb.Append("\n- رقم واتساب الزبون: +").Append(phone).Append(". لو سأل عن أوردر وقال إنه طلب بنفس الرقم ده، استخدمه كرقم الموبايل في أداة الأوردرات من غير ما تطلبه منه تاني.");
             return sb.ToString();
         }

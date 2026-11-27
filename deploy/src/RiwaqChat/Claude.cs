@@ -74,18 +74,22 @@ namespace RiwaqChat
 
         public const string SearchToolName = "search_store_data";
 
-        public static string StorePrompt(SqlConnection c, StoreInfo s, out StoreIndex idx)
+        // ownStore: the merchant's own store (SellyStore, ShopBot.For) is open, or the owner is previewing it: then IT is the source
+        // of products, prices, stock and orders (ShopBot's prompt and tools). Shopify / EasyOrders stay linked, but their synced data,
+        // their «use it» rules and their order tracking are left out, so the assistant never answers from them by mistake.
+        public static string StorePrompt(SqlConnection c, StoreInfo s, out StoreIndex idx, bool ownStore = false)
         {
-            idx = Search.For(c, s);
+            idx = Search.For(c, s, ownStore);
             Tuple<int, string> hit;
-            int ver = s.DataVersion * 2 + (OrderTracking.On(s) ? 1 : 0);   // the plan can switch order tracking off without a data change
+            bool track = !ownStore && OrderTracking.On(s);
+            int ver = s.DataVersion * 4 + (track ? 1 : 0) + (ownStore ? 2 : 0);   // the plan can switch order tracking off, and the store can open, without a data change
             if (PromptCache.TryGetValue(s.Id, out hit) && hit.Item1 == ver) return hit.Item2;
 
             var sb = new StringBuilder();
             if (string.IsNullOrWhiteSpace(s.BotName)) sb.Append("انت المساعد اللطيف بتاع ").Append(s.Name).Append(" (بتتكلم باسم ").Append(s.Name).Append(" نفسه).\n");
             else sb.Append("انت \"").Append(s.BotName).Append("\"، المساعد اللطيف بتاع ").Append(s.Name).Append(".\n");
             sb.Append(CoreRules(s.Name));
-            if (!string.IsNullOrEmpty(s.ShopifyDomain))
+            if (!ownStore && !string.IsNullOrEmpty(s.ShopifyDomain))
                 sb.Append("\n\nمصادر المعلومات: بيانات المتجر فيها ملفات صاحب المتجر، وفيها جزء عنوانه \"").Append(Shopify.ItemTitle)
                   .Append("\" بيتسحب تلقائيًا من موقع المتجر على Shopify.\n")
                   .Append("- اعتمد على ملفات صاحب المتجر الأول. ولو المعلومة نفسها موجودة في الاتنين ومختلفة، كلام صاحب المتجر هو الصح.\n")
@@ -93,14 +97,14 @@ namespace RiwaqChat
                   .Append("- أي حاجة مش موجودة في ملفات صاحب المتجر (منتج، سعر، مقاس، لون، متاح ولا خلصان، سياسة) خدها من داتا Shopify.\n")
                   .Append("- لما ترشّح منتج من داتا Shopify ابعت لينكه، والزبون مايعرفش حاجة عن المصادر دي فماتذكرهاش.\n")
                   .Append("- لو مكتوب \"فاضل كذا\" والكمية قليلة (5 أو أقل)، ممكن تقول للزبون إن الكمية قربت تخلص.");
-            if (EasyOrders.Connected(s))
+            if (!ownStore && EasyOrders.Connected(s))
                 sb.Append("\n\nمصادر المعلومات: بيانات المتجر فيها ملفات صاحب المتجر، وفيها جزء عنوانه \"").Append(EasyOrders.ItemTitle)
                   .Append("\" بيتسحب تلقائيًا من متجره على EasyOrders.\n")
                   .Append("- اعتمد على ملفات صاحب المتجر الأول. ولو المعلومة نفسها موجودة في الاتنين ومختلفة، كلام صاحب المتجر هو الصح.\n")
                   .Append("- أي حاجة مش موجودة في ملفات صاحب المتجر (منتج، سعر، مقاس، لون، متاح ولا خلصان) خدها من داتا EasyOrders.\n")
                   .Append("- لو المنتج ليه لينك ابعته لما ترشّحه، والزبون مايعرفش حاجة عن المصادر دي فماتذكرهاش.\n")
                   .Append("- لو مكتوب \"فاضل كذا\" والكمية قليلة (5 أو أقل)، ممكن تقول للزبون إن الكمية قربت تخلص.");
-            if (OrderTracking.On(s))
+            if (track)
                 sb.Append("\n\nتتبع الأوردرات: عندك أداة ").Append(ShopifyAdmin.OrderToolName).Append(" بتجيب حالة أوردر الزبون.\n")
                   .Append("- لو الزبون سأل عن أوردره (فين، اتشحن ولا لأ، هيوصل امتى، رقم الشحنة)، اطلب منه في جملة واحدة رقم الأوردر والموبايل أو الإيميل اللي طلب بيه (مثلًا: \"ابعتلي رقم الأوردر ورقم الموبايل اللي طلبت بيه\")، وبعدين استخدم الأداة.\n")
                   .Append("- ماتقولش أي حاجة عن أي أوردر غير اللي الأداة رجّعته بعد ما قالت إن البيانات مطابقة. ماتخمّنش حالة أوردر أبدًا.\n")

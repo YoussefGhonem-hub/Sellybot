@@ -196,7 +196,7 @@ namespace RiwaqChat
         static void Silent(SqlConnection c, StoreInfo s, DateTime from, StringBuilder sb)
         {
             var rows = new List<string>();
-            foreach (var t in new[] { "OrderConfirms", "EoConfirms" })
+            foreach (var t in Shops.Ready ? new[] { "OrderConfirms", "EoConfirms", "ShopConfirms" } : new[] { "OrderConfirms", "EoConfirms" })   // ShopConfirms: the store's own page
                 using (var cmd = Db.Cmd(c, "SELECT TOP 5 OrderName, Customer, AlertTo FROM dbo." + t + " WHERE StoreId=@s AND Status='pending' AND AlertedAt >= @f ORDER BY Id DESC", "@s", s.Id, "@f", from))
                 using (var r = cmd.ExecuteReader())
                     while (r.Read())

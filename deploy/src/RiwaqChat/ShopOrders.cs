@@ -183,7 +183,7 @@ namespace RiwaqChat
                             if (t[2] != null) Stock(c, tx, row.StoreId, l.P.Id, l.VariantId, -(int)t[1], (int)t[2], "order", id, null);
                             using (var cmd = Db.Cmd(c, "UPDATE dbo.ShopProducts SET Sold=Sold+@n WHERE Id=@p AND StoreId=@s", "@n", (int)t[1], "@p", l.P.Id, "@s", row.StoreId)) { cmd.Transaction = tx; cmd.ExecuteNonQuery(); }
                         }
-                        Log_(c, tx, row.StoreId, id, o.ByOwner ? "owner" : "customer", o.ByOwner ? "اتسجل بإيد التاجر" : "الطلب اتعمل " + (o.Channel == "chat" ? "من الشات" : o.Channel == "wa" ? "من شات الواتساب" : o.Channel == "msgr" ? "من المسنجر" : o.Channel == "tg" ? "من تيليجرام" : "من المتجر"));
+                        Log_(c, tx, row.StoreId, id, o.ByOwner ? "owner" : "customer", o.ByOwner ? "اتسجل بإيد التاجر" : "الطلب اتعمل " + (o.Channel == "chat" ? "من الشات" : o.Channel == "wa" ? "من شات الواتساب" : o.Channel == "msgr" ? "من المسنجر" : o.Channel == "ig" ? "من إنستجرام" : o.Channel == "tg" ? "من تيليجرام" : "من المتجر"));
                         Daily(c, tx, row.StoreId, "Orders", 1);
                         tx.Commit(); done = true;
                         var order = ById(c, row.StoreId, id);

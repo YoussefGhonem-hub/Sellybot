@@ -7093,7 +7093,7 @@
   };
   var CR_M = { star: "⭐ مهم", follow: "🔁 محتاج متابعة", whole: "📦 جملة", block: "⛔ ماتشحنلوش" };
   var CR_S = { open: "⏳ لسه", shipped: "🚚 اتشحن", delivered: "✅ اتسلم", returned: "↩️ رجع", cancelled: "❌ اتلغى" };
-  var CR_SRC = { shopify: "Shopify", eo: "EasyOrders", excel: "من ملف", hand: "سجّلته بإيدك" };
+  var CR_SRC = { shop: "«متجري»", shopify: "Shopify", eo: "EasyOrders", excel: "من ملف", hand: "سجّلته بإيدك" };
   var CR_CH = { wa: "💬", fb: "📘", ig: "📸", tg: "✈️", web: "🌐" };
   var CR_EV = { cart: "🛒", wait: "🔔", hand: "🙋", offer: "📣", confirm: "📲", stop: "🚫" };
   function crCustN(n) { return bcPlural(n, "زبون واحد", "زبونين", "زباين", "زبون"); }
@@ -7182,7 +7182,7 @@
     } else ex.innerHTML = "🧮 <b>مثال:</b> متجر عنده 100 زبون اشتروا واختفوا، ومتوسط أوردره 400 ج.م. لو 5 بس رجعوا يشتروا، دول 2,000 ج.م من رسالة واحدة ومن غير إعلان.".replace(/[0-9,]+/g, function (x) { return fmt(+x.replace(/,/g, "")); }) + "<small>ده حساب للتوضيح، مش وعد بنتيجة.</small>";
     // what fills the page: done, or the button that does it
     var st = [];
-    if (cr.shopify || cr.eo) st.push("<em>✓ متجرك مربوط</em>"); else if (hasF("shopify") || hasF("easyorders")) st.push('<button type="button" data-crst="data">🛍️ اربط متجرك</button>');
+    if (cr.shopify || cr.eo || cr.own) st.push("<em>✓ متجرك مربوط</em>");   // own: «متجري» adds its orders by itself else if (hasF("shopify") || hasF("easyorders")) st.push('<button type="button" data-crst="data">🛍️ اربط متجرك</button>');
     st.push(cr.whatsapp ? "<em>✓ الواتساب مربوط</em>" : '<button type="button" data-crst="wa">💬 اربط الواتساب</button>');
     st.push('<button type="button" data-crst="up">⬆️ ارفع أوردراتك القديمة</button>');
     $("crGdSt").innerHTML = st.join("");
@@ -7220,7 +7220,7 @@
     if (!cr.all) {
       el.innerHTML = cr.pulling ? '<div class="cr-empty"><div class="e">🔄</div><b>بنسحب أوردراتك من Shopify</b><p>أول مرة بتاخد دقيقة أو اتنين. زباينك هيظهروا هنا لوحدهم.</p></div>'
         : '<div class="cr-empty"><div class="e">👥</div><b>زباينك هيظهروا هنا لوحدهم</b><p>أول ما زبون يكلّمك على الواتساب أو يعمل أوردر، هتلاقيله ملف هنا. ابدأ بأي واحدة من دول:</p><div class="row">' +
-          (cr.shopify || cr.eo || !hasF("shopify") ? "" : '<button class="btn" type="button" data-go="data">🛍️ اربط متجرك</button>') + (cr.whatsapp ? "" : '<button class="btn ghost" type="button" data-go="wa">💬 اربط الواتساب</button>') +
+          (cr.shopify || cr.eo || cr.own || !hasF("shopify") ? "" : '<button class="btn" type="button" data-go="data">🛍️ اربط متجرك</button>') + (cr.whatsapp ? "" : '<button class="btn ghost" type="button" data-go="wa">💬 اربط الواتساب</button>') +
           '<button class="btn ghost" type="button" data-do="crUp">⬆️ ارفع أوردرات قديمة</button><button class="btn ghost" type="button" data-do="crAdd">➕ ضيف زبون</button></div></div>';
       el.querySelectorAll("[data-go]").forEach(function (b) { b.onclick = function () { go(b.dataset.go); }; });
       el.querySelectorAll("[data-do]").forEach(function (b) { b.onclick = function () { $(b.dataset.do).click(); }; });

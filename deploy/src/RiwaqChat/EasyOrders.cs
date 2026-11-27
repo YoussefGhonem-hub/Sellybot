@@ -784,43 +784,7 @@ namespace RiwaqChat
         }
 
         // ---------- the customer's answer ----------
-        // Called for every text a customer sends to the store's number, before the assistant. True = handled here.
-        public static bool Intercept(SqlConnection c, StoreInfo s, string chatKey, string chat, string text, long rowId)
-        {
-            bool? yes = OrderConfirm.Decide(text);
-            if (yes == null) return false;
-            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.EoConfirms WHERE StoreId=@s AND Status='pending' AND CreatedAt > DATEADD(DAY,-@d,SYSUTCDATETIME())", "@s", s.Id, "@d", AnswerDays))
-                if ((int)cmd.ExecuteScalar() == 0) return false;
-
-            int storeId = s.Id;
-            string phone = WaChat.Digits(chatKey);
-            if (phone != null)
-            {
-                long? oc = Pending(c, storeId, phone);
-                if (oc == null || !Claim(c, oc.Value, yes.Value)) return false;
-                HostingEnvironment.QueueBackgroundWorkItem(ct => Act(storeId, oc.Value, yes.Value, chat, phone));
-                return true;
-            }
-            // "...@lid": ask Wapilot for the number behind it, then either answer the order or let the assistant reply
-            HostingEnvironment.QueueBackgroundWorkItem(async ct =>
-            {
-                try
-                {
-                    long? oc = null; string num = null;
-                    using (var c2 = Db.Open())
-                    {
-                        var s2 = Db.StoreById(c2, storeId);
-                        var token = s2 == null ? null : WaAccount.Token(c2, s2);
-                        if (token != null && !string.IsNullOrEmpty(s2.WaInstance)) num = await Wapilot.LidPhone(token, s2.WaInstance, chat);
-                        if (num != null) { oc = Pending(c2, storeId, num); if (oc != null && !Claim(c2, oc.Value, yes.Value)) oc = null; }
-                    }
-                    if (oc != null) await Act(storeId, oc.Value, yes.Value, chat, chatKey);
-                    else await WhatsAppBot.Reply(storeId, chatKey, chat, rowId, ct);
-                }
-                catch (Exception ex) { Log.Error(ex); }
-            });
-            return true;
-        }
+        // The answer itself is routed by ConfirmAnswers (OrderConfirm.cs), with the other systems' confirmations: these find, claim and act.
 
         static long? Pending(SqlConnection c, int storeId, string phone)
         {
@@ -834,14 +798,14 @@ namespace RiwaqChat
         }
 
         // only one answer wins, even when the customer sends "1" twice
-        static bool Claim(SqlConnection c, long id, bool yes)
+        internal static bool Claim(SqlConnection c, long id, bool yes)
         {
             using (var cmd = Db.Cmd(c, "UPDATE dbo.EoConfirms SET Status=@st, AnsweredAt=SYSUTCDATETIME() WHERE Id=@id AND Status='pending'",
                 "@st", yes ? "confirmed" : "cancelled", "@id", id))
                 return cmd.ExecuteNonQuery() == 1;
         }
 
-        static async Task Act(int storeId, long id, bool yes, string chat, string chatKey)
+        internal static async Task Act(int storeId, long id, bool yes, string chat, string chatKey)   // ConfirmAnswers
         {
             try
             {
