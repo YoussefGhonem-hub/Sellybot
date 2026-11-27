@@ -399,7 +399,6 @@ namespace RiwaqChat
                 { "rel", Related(d, p).Select(x => x.Id).ToArray() }
             };
             if (p.Stars != null) r["rs"] = p.Stars;
-            if (!string.IsNullOrEmpty(p.Video)) r["vd"] = p.Video;
             var guide = SizeGuide(d, p);
             if (guide != null) r["sg"] = guide;
             ShopDigital.Mark(d, p, r);

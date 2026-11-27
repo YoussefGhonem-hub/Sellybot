@@ -467,7 +467,7 @@ namespace RiwaqChat
             if (p.Page != null) page["pg"] = new Dictionary<string, object> { { "s", p.Page.Slug }, { "k", p.Page.Kind }, { "t", ShopView.Pair(p.Page.Title, p.Page.TitleEn) }, { "b", ShopView.Pair(p.Page.Body, p.Page.BodyEn) } };
             if (p.Token != null) page["token"] = p.Token;
             if (p.Post != null) page["post"] = new Dictionary<string, object> { { "s", p.Post.Slug }, { "t", ShopView.Pair(p.Post.Title, p.Post.TitleEn) }, { "b", ShopView.Pair(p.PostBody, p.PostBodyEn) }, { "im", p.Post.Image ?? "" }, { "at", ShopView.Unix(p.Post.At) }, { "ps", (p.PostProducts ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) } };
-            var boot = new Dictionary<string, object> { { "shop", shop }, { "look", x.Look }, { "lang", lang }, { "pre", x.Prefix }, { "ver", ver }, { "page", page }, { "now", ShopView.Unix(now) }, { "preview", x.Preview }, { "dash", x.Preview ? Dash() : "" }, { "pv", x.Preview ? x.Pv ?? "" : "" },
+            var boot = new Dictionary<string, object> { { "shop", shop }, { "look", ShopLook.NoVideo(x.Look) }, { "lang", lang }, { "pre", x.Prefix }, { "ver", ver }, { "page", page }, { "now", ShopView.Unix(now) }, { "preview", x.Preview }, { "dash", x.Preview ? Dash() : "" }, { "pv", x.Preview ? x.Pv ?? "" : "" },
                 { "a", new Dictionary<string, object> { { "core", Ver("core.js") }, { "more", Ver("more.js") }, { "geo", "1" } } } };
             ShopSeasons.Boot(boot, x);
 
