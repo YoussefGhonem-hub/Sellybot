@@ -1256,8 +1256,16 @@
   };
   $("mtAskThFb").insertAdjacentHTML("afterbegin", ASK_IC.fb); $("mtAskThIg").insertAdjacentHTML("afterbegin", ASK_IC.ig);
   $("mtAskFilter").onclick = function (e) { var b = e.target.closest("button[data-f]"); if (!b) return; mtAskF = b.dataset.f; drawAsks(); };
-  // facebook.com/my.store or facebook.com/profile.php?id=…: short enough for the cell (the full link is on hover and on click)
-  function askShort(u) { return String(u || "").replace(/^https?:\/\/(www\.|m\.)?/i, "").replace(/\/$/, ""); }
+  // just what names the Page (the mark already says Facebook; the full link is on hover and on click):
+  // facebook.com/my.store → my.store, …/people/My-Store/615… → My-Store, profile.php?id=61596532536711 → id …36711
+  function askShort(u) {
+    var s = String(u || "").trim(), id = (s.match(/[?&]id=(\d+)/) || [])[1];
+    if (id) return "id …" + id.slice(-5);
+    var p = s.replace(/^https?:\/\//i, "").replace(/^([a-z]+\.)?(facebook\.com|fb\.com|fb\.me)(\/|$)/i, "").replace(/[?#].*$/, "").split("/").filter(Boolean);
+    if (/^(people|pages|pg)$/i.test(p[0] || "") && p[1]) p = [p[1]];
+    var t = p[0] === "share" ? p.join("/") : p[0] || s;
+    try { return decodeURIComponent(t); } catch (e) { return t; }
+  }
   function askHtml(a) {
     var ST = { pending: '<span class="pill warn">⏳ مستني الربط</span>', problem: '<span class="pill">✍️ مستني التاجر</span>', done: '<span class="pill ok">✅ اتربط</span>', off: '<span class="pill">🔌 اتفك الربط</span>' };
     var at = new Date(a.updatedAt), first = Array.from(String(a.storeName || a.slug || "?").trim())[0] || "?";
