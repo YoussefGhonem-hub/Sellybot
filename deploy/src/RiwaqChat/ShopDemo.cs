@@ -14,6 +14,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Web.Hosting;
 
 namespace RiwaqChat
@@ -25,10 +26,22 @@ namespace RiwaqChat
         static int known = -1;                                 // the demo store's id: -1 = not looked up yet, 0 = none
         const int Version = 3;                                 // raise it when Build changes: the store is built again on the next start
 
-        // started with the site, away from the first request (the pictures may go to R2)
+        // started with the site, away from the first request (the pictures may go to R2). A deploy starts a second copy of the site
+        // and then stops the first: whichever copy is left keeps trying every 30 seconds until the store is built (Sync says so).
         public static void Start()
         {
-            try { HostingEnvironment.QueueBackgroundWorkItem(ct => { try { using (var c = Db.Open()) Sync(c, HostingEnvironment.MapPath("~/App_Data/shopdemo")); } catch (Exception ex) { Log.Error(ex); } }); }
+            try
+            {
+                HostingEnvironment.QueueBackgroundWorkItem(async ct =>
+                {
+                    var dir = HostingEnvironment.MapPath("~/App_Data/shopdemo");
+                    for (int i = 0; i < 40 && !ct.IsCancellationRequested; i++)
+                    {
+                        try { using (var c = Db.Open()) if (Sync(c, dir)) return; } catch (Exception ex) { Log.Error(ex); }
+                        try { await Task.Delay(TimeSpan.FromSeconds(30), ct); } catch (TaskCanceledException) { return; }
+                    }
+                });
+            }
             catch (Exception ex) { Log.Error(ex); }   // never stop the site over this
         }
 
@@ -58,9 +71,10 @@ namespace RiwaqChat
             return ShopTemplates.Cards().Where(x => open.Contains(x.Id)).Select(x => (object)new[] { x.Id, x.Name[0], x.Name[1] }).ToArray();
         }
 
-        public static void Sync(SqlConnection c, string dir)
+        // true = the store is as the files say (or can't be made: logged); false = another copy is building it now, try again later
+        public static bool Sync(SqlConnection c, string dir)
         {
-            if (!Shops.Ready || string.IsNullOrEmpty(dir) || !File.Exists(Path.Combine(dir, "demo.json"))) return;
+            if (!Shops.Ready || string.IsNullOrEmpty(dir) || !File.Exists(Path.Combine(dir, "demo.json"))) return true;
             string raw = File.ReadAllText(Path.Combine(dir, "demo.json"), Encoding.UTF8).TrimStart('﻿');
             var pics = Directory.Exists(Path.Combine(dir, "img")) ? Directory.GetFiles(Path.Combine(dir, "img"), "*.jpg").OrderBy(x => x, StringComparer.Ordinal).ToList() : new List<string>();
             string hash;
@@ -70,15 +84,16 @@ namespace RiwaqChat
                 foreach (var f in pics) all.Append('\0').Append(Path.GetFileName(f)).Append('\0').Append(new FileInfo(f).Length);
                 hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(all.ToString()))).Replace("-", "").ToLowerInvariant();
             }
-            if (Billing.Get(c, HashKey) == hash && Id(c) > 0) return;   // nothing changed
+            if (Billing.Get(c, HashKey) == hash && Id(c) > 0) return true;   // nothing changed
 
             // one copy at a time (the two copies of the site overlap for a moment after a deploy); the other one just leaves it
-            using (var cmd = Db.Cmd(c, "DECLARE @r INT; EXEC @r = sp_getapplock @Resource='shopdemo', @LockMode='Exclusive', @LockOwner='Session', @LockTimeout=0; SELECT @r")) if ((int)cmd.ExecuteScalar() < 0) return;
+            using (var cmd = Db.Cmd(c, "DECLARE @r INT; EXEC @r = sp_getapplock @Resource='shopdemo', @LockMode='Exclusive', @LockOwner='Session', @LockTimeout=0; SELECT @r")) if ((int)cmd.ExecuteScalar() < 0) return false;
             try
             {
-                if (Billing.Get(c, HashKey) == hash && Id(c) > 0) return;
+                if (Billing.Get(c, HashKey) == hash && Id(c) > 0) return true;
                 Build(c, ShopJson.Obj(raw), Path.Combine(dir, "img"));
                 Billing.Set(c, HashKey, hash);
+                return true;
             }
             finally
             {
