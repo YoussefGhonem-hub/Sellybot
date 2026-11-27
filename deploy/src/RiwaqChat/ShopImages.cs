@@ -2,8 +2,8 @@
 // the bytes themselves, never SVG. A picture's path is <store id>/<random>.webp (the small one: <random>-s.webp) and never changes, so
 // browsers and Cloudflare keep it for a year. Kept on Cloudflare R2 through the Worker (AppSettings ShopImgMode = r2), and on this
 // server's disk (App_Data/shopimg) until R2 is on, or when it doesn't answer; pictures left on the disk move to R2 by themselves.
-// The stores are pictures only since 2026-11-27: no video is taken, and the MP4 / WebM ones uploaded before are removed (ShopAccount.Tidy).
-// The video paths stay readable here so the old ones can be found, deleted and, until then, given in parts.
+// The stores are pictures only since 2026-11-27: no video is taken. The MP4 / WebM ones uploaded before are kept (the owner chose not to
+// delete them for now) but never shown; their paths stay readable here so they can be found, deleted later, and given in parts.
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
