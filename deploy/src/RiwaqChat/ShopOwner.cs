@@ -100,7 +100,7 @@ namespace RiwaqChat
                 { "reviewNote", sh.ReviewNote ?? "" }, { "closeNote", sh.CloseNote ?? "" }, { "pendSlug", sh.PendSlug ?? "" }, { "pendName", sh.PendName ?? "" }, { "reviewChange", sh.ReviewChange },
                 { "submittedAt", Iso(sh.SubmittedAt) }, { "publishedAt", Iso(sh.PublishedAt) }, { "dirty", sh.DraftAt.HasValue }, { "everLive", sh.LiveJson != null },
                 { "service", ShopRent.Json(c, s, sh) }, { "open", Shops.Open(c, s, sh) }, { "until", Iso(until) },
-                { "draft", sh.Look(true) }, { "settings", sh.Settings }, { "templates", ShopTemplates.List(c) }, { "bizzes", ShopLook.Bizzes },
+                { "draft", ShopLook.NoVideo(sh.Look(true)) }, { "settings", sh.Settings }, { "templates", ShopTemplates.List(c) }, { "bizzes", ShopLook.Bizzes },
                 { "cats", d.Cats.Select(k => CatJson(k)).ToArray() }, { "pages", d.Pages.Select(PageJson).ToArray() }, { "zones", d.Zones.Values.Select(z => new Dictionary<string, object> { { "g", z.Gov }, { "f", z.Fee.HasValue ? (object)z.Fee.Value : null }, { "d", z.Days ?? "" }, { "m", z.MinSub.HasValue ? (object)z.MinSub.Value : null }, { "off", z.Off } }).ToArray() },
                 { "counts", new Dictionary<string, object> { { "products", d.Products.Count }, { "shown", d.Shown.Count() }, { "out", d.Products.Count(p => p.Status == "active" && !p.Available) }, { "orders", orders }, { "newOrders", newOrders }, { "offers", d.Offers.Count(o => o.Running(DateTime.UtcNow)) } } },
                 { "waiting", ShopDesk.Waiting(c, sh.StoreId) }, { "carriers", Carriers.StateJson(c, s) }, { "cat", ShopGoods.StateJson(c, s, sh) }, { "plans", new Dictionary<string, object> { { "carts", PlanGate.Allows(c, s, Carts.Feature) }, { "restock", PlanGate.Allows(c, s, Restock.Feature) } } },
@@ -179,7 +179,7 @@ namespace RiwaqChat
                 { "metaTitle", p.MetaTitle ?? "" }, { "metaDesc", p.MetaDesc ?? "" }, { "cats", p.Cats }, { "main", p.MainCat }, { "sold", p.Sold }, { "url", sh.Url + "/p/" + p.Slug },
                 { "options", p.Options.Select(o => new Dictionary<string, object> { { "n", new[] { o.Ar, o.En } }, { "v", o.Vals.Select(v => new[] { v.Ar, v.En, v.Hex }).ToArray() } }).ToArray() },
                 { "vars", p.Vars.Select(v => new Dictionary<string, object> { { "id", v.Id }, { "o", v.Vals }, { "price", v.Price.HasValue ? (object)v.Price.Value : null }, { "old", v.OldPrice.HasValue ? (object)v.OldPrice.Value : null }, { "cost", v.Cost.HasValue ? (object)v.Cost.Value : null }, { "stock", v.Stock }, { "sku", v.Sku ?? "" }, { "image", v.Image ?? "" }, { "active", v.Active } }).ToArray() },
-                { "images", Images(c, sh.StoreId, p.Id) }, { "ask", ShopJson.Arr(p.AskJson) }, { "goes", ShopView.GoesIds(p) }, { "video", p.Video ?? "" }, { "rating", p.Rating }, { "reviews", p.Reviews }
+                { "images", Images(c, sh.StoreId, p.Id) }, { "ask", ShopJson.Arr(p.AskJson) }, { "goes", ShopView.GoesIds(p) }, { "rating", p.Rating }, { "reviews", p.Reviews }
             };
         }
         static object[] Images(SqlConnection c, int storeId, int productId)
@@ -600,7 +600,7 @@ namespace RiwaqChat
             int min = Math.Max(1, Math.Min(500, Int(b, "min", 1))), max = Math.Max(0, Math.Min(999, Int(b, "max"))); if (max > 0 && max < min) max = min;
             string slug = FreeSlug(c, "ShopProducts", s, Str(b, "slug", 80), name, id, 80);
             object[] args = { "@s", s, "@i", id, "@slug", slug, "@n", name, "@ne", Nz(Str(b, "nameEn", 150)), "@d", Nz(Str(b, "descr", 8000)), "@de", Nz(Str(b, "descrEn", 8000)), "@p", price, "@o", old > 0 ? (object)old : null, "@c", cost > 0 ? (object)cost : null, "@sku", Nz(Str(b, "sku", 60)), "@u", Nz(Str(b, "unit", 20)), "@br", Nz(Str(b, "brand", 60)), "@tg", Nz(Str(b, "tags", 300)), "@min", min, "@max", max > 0 ? (object)max : null,
-                "@t", Bool(b, "track", true), "@om", outMode, "@st", status, "@op", opts.Count == 0 ? null : ShopJson.Write(opts), "@sp", specs.Length == 0 ? null : ShopJson.Write(specs), "@g", guide == null ? null : ShopJson.Write(Guide(guide)), "@x", extra.Count == 0 ? null : ShopJson.Write(extra), "@mt", Nz(Str(b, "metaTitle", 120)), "@md", Nz(Str(b, "metaDesc", 300)), "@f", Bool(b, "feat"), "@w", Int(b, "weight") > 0 ? (object)Int(b, "weight") : null, "@ask", Ask(ShopJson.At(b, "ask")), "@hasAsk", b.ContainsKey("ask"), "@vd", Nz(Vid(b, s)), "@goes", Nz(string.Join(",", ShopJson.List(ShopJson.At(b, "goes")).Select(x => ShopJson.Int(x)).Where(x => x > 0 && x != id && d.ById.ContainsKey(x)).Distinct().Take(8))) };
+                "@t", Bool(b, "track", true), "@om", outMode, "@st", status, "@op", opts.Count == 0 ? null : ShopJson.Write(opts), "@sp", specs.Length == 0 ? null : ShopJson.Write(specs), "@g", guide == null ? null : ShopJson.Write(Guide(guide)), "@x", extra.Count == 0 ? null : ShopJson.Write(extra), "@mt", Nz(Str(b, "metaTitle", 120)), "@md", Nz(Str(b, "metaDesc", 300)), "@f", Bool(b, "feat"), "@w", Int(b, "weight") > 0 ? (object)Int(b, "weight") : null, "@ask", Ask(ShopJson.At(b, "ask")), "@hasAsk", b.ContainsKey("ask"), "@vd", DBNull.Value, "@goes", Nz(string.Join(",", ShopJson.List(ShopJson.At(b, "goes")).Select(x => ShopJson.Int(x)).Where(x => x > 0 && x != id && d.ById.ContainsKey(x)).Distinct().Take(8))) };
             using (var tx = c.BeginTransaction())
             {
                 if (id == 0)
@@ -645,7 +645,6 @@ namespace RiwaqChat
             if (me != null && me.Slug != slug) Redirect(c, s, "p", me.Slug, id);
             return id;
         }
-        static string Vid(Dictionary<string, object> b, int storeId) { var p = Str(b, "video", 160); return Regex.IsMatch(p, "^" + storeId + @"/[a-z0-9]{8,40}\.(mp4|webm)$") ? p : ""; }
         // «خيارات يكتبها الزبون»: a name to engrave, a message, a picture (up to 4)
         static object Ask(object v)
         {

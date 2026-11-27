@@ -389,6 +389,14 @@ namespace RiwaqChat
             // pictures customers sent that went with nothing
             var old = new List<KeyValuePair<int, string>>(); using (var cmd = Db.Cmd(c, "SELECT TOP 200 StoreId, Path FROM dbo.ShopImages WHERE Alt='customer' AND Used=0 AND CreatedAt<DATEADD(DAY,-2,SYSUTCDATETIME()) AND NOT EXISTS (SELECT 1 FROM dbo.ShopOrderItems i WHERE i.StoreId=dbo.ShopImages.StoreId AND i.Extra LIKE '%'+dbo.ShopImages.Path+'%')")) using (var r = cmd.ExecuteReader()) while (r.Read()) old.Add(new KeyValuePair<int, string>((int)r[0], (string)r[1]));
             foreach (var g in old.GroupBy(k => k.Key)) ShopImages.Delete(c, g.Key, g.Select(k => k.Value));
+            // the stores are pictures only (2026-11-27): the videos uploaded before go, so their room comes back to the store
+            var vids = new List<KeyValuePair<int, string>>(); using (var cmd = Db.Cmd(c, "SELECT TOP 200 StoreId, Path FROM dbo.ShopImages WHERE Path LIKE '%.mp4' OR Path LIKE '%.webm'")) using (var r = cmd.ExecuteReader()) while (r.Read()) vids.Add(new KeyValuePair<int, string>((int)r[0], (string)r[1]));
+            foreach (var g in vids.GroupBy(k => k.Key))
+            {
+                ShopImages.Delete(c, g.Key, g.Select(k => k.Value));
+                Exec(c, "UPDATE dbo.ShopProducts SET Video=NULL WHERE StoreId=@s AND Video IS NOT NULL", "@s", g.Key);
+                Shops.Bump(c, g.Key);
+            }
         }
     }
 

@@ -1,8 +1,9 @@
 // The stores' pictures. The dashboard shrinks a picture before it is sent (a big one and a small one); PNG, JPEG or WebP only, read from
 // the bytes themselves, never SVG. A picture's path is <store id>/<random>.webp (the small one: <random>-s.webp) and never changes, so
-// browsers and Cloudflare keep it for a year. A short video (MP4 or WebM, 6 MB) is kept the same way, in one size, and is given in parts
-// (a phone asks for a piece of it at a time). Kept on Cloudflare R2 through the Worker (AppSettings ShopImgMode = r2), and on this
+// browsers and Cloudflare keep it for a year. Kept on Cloudflare R2 through the Worker (AppSettings ShopImgMode = r2), and on this
 // server's disk (App_Data/shopimg) until R2 is on, or when it doesn't answer; pictures left on the disk move to R2 by themselves.
+// The stores are pictures only since 2026-11-27: no video is taken, and the MP4 / WebM ones uploaded before are removed (ShopAccount.Tidy).
+// The video paths stay readable here so the old ones can be found, deleted and, until then, given in parts.
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -19,7 +20,7 @@ namespace RiwaqChat
 {
     public static class ShopImages
     {
-        public const int MaxBig = 1200 * 1024, MaxSmall = 260 * 1024, MaxVideo = 6 * 1024 * 1024;
+        public const int MaxBig = 1200 * 1024, MaxSmall = 260 * 1024;
         public const long MaxStoreBytes = 250L * 1024 * 1024;
         static readonly Regex PathRx = new Regex(@"^\d+/[a-z0-9]{8,40}(-s)?\.(webp|jpg|png|mp4|webm)$");
         static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
@@ -74,17 +75,6 @@ namespace RiwaqChat
                 int id = (int)cmd.ExecuteScalar();
                 return new Dictionary<string, object> { { "id", id }, { "path", path }, { "url", Url(path) }, { "small", Url(path, true) }, { "w", w }, { "h", h }, { "alt", alt ?? "" } };
             }
-        }
-
-        // the owner's short video: read from the bytes themselves (MP4: 'ftyp', WebM: EBML)
-        public static string SaveVideo(SqlConnection c, int storeId, byte[] b)
-        {
-            if (b == null || b.Length < 2000 || b.Length > MaxVideo) throw new ShopException("big", "الفيديو لازم يكون لحد 6 ميجا. قصّره أو صغّره وارفعه تاني.");
-            string ext = b[4] == 'f' && b[5] == 't' && b[6] == 'y' && b[7] == 'p' ? "mp4" : b[0] == 0x1A && b[1] == 0x45 && b[2] == 0xDF && b[3] == 0xA3 ? "webm" : null; if (ext == null) throw new ShopException("type", "ارفع فيديو MP4 أو WebM.");
-            long used; using (var cmd = Db.Cmd(c, "SELECT ISNULL(SUM(CAST(Bytes AS BIGINT)),0) FROM dbo.ShopImages WHERE StoreId=@s", "@s", storeId)) used = Convert.ToInt64(cmd.ExecuteScalar()); if (used + b.Length > MaxStoreBytes) throw new ShopException("full", "مساحة متجرك خلصت. امسح صور أو فيديوهات مش محتاجها.");
-            string path = storeId + "/" + Shops.Token(10) + "." + ext, place = Put(c, path, b, null);
-            using (var cmd = Db.Cmd(c, "INSERT INTO dbo.ShopImages(StoreId, Path, W, H, Bytes, Alt, Used, Place) VALUES(@s, @p, 16, 9, @b, 'video', 1, @pl)", "@s", storeId, "@p", path, "@b", b.Length, "@pl", place)) cmd.ExecuteNonQuery();
-            return path;
         }
 
         static string Put(SqlConnection c, string path, byte[] big, byte[] small)
