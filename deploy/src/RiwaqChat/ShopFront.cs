@@ -23,7 +23,7 @@ namespace RiwaqChat
         public override bool IsReusable { get { return true; } }
 
         // the store a request is for (the chat inside the store reads it)
-        public class Ctx { public StoreInfo Store; public Shop Row; public ShopData Data; public string Ip, Path, Lang, Prefix, Pv; public bool Preview; public DateTime Now = DateTime.UtcNow; public Dictionary<string, object> Look; }
+        public class Ctx { public StoreInfo Store; public Shop Row; public ShopData Data; public string Ip, Path, Lang, Prefix, Pv; public bool Preview, Demo; public DateTime Now = DateTime.UtcNow; public Dictionary<string, object> Look; }
 
         public override async Task ProcessRequestAsync(HttpContext ctx)
         {
@@ -85,8 +85,10 @@ namespace RiwaqChat
                 string token = x.Pv ?? (req.Cookies["sbpv"] == null ? null : req.Cookies["sbpv"].Value);
                 if (path.StartsWith("/_preview/", StringComparison.Ordinal)) { ShopPages.StartPreview(c, x, path.Substring(10), res, Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]f=1(&|$)"), Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]live=1(&|$)")); return; }
                 if (path == "/_preview-off") { ShopPages.Cookie(res, "", DateTime.UtcNow.AddDays(-1)); res.Redirect("/", false); return; }
-                x.Preview = token != null && ShopPages.PreviewOk(c, x.Row.StoreId, token);
-                open = Shops.Open(c, x.Store, x.Row);
+                // «شوفه بمنتجات تجريبية»: Sellybot's sample store is always a preview (ShopDemo.cs)
+                x.Demo = ShopDemo.Is(c, x.Row);
+                x.Preview = x.Demo || (token != null && ShopPages.PreviewOk(c, x.Row.StoreId, token));
+                open = x.Demo || Shops.Open(c, x.Store, x.Row);
                 if (!open && !x.Preview)
                 {
                     if (chat || path.StartsWith("/_")) { Web.Error(res, 403, "closed", "المتجر مقفول دلوقتي."); return; }
@@ -94,7 +96,8 @@ namespace RiwaqChat
                 }
                 // «المنشور» inside the preview, to compare the two
                 x.Look = x.Row.Look(x.Preview && !(x.Row.LiveJson != null && Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]_lv=1(&|$)")));
-                ShopAb.Pick(c, x, req, res);   // «تجربة شكلين»: half the visitors see look B
+                if (x.Demo) ShopDemo.Look(c, x.Look, req.Headers["X-Shop-Query"]);   // ?t=<template>
+                else ShopAb.Pick(c, x, req, res);   // «تجربة شكلين»: half the visitors see look B
                 if (!chat)
                 {
                     x.Data = ShopCache.Get(c, x.Row);
@@ -121,6 +124,8 @@ namespace RiwaqChat
             // the language the customer is reading: their messages and their order's WhatsApp follow it
             string langs = ShopJson.Str(ShopJson.At(x.Look, "langs")); x.Lang = langs == "en" || (langs == "both" && Regex.IsMatch(req.Headers["X-Shop-Query"] ?? "", "[?&]l=en(&|$)")) ? "en" : "ar";
             if (a == "hit") { Hit(c, x, req); res.StatusCode = 204; return; }
+            // the sample store keeps nothing: only the cart's sum, the delivery days, the search and the preview's own account answer
+            if (x.Demo && a != "quote" && a != "days" && a != "find" && a != "me") throw new ShopException("demo", x.Lang == "en" ? "This is a sample store: nothing sent here is kept, and no order is made." : "ده متجر تجريبي: مفيش حاجة بتتسجّل هنا، ولا بيتعمل طلب.");
             if (!Web.Allow("shop-a:" + x.Ip, 600, min)) { Web.Error(res, 429, "rate_limited", "استنى ثواني وجرّب تاني."); return; }
             if (a.Length == 0) { Web.Error(res, 404, "not_found"); return; }
             var b = Web.Body(req, a == "me" || a == "proof" || a == "pic" ? 900000 : 40000);   // a customer's picture, already small
@@ -470,6 +475,7 @@ namespace RiwaqChat
             var boot = new Dictionary<string, object> { { "shop", shop }, { "look", ShopLook.NoVideo(x.Look) }, { "lang", lang }, { "pre", x.Prefix }, { "ver", ver }, { "page", page }, { "now", ShopView.Unix(now) }, { "preview", x.Preview }, { "dash", x.Preview ? Dash() : "" }, { "pv", x.Preview ? x.Pv ?? "" : "" },
                 { "a", new Dictionary<string, object> { { "core", Ver("core.js") }, { "more", Ver("more.js") }, { "geo", "1" } } } };
             ShopSeasons.Boot(boot, x);
+            if (x.Demo) boot["demo"] = new Dictionary<string, object> { { "tpls", ShopDemo.Templates(c) } };   // the bar on top of the sample store
 
             var h = new StringBuilder(16000);
             h.Append("<!doctype html><html lang=\"").Append(lang).Append("\" dir=\"").Append(en ? "ltr" : "rtl").Append("\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover\">");
@@ -619,9 +625,9 @@ namespace RiwaqChat
             string on = null; try { using (var c = Db.Open()) on = Billing.Get(c, "ShopOn"); } catch (Exception ex) { Log.Error(ex); }
             var f = on == "1" ? Load("~/shop/root.html") : null;
             if (f == null) { Message(res, "SellyStore", "متاجر جاهزة باسمك من Sellybot. قريب."); return; }
-            string tpls; using (var c = Db.Open()) { var open = new HashSet<string>(ShopTemplates.List(c)); tpls = Web.Js.Serialize(ShopTemplates.Cards().Where(x => open.Contains(x.Id)).Select(x => new[] { x.Id, x.Name[0], x.For }).ToArray()); }
+            string tpls, demo; using (var c = Db.Open()) { var open = new HashSet<string>(ShopTemplates.List(c)); tpls = Web.Js.Serialize(ShopTemplates.Cards().Where(x => open.Contains(x.Id)).Select(x => new[] { x.Id, x.Name[0], x.For }).ToArray()); demo = Web.Js.Serialize(ShopDemo.Url(c) ?? ""); }
             res.ContentType = "text/html; charset=utf-8"; Keep(res, 60);
-            res.Write(Encoding.UTF8.GetString(f.Data).TrimStart('\uFEFF').Replace("/*TPL*/[]", Safe(tpls)));
+            res.Write(Encoding.UTF8.GetString(f.Data).TrimStart('\uFEFF').Replace("/*TPL*/[]", Safe(tpls)).Replace("/*DEMO*/\"\"", Safe(demo)));
         }
     }
 }
