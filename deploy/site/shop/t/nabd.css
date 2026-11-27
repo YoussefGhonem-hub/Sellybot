@@ -388,6 +388,7 @@
 .st.t-nabd .txt{background:var(--card);border-radius:28px;padding:26px 22px!important;margin-top:30px}
 .st.t-nabd .cmk{border-radius:28px;margin-inline:var(--g);overflow:hidden}
 .st.t-nabd .annb{font-weight:700;font-size:13.5px}
+.st.t-nabd[data-th=dark] .annb:not(.seab):not(.vac){background:var(--card);color:var(--fg);border-bottom:1px solid var(--line)}
 .st.t-nabd .toast{border-radius:999px!important;padding:11px 18px!important;bottom:calc(var(--tbh,64px) + 16px + env(safe-area-inset-bottom,0px))!important;font-weight:700}
 .st.t-nabd .toast button{font-weight:800;color:var(--ac)}
 .st.t-nabd .n-lh{padding-top:16px}
@@ -756,6 +757,8 @@ to{transform:scale(1)}
 .st.t-nabd .n-ph.two:hover img.a{opacity:0}
 .st.t-nabd .n-pc:hover .n-ph:not(.two) img{transform:scale(1.04)}
 .st.t-nabd .n-plus:hover{background:var(--ac);color:var(--on);transform:scale(1.07)}
+}
+@container st (max-width:429px){.st.t-nabd .n-pbb .stp{display:none}
 }
 @container st (max-width:359px){.st.t-nabd .n-bb .n-btn svg.i{display:none}
 .st.t-nabd .n-bb .n-btn{padding:0 14px}
