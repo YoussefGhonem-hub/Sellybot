@@ -522,6 +522,7 @@
 </head>
 <body>
 <script src="sb-loader.js?v=1"></script><!-- Sellybot's loader: first in <body>, not deferred (sb-loader.js) -->
+<script src="sb-dialog.js?v=1" defer></script><!-- Sellybot's own confirm / prompt boxes (sb-dialog.js) -->
 
 <!-- ============ login ============ -->
 <section class="login" id="loginView" hidden>
@@ -1183,10 +1184,10 @@
   function loadShops() {
     spFile = spFile || new Promise(function (ok, no) {
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "shop-admin/super.css?v=1"; document.head.appendChild(l);
-      var s = document.createElement("script"); s.src = "shop-admin/super.js?v=2"; s.onload = ok; s.onerror = function () { spFile = null; no(new Error("الصفحة ماحمّلتش. جرّب تاني.")); }; document.body.appendChild(s);
+      var s = document.createElement("script"); s.src = "shop-admin/super.js?v=3"; s.onload = ok; s.onerror = function () { spFile = null; no(new Error("الصفحة ماحمّلتش. جرّب تاني.")); }; document.body.appendChild(s);
     });
     spFile.then(function () { var s = document.createElement("script"); s.src = "shop-admin/brands-admin.js?v=1"; s.onload = function () { SbBrands.open($("shopsRoot"), toast); }; if (!window.SbBrands) document.body.appendChild(s); else SbBrands.open($("shopsRoot"), toast); });   // «متجر جديد»: the switch and the groups
-    spFile.then(function () { SbShops.open($("shopsRoot"), { toast: toast, count: spBadge }); if (window.SbDomains) SbDomains.open($("shopsRoot"), toast); else { var sd = document.createElement("script"); sd.src = "shop-admin/domain-admin.js?v=2"; sd.onload = function () { SbDomains.open($("shopsRoot"), toast); }; document.body.appendChild(sd); } if (window.SbCarriers) SbCarriers.open($("shopsRoot"), toast); else { var s = document.createElement("script"); s.src = "shop-admin/ship-admin.js?v=20261126b"; s.onload = function () { SbCarriers.open($("shopsRoot"), toast); }; document.body.appendChild(s); } }).catch(function (e) { toast(e.message, true); });
+    spFile.then(function () { SbShops.open($("shopsRoot"), { toast: toast, count: spBadge }); if (window.SbDomains) SbDomains.open($("shopsRoot"), toast); else { var sd = document.createElement("script"); sd.src = "shop-admin/domain-admin.js?v=3"; sd.onload = function () { SbDomains.open($("shopsRoot"), toast); }; document.body.appendChild(sd); } if (window.SbCarriers) SbCarriers.open($("shopsRoot"), toast); else { var s = document.createElement("script"); s.src = "shop-admin/ship-admin.js?v=20261127"; s.onload = function () { SbCarriers.open($("shopsRoot"), toast); }; document.body.appendChild(s); } }).catch(function (e) { toast(e.message, true); });
   }
 
   // ---------- Messenger + Instagram: one Meta app for every store ----------
@@ -1308,11 +1309,11 @@
     if (what === "pick" || what === "unlink") { body.channel = b.closest("[data-ch]").dataset.ch; body.id = b.dataset.id; }
     if (what === "unlink") {
       var who = b.closest("[data-store]").querySelector(".ask-who b").textContent, where = body.channel === "fb" ? "المسنجر" : "الإنستجرام";
-      if (!confirm("تفك ربط «" + b.dataset.name + "» (" + where + ") من متجر «" + who + "»؟\n\nالمساعد هيبطّل يرد على " + where + " بتاعه، ورسايله اللي عندنا هتتمسح. وتقدر تربطه تاني بعدين من نفس الصف.")) return;
+      if (!(await sbConfirm("المساعد هيبطّل يرد على " + where + " بتاعه، ورسايله اللي عندنا هتتمسح. وتقدر تربطه تاني بعدين من نفس الصف.", { title: "تفك ربط «" + b.dataset.name + "» (" + where + ") من متجر «" + who + "»؟", ok: "افك الربط", no: "سيبه", danger: true }))) return;
     }
     if (what === "problem") {
-      var n = prompt("اكتب للتاجر إيه المشكلة وهو يعمل إيه (هيشوفها في لوحته):", "مالقيناش حسابنا على صفحتك. اتأكد إنك ضفته من «الوصول إلى الصفحة» ← «الأشخاص اللي ليهم وصول للمهام» بصلاحية «الرسائل ونشاط المجتمع».");
-      if (!n || !n.trim()) return; body.note = n.trim();
+      var n = await sbPrompt("هيشوفها في لوحته، فاكتبله إيه المشكلة وهو يعمل إيه.", "مالقيناش حسابنا على صفحتك. اتأكد إنك ضفته من «الوصول إلى الصفحة» ← «الأشخاص اللي ليهم وصول للمهام» بصلاحية «الرسائل ونشاط المجتمع».", { title: "قول للتاجر إن فيه مشكلة", multiline: true, required: true, ok: "ابعتها للتاجر", no: "إلغاء" });
+      if (!n) return; body.note = n;
     }
     busy(b, true);
     try { renderMeta(await metaApi("ask", body)); toast(what === "pick" ? "اتربط ✓" : what === "unlink" ? "اتفك الربط ✓" : "تم ✓"); } catch (err) { toast(err.message, true); busy(b, false); }
@@ -1351,7 +1352,7 @@
   $("mtSiteRows").onclick = async function (e) {
     var b = e.target.closest("[data-do]"); if (!b) return;
     var ch = b.closest("[data-ch]").dataset.ch, what = b.dataset.do, body = { do: what, channel: ch };
-    if (what === "unlink" && !confirm("إلغاء الربط هيمسح المحادثات اللي اتحفظت من " + (ch === "fb" ? "الصفحة" : "الإنستجرام") + ". متأكد؟")) return;
+    if (what === "unlink" && !(await sbConfirm("المحادثات اللي اتحفظت من " + (ch === "fb" ? "الصفحة" : "الإنستجرام") + " هتتمسح.", { title: "تلغي الربط؟", ok: "الغي الربط", no: "سيبه", danger: true }))) return;
     if (what === "pick") body.id = b.dataset.id;
     if (what === "enable") body.enabled = b.dataset.on === "1";
     busy(b, true);
@@ -1405,7 +1406,7 @@
     busy(b, false);
   };
   $("tgClear").onclick = async function () {
-    if (!confirm("شيل بوت Sellybot؟ التجار مش هيقدروا يعملوا بوت بضغطة لحد ما تحط بوت تاني. البوتات المربوطة هتفضل شغالة.")) return;
+    if (!(await sbConfirm("التجار مش هيقدروا يعملوا بوت بضغطة لحد ما تحط بوت تاني. البوتات المربوطة هتفضل شغالة.", { title: "تشيل بوت Sellybot؟", ok: "شيله", no: "سيبه", danger: true }))) return;
     try { renderTgAdmin(await tgApi("clear", {})); toast("اتشال ✓"); } catch (err) { toast(err.message, true); }
   };
   // ---------- «💬 محادثاتي» (SellyChat): testers, employees per store, who uses it (api/inbox-admin.ashx) ----------
@@ -1489,7 +1490,7 @@
   $("cnReload").onclick = loadCouncil;
   $("cnSet").onsubmit = async function (e) {
     e.preventDefault(); var b = $("cnSave"), on = $("cnOn").checked; setMsg($("cnSetMsg"), "");
-    if (cnA && on && !cnA.settings.on && !confirm("«فكّر معانا» هتظهر لكل التجار دلوقتي، وكل متجر هياخد " + fmt(+$("cnFree").value) + " توكن هدية أول ما يفتح الصفحة. أكمّل؟")) return;
+    if (cnA && on && !cnA.settings.on && !(await sbConfirm("كل متجر هياخد " + fmt(+$("cnFree").value) + " توكن هدية أول ما يفتح الصفحة.", { title: "«فكّر معانا» هتظهر لكل التجار دلوقتي", ok: "افتحها للكل", no: "لسه" }))) return;
     busy(b, true);
     try { renderCouncil(await cnApi("settings", { on: on, per1k: $("cnPer").value, free: $("cnFree").value, minEgp: $("cnMin").value, packs: $("cnPk").value })); toast("اتحفظ ✓"); }
     catch (err) { setMsg($("cnSetMsg"), err.message); }
@@ -1499,11 +1500,11 @@
     var b = e.target.closest("[data-cn]"); if (!b) return;
     var id = +b.closest("[data-id]").dataset.id, t = cnA.topups.filter(function (x) { return x.id === id; })[0], body = { id: id, approve: b.dataset.cn === "yes" };
     if (body.approve) {
-      var p = prompt("وصلك كام جنيه فعلًا؟ التوكنز هتتحسب على المبلغ ده بالسعر اللي التاجر شافه.", String(t.amount)); if (p === null) return;
-      body.paid = p.trim();
+      var p = await sbPrompt("التوكنز هتتحسب على المبلغ ده بالسعر اللي التاجر شافه.", String(t.amount), { title: "وصلك كام جنيه فعلًا؟", type: "number", required: true, ok: "ضيف التوكنز", no: "إلغاء", icon: "ok" }); if (p === null) return;
+      body.paid = p;
     } else {
-      var n = prompt("سبب الرفض (هيظهر لصاحب المتجر):", "مالقيناش التحويل بالرقم المرجعي ده. اتأكد منه وابعت الطلب تاني."); if (!n || !n.trim()) return;
-      body.note = n.trim();
+      var n = await sbPrompt("هيظهر لصاحب المتجر.", "مالقيناش التحويل بالرقم المرجعي ده. اتأكد منه وابعت الطلب تاني.", { title: "ليه هترفض الطلب؟", multiline: true, required: true, ok: "ارفض الطلب", no: "رجوع", danger: true }); if (!n) return;
+      body.note = n;
     }
     busy(b, true);
     try { renderCouncil(await cnApi("decide", body)); toast(body.approve ? "التوكنز اتضافت ✅" : "اترفض الطلب"); } catch (err) { toast(err.message, true); busy(b, false); }
@@ -1600,8 +1601,8 @@
         var id = sel.dataset.as, sid = +sel.value;
         if (!sid) { sel.value = was; unassignWa(id); return; }
         var s = stores.filter(function (x) { return x.id === sid; })[0];
-        if (s && s.own && !confirm(s.name + " مربوط بحساب Wapilot بتاعه. لو خصّصت له الرقم ده هيتفك من حسابه. أكمّل؟")) { sel.value = was; return; }
-        if (s && !s.service && !confirm(s.name + " مش مشترك في خدمة الواتساب، فالمساعد مش هيرد على الرقم ده لحد ما يشترك. تخصّصه له برضه؟")) { sel.value = was; return; }
+        if (s && s.own && !(await sbConfirm("لو خصّصت له الرقم ده هيتفك من حسابه.", { title: s.name + " مربوط بحساب Wapilot بتاعه", ok: "خصّصه برضه", no: "لأ", danger: true }))) { sel.value = was; return; }
+        if (s && !s.service && !(await sbConfirm("المساعد مش هيرد على الرقم ده لحد ما يشترك.", { title: s.name + " مش مشترك في خدمة الواتساب", ok: "خصّصه برضه", no: "لأ" }))) { sel.value = was; return; }
         sel.disabled = true;
         try { renderWa(await waApi("assign", { instance: id, storeId: sid })); toast("الرقم اتخصص للمتجر. صاحب المتجر هيلاقي الـ QR في لوحته."); }
         catch (e) { toast(e.message, true); sel.value = was; sel.disabled = false; }
@@ -1614,8 +1615,12 @@
   }
   async function unassignWa(id) {
     var i = (state.wa.instances || []).filter(function (x) { return x.id === id; })[0]; if (!i || !i.storeId) return;
-    var logout = i.linked && confirm("تفك الموبايل المربوط على الرقم ده كمان؟ (OK = يتفك ويرجع الرقم فاضي، Cancel = يفضل مربوط)");
-    if (!confirm("الرقم هيتشال من «" + i.store + "» والمساعد هيبطّل يرد عليه. أكمّل؟")) return;
+    var logout = false;
+    if (i.linked) {   // its own question, with real answers instead of OK / Cancel (× = never mind)
+      logout = await SbDialog.ask({ title: "تفك الموبايل المربوط على الرقم ده كمان؟", text: "لو فكّيته الرقم هيرجع فاضي. لو سبته هيفضل مربوط بنفس الموبايل.", ok: "افكّه", no: "يفضل مربوط" });
+      if (logout === null) return;
+    }
+    if (!(await sbConfirm("المساعد هيبطّل يرد عليه.", { title: "تشيل الرقم من «" + i.store + "»؟", ok: "شيله", no: "سيبه", danger: true }))) return;
     try { renderWa(await waApi("unassign", { instance: id, logout: !!logout })); toast("الرقم اتشال من المتجر."); } catch (e) { toast(e.message, true); }
   }
   async function loadWa() {
@@ -1632,7 +1637,7 @@
   };
   $("waHookCopy").onclick = function () { $("waHook").select(); (navigator.clipboard ? navigator.clipboard.writeText($("waHook").value) : Promise.reject()).then(function () { toast("اتنسخ ✓"); }, function () { document.execCommand("copy"); toast("اتنسخ ✓"); }); };
   $("waNewKey").onclick = async function () {
-    if (!confirm("اللينك القديم هيبطّل يشتغل فورًا، ولازم تحط الجديد في كل رقم على Wapilot. أكمّل؟")) return;
+    if (!(await sbConfirm("ولازم تحط الجديد في كل رقم على Wapilot.", { title: "اللينك القديم هيبطّل يشتغل فورًا", ok: "اعمل لينك جديد", no: "سيبه", danger: true }))) return;
     try { renderWa(await waApi("new-key", {})); toast("اتعمل لينك جديد، حطه في Wapilot."); } catch (e) { toast(e.message, true); }
   };
   $("waPriceSave").onclick = async function () {

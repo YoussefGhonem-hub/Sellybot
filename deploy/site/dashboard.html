@@ -2018,6 +2018,7 @@
 </head>
 <body>
 <script src="sb-loader.js?v=1"></script><!-- Sellybot's loader: first in <body>, not deferred (sb-loader.js) -->
+<script src="sb-dialog.js?v=1" defer></script><!-- Sellybot's own confirm / prompt boxes (sb-dialog.js) -->
 
 <header class="nav">
   <div class="nav-in">
@@ -4352,7 +4353,7 @@
     $("hmCopyDl").onclick = function () {
       var b = this, url = BASE + "download.html";
       function done() { b.textContent = "✓ اتنسخ، ابعته لنفسك وافتحه من الكمبيوتر"; }
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { prompt("انسخ اللينك:", url); }); else prompt("انسخ اللينك:", url);
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { sbCopy(url); }); else sbCopy(url);
     };
   }
   function homeToApp() { go("home"); setTimeout(function () { $("hmApp").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }); }, 60); }
@@ -4792,7 +4793,7 @@
           : '<button type="button" class="btn ghost sm" id="rlOk">تمام 👍</button>') +
       '</div></div>';
     if (pend) $("rqCancel").onclick = async function () {
-      if (!confirm("تلغي الطلب ده؟")) return;
+      if (!(await sbConfirm("", { title: "تلغي الطلب ده؟", ok: "الغيه", no: "سيبه", danger: true }))) return;
       try { await api("api/plans.ashx?action=cancel", { method: "POST", json: { id: r.id } }); toast("اتلغى الطلب"); loadMine(); refreshMe(); } catch (e) { toast(e.message); }
     };
     if (bad) $("rlAgain").onclick = function () { resendReq(r); };
@@ -5852,7 +5853,7 @@
     if (r) setMsg("shopMsg", "✅ اتحدثت: " + fmt(r.products) + " منتج" + (r.policies ? " و" + fmt(r.policies) + " سياسات" : "") + ".", true);
   };
   $("shopOffBtn").onclick = async function () {
-    if (!confirm("متأكد؟ هنمسح داتا Shopify اللي اتسحبت والمساعد مش هيرد منها تاني. ملفاتك التانية مش هتتأثر، وتقدر تربط تاني في أي وقت.")) return;
+    if (!(await sbConfirm("هنمسح داتا Shopify اللي اتسحبت والمساعد مش هيرد منها تاني. ملفاتك التانية مش هتتأثر، وتقدر تربط تاني في أي وقت.", { title: "تفصل Shopify؟", ok: "افصله", no: "سيبه", danger: true }))) return;
     var r = await shopCall("shopify-disconnect", {}, this, "…");
     if (r) setMsg("shopMsg", "اتلغى الربط.", true);
   };
@@ -5979,7 +5980,7 @@
   $("eoUrlOn").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("eoSync").click(); } });
   $("eoCopyHook").onclick = function () { copy($("eoHookUrl").textContent); this.textContent = "✓ اتنسخ"; var b = this; setTimeout(function () { b.textContent = "نسخ"; }, 1800); };
   $("eoOffBtn").onclick = async function () {
-    if (!confirm("متأكد؟ هنمسح داتا EasyOrders اللي اتسحبت، ونوقف تتبع الأوردرات وتأكيدها على واتساب. ملفاتك التانية مش هتتأثر، وتقدر تربط تاني في أي وقت.")) return;
+    if (!(await sbConfirm("هنمسح داتا EasyOrders اللي اتسحبت، ونوقف تتبع الأوردرات وتأكيدها على واتساب. ملفاتك التانية مش هتتأثر، وتقدر تربط تاني في أي وقت.", { title: "تفصل EasyOrders؟", ok: "افصله", no: "سيبه", danger: true }))) return;
     var r = await eoCall("disconnect", {}, this, "…");
     if (r) { eoHookOpen = false; setMsg("eoMsg", "اتلغى الربط.", true); }
   };
@@ -6097,7 +6098,7 @@
       ed.type = cx.type = "button";
       ed.onclick = function () { mtEasyOpen = true; renderMtEasy(false); $("mtEasyStep4").open = true; $("mtEasyPage").focus(); };
       cx.onclick = async function () {
-        if (!confirm("تلغي طلب الربط؟ لو ضفت حساب Sellybot على صفحتك، شيله من «الوصول إلى الصفحة».")) return;
+        if (!(await sbConfirm("لو ضفت حساب Sellybot على صفحتك، شيله من «الوصول إلى الصفحة».", { title: "تلغي طلب الربط؟", ok: "الغي الطلب", no: "سيبه", danger: true }))) return;
         cx.disabled = true;
         try { mt = await api("api/meta.ashx?action=easy-cancel", { method: "POST", json: {} }); toast("الطلب اتلغى"); } catch (err) { toast(err.message); }
         mtEasyOpen = false; renderMtEasy(true); renderMtApp(false); renderMt("fb"); renderMt("ig");
@@ -6279,7 +6280,7 @@
     if (!L.subscribed) { var rs = mtEl("button", "btn ghost sm", "🔄 جدّد الربط"); rs.type = "button"; rs.onclick = function () { mtPost(ch, "resubscribe", {}, "✅ اتجدد"); }; row.appendChild(rs); }
     row.appendChild(mtEl("span", "space"));
     var un = mtEl("button", "btn danger sm", "إلغاء الربط"); un.type = "button";
-    un.onclick = function () { if (confirm("متأكد؟ المساعد هيبطّل يرد على " + F.name + ". تقدر تربط تاني في أي وقت.")) mtPost(ch, "unlink", {}, "الربط اتلغى"); };
+    un.onclick = function () { sbConfirm("المساعد هيبطّل يرد على " + F.name + ". تقدر تربط تاني في أي وقت.", { title: "تلغي الربط؟", ok: "الغي الربط", no: "سيبه", danger: true }).then(function (y) { if (y) mtPost(ch, "unlink", {}, "الربط اتلغى"); }); };
     row.appendChild(un);
     body.appendChild(row);
   }
@@ -6344,9 +6345,9 @@
       if (a.lastAt) who.appendChild(mtEl("span", "hint", "آخر دخول: " + ago(a.lastAt)));
       r.appendChild(who);
       var rs = mtEl("button", "btn ghost sm", "🔑 باسورد جديد"); rs.type = "button";
-      rs.onclick = function () { if (confirm("نعمل باسورد جديد لـ " + a.name + "؟ القديم هيبطل يشتغل، وهيخرج من أي جهاز داخل منه.")) scPost("staff-reset", { id: a.id }, "اتعمل باسورد جديد"); };
+      rs.onclick = function () { sbConfirm("القديم هيبطل يشتغل، وهيخرج من أي جهاز داخل منه.", { title: "نعمل باسورد جديد لـ " + a.name + "؟", ok: "اعمل باسورد جديد", no: "لأ" }).then(function (y) { if (y) scPost("staff-reset", { id: a.id }, "اتعمل باسورد جديد"); }); };
       var rm = mtEl("button", "btn ghost sm", "امسحه"); rm.type = "button";
-      rm.onclick = function () { if (confirm("نمسح " + a.name + " من فريقك؟ مش هيقدر يدخل SellyChat تاني، والمحادثات اللي كانت معاه هترجع لمحدش.")) { scPw = null; scPost("staff-remove", { id: a.id }, "اتمسح"); } };
+      rm.onclick = function () { sbConfirm("مش هيقدر يدخل SellyChat تاني، والمحادثات اللي كانت معاه هترجع لمحدش.", { title: "نمسح " + a.name + " من فريقك؟", ok: "امسحه", no: "سيبه", danger: true }).then(function (y) { if (y) { scPw = null; scPost("staff-remove", { id: a.id }, "اتمسح"); } }); };
       r.appendChild(rs); r.appendChild(rm); list.appendChild(r);
     });
     var pw = $("scPass"); pw.textContent = "";
@@ -6486,7 +6487,7 @@
     if (L.status) { var rs = mtEl("button", "btn ghost sm", "🔄 جدّد الربط"); rs.type = "button"; rs.onclick = function () { rs.disabled = true; tgPost("refresh", {}, "✅ اتجدد"); }; row.appendChild(rs); }
     row.appendChild(mtEl("span", "space"));
     var un = mtEl("button", "btn danger sm", "إلغاء الربط"); un.type = "button";
-    un.onclick = function () { if (confirm("متأكد؟ المساعد هيبطّل يرد في البوت @" + L.username + "، والمحادثات اللي اتحفظت منه هتتمسح. البوت نفسه هيفضل على حسابك في تيليجرام.")) tgPost("unlink", {}, "الربط اتلغى"); };
+    un.onclick = function () { sbConfirm("المساعد هيبطّل يرد في البوت @" + L.username + "، والمحادثات اللي اتحفظت منه هتتمسح. البوت نفسه هيفضل على حسابك في تيليجرام.", { title: "تلغي ربط البوت؟", ok: "الغي الربط", no: "سيبه", danger: true }).then(function (y) { if (y) tgPost("unlink", {}, "الربط اتلغى"); }); };
     row.appendChild(un);
     body.appendChild(row);
   }
@@ -6728,7 +6729,7 @@
     var sp = bcLastSplit || { wa: bcLastCount || 0, tg: 0 }, say = [];
     if (sp.wa) say.push("على الواتساب من رقم متجرك لـ " + bcNums(sp.wa) + "، " + bcEta(sp.wa));
     if (sp.tg) say.push("على التيليجرام من بوت متجرك لـ " + bcPeople(sp.tg));
-    if (!confirm("العرض هيتبعت " + (say.length ? say.join("\nو") : "") + ".\nرسالة رسالة، ومش بالليل، وتقدر توقّفه في أي وقت.\n\nتبعته؟")) return;
+    if (!(await sbConfirm("هيتبعت " + (say.length ? say.join("\nو") : "") + ".\nرسالة رسالة، ومش بالليل، وتقدر توقّفه في أي وقت.", { title: "تبعت العرض؟", ok: "ابعته", no: "لسه", icon: "ask" }))) return;
     b.disabled = true;
     if (await bcPost("create", { text: text, image: bcImage, audiences: aud }, "العرض بدأ يتبعت ✅", null, "bcMsg")) {
       $("bcText").value = ""; bcImage = null; $("bcThumb").hidden = true; bcPreview();
@@ -6738,9 +6739,9 @@
   };
   $("bcPause").onclick = function () { bcPost("pause", { id: bc.current.id }, "الإرسال وقف ⏸️", this, "bcNowMsgErr"); };
   $("bcResume").onclick = function () { bcPost("resume", { id: bc.current.id }, "الإرسال كمّل ▶️", this, "bcNowMsgErr"); };
-  $("bcCancel").onclick = function () {
+  $("bcCancel").onclick = async function () {
     var left = bc.current && bc.current.counts ? (bc.current.counts.waiting || 0) : 0;
-    if (!confirm("الأرقام اللي لسه ماوصلهاش العرض (" + fmt(left) + ") مش هيوصلها. متأكد؟")) return;
+    if (!(await sbConfirm("الأرقام اللي لسه ماوصلهاش العرض (" + fmt(left) + ") مش هيوصلها.", { title: "توقّف باقي الإرسال؟", ok: "وقّفه", no: "كمّل الإرسال", danger: true }))) return;
     bcPost("cancel", { id: bc.current.id }, "اتلغى باقي الإرسال", this, "bcNowMsgErr");
   };
   // the owner's list: typed or from a file
@@ -6781,8 +6782,8 @@
     } catch (err) { setMsg("bcListMsg", err.message); }
     finally { b.disabled = false; }
   };
-  $("bcClear").onclick = function () {
-    if (!confirm("هتمسح كل الأرقام اللي في قايمتك (" + fmt((bc.list || {}).total) + "). اللي كلّموك على الواتساب هيفضلوا في «كل اللي كلّموك». متأكد؟")) return;
+  $("bcClear").onclick = async function () {
+    if (!(await sbConfirm("اللي كلّموك على الواتساب هيفضلوا في «كل اللي كلّموك».", { title: "تمسح كل الأرقام اللي في قايمتك (" + fmt((bc.list || {}).total) + ")؟", ok: "امسحهم", no: "سيبهم", danger: true }))) return;
     bcPost("clear", { source: "all" }, "القايمة اتمسحت", this, "bcListMsg").then(bcCount);
   };
   $("bcAsk").onchange = function () {
@@ -7350,7 +7351,7 @@
         Object.keys(CR_S).map(function (k) { return '<option value="' + k + '"' + (o.status === k ? " selected" : "") + ">" + CR_S[k] + "</option>"; }).join("") + "</select></div>";
     }).join("") : '<div class="cr-none">لسه مفيش أوردرات ليه.</div>';
     $("crfOrders").querySelectorAll("[data-st]").forEach(function (s) { s.onchange = function () { crSave("order", { id: +s.dataset.st, status: s.value }, "الحالة اتغيّرت ✓", '[data-st="' + s.dataset.st + '"]'); }; });
-    $("crfOrders").querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { if (confirm("تمسح الأوردر ده من ملفه؟")) crSave("unlog", { id: +b.dataset.del }, "اتمسح"); }; });
+    $("crfOrders").querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { sbConfirm("", { title: "تمسح الأوردر ده من ملفه؟", ok: "امسحه", no: "سيبه", danger: true }).then(function (y) { if (y) crSave("unlog", { id: +b.dataset.del }, "اتمسح"); }); }; });
     $("crfP1").innerHTML = (d.events || []).length ? d.events.map(function (e) { return '<div class="cr-ev"><i aria-hidden="true">' + (CR_EV[e.kind] || "•") + "</i><div><b>" + esc(e.title) + "</b><small>" + crWhen(e.at) + (e.text ? " · " + esc(e.text) : "") + "</small></div></div>"; }).join("") : '<div class="cr-none">لسه مفيش حاجة هنا: السلات والعروض و«بلّغني لما يرجع» وتأكيد الطلبات بتظهر هنا.</div>';
     $("crfP2").innerHTML = (d.chat || []).length ? '<div class="cr-chat">' + d.chat.map(function (m) { return '<div class="' + (m.me ? "me" : "") + '">' + esc(m.text) + "<small>" + (m.me ? (m.hand ? "إنت · " : "المساعد · ") : "") + crWhen(m.at) + "</small></div>"; }).join("") + '</div><p class="hint">آخر رسايل الواتساب (بتتحفظ 60 يوم).</p>' : '<div class="cr-none">مفيش رسايل واتساب معاه آخر 60 يوم.</div>';
     $("crfStop").checked = !!d.stopped; $("crfStop").disabled = !!d.stopped && !d.stopByOwner;
@@ -7381,7 +7382,7 @@
   };
   $("crfStop").onchange = async function () { var want = this.checked; if (!await crSave("stop", { on: want }, want ? "مش هيوصله عروض" : "هيوصله العروض تاني")) this.checked = !want; };
   $("crfErase").onclick = async function () {
-    if (!confirm("هنمسح كل اللي عندنا عن الزبون ده: اسمه ورقمه وأوردراته وكلامه وملاحظتك. مفيش رجوع. متأكد؟")) return;
+    if (!(await sbConfirm("اسمه ورقمه وأوردراته وكلامه وملاحظتك. مفيش رجوع.", { title: "تمسح كل اللي عندنا عن الزبون ده؟", ok: "امسح كله", no: "سيبه", danger: true }))) return;
     try { await api("api/customers.ashx?action=erase", { method: "POST", json: { phone: crCur.phone } }); crClose(); toast("بيانات الزبون اتمسحت"); } catch (e) { setMsg("crfMsg", e.message); }
   };
 
@@ -7533,7 +7534,7 @@
       n.hidden = false; n.className = "cn-note wait";
       n.innerHTML = "<span>⏳ طلب شحن <b>" + fmt(t.amount) + " ج.م</b> (" + cnTok(t.tokens) + ") بيتراجع. التوكنز هتتضاف أول ما نتأكد من التحويل.</span><button class=\"btn ghost sm\" type=\"button\" id=\"cnCancel\">إلغاء الطلب</button>";
       $("cnCancel").onclick = async function () {
-        if (!confirm("تلغي طلب الشحن؟ لو حوّلت الفلوس فعلًا، ماتلغيهوش.")) return;
+        if (!(await sbConfirm("لو حوّلت الفلوس فعلًا، ماتلغيهوش.", { title: "تلغي طلب الشحن؟", ok: "الغيه", no: "سيبه", danger: true }))) return;
         try { cn = await api("api/council.ashx?action=cancel", { method: "POST", json: { id: t.id } }); cnRender(); toast("اتلغى الطلب"); } catch (e) { toast(e.message); }
       };
     } else if (t && t.status === "rejected" && recent) { n.hidden = false; n.className = "cn-note bad"; n.innerHTML = "<span>❌ طلب الشحن (" + fmt(t.amount) + " ج.م) اترفض" + (t.adminNote ? ": " + esc(t.adminNote) : ".") + "</span>"; }
@@ -8114,14 +8115,14 @@
     if (r) { wa = r; renderWa(); setMsg("waMsg", ""); }
   };
   $("waUnlink").onclick = async function () {
-    if (!confirm("هنفك الموبايل الحالي عن رقم المتجر، وهيظهرلك QR جديد تمسحه من الموبايل التاني. المساعد مش هيرد لحد ما تمسحه. نكمّل؟")) return;
+    if (!(await sbConfirm("هنفك الموبايل الحالي عن رقم المتجر، وهيظهرلك QR جديد تمسحه من الموبايل التاني. المساعد مش هيرد لحد ما تمسحه.", { title: "تربط موبايل تاني؟", ok: "كمّل", no: "لأ" }))) return;
     var r = await waCall("unlink", {}, this, "…");
     if (r) { wa = r; renderWa(); }
   };
   $("waOffBtn").onclick = async function () {
     var platform = wa && wa.mode === "platform";
-    if (!confirm(platform ? "متأكد؟ المساعد هيبطّل يرد على الواتساب، والموبايل هيتفك من الربط، وهنمسح المحادثات المحفوظة عندنا. تقدر تربط تاني في أي وقت."
-                          : "متأكد؟ المساعد هيبطّل يرد على الواتساب وهنمسح المحادثات المحفوظة عندنا. وتقدر تربط تاني في أي وقت.")) return;
+    if (!(await sbConfirm(platform ? "المساعد هيبطّل يرد على الواتساب، والموبايل هيتفك من الربط، وهنمسح المحادثات المحفوظة عندنا. تقدر تربط تاني في أي وقت."
+                          : "المساعد هيبطّل يرد على الواتساب وهنمسح المحادثات المحفوظة عندنا. وتقدر تربط تاني في أي وقت.", { title: "تفصل الواتساب؟", ok: "افصله", no: "سيبه", danger: true }))) return;
     var r = await waCall("disconnect", {}, this, "…");
     if (r) { stopQr(); await loadWa(); setMsg("waMsg", platform ? "اتلغى الربط." : "اتلغى الربط.", true); }
   };
@@ -8176,13 +8177,13 @@
         if (!l.assigned) act("🔄 جرّب تاني", "ghost", function (b) { wlPost("link", { id: l.id }, b); });
         else if (l.works && !l.linked && wlQrId !== l.id) act("📷 اعرض الـ QR", "", function () { openLineQr(l.id); });
         if (l.linked) act("📱 اربط موبايل تاني", "ghost", function (b) {
-          if (confirm("هنفك الموبايل الحالي عن الرقم ده، وهيظهرلك QR جديد تمسحه من الموبايل التاني. نكمّل؟")) wlPost("unlink", { id: l.id }, b).then(function (r) { if (r) openLineQr(l.id); });
+          sbConfirm("هنفك الموبايل الحالي عن الرقم ده، وهيظهرلك QR جديد تمسحه من الموبايل التاني.", { title: "تربط موبايل تاني؟", ok: "كمّل", no: "لأ" }).then(function (y) { if (y) wlPost("unlink", { id: l.id }, b).then(function (r) { if (r) openLineQr(l.id); }); });
         });
         act("🗑️ شيل الرقم", "danger", function (b) {
-          if (confirm("هنفك الرقم ده ونشيله من متجرك، والمساعد هيبطّل يرد عليه. محادثاته القديمة بتفضل في الإحصائيات. نكمّل؟")) {
+          sbConfirm("المساعد هيبطّل يرد عليه. محادثاته القديمة بتفضل في الإحصائيات.", { title: "تشيل الرقم ده من متجرك؟", ok: "شيله", no: "سيبه", danger: true }).then(function (y) { if (y) {
             if (wlQrId === l.id) { wlQrId = null; stopLineQr(); }
             wlPost("remove", { id: l.id }, b, "اتشال الرقم");
-          }
+          } });
         });
       }
       row.appendChild(acts);
@@ -8267,7 +8268,7 @@
   $("editor").addEventListener("click", function (e) { if (e.target === $("editor")) $("editor").hidden = true; });
   $("editorForm").onsubmit = async function (e) {
     e.preventDefault(); setMsg("edMsg", "");
-    if (vagueName($("edTitle").value) && !confirm("الاسم \"" + $("edTitle").value + "\" مش بيوصف المحتوى. الأسماء الواضحة بتخلّي المساعد يلاقي المعلومة أسرع. تحفظ بالاسم ده برضه؟")) { $("edTitle").focus(); return; }
+    if (vagueName($("edTitle").value) && !(await sbConfirm("الأسماء الواضحة بتخلّي المساعد يلاقي المعلومة أسرع.", { title: "الاسم «" + $("edTitle").value + "» مش بيوصف المحتوى", ok: "احفظ بالاسم ده برضه", no: "هغيّره", icon: "info" }))) { $("edTitle").focus(); return; }
     $("edSave").disabled = true;
     try {
       var body = { title: $("edTitle").value, content: $("edContent").value };
@@ -8278,7 +8279,7 @@
     finally { $("edSave").disabled = false; }
   };
   $("edDelete").onclick = async function () {
-    if (!editingId || !confirm("متأكد إنك عايز تمسح الجزء ده؟ مش هينفع ترجعه.")) return;
+    if (!editingId || !(await sbConfirm("مش هينفع ترجعه.", { title: "تمسح الجزء ده؟", ok: "امسحه", no: "سيبه", danger: true }))) return;
     try { await api("api/knowledge.ashx?action=delete", { method: "POST", json: { id: editingId } }); $("editor").hidden = true; toast("اتمسح"); loadItems(); refreshMe(); }
     catch (err) { setMsg("edMsg", err.message); }
   };
@@ -8382,7 +8383,7 @@
     finally { b.disabled = false; b.textContent = old; updateLook(); }
   };
   $("logoDel").onclick = async function () {
-    if (!confirm("تشيل اللوجو؟ لو الفقاعة عاملة باللوجو، هترجع للدبدوب لحد ما تختار شكل تاني.")) return;
+    if (!(await sbConfirm("لو الفقاعة عاملة باللوجو، هترجع للدبدوب لحد ما تختار شكل تاني.", { title: "تشيل اللوجو؟", ok: "شيله", no: "سيبه", danger: true }))) return;
     setMsg("logoMsg", "");
     try {
       me = await api("api/logo.ashx", { method: "POST", json: { remove: true } });

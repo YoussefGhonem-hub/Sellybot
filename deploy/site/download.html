@@ -410,6 +410,7 @@
 </head>
 <body>
 <script src="sb-loader.js?v=1"></script><!-- Sellybot's loader: first in <body>, not deferred (sb-loader.js) -->
+<script src="sb-dialog.js?v=1" defer></script><!-- Sellybot's own confirm / prompt boxes (sb-dialog.js) -->
 <noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=2169409460277527&ev=PageView&noscript=1"></noscript>
 
 <header class="nav" id="nav">
@@ -685,8 +686,8 @@
   $("copyLink").onclick = function () {
     var b = this, url = location.href.split("#")[0];
     function done() { b.textContent = "✓ اتنسخ، ابعته لنفسك وافتحه من الكمبيوتر"; }
-    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { prompt("انسخ اللينك:", url); });
-    else prompt("انسخ اللينك:", url);
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { sbCopy(url); });
+    else sbCopy(url);
   };
 
   // ---------- Microsoft Store button: "soon" now, a real link once STORE_LIVE ----------

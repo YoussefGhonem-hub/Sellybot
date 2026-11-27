@@ -22,7 +22,7 @@ window.SbCarriers = {
     if (!box) {
       box = D.createElement("div");
       box.addEventListener("change", async e => { if (e.target.id !== "scO") return; try { d = await call({ a: "off", off: e.target.checked }); draw(); toast("اتحفظ ✅"); } catch (x) { toast(x.message, true); } });
-      box.addEventListener("click", async e => { const b = e.target.closest("[data-sc]"); if (!b) return; const a = b.dataset.sc; if (a === "jt-clear" && !confirm("التجار اللي رابطين J&T بالمفاتيح دي من غير مفاتيحهم هيقفوا. تمسحها؟")) return; b.disabled = true; const v = i => D.getElementById(i).value.trim(); try { d = await call(a === "testers" ? { a, testers: v("scT") } : a === "jt" ? { a, account: v("scA"), key: v("scK") } : { a }); draw(); toast("اتحفظ ✅"); } catch (x) { b.disabled = false; toast(x.message, true); } });
+      box.addEventListener("click", async e => { const b = e.target.closest("[data-sc]"); if (!b) return; const a = b.dataset.sc; if (a === "jt-clear" && !(await sbConfirm("التجار اللي رابطين J&T بالمفاتيح دي من غير مفاتيحهم هيقفوا.", { title: "تمسح مفاتيح J&T؟", ok: "امسحها", no: "سيبها", danger: true }))) return; b.disabled = true; const v = i => D.getElementById(i).value.trim(); try { d = await call(a === "testers" ? { a, testers: v("scT") } : a === "jt" ? { a, account: v("scA"), key: v("scK") } : { a }); draw(); toast("اتحفظ ✅"); } catch (x) { b.disabled = false; toast(x.message, true); } });
     }
     if (box.parentNode !== root.parentNode) root.parentNode.insertBefore(box, root.nextSibling);
     try { d = await call(); draw(); } catch (x) { box.innerHTML = `<div class="card hint">${esc(x.message)}</div>`; }

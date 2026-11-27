@@ -185,6 +185,7 @@
 </head>
 <body>
 <script src="sb-loader.js?v=1"></script><!-- Sellybot's loader: first in <body>, not deferred (sb-loader.js) -->
+<script src="sb-dialog.js?v=1" defer></script><!-- Sellybot's own confirm / prompt boxes (sb-dialog.js) -->
 <!-- an employee signs in here; the owner comes from the dashboard (their sign-in works here as it is) -->
 <div class="login" id="login" hidden>
   <form id="loginForm" autocomplete="on">
@@ -592,7 +593,7 @@
       var r = el("div", "sn-row"), d = el("div"); d.appendChild(el("b", "", s.title)); d.appendChild(el("small", "", s.body)); r.appendChild(d);
       var e1 = el("button", "btn ghost sm", "تعديل"); e1.type = "button"; e1.onclick = function () { edit(s); };
       var e2 = el("button", "btn ghost sm", "امسح"); e2.type = "button";
-      e2.onclick = async function () { if (!confirm("نمسح «" + s.title + "»؟")) return; await api(API + "snippet-delete", { json: { id: s.id } }); snippets = null; await snips(); renderSnips(); };
+      e2.onclick = async function () { if (!(await sbConfirm("", { title: "نمسح «" + s.title + "»؟", ok: "امسحه", no: "سيبه", danger: true }))) return; await api(API + "snippet-delete", { json: { id: s.id } }); snippets = null; await snips(); renderSnips(); };
       r.appendChild(e1); r.appendChild(e2); l.appendChild(r);
     });
   }

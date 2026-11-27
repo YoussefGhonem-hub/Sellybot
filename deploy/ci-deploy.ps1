@@ -70,6 +70,14 @@ foreach ($f in Get-ChildItem $out -Recurse -Filter *.html) {
 }
 if ($ln -lt 5) { Remove-Item -Recurse -Force $out; Fail "Only $ln pages load sb-loader.js?v=... (every Sellybot page should)." }
 Say "OK  sb-loader.js stamped in $ln pages ($lfp)" Green
+# Sellybot's own confirm / prompt boxes (sb-dialog.js): the same, in the pages that ask something.
+$dfp = (Get-FileHash -Algorithm SHA256 (Join-Path $out "sb-dialog.js")).Hash.Substring(0, 8).ToLower(); $dn = 0
+foreach ($f in Get-ChildItem $out -Recurse -Filter *.html) {
+  $html = [IO.File]::ReadAllText($f.FullName, [Text.Encoding]::UTF8); $new = [regex]::Replace($html, 'sb-dialog\.js\?v=[\w-]+', "sb-dialog.js?v=$dfp")
+  if ($new -ne $html) { [IO.File]::WriteAllText($f.FullName, $new, (New-Object Text.UTF8Encoding $false)); $dn++ }
+}
+if ($dn -lt 5) { Remove-Item -Recurse -Force $out; Fail "Only $dn pages load sb-dialog.js?v=... (admin, dashboard, inbox, download and reels should)." }
+Say "OK  sb-dialog.js stamped in $dn pages ($dfp)" Green
 $conn = "Data Source=" + (CsValue $cfg.DB_SERVER) + ";Initial Catalog=" + (CsValue $cfg.DB_NAME) + ";User ID=" + (CsValue $cfg.DB_USER) +
         ";Password=" + (CsValue $cfg.DB_PASSWORD) + ";Encrypt=True;TrustServerCertificate=True"
 $wc = Join-Path $out "web.config"

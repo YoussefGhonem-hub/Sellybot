@@ -18,7 +18,7 @@ function draw() {
 window.SbDomains = {
   async open(root, t) {
     toast = t;
-    if (!box) { box = D.createElement("div"); box.addEventListener("click", async e => { const b = e.target.closest("[data-cf]"); if (!b) return; const a = b.dataset.cf; if (a === "clear" && !confirm("الدومينات المربوطة هتفضل شغالة، بس مش هنقدر نضيف أو نشيّك. تمسحه؟")) return; b.disabled = true; const v = i => D.getElementById(i).value.trim(); try { d = await call(a === "save" ? { a, token: v("cfT"), zone: v("cfZ"), target: v("cfC") } : { a }); test = a === "test" ? d.result : null; draw(); toast(a === "test" ? (test.ok ? "Cloudflare ردّت ✅" : "Cloudflare مارّدتش") : "اتحفظ ✅", a === "test" && !test.ok); } catch (x) { b.disabled = false; toast(x.message, true); } }); }
+    if (!box) { box = D.createElement("div"); box.addEventListener("click", async e => { const b = e.target.closest("[data-cf]"); if (!b) return; const a = b.dataset.cf; if (a === "clear" && !(await sbConfirm("الدومينات المربوطة هتفضل شغالة، بس مش هنقدر نضيف أو نشيّك.", { title: "تمسح مفتاح Cloudflare؟", ok: "امسحه", no: "سيبه", danger: true }))) return; b.disabled = true; const v = i => D.getElementById(i).value.trim(); try { d = await call(a === "save" ? { a, token: v("cfT"), zone: v("cfZ"), target: v("cfC") } : { a }); test = a === "test" ? d.result : null; draw(); toast(a === "test" ? (test.ok ? "Cloudflare ردّت ✅" : "Cloudflare مارّدتش") : "اتحفظ ✅", a === "test" && !test.ok); } catch (x) { b.disabled = false; toast(x.message, true); } }); }
     if (box.parentNode !== root.parentNode) root.parentNode.insertBefore(box, root.nextSibling);
     try { d = await call(); draw(); } catch (x) { box.innerHTML = `<div class="card hint">${esc(x.message)}</div>`; }
   }
