@@ -76,6 +76,13 @@
   .links .dd-menu button.on:after{display:none}
   .dd-ic{width:36px;height:36px;flex:none;border-radius:10px;display:grid;place-items:center;background:var(--soft);font-size:17px}
   .links .dd-menu button.on .dd-ic{background:var(--card)}
+  /* the channels' own logos (WhatsApp / Messenger + Instagram / Telegram) instead of emoji; br2 = two logos in one tile */
+  .dd-ic.br svg{width:24px;height:24px;display:block}
+  .dd-ic.br2{position:relative}
+  .dd-ic.br2 svg{position:absolute;width:19px;height:19px}
+  .dd-ic.br2 svg:first-child{top:3px;inset-inline-start:3px}
+  .dd-ic.br2 svg:last-child{bottom:3px;inset-inline-end:3px;border-radius:6px;box-shadow:0 0 0 2px var(--soft)}
+  .links .dd-menu button.on .dd-ic.br2 svg:last-child{box-shadow:0 0 0 2px var(--card)}
   .dd-menu b{display:block;font-weight:600}
   .dd-menu small{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
   .theme-btn svg{width:18px;height:18px;grid-area:1/1;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
@@ -125,6 +132,12 @@
     .links .dd-menu button{gap:0;padding:12px 14px;border-radius:12px;font-size:15px}
     .links .dd-menu button.on:after{display:block}
     .dd-ic,.links .dd-menu button.on .dd-ic{width:auto;height:auto;background:none;font-size:inherit;margin-inline-end:5px}
+    .dd-ic.br,.links .dd-menu button.on .dd-ic.br{width:20px;height:20px;margin-inline-end:8px}
+    .dd-ic.br svg{width:20px;height:20px}
+    .dd-ic.br2,.links .dd-menu button.on .dd-ic.br2{width:31px}
+    .dd-ic.br2 svg{width:17px;height:17px}
+    .dd-ic.br2 svg:first-child{top:-3px;inset-inline-start:0}
+    .dd-ic.br2 svg:last-child,.links .dd-menu button.on .dd-ic.br2 svg:last-child{bottom:-3px;inset-inline-end:0;box-shadow:0 0 0 2px var(--card)}
     .dd-menu b{font-weight:inherit}
     .dd-menu small{display:none}
     .side-head{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px;margin-bottom:6px;border-bottom:1px solid var(--line)}
@@ -2043,9 +2056,9 @@
       <div class="dd">
         <button type="button" class="dd-btn" aria-haspopup="true" aria-expanded="false" aria-controls="ddLink">🔗 ربط بحساباتك <svg class="dd-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="dd-menu" id="ddLink" role="menu" aria-label="ربط بحساباتك">
-          <button data-tab="wa" role="menuitem"><span class="dd-ic">💬</span><span><b>واتساب</b><small>المساعد يرد على رقم واتساب متجرك</small></span></button>
-          <button data-tab="social" id="socialTabBtn" role="menuitem" hidden><span class="dd-ic">📨</span><span><b>مسنجر وإنستجرام</b><small>المساعد يرد على صفحتك والدايركت</small></span></button>
-          <button data-tab="telegram" data-feat="telegram" role="menuitem"><span class="dd-ic">✈️</span><span><b>تيليجرام</b><small>المساعد يرد على بوت متجرك</small></span></button>
+          <button data-tab="wa" role="menuitem"><span class="dd-ic br" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#25d366"/><path fill="#fff" transform="translate(2.6 2.6) scale(.78)" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></span><span><b>واتساب</b><small>المساعد يرد على رقم واتساب متجرك</small></span></button>
+          <button data-tab="social" id="socialTabBtn" role="menuitem" hidden><span class="dd-ic br br2" aria-hidden="true"><svg viewBox="0 0 24 24"><defs><linearGradient id="ddMsG" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0099ff"/><stop offset=".6" stop-color="#a033ff"/><stop offset=".9" stop-color="#ff5280"/><stop offset="1" stop-color="#ff7061"/></linearGradient></defs><path fill="url(#ddMsG)" d="M12 2C6.4 2 2 6.1 2 11.7c0 2.9 1.2 5.4 3.1 7.2.2.1.3.3.3.6l.1 1.8c0 .6.6.9 1.1.7l2-.9c.2-.1.4-.1.5 0 .9.3 1.9.4 2.9.4 5.6 0 10-4.1 10-9.7S17.6 2 12 2z"/><path fill="#fff" d="M6 14.5l2.9-4.7c.5-.7 1.5-.9 2.2-.4l2.3 1.8c.2.2.5.2.7 0l3.2-2.4c.4-.3 1 .2.7.6l-2.9 4.7c-.5.7-1.5.9-2.2.4l-2.3-1.8c-.2-.2-.5-.2-.7 0l-3.2 2.4c-.4.3-1-.2-.7-.6z"/></svg><svg viewBox="0 0 24 24"><defs><radialGradient id="ddIgG" cx=".3" cy="1.07" r="1.2"><stop offset="0" stop-color="#fdf497"/><stop offset=".08" stop-color="#fdf497"/><stop offset=".45" stop-color="#fd5949"/><stop offset=".62" stop-color="#d6249f"/><stop offset=".95" stop-color="#285aeb"/></radialGradient></defs><rect width="24" height="24" rx="7" fill="url(#ddIgG)"/><rect x="5" y="5" width="14" height="14" rx="4.2" fill="none" stroke="#fff" stroke-width="1.9"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="#fff" stroke-width="1.9"/><circle cx="16.3" cy="7.7" r="1.1" fill="#fff"/></svg></span><span><b>مسنجر وإنستجرام</b><small>المساعد يرد على صفحتك والدايركت</small></span></button>
+          <button data-tab="telegram" data-feat="telegram" role="menuitem"><span class="dd-ic br" aria-hidden="true"><svg viewBox="0 0 24 24"><defs><linearGradient id="ddTgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#37aee2"/><stop offset="1" stop-color="#1e96c8"/></linearGradient></defs><circle cx="12" cy="12" r="12" fill="url(#ddTgG)"/><path fill="#fff" d="M5.4 11.8l10.9-4.2c.5-.2 1 .1.8 1l-1.9 8.8c-.1.6-.5.8-1 .5l-2.8-2.1-1.4 1.3c-.1.2-.3.3-.6.3l.2-2.9 5.3-4.8c.2-.2 0-.3-.3-.1l-6.5 4.1-2.8-.9c-.6-.2-.6-.6.1-1z"/></svg></span><span><b>تيليجرام</b><small>المساعد يرد على بوت متجرك</small></span></button>
         </div>
       </div>
       <button data-tab="offers" data-feat="broadcast" id="bcTabBtn" class="nav2"><span class="cn-nw">📣 ابعت عرض</span><span class="dd-ic cn-nm">📣</span><span class="cn-nm"><b>ابعت عرض</b><small>عرضك يوصل لزباينك</small></span></button>
