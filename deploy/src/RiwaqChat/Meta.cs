@@ -450,12 +450,12 @@ namespace RiwaqChat
             return list;
         }
 
-        // admin.html: the asks still open, and the ones settled in the last week
+        // admin.html: the asks still open, the ones settled in the last week, and every store still linked (so it can be unlinked)
         public static List<Dictionary<string, object>> ForAdmin(SqlConnection c)
         {
             var asks = new List<Tuple<Ask, string, string>>();
             using (var cmd = Db.Cmd(c, @"SELECT TOP 200 r.*, s.Slug, s.Name AS StoreName FROM dbo.MetaRequests r JOIN dbo.Stores s ON s.Id = r.StoreId
-                WHERE r.Status <> 'done' OR r.UpdatedAt > DATEADD(DAY,-7,SYSUTCDATETIME())
+                WHERE r.Status <> 'done' OR r.UpdatedAt > DATEADD(DAY,-7,SYSUTCDATETIME()) OR EXISTS (SELECT 1 FROM dbo.MetaLinks l WHERE l.StoreId = r.StoreId)
                 ORDER BY CASE r.Status WHEN 'pending' THEN 0 WHEN 'problem' THEN 1 ELSE 2 END, r.CreatedAt"))
             using (var r = cmd.ExecuteReader())
                 while (r.Read()) asks.Add(Tuple.Create(Read(r), (string)r["Slug"], (string)r["StoreName"]));
@@ -1401,7 +1401,7 @@ ELSE
                         Web.Json(res, 200, State(c, req));
                         return;
                     }
-                    // a store's ask: {store, do: pick (channel, id) | problem (note, the owner sees it) | done}
+                    // a store's ask: {store, do: pick (channel, id) | problem (note, the owner sees it) | done | unlink (channel)}
                     if (action == "ask")
                     {
                         int storeId; object sv;
@@ -1437,6 +1437,13 @@ ELSE
                             MetaEasy.Set(c, storeId, MetaEasy.Problem, note);
                         }
                         else if (what == "done") MetaEasy.Set(c, storeId, MetaEasy.Done, null);
+                        else if (what == "unlink")
+                        {
+                            // the same as the owner's «إلغاء الربط»: Meta stops sending us the Page's messages, its token and the messages we kept go.
+                            // A settled ask stays settled (the owner then sees the ask form again, dashboard.html), touched so it stays in the list a week.
+                            if (!await MetaHandler.Act(res, s, "unlink", b)) return;
+                            var a = MetaEasy.Get(c, storeId); if (a != null && a.Status == MetaEasy.Done) MetaEasy.Set(c, storeId, MetaEasy.Done, null);
+                        }
                         else { Web.Error(res, 400, "bad_request"); return; }
                         Web.Json(res, 200, State(c, req));
                         return;

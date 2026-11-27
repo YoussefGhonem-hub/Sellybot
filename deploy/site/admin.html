@@ -233,7 +233,7 @@
   .ask-tbl tbody tr{transition:background .15s}
   .ask-tbl tbody tr:hover{background:color-mix(in srgb,var(--soft) 60%,transparent)}
   .ask-tbl td:first-child{box-shadow:inset -3px 0 0 var(--ask-c,transparent)}
-  .ask-tbl tr.ask-pending{--ask-c:#f0b04a}.ask-tbl tr.ask-problem{--ask-c:#9a8b7d}.ask-tbl tr.ask-done{--ask-c:#2e9d5b}
+  .ask-tbl tr.ask-pending{--ask-c:#f0b04a}.ask-tbl tr.ask-problem{--ask-c:#9a8b7d}.ask-tbl tr.ask-done{--ask-c:#2e9d5b}.ask-tbl tr.ask-off{--ask-c:#c9bfb4}
   .ask-h{display:inline-flex;align-items:center;gap:7px}
   .ask-ic{flex:none;width:18px;height:18px;border-radius:5px;display:inline-grid;place-items:center;overflow:hidden}
   .ask-ic svg{width:18px;height:18px;display:block}
@@ -254,6 +254,8 @@
   .ask-ch a.btn{text-decoration:none;min-width:132px;justify-content:center}
   .ask-linked{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
   .ask-linked span[dir]{font-weight:600;font-size:13.5px}
+  .ask-linked .ask-off{margin-top:2px;font-size:12px;padding:3px 10px}
+  .ask-linked .ask-off:hover{border-color:var(--err);color:var(--err);background:none}
   .ask-picks{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin-top:6px}
   .ask-picks .btn{justify-content:flex-start;white-space:normal;text-align:right}
   .ask-ch .hint:first-child{margin-top:0}
@@ -1228,19 +1230,21 @@
   }
   // the asks as a table: waiting ones first (oldest on top, it's a queue), then the owner's turn, then the linked ones (newest first)
   var mtAsksAll = [], mtAskF = null;
-  var ASK_ORDER = { pending: 0, problem: 1, done: 2 };
+  var ASK_ORDER = { pending: 0, problem: 1, done: 2, off: 3 };
+  // a settled ask whose Page was unlinked since: «اتفك الربط» (not counted with the linked ones)
+  function askSt(a) { return a.status === "done" && !(a.fb && a.fb.link) ? "off" : a.status; }
   function drawAsks() {
     var n = { pending: 0, problem: 0, done: 0, all: mtAsksAll.length };
-    mtAsksAll.forEach(function (a) { if (n[a.status] !== undefined) n[a.status]++; });
+    mtAsksAll.forEach(function (a) { if (n[askSt(a)] !== undefined) n[askSt(a)]++; });
     document.querySelectorAll("#mtAskFilter button").forEach(function (b) {
       var f = b.dataset.f; b.classList.toggle("on", f === mtAskF); b.querySelector("b").textContent = n[f] ? fmt(n[f]) : "";
     });
-    var rows = mtAsksAll.filter(function (a) { return mtAskF === "all" || a.status === mtAskF; }).sort(function (x, y) {
-      var o = (ASK_ORDER[x.status] || 0) - (ASK_ORDER[y.status] || 0); if (o) return o;
+    var rows = mtAsksAll.filter(function (a) { return mtAskF === "all" || askSt(a) === mtAskF; }).sort(function (x, y) {
+      var o = (ASK_ORDER[askSt(x)] || 0) - (ASK_ORDER[askSt(y)] || 0); if (o) return o;
       var tx = new Date(x.updatedAt).getTime(), ty = new Date(y.updatedAt).getTime();
       return x.status === "done" ? ty - tx : tx - ty;
     });
-    var EMPTY = { pending: "مفيش طلبات مستنية الربط 🎉", problem: "مفيش طلبات مستنية التاجر.", done: "مفيش صفحات اتربطت آخر 7 أيام.", all: "لسه محدش طلب الربط." };
+    var EMPTY = { pending: "مفيش طلبات مستنية الربط 🎉", problem: "مفيش طلبات مستنية التاجر.", done: "مفيش صفحات مربوطة دلوقتي.", all: "لسه محدش طلب الربط." };
     $("mtAsks").innerHTML = rows.length ? rows.map(askHtml).join("") : '<tr><td colspan="5" class="ask-empty">' + EMPTY[mtAskF] + "</td></tr>";
   }
   // the Facebook / Instagram marks (same as the owner's steps in the dashboard): in the headers and on the links the owner sent
@@ -1253,13 +1257,13 @@
   // facebook.com/my.store or facebook.com/profile.php?id=…: short enough for the cell (the full link is on hover and on click)
   function askShort(u) { return String(u || "").replace(/^https?:\/\/(www\.|m\.)?/i, "").replace(/\/$/, ""); }
   function askHtml(a) {
-    var ST = { pending: '<span class="pill warn">⏳ مستني الربط</span>', problem: '<span class="pill">✍️ مستني التاجر</span>', done: '<span class="pill ok">✅ اتربط</span>' };
+    var ST = { pending: '<span class="pill warn">⏳ مستني الربط</span>', problem: '<span class="pill">✍️ مستني التاجر</span>', done: '<span class="pill ok">✅ اتربط</span>', off: '<span class="pill">🔌 اتفك الربط</span>' };
     var at = new Date(a.updatedAt), first = Array.from(String(a.storeName || a.slug || "?").trim())[0] || "?";
-    return '<tr data-store="' + a.store + '" class="ask-' + esc(a.status) + '">'
+    return '<tr data-store="' + a.store + '" class="ask-' + esc(askSt(a)) + '">'
       + '<td><div class="ask-who"><span class="ask-av" aria-hidden="true">' + esc(first.toUpperCase()) + '</span><div><b dir="auto" title="' + esc(a.storeName) + '">' + esc(a.storeName) + '</b>'
       + '<div class="hint"><span dir="ltr">' + esc(a.slug) + "</span></div></div></div></td>"
       + askCh(a, "fb") + askCh(a, "ig")
-      + "<td>" + (ST[a.status] || esc(a.status))
+      + "<td>" + (ST[askSt(a)] || esc(a.status))
       + '<span class="ask-at" title="' + esc(at.toLocaleString("ar-EG")) + '">' + esc(ago(a.updatedAt)) + "</span>"
       + (a.note ? '<div class="ask-note" dir="auto">📝 ' + esc(a.note) + "</div>" : "") + "</td>"
       + "<td>" + (a.status !== "done" ? '<div class="ask-btns"><button class="btn ghost sm" type="button" data-ask="done" title="اقفل الطلب">✓ تم</button><button class="btn ghost sm" type="button" data-ask="problem" title="ابعت للتاجر يصلّح حاجة">⚠️ فيه مشكلة</button></div>' : "") + "</td>"
@@ -1275,7 +1279,8 @@
     var h = '<td class="ask-ch" data-ch="' + ch + '">';
     if (ch === "ig" && !a.igUser) return h + '<span class="ask-none">مش مطلوب</span></td>';
     h += ch === "fb" ? askSrc(ASK_IC.fb, a.pageUrl, askShort(a.pageUrl)) : askSrc(ASK_IC.ig, "https://www.instagram.com/" + a.igUser + "/", "@" + a.igUser);
-    if (l) return h + '<div class="ask-linked"><span dir="auto">' + esc(l.name || l.id) + '</span><span class="pill ok">مربوط ✅</span>' + (l.status ? '<span class="pill warn">' + esc(l.status) + "</span>" : "") + "</div></td>";
+    if (l) return h + '<div class="ask-linked"><span dir="auto">' + esc(l.name || l.id) + '</span><span class="pill ok">مربوط ✅</span>' + (l.status ? '<span class="pill warn">' + esc(l.status) + "</span>" : "")
+      + '<button class="btn ghost sm ask-off" type="button" data-ask="unlink" data-name="' + esc(l.name || l.id) + '">🔌 فك الربط</button></div></td>';
     if (!x.allowed) return h + '<span class="ask-none">باقته مافيهاش ' + (ch === "fb" ? "المسنجر" : "الإنستجرام") + "</span></td>";
     if (x.choices && x.choices.length) {
       var pageId = (a.pageUrl.match(/[?&]id=(\d+)/) || [])[1];   // a profile.php?id= link names the Page: mark it
@@ -1290,13 +1295,17 @@
   $("mtAsks").onclick = async function (e) {
     var b = e.target.closest("[data-ask]"); if (!b) return;
     var what = b.dataset.ask, body = { do: what, store: +b.closest("[data-store]").dataset.store };
-    if (what === "pick") { body.channel = b.closest("[data-ch]").dataset.ch; body.id = b.dataset.id; }
+    if (what === "pick" || what === "unlink") { body.channel = b.closest("[data-ch]").dataset.ch; body.id = b.dataset.id; }
+    if (what === "unlink") {
+      var who = b.closest("[data-store]").querySelector(".ask-who b").textContent, where = body.channel === "fb" ? "المسنجر" : "الإنستجرام";
+      if (!confirm("تفك ربط «" + b.dataset.name + "» (" + where + ") من متجر «" + who + "»؟\n\nالمساعد هيبطّل يرد على " + where + " بتاعه، ورسايله اللي عندنا هتتمسح. وتقدر تربطه تاني بعدين من نفس الصف.")) return;
+    }
     if (what === "problem") {
       var n = prompt("اكتب للتاجر إيه المشكلة وهو يعمل إيه (هيشوفها في لوحته):", "مالقيناش حسابنا على صفحتك. اتأكد إنك ضفته من «الوصول إلى الصفحة» ← «الأشخاص اللي ليهم وصول للمهام» بصلاحية «الرسائل ونشاط المجتمع».");
       if (!n || !n.trim()) return; body.note = n.trim();
     }
     busy(b, true);
-    try { renderMeta(await metaApi("ask", body)); toast(what === "pick" ? "اتربط ✓" : "تم ✓"); } catch (err) { toast(err.message, true); busy(b, false); }
+    try { renderMeta(await metaApi("ask", body)); toast(what === "pick" ? "اتربط ✓" : what === "unlink" ? "اتفك الربط ✓" : "تم ✓"); } catch (err) { toast(err.message, true); busy(b, false); }
   };
   $("mtAgentForm").onsubmit = async function (e) {
     e.preventDefault(); busy($("mtAgentSave"), true);
