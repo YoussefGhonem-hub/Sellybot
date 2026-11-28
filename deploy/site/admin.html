@@ -1907,7 +1907,7 @@
       busy(this, true);
       try {
         var res = await api("request-approve", { id: id, paidEgp: m.querySelector("#apPaid").value, note: m.querySelector("#apNote").value }); closeModal();
-        toast(res.kind === "wa" ? "اتفعّلت خدمة الواتساب لحد " + date(res.endsAt) + " ✅" : res.kind === "topup" ? "اتضاف الرصيد ✅" : res.kind === "upgrade" ? "اترقّت الباقة ✅ لحد " + date(res.endsAt)
+        toast(res.kind === "wa" ? "اتفعّلت خدمة الواتساب لحد " + date(res.endsAt) + " ✅" : res.kind === "topup" ? "اتضاف الرصيد ✅" : res.kind === "shop" ? "اتجدد إيجار المتجر لحد " + date(res.endsAt) + " ✅" : res.kind === "upgrade" ? "اترقّت الباقة ✅ لحد " + date(res.endsAt)
           : new Date(res.startsAt) > new Date(Date.now() + 60000) ? "اتسجلت ✅ هتبدأ يوم " + date(res.startsAt) + " لحد " + date(res.endsAt) : "اتفعّلت الباقة لحد " + date(res.endsAt) + " ✅");
         loadReqs();
       }
@@ -2729,8 +2729,8 @@
     var box = $("tkMsgs"); box.scrollTop = box.scrollHeight;
     $("tkStore").onclick = function () { openStore(t.storeId, "tk"); };
     var cl = $("tkClose"), ro = $("tkReopen");
-    if (cl) cl.onclick = async function () { await api("ticket-status", { id: id, status: "closed" }); toast("اتقفلت التذكرة"); loadTickets(); };
-    if (ro) ro.onclick = async function () { await api("ticket-status", { id: id, status: "open" }); toast("اتفتحت تاني"); loadTickets(); };
+    if (cl) cl.onclick = async function () { busy(cl, true); try { await api("ticket-status", { id: id, status: "closed" }); toast("اتقفلت التذكرة"); loadTickets(); } catch (e) { toast(e.message, true); } finally { busy(cl, false); } };
+    if (ro) ro.onclick = async function () { busy(ro, true); try { await api("ticket-status", { id: id, status: "open" }); toast("اتفتحت تاني"); loadTickets(); } catch (e) { toast(e.message, true); } finally { busy(ro, false); } };
     $("tkBody").onkeydown = function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("tkReply").requestSubmit(); };
     $("tkReply").onsubmit = async function (e) {
       e.preventDefault(); var btn = $("tkSend"); busy(btn, true);

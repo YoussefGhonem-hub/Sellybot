@@ -11,6 +11,13 @@
   <ItemGroup>
     <PackageReference Include="Anthropic" Version="13.8.0" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
+    <!-- the admin app's live notifications (AdminLive.cs): ASP.NET SignalR 2 on OWIN, and HTTP/2 for Apple's push service -->
+    <PackageReference Include="Microsoft.AspNet.SignalR.Core" Version="2.4.3" />
+    <PackageReference Include="Microsoft.AspNet.SignalR.SystemWeb" Version="2.4.3" />
+    <PackageReference Include="Microsoft.Owin.Host.SystemWeb" Version="4.2.2" />
+    <PackageReference Include="Microsoft.Owin.Security" Version="4.2.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.2" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Extensions" />

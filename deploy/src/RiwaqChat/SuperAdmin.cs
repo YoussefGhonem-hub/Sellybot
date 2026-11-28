@@ -798,11 +798,21 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
 
         public static void SignOut(HttpContext ctx) { ctx.Response.Cookies.Add(new HttpCookie(Cookie, "") { HttpOnly = true, Path = "/", Expires = DateTime.UtcNow.AddDays(-1) }); }
 
-        public static int? Current(HttpContext ctx)
+        public static int? Current(HttpContext ctx) { DateTime issued; return Current(ctx, out issued); }
+        public static int? Current(HttpContext ctx, out DateTime issued)
         {
             var c = ctx.Request.Cookies[Cookie];
-            if (c == null || string.IsNullOrEmpty(c.Value)) return null;
-            var p = c.Value.Split('|');
+            return Check(c == null ? null : c.Value, out issued);
+        }
+
+        // the cookie's value -> the admin's id while it's signed and not expired; issued = when it was given (12 hours before it ends).
+        // The admin app's SignalR hub (AdminLive.cs) checks the same cookie.
+        public const string CookieName = Cookie;
+        public static int? Check(string value, out DateTime issued)
+        {
+            issued = DateTime.MinValue;
+            if (string.IsNullOrEmpty(value)) return null;
+            var p = value.Split('|');
             if (p.Length != 3) return null;
             var expected = Sign(p[0] + "|" + p[1]);
             if (expected.Length != p[2].Length) return null;
@@ -810,6 +820,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
             for (int i = 0; i < expected.Length; i++) diff |= expected[i] ^ p[2][i];
             long exp; int id;
             if (diff != 0 || !long.TryParse(p[1], out exp) || exp < DateTimeOffset.UtcNow.ToUnixTimeSeconds() || !int.TryParse(p[0], out id)) return null;
+            issued = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime.AddHours(-12);
             return id;
         }
     }
@@ -846,23 +857,42 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                         AdminAuth.SignIn(ctx, id);
                         bool isDefault;
                         using (var cmd = Db.Cmd(c, "SELECT DefaultPassword FROM dbo.Admins WHERE Id = @id", "@id", id)) isDefault = (bool)cmd.ExecuteScalar();
-                        Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "username", user }, { "defaultPassword", isDefault } });
+                        var ok = new Dictionary<string, object> { { "ok", true }, { "username", user }, { "defaultPassword", isDefault } };
+                        // the admin app asks for its own long sign-in on this device (AdminApp.cs); the web page doesn't send "device"
+                        var dev = Web.Str(b, "device", 80);
+                        if (!string.IsNullOrWhiteSpace(dev)) { ok["deviceToken"] = AdminApp.NewDevice(c, id, dev, Web.Str(b, "platform", 12), Web.Str(b, "version", 20)); ok["appMin"] = AdminApp.MinVersion(c); }
+                        Web.Json(res, 200, ok);
                         return;
                     }
-                    if (action == "logout" && post) { AdminAuth.SignOut(ctx); Web.Json(res, 200, new { ok = true }); return; }
+                    if (action == "logout" && post) { AdminApp.DeviceLogout(c, Web.Str(b, "device", 100)); AdminAuth.SignOut(ctx); Web.Json(res, 200, new { ok = true }); return; }
+                    // the admin app (mobile-app/): its own long sign-in per device, and the errors it hits (AdminApp.cs)
+                    if (action == "device-login" && post) { AdminApp.DeviceLogin(ctx, c, b, res); return; }
+                    if (action == "app-error" && post) { AdminApp.AppError(req, b, res); return; }
 
                     // ---- everything below needs a signed-in super admin ----
-                    var adminId = AdminAuth.Current(ctx);
+                    DateTime issued;
+                    var adminId = AdminAuth.Current(ctx, out issued);
                     string adminName = null; bool defaultPassword = false;
                     if (adminId.HasValue)
-                        using (var cmd = Db.Cmd(c, "SELECT Username, DefaultPassword FROM dbo.Admins WHERE Id = @id", "@id", adminId.Value))
-                        using (var r = cmd.ExecuteReader()) if (r.Read()) { adminName = (string)r[0]; defaultPassword = (bool)r[1]; }
+                        using (var cmd = Db.Cmd(c, "SELECT Username, DefaultPassword, SignedOutAt FROM dbo.Admins WHERE Id = @id", "@id", adminId.Value))
+                        using (var r = cmd.ExecuteReader())
+                            // «اخرج من الأجهزة التانية» (AdminApp.cs) ends every sign-in given before it
+                            if (r.Read() && !(r["SignedOutAt"] is DateTime && issued < (DateTime)r["SignedOutAt"])) { adminName = (string)r[0]; defaultPassword = (bool)r[1]; }
                     if (adminName == null) { Web.Error(res, 401, "not_logged_in"); return; }
                     Db.RollOverPlans(c);   // lower plans whose turn came show as the store's plan in every list
 
                     switch (action)
                     {
-                        case "me": Web.Json(res, 200, new Dictionary<string, object> { { "username", adminName }, { "defaultPassword", defaultPassword } }); return;
+                        case "me": Web.Json(res, 200, new Dictionary<string, object> { { "username", adminName }, { "defaultPassword", defaultPassword }, { "appMin", AdminApp.MinVersion(c) } }); return;
+                        // the admin app (AdminApp.cs): badge counts, what's new since it last looked, its devices, Apple's push service
+                        case "badges": Web.Json(res, 200, AdminApp.Badges(c)); return;
+                        case "events": Web.Json(res, 200, AdminApp.Since(c, req.QueryString["since"]).Json()); return;
+                        case "devices": Web.Json(res, 200, AdminApp.Devices(c, adminId.Value, req.QueryString["device"])); return;
+                        case "device-revoke": if (!post) break; AdminApp.Revoke(c, adminId.Value, b, res); return;
+                        case "devices-out": if (!post) break; AdminApp.OthersOut(ctx, c, adminId.Value, b, res); return;
+                        case "device-push": if (!post) break; AdminApp.SetPush(c, adminId.Value, b, res); return;
+                        case "apns": if (post) Apns.Save(c, b, res); else Web.Json(res, 200, Apns.Status(c)); return;
+                        case "apns-test": if (!post) break; Apns.Test(c, adminId.Value, res); return;
                         case "overview": Web.Json(res, 200, Overview(c)); return;
                         case "jobs": Web.Json(res, 200, Jobs.Stats(c)); return;   // «⏱️ الشغل التلقائي» (Jobs.cs)
                         case "money": Web.Json(res, 200, Finance.Report(c)); return;   // «💰 المكسب والتكلفة» (Finance.cs)
@@ -1455,7 +1485,7 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                     "@method", (object)method ?? DBNull.Value, "@notes", notes, "@start", now, "@end", monthEnd)) subId = (int)cmd.ExecuteScalar();
                 using (var cmd = Db.Cmd(c, "UPDATE dbo.PlanRequests SET Status='approved', AdminNote=@n, SubscriptionId=@sub, Month=@m, DecidedAt=SYSUTCDATETIME() WHERE Id=@id",
                     "@n", (object)adminNote ?? DBNull.Value, "@sub", subId, "@m", Db.Month, "@id", id.Value)) cmd.ExecuteNonQuery();
-                Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "units", units }, { "endsAt", monthEnd.ToString("o") } });
+                Web.Json(res, 200, new Dictionary<string, object> { { "ok", true }, { "kind", "topup" }, { "units", units }, { "endsAt", monthEnd.ToString("o") } });
                 return;
             }
             // the WhatsApp service bought with the plan: the plan's payment row gets the plan's share, the service its own row (below)
@@ -1603,51 +1633,53 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
 
         static void SettingsSave(SqlConnection c, Dictionary<string, object> b, HttpResponse res)
         {
+            // every value is checked first and saved only when all of them are right (one bad field used to keep the fields before it and drop the rest)
+            var save = new List<Action>();
             var rate = DecOf(b, "usdRate");
-            if (rate != null) { if (rate < 1 || rate > 1000) { Web.Error(res, 400, "bad_rate", "سعر الدولار مش منطقي."); return; } Billing.Set(c, "UsdRate", rate.Value.ToString(CultureInfo.InvariantCulture)); }
+            if (rate != null) { if (rate < 1 || rate > 1000) { Web.Error(res, 400, "bad_rate", "سعر الدولار مش منطقي."); return; } save.Add(() => Billing.Set(c, "UsdRate", rate.Value.ToString(CultureInfo.InvariantCulture))); }
             if (b.ContainsKey("whatsapp"))
             {
                 var w = new string((Web.Str(b, "whatsapp", 30) ?? "").Where(ch => char.IsDigit(ch) || ch == '+').ToArray());
                 if (w.Length < 8) { Web.Error(res, 400, "bad_whatsapp", "اكتب رقم واتساب صحيح."); return; }
-                Billing.Set(c, "WhatsApp", w);
+                save.Add(() => Billing.Set(c, "WhatsApp", w));
             }
             foreach (var k in new[] { "unitsSmall", "unitsMedium", "unitsLarge" })
             {
                 var v = Web.Int(b, k);
                 if (v == null) continue;
                 if (v < 100 || v > 1000000) { Web.Error(res, 400, "bad_units", "استهلاك الرسالة لازم يكون بين 100 و مليون وحدة."); return; }
-                Billing.Set(c, "U" + k.Substring(1), v.Value.ToString(CultureInfo.InvariantCulture));
+                save.Add(() => Billing.Set(c, "U" + k.Substring(1), v.Value.ToString(CultureInfo.InvariantCulture)));
             }
             // «السعر القديم»: the last day (yyyy-MM-dd, empty = off) and how many first months keep the price
             if (b.ContainsKey("oldPriceUntil"))
             {
                 var day = (Web.Str(b, "oldPriceUntil", 20) ?? "").Trim(); DateTime dd;
                 if (day.Length > 0 && !DateTime.TryParseExact(day, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dd)) { Web.Error(res, 400, "bad_date", "آخر يوم للسعر القديم مش مظبوط."); return; }
-                Billing.Set(c, "OldPriceUntil", day.Length > 0 ? day : "off");
+                save.Add(() => Billing.Set(c, "OldPriceUntil", day.Length > 0 ? day : "off"));
             }
             var oldMonths = Web.Int(b, "oldPriceMonths");
             if (oldMonths != null)
             {
                 if (oldMonths < 0 || oldMonths > 24) { Web.Error(res, 400, "bad_months", "عدد الشهور بالسعر القديم من 0 لـ 24."); return; }
-                Billing.SetOldPriceMonths(c, oldMonths.Value);
+                save.Add(() => Billing.SetOldPriceMonths(c, oldMonths.Value));
             }
             var refPct = Web.Int(b, "referralPct");   // «دعوة تاجر»: % off a month for each invited store that pays (0 = off)
             if (refPct != null)
             {
                 if (refPct < 0 || refPct > 100) { Web.Error(res, 400, "bad_ref_pct", "خصم الدعوة من 0 لـ 100%."); return; }
-                Billing.Set(c, "ReferralPct", refPct.Value.ToString(CultureInfo.InvariantCulture));
+                save.Add(() => Billing.Set(c, "ReferralPct", refPct.Value.ToString(CultureInfo.InvariantCulture)));
             }
             if (b.ContainsKey("paymentInfo"))
             {
                 var pi = (Web.Str(b, "paymentInfo", 400) ?? "").Trim();
                 if (pi.Length < 5) { Web.Error(res, 400, "bad_payment_info", "اكتب طريقة الدفع اللي هتظهر لأصحاب المتاجر."); return; }
-                Billing.Set(c, "PaymentInfo", pi);
+                save.Add(() => Billing.Set(c, "PaymentInfo", pi));
             }
             if (b.ContainsKey("payNumber"))
             {
                 var pn = (Web.Str(b, "payNumber", 40) ?? "").Trim();
                 if (pn.Count(char.IsDigit) < 8) { Web.Error(res, 400, "bad_pay_number", "اكتب رقم التحويل صح، مثلًا 01001234567."); return; }
-                Billing.Set(c, "PayNumber", pn);
+                save.Add(() => Billing.Set(c, "PayNumber", pn));
             }
             object pd;
             if (b.TryGetValue("periodDiscounts", out pd) && pd is Dictionary<string, object>)
@@ -1661,8 +1693,9 @@ FROM dbo.Stores s LEFT JOIN dbo.UsageMonthly u ON u.StoreId = s.Id AND u.Month =
                     { Web.Error(res, 400, "bad_discount", "خصم المدة لازم يكون من 0 لـ 89%."); return; }
                     parts.Add(m + ":" + pct.ToString(CultureInfo.InvariantCulture));
                 }
-                Billing.Set(c, "PeriodDiscounts", string.Join(",", parts));
+                save.Add(() => Billing.Set(c, "PeriodDiscounts", string.Join(",", parts)));
             }
+            foreach (var a in save) a();
             Web.Json(res, 200, SettingsGet(c));
         }
 
