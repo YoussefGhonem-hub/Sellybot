@@ -306,3 +306,32 @@ div.sm-ol{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1
 .sm-vh>span:nth-child(2){flex:1;min-width:0;display:grid;gap:2px}
 .sm-vh small{color:var(--muted);font-size:12.5px;line-height:1.5}
 .sm-vh>.sm-i{flex:none;width:18px;height:18px;color:var(--brand)}
+/* «جهّزلي متجري من حسابي»: the card on the steps (a button that looks like .sm-vh) and its pane's lines */
+button.sm-fill{width:100%;font:inherit;text-align:start;cursor:pointer;border-style:solid}
+.sm-frs{display:grid;gap:8px;margin-top:10px}
+.sm-fr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.sm-fr.off{opacity:.55}
+.sm-frc{display:flex;gap:8px;align-items:flex-start;min-width:0;cursor:pointer}
+.sm-frc input{flex:none;width:18px;height:18px;margin-top:2px;accent-color:var(--brand)}
+.sm-frc span{display:grid;gap:1px;min-width:0}.sm-frc b{font-size:14px;overflow-wrap:anywhere}.sm-frc small{color:var(--muted);font-size:12px}
+.sm-fr>input[type=text]{width:100%;min-width:0;min-height:40px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--bg);color:var(--ink);font:inherit}
+.sm-fr>input[type=text]:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.sm-fr>input[type=color]{width:56px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:3px;justify-self:start}
+.sm-frl{max-width:120px;max-height:56px;object-fit:contain;justify-self:start;border-radius:8px;background:repeating-conic-gradient(#0000 0 25%,#8881 0 50%) 0 0/14px 14px}
+@media (max-width:520px){.sm-fr{grid-template-columns:1fr}}
+/* «رتّب منتجاتك في أقسام»: a card per suggested category, its products as chips with ✕ */
+.sm-cai{display:grid;gap:10px;margin-top:10px}
+.sm-caic{padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.sm-caic.off{opacity:.55}
+.sm-caih{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
+.sm-caih>input[type=checkbox]{flex:none;width:18px;height:18px;accent-color:var(--brand)}
+.sm-caih>input[type=text]{flex:1 1 160px;min-width:0;min-height:40px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--bg);color:var(--ink);font:inherit;font-weight:700}
+.sm-caih>input[type=text]:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.sm-caih>b{flex:1 1 auto;min-width:0}
+.sm-caih>small{color:var(--muted);font-size:12.5px}
+.sm-caih>small.sm-pill{padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--brand) 12%,var(--card));color:var(--ink)}
+.sm-caip{display:flex;flex-wrap:wrap;gap:6px}
+.sm-caip .sm-chip{color:var(--ink);font-size:13px}
+.sm-caip .sm-chip button{display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:50%;background:none;color:var(--muted);cursor:pointer}
+.sm-caip .sm-chip button:hover,.sm-caip .sm-chip button:focus-visible{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);outline:none}
+.sm-caip .sm-chip .sm-i{width:14px;height:14px}
