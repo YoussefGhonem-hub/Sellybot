@@ -1,7 +1,8 @@
 // More than one WhatsApp number per store (the user, 2026-11-24). A store whose people answer customers on several WhatsApp
 // numbers links every one of them, and the assistant answers on each. The main number stays where it always was
 // (Stores.WaInstance / WaNumber = line 0); the others are dbo.WaLines rows (line = WaLines.Id). Each extra number is a number
-// on Sellybot's Wapilot account linked by scanning its QR, so they need the main number on Sellybot's account too.
+// on Sellybot's own account (our WhatsApp server, WaBridge.cs: made for the line when it's added) linked by scanning its QR,
+// so they need the main number on Sellybot's account too.
 //
 // Price (the user): the WhatsApp service is 300 a month for one number; with more than one, every number is 260
 // (AppSettings WaAddonPrice / WaMultiPrice). Stores.WaCount = how many numbers the service is paid for. A plan with WhatsApp
@@ -195,7 +196,18 @@ namespace RiwaqChat
         public static async Task<string> AssignFree(SqlConnection c, int storeId, int line)
         {
             var token = WaAccount.PlatformToken(c);
-            if (token == null || WaAccount.AutoAssign(c) == "off") return null;
+            if (token == null) return null;
+            // our own server: a new number made for this line
+            if (WaBridge.Is(token))
+            {
+                var made = await Wapilot.Create(token, "store " + storeId + " line " + line);
+                int got;
+                using (var cmd = Db.Cmd(c, "UPDATE dbo.WaLines SET Instance=@i, Number=NULL, Status=NULL WHERE Id=@l AND StoreId=@s AND Instance IS NULL", "@i", made.Id, "@l", line, "@s", storeId))
+                    got = cmd.ExecuteNonQuery();
+                if (got == 0) { try { await WaBridge.Delete(token, made.Id); } catch (WaException) { } return null; }
+                return made.Id;
+            }
+            if (WaAccount.AutoAssign(c) == "off") return null;
             var all = await Wapilot.Instances(token);
             var taken = Taken(c);
             var reserved = WaAccount.Reserved(c);
@@ -365,7 +377,7 @@ namespace RiwaqChat
                     if (action == "add")
                     {
                         if (string.IsNullOrEmpty(s.WaInstance)) { Web.Error(res, 400, "no_main", "اربط رقم المتجر الأساسي الأول، وبعدين ضيف أرقام تانية."); return; }
-                        if (!WaAccount.IsPlatform(s)) { Web.Error(res, 400, "own_account", "الأرقام الإضافية شغالة مع الربط بالـ QR بس، ورقمك الأساسي مربوط بحساب Wapilot بتاعك."); return; }
+                        if (!WaAccount.IsPlatform(s)) { Web.Error(res, 400, "own_account", "الأرقام الإضافية محتاجة رقمك الأساسي يكون مربوط بالـ QR من هنا. الغي ربطه واربطه تاني بالـ QR."); return; }
                         if (!WaAccount.HasService(s)) { Web.Error(res, 400, "no_service", "خدمة الواتساب مش مفعّلة على متجرك دلوقتي. فعّلها أو جدّدها من «باقتي»."); return; }
                         int have = 1 + WaLines.Extra(c, s.Id);
                         if (have >= WaLines.Max) { Web.Error(res, 400, "too_many", "أقصى عدد " + WaLines.Max + " أرقام للمتجر."); return; }
@@ -446,9 +458,9 @@ namespace RiwaqChat
                     }
                     if (action == "remove")
                     {
-                        // the phone is logged out first, so the number goes back to the pool clean; its chats stay for the history
+                        // the number is let go first (our server deletes it; on Wapilot the phone is logged out); its chats stay for the history
                         if (!string.IsNullOrEmpty(ln.Instance))
-                            try { await Wapilot.Logout(WaAccount.PlatformToken(c), ln.Instance); }
+                            try { await Wapilot.Release(WaAccount.PlatformToken(c), ln.Instance); }
                             catch (WaException ex) { if (ex.Status != 404) Log.Error(ex); }
                         using (var cmd = Db.Cmd(c, "DELETE FROM dbo.WaLines WHERE Id=@id AND StoreId=@s; UPDATE dbo.Stores SET ReportLine=0 WHERE Id=@s AND ReportLine=@id;",
                             "@id", ln.Id, "@s", s.Id)) cmd.ExecuteNonQuery();
@@ -473,7 +485,11 @@ namespace RiwaqChat
         {
             string picked = null, note = null;
             try { picked = await WaLines.AssignFree(c, s.Id, line); }
-            catch (WaException ex) { Log.Error(ex); note = "مقدرناش نجهّز رقم دلوقتي، جرّب كمان شوية."; }
+            catch (WaException ex)
+            {
+                if (ex.Code == "BRIDGE_FULL") { WaAccount.TellAdmin(c, s, WaLines.AskSubject, "(رسالة تلقائية) عايز أربط رقم واتساب إضافي لمتجري، وسيرفر الواتساب مليان."); note = ex.Message; }
+                else { Log.Error(ex); note = ex.Status == 0 ? ex.Message : "مقدرناش نجهّز رقم دلوقتي، جرّب كمان شوية."; }
+            }
             if (picked == null && note == null)
             {
                 WaAccount.TellAdmin(c, s, WaLines.AskSubject, "(رسالة تلقائية) عايز أربط رقم واتساب إضافي لمتجري، ومفيش رقم ربط فاضي دلوقتي.");
@@ -538,6 +554,7 @@ namespace RiwaqChat
                     { "number", l.Number ?? "" }, { "want", l.Want ?? "" }, { "staff", l.Staff ?? "" },
                     { "assigned", !string.IsNullOrEmpty(l.Instance) }, { "linked", l.Linked }, { "live", lv ?? "" },
                     { "works", i < allowed && WaAccount.HasService(s) }, { "status", l.Status ?? "" }, { "lastAt", Iso(l.LastAt) },
+                    { "relink", WaBridge.NeedsQr(l.Status) },   // the phone removed the linked device: scan again
                     { "top", top.HasValue && top.Value == l.Id },
                     { "stats", new Dictionary<string, object> { { "chats", st.Chats }, { "bot", st.Bot }, { "staff", st.Staff }, { "staffChats", st.StaffChats }, { "alerts", st.Alerts } } } });
             }

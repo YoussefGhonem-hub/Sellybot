@@ -63,6 +63,7 @@ namespace RiwaqChat
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(ct))
             {
                 cts.CancelAfter(TimeSpan.FromSeconds(20));
+                if (WaBridge.Is(token)) token = null;   // our WhatsApp server's picture links are signed: no header (its secret stays home)
                 for (int hop = 0, auth = 0; hop < 4; hop++)
                 {
                     var why = Bad(u); if (why != null) return new Got { Why = why };

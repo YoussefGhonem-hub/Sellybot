@@ -61,6 +61,8 @@ namespace RiwaqChat
             new Lane { Name = "cat", Work = (src, ct) => ShopGoods.Run(ct) },
             // «ربط ببرامج تانية»: the webhooks and their retries, what changed in the products; «القياس من السيرفر»: the ad events in batches (claimed in the database)
             new Lane { Name = "links", Work = (src, ct) => ShopApiHooks.Run(ct) },
+            // our own WhatsApp server (WaBridge.cs): its health and every number's state, every 3 minutes; the admin and the owner are told
+            new Lane { Name = "wa", Work = (src, ct) => WaBridge.Watch(ct) },
         };
 
         public static void Start()

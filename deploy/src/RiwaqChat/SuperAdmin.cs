@@ -975,7 +975,7 @@ WHEN NOT MATCHED THEN INSERT (StoreId, PlanId, PlanName, PriceEgp, MonthsUsed, S
                 { "revenueMonth", revMonth }, { "revenueTotal", revTotal }, { "openTickets", openTickets },
                 { "messagesMonth", thisMonth.Messages }, { "costUsdMonth", Math.Round(costUsd, 4) }, { "costEgpMonth", Math.Round(costUsd * rate, 2) },
                 { "profitMonth", Math.Round(revMonth - costUsd * rate, 2) },
-                { "series", series }, { "topStores", top }, { "recentSubs", subs }, { "recentTickets", Tickets(c, "active", 5)["tickets"] }, { "jobs", Jobs.Stats(c) },
+                { "series", series }, { "topStores", top }, { "recentSubs", subs }, { "recentTickets", Tickets(c, "active", 5)["tickets"] }, { "jobs", Jobs.Stats(c) }, { "waBridge", WaBridge.On(c) ? WaBridge.WatchJson(c) : null },
             };
         }
 

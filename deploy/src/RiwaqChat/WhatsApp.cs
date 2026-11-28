@@ -1,5 +1,10 @@
-// WhatsApp through Wapilot (https://wapilot.net, API v2): the store's own WhatsApp number answers customers
-// with the same assistant as the site chat (same data, rules, Shopify tools and monthly quota).
+// WhatsApp: the store's own WhatsApp number answers customers with the same assistant as the site chat (same data, rules,
+// Shopify tools and monthly quota).
+//
+// Since 2026-11-28 the linked-device part is Sellybot's own server (deploy/wa-bridge, Baileys; WaBridge.cs), AppSettings
+// WaProvider = "bridge" (default). Sellybot creates every number on it by itself, and the owner only scans the QR. The class
+// Wapilot below stays the one door every sender uses: with the bridge's token (WaBridge.Is) each call goes to WaBridge, otherwise
+// to the Wapilot API as before (WaProvider = "wapilot", or a store still on its own Wapilot token). What follows describes Wapilot.
 //
 // Two ways to connect (see WaAccount):
 // - Sellybot's account (default): the super admin saves ONE Wapilot token (admin.html → الواتساب) and creates numbers
@@ -106,6 +111,7 @@ namespace RiwaqChat
 
         public static async Task<List<Instance>> Instances(string token)
         {
+            if (WaBridge.Is(token)) return await WaBridge.Instances(token);
             var root = await Call(HttpMethod.Get, "instances", token);
             var list = new List<Instance>();
             JsonElement arr;
@@ -126,6 +132,7 @@ namespace RiwaqChat
         // Live connection state: QR instances have /status; Official ones only the instance details.
         public static async Task<Instance> Status(string token, string instance)
         {
+            if (WaBridge.Is(token)) return await WaBridge.Status(token, instance);
             string id = Uri.EscapeDataString(instance);
             try
             {
@@ -144,6 +151,7 @@ namespace RiwaqChat
         // (already linked, or the session is stopped). Needs a QR instance (not Official).
         public static async Task<string> Qr(string token, string instance)
         {
+            if (WaBridge.Is(token)) return await WaBridge.Qr(token, instance);
             try
             {
                 var r = await Call(HttpMethod.Get, "instances/" + Uri.EscapeDataString(instance) + "/qr-code", token);
@@ -158,8 +166,18 @@ namespace RiwaqChat
         }
 
         // Session controls for QR instances: start (so a QR is produced), logout (unlinks the phone).
-        public static Task Start(string token, string instance) { return Call(HttpMethod.Post, "instances/" + Uri.EscapeDataString(instance) + "/start", token, new Dictionary<string, object>()); }
-        public static Task Logout(string token, string instance) { return Call(HttpMethod.Post, "instances/" + Uri.EscapeDataString(instance) + "/logout", token, new Dictionary<string, object>()); }
+        public static Task Start(string token, string instance) { if (WaBridge.Is(token)) return WaBridge.Start(token, instance); return Call(HttpMethod.Post, "instances/" + Uri.EscapeDataString(instance) + "/start", token, new Dictionary<string, object>()); }
+        public static Task Logout(string token, string instance) { if (WaBridge.Is(token)) return WaBridge.Logout(token, instance); return Call(HttpMethod.Post, "instances/" + Uri.EscapeDataString(instance) + "/logout", token, new Dictionary<string, object>()); }
+
+        // A number the store no longer needs: the bridge deletes it (it made it for this store); on Wapilot the phone is logged out
+        // and the number goes back to the pool.
+        public static Task Release(string token, string instance) { return WaBridge.Is(token) ? WaBridge.Delete(token, instance) : Logout(token, instance); }
+
+        // A new number for a store: only the bridge can make one (Wapilot's numbers are made in its app)
+        public static Task<Instance> Create(string token, string name) { if (!WaBridge.Is(token)) throw new WaException("مفيش رقم ربط فاضي دلوقتي.", 409, "NO_CREATE"); return WaBridge.Create(token, name); }
+
+        // "typing…" while the assistant writes: the bridge only (Wapilot has nothing like it)
+        public static Task Typing(string token, string instance, string chatId) { return WaBridge.Is(token) ? WaBridge.Typing(token, instance, chatId) : Task.CompletedTask; }
 
         // Which send route works for an instance (QR "/{id}/send-message" or Official "/official/{id}/send-message"), learned on first use.
         static readonly ConcurrentDictionary<string, bool> Official = new ConcurrentDictionary<string, bool>();
@@ -167,6 +185,7 @@ namespace RiwaqChat
         // Returns Wapilot's message_id (null when it gives none). The message is only queued at Wapilot: MessageStatus tells if it went out.
         public static Task<string> Send(string token, string instance, string chatId, string text, string idem)
         {
+            if (WaBridge.Is(token)) return WaBridge.Send(token, instance, chatId, text, idem);
             var body = new Dictionary<string, object> { { "chat_id", chatId }, { "text", text } };
             return Queue(token, instance, "send-message", () => new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"), idem);
         }
@@ -174,6 +193,7 @@ namespace RiwaqChat
         // A picture (jpg / png / webp; Wapilot takes up to 10 MB) with an optional caption (Official numbers: up to 1024 characters)
         public static Task<string> SendImage(string token, string instance, string chatId, byte[] image, string contentType, string caption, string idem)
         {
+            if (WaBridge.Is(token)) return WaBridge.SendImage(token, instance, chatId, image, contentType, caption, idem);
             string ext = contentType == "image/png" ? "png" : contentType == "image/webp" ? "webp" : "jpg";
             return Queue(token, instance, "send-image", () =>
             {
@@ -212,6 +232,7 @@ namespace RiwaqChat
         public class Sent { public string Status, Error; }
         public static async Task<Sent> MessageStatus(string token, string instance, string messageId)
         {
+            if (WaBridge.Is(token)) return await WaBridge.MessageStatus(token, instance, messageId);
             bool official;
             string path = (Official.TryGetValue(instance, out official) && official ? "official/" : "") + Uri.EscapeDataString(instance) + "/messages/" + Uri.EscapeDataString(messageId);
             JsonElement r;
@@ -228,6 +249,7 @@ namespace RiwaqChat
         // Reply buttons exist only on Official (Meta) numbers. True when sent, false when the number is a QR one (send text instead).
         public static async Task<bool> TrySendButtons(string token, string instance, string chatId, string body, string[][] buttons, string idem)
         {
+            if (WaBridge.Is(token)) return false;   // a linked device has no reply buttons: the text with 1 / 2 goes instead
             bool official;
             if (!Official.TryGetValue(instance, out official) || !official) return false;
             var btns = buttons.Select(b => new Dictionary<string, object> { { "id", b[0] }, { "title", b[1] } }).ToList();
@@ -240,6 +262,7 @@ namespace RiwaqChat
         static readonly ConcurrentDictionary<string, string> Lids = new ConcurrentDictionary<string, string>();
         public static async Task<string> LidPhone(string token, string instance, string lid)
         {
+            if (WaBridge.Is(token)) return await WaBridge.LidPhone(token, instance, lid);
             string hit;
             if (Lids.TryGetValue(lid, out hit)) return hit;
             try
@@ -304,7 +327,12 @@ namespace RiwaqChat
     {
         public static bool IsPlatform(StoreInfo s) { return s != null && string.IsNullOrEmpty(s.WaToken) && !string.IsNullOrEmpty(s.WaInstance); }
 
-        public static string PlatformToken(SqlConnection c) { var box = Billing.Get(c, "WaPlatformToken"); return string.IsNullOrEmpty(box) ? null : Secrets.Unprotect(box); }
+        // Sellybot's own account: the bridge (WaBridge.Token, the default) or the Wapilot token. null = not set up yet.
+        public static string PlatformToken(SqlConnection c)
+        {
+            if (WaBridge.On(c)) return WaBridge.Token(c);
+            var box = Billing.Get(c, "WaPlatformToken"); return string.IsNullOrEmpty(box) ? null : Secrets.Unprotect(box);
+        }
 
         public static string PlatformHookKey(SqlConnection c, bool create)
         {
@@ -327,7 +355,7 @@ namespace RiwaqChat
 
         // Wapilot session states (WAHA-style): WORKING = a phone is linked; STOPPED/FAILED = needs a start to show a QR
         public static bool Linked(string upper) { return upper == "WORKING" || upper == "CONNECTED" || upper == "AUTHENTICATED" || upper == "OPEN" || upper == "READY"; }
-        public static bool Stopped(string upper) { return upper == "STOPPED" || upper == "FAILED" || upper == "DISCONNECTED" || upper == "CLOSED" || upper == ""; }
+        public static bool Stopped(string upper) { return upper == "STOPPED" || upper == "FAILED" || upper == "DISCONNECTED" || upper == "CLOSED" || upper == "LOGGED_OUT" || upper == ""; }
 
         // ---------- the WhatsApp service: its own monthly subscription (AppSettings "WaAddonPrice", 300 EGP by default) ----------
         // While Stores.WaUntil is in the future the store may take a number, and the bot, order confirmations, delivery messages and
@@ -397,8 +425,15 @@ namespace RiwaqChat
                 { "inPlan", !s.IsAdmin && Billing.WaInPlan(s) }, { "planName", s.PlanName ?? "" },
                 { "price", ServicePrice(c) }, { "days", ServiceDays }, { "planRunning", s.PlanId.HasValue && !Billing.Expired(s) },
                 { "connected", !string.IsNullOrEmpty(s.WaInstance) }, { "pending", pending }, { "number", s.WaNumber ?? "" },   // the linked phone, filled in on a renewal
+                // a number whose phone removed the linked device: a banner on every dashboard page until it's scanned again (WaBridge)
+                { "relink", WaBridge.NeedsQr(s.WaStatus) || RelinkLines(c, s.Id) > 0 },
                 // this calendar month on WhatsApp: the assistant's replies, and the customers who wrote
                 { "replies", replies }, { "chats", chats } };
+        }
+
+        static int RelinkLines(SqlConnection c, int storeId)
+        {
+            using (var cmd = Db.Cmd(c, "SELECT COUNT(*) FROM dbo.WaLines WHERE StoreId=@s AND Status=@t", "@s", storeId, "@t", WaBridge.LostText)) return (int)cmd.ExecuteScalar();
         }
 
         // "paid" (default): a store with the WhatsApp service takes a free number by itself; "off": the admin assigns every number.
@@ -427,7 +462,18 @@ namespace RiwaqChat
         public static async Task<string> AssignFree(SqlConnection c, int storeId)
         {
             var token = PlatformToken(c);
-            if (token == null || AutoAssign(c) == "off") return null;
+            if (token == null) return null;
+            // our own server: a new number made for this store, nothing to pick from (and nobody to wait for)
+            if (WaBridge.Is(token))
+            {
+                var made = await Wapilot.Create(token, "store " + storeId + " main");
+                int got;
+                using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=@i, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=1, WaLastAt=NULL
+                    WHERE Id=@s AND WaInstance IS NULL", "@i", made.Id, "@s", storeId)) got = cmd.ExecuteNonQuery();
+                if (got == 0) { try { await WaBridge.Delete(token, made.Id); } catch (WaException) { } return null; }   // a second press a moment ago took one
+                return made.Id;
+            }
+            if (AutoAssign(c) == "off") return null;
             var all = await Wapilot.Instances(token);
             var taken = WaLines.Taken(c);   // stores' main numbers and their extra ones (WaLines.cs)
             var reserved = Reserved(c);
@@ -729,6 +775,9 @@ ELSE
                         + Carts.Note(c, s.Id, chatKey) + Handoff.Note(c, s.Id, chatKey);
                 }
 
+                // "typing…" on the customer's phone while the assistant writes (our own server only)
+                if (WaBridge.Is(token)) { var tk = token; var fr = from; var ch = chat; var _ = Task.Run(async () => { try { await Wapilot.Typing(tk, fr, ch); } catch (WaException) { } }); }
+
                 // the pictures in the customer's newest turn (newest first, up to 3)
                 var imgs = new Dictionary<long, ImageBlockParam>();
                 foreach (var x in rows.TakeWhile(x => x.Customer).Where(x => x.Media != null).Take(WaImages.MaxPerTurn))
@@ -843,7 +892,8 @@ ELSE
         }
     }
 
-    // api/wa-webhook.ashx?store=<slug>&key=<secret> — Wapilot calls this for every WhatsApp message.
+    // api/wa-webhook.ashx?src=bridge — our own WhatsApp server posts every message and connection change here, signed (WaBridge.Webhook).
+// api/wa-webhook.ashx?store=<slug>&key=<secret> / ?key=<platform secret> — the same from Wapilot (WaProvider = "wapilot").
     public class WhatsAppWebhookHandler : IHttpHandler
     {
         static DateTime lastShapeLog = DateTime.MinValue;
@@ -859,6 +909,8 @@ ELSE
             {
                 using (var c = Db.Open())
                 {
+                    // our own server (WaBridge.cs): a signed body, routed by instance_id
+                    if (req.QueryString["src"] == "bridge" || req.Headers["X-Bridge-Signature"] != null) { WaBridge.Webhook(ctx, c); return; }
                     // two kinds of URL: ?store=<slug>&key=<store secret> (owner's own Wapilot account),
                     // or ?key=<platform secret> (Sellybot's account: every number posts here, routed by instance_id)
                     bool platform = slug.Length == 0;
@@ -939,6 +991,8 @@ ELSE
 
                     if (action == "connect")
                     {
+                        // the owner's own Wapilot account: only while Sellybot itself is on Wapilot (WaProvider = "wapilot")
+                        if (WaBridge.On(c)) { Web.Error(res, 400, "bad_action"); return; }
                         string token = (Web.Str(body, "token", 600) ?? "").Trim(), pick = (Web.Str(body, "instance", 150) ?? "").Trim();
                         if (token.Length == 0 && !string.IsNullOrEmpty(s.WaToken)) token = Secrets.Unprotect(s.WaToken) ?? "";   // choosing another number later
                         if (token.Length < 10 || token.Length > 600 || token.Contains(" ")) { Web.Error(res, 400, "bad_token", "الـ API token مش مظبوط. انسخه زي ما هو من Wapilot."); return; }
@@ -972,7 +1026,12 @@ ELSE
                         if (why != null) { Web.Error(res, 400, "not_available", why); return; }
                         string picked;
                         try { picked = await WaAccount.AssignFree(c, s.Id); }
-                        catch (WaException ex) { Log.Error(ex); Web.Error(res, 400, "wapilot", "مقدرناش نجهّز رقم دلوقتي، جرّب كمان شوية."); return; }
+                        catch (WaException ex)
+                        {
+                            // our server is full: the admin gets a ticket (like an empty pool on Wapilot), the owner the plain reason
+                            if (ex.Code == "BRIDGE_FULL") { WaAccount.AskAdmin(c, s); Web.Error(res, 409, "no_free_number", ex.Message); return; }
+                            Log.Error(ex); Web.Error(res, 400, "wapilot", ex.Status == 0 ? ex.Message : "مقدرناش نجهّز رقم دلوقتي، جرّب كمان شوية."); return;
+                        }
                         if (picked == null)
                         {
                             WaAccount.AskAdmin(c, s);
@@ -1073,9 +1132,9 @@ ELSE
                     {
                         // the extra numbers (WaLines.cs) lean on the main one: they go first
                         if (WaLines.Extra(c, s.Id) > 0) { Web.Error(res, 400, "has_lines", "عندك أرقام واتساب إضافية مربوطة. شيلها الأول من «أرقام الواتساب والفريق»، وبعدين الغي ربط الرقم الأساسي."); return; }
-                        // on Sellybot's account the phone is logged out first, so the number goes back to the pool clean
+                        // on Sellybot's account the number is let go: our server deletes it, on Wapilot the phone is logged out first
                         if (platformMode)
-                            try { await Wapilot.Logout(WaAccount.PlatformToken(c), s.WaInstance); }
+                            try { await Wapilot.Release(WaAccount.PlatformToken(c), s.WaInstance); }
                             catch (WaException ex) { if (ex.Status != 404) Log.Error(ex); }
                         using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaToken=NULL, WaHookKey=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE Id=@s;
                             DELETE FROM dbo.WaMessages WHERE StoreId=@s;", "@s", s.Id)) cmd.ExecuteNonQuery();
@@ -1110,6 +1169,7 @@ ELSE
                 return d;
             }
             d["instance"] = s.WaInstance; d["number"] = s.WaNumber ?? ""; d["enabled"] = s.WaEnabled;
+            d["relink"] = WaBridge.NeedsQr(s.WaStatus);   // the phone removed the linked device: one button shows a new QR
             d["status"] = s.WaStatus ?? ""; d["lastAt"] = s.WaLastAt.HasValue ? s.WaLastAt.Value.ToString("o") : "";
             if (!platform) d["webhookUrl"] = HookUrl(req, s);
             d["pauseHours"] = WhatsAppBot.PauseHours;
@@ -1135,7 +1195,8 @@ ELSE
         }
     }
 
-    // api/wa-admin.ashx — super admin: Sellybot's Wapilot account (token, webhook) and which number belongs to which store.
+    // api/wa-admin.ashx — super admin «سيرفر الواتساب»: our own server's address and secret (?action=bridge, «جرّب الاتصال» = bridge-test),
+    // its health, and which number belongs to which store. With WaProvider = "wapilot" the old Wapilot token / webhook actions work as before.
     public class WhatsAppAdminHandler : HttpTaskAsyncHandler
     {
         public override bool IsReusable { get { return true; } }
@@ -1159,6 +1220,29 @@ ELSE
                     string action = (req.QueryString["action"] ?? "").ToLowerInvariant();
                     var b = Web.Body(req, 4000);
 
+                    // ---------- our own WhatsApp server (WaBridge.cs) ----------
+                    if (action == "bridge")
+                    {
+                        string url = WaBridge.CleanUrl(Web.Str(b, "url", 300)), secret = (Web.Str(b, "secret", 300) ?? "").Trim();
+                        if (url == null) { Web.Error(res, 400, "bad_url", "العنوان مش مظبوط. اكتبه كده: https://wa.sellybot.online"); return; }
+                        if (secret.Length == 0) secret = WaBridge.Secret(c) ?? "";   // changing only the address keeps the saved secret
+                        if (!WaBridge.GoodSecret(secret)) { Web.Error(res, 400, "bad_secret", "المفتاح مش مظبوط: لازم يكون من 32 حرف أو أكتر (حروف إنجليزي وأرقام و - و _)، من غير مسافات."); return; }
+                        Billing.Set(c, "WaBridgeUrl", url);
+                        Billing.Set(c, "WaBridgeSecret", Secrets.Protect(secret));
+                        var d = await State(c, req);
+                        d["test"] = await WaBridge.Test(url, secret);
+                        Web.Json(res, 200, d);
+                        return;
+                    }
+                    if (action == "bridge-test")
+                    {
+                        var secret = WaBridge.Secret(c);
+                        if (secret == null) { Web.Error(res, 400, "no_secret", "احفظ مفتاح السيرفر الأول."); return; }
+                        var d = await State(c, req);
+                        d["test"] = await WaBridge.Test(WaBridge.Url(c), secret);
+                        Web.Json(res, 200, d);
+                        return;
+                    }
                     if (action == "token")
                     {
                         string token = (Web.Str(b, "token", 600) ?? "").Trim();
@@ -1216,7 +1300,18 @@ ELSE
                     }
 
                     var token2 = WaAccount.PlatformToken(c);
-                    if (token2 == null) { Web.Error(res, 400, "no_token", "حط الـ API token بتاع حساب Wapilot الأول."); return; }
+                    if (token2 == null) { Web.Error(res, 400, "no_token", WaBridge.On(c) ? "احفظ عنوان سيرفر الواتساب ومفتاحه الأول." : "حط الـ API token بتاع حساب Wapilot الأول."); return; }
+
+                    if (action == "delete")
+                    {
+                        // a number on our server that no store holds (left over after a store let it go): deleted from the server
+                        var inst = (Web.Str(b, "instance", 150) ?? "").Trim();
+                        if (inst.Length == 0 || !WaBridge.Is(token2)) { Web.Error(res, 400, "bad_request"); return; }
+                        if (WaLines.Taken(c).Contains(inst)) { Web.Error(res, 400, "taken", "الرقم ده مع متجر. فكّه من المتجر الأول."); return; }
+                        try { await WaBridge.Delete(token2, inst); } catch (WaException ex) { Web.Error(res, 400, "bridge", ex.Message); return; }
+                        Web.Json(res, 200, await State(c, req));
+                        return;
+                    }
 
                     if (action == "assign")
                     {
@@ -1228,7 +1323,7 @@ ELSE
                         try { all = await Wapilot.Instances(token2); }
                         catch (WaException ex) { Web.Error(res, 400, "wapilot", ex.Message); return; }
                         var i = all.FirstOrDefault(x => string.Equals(x.Id, inst, StringComparison.OrdinalIgnoreCase));
-                        if (i == null) { Web.Error(res, 400, "not_found", "الرقم ده مش موجود على حساب Wapilot."); return; }
+                        if (i == null) { Web.Error(res, 400, "not_found", WaBridge.Is(token2) ? "الرقم ده مش موجود على سيرفر الواتساب." : "الرقم ده مش موجود على حساب Wapilot."); return; }
                         bool linked = WaAccount.Linked((i.Status ?? "").ToUpperInvariant());
                         // extra: to the store's oldest extra number still waiting for one (WaLines.cs), not its main number
                         object ex0; bool extra = b.TryGetValue("extra", out ex0) && ex0 is bool && (bool)ex0;
@@ -1259,7 +1354,8 @@ ELSE
                         if (inst.Length == 0) { Web.Error(res, 400, "bad_request"); return; }
                         using (var cmd = Db.Cmd(c, @"UPDATE dbo.Stores SET WaInstance=NULL, WaNumber=NULL, WaStatus=NULL, WaEnabled=0, WaLastAt=NULL WHERE WaInstance=@i AND WaToken IS NULL;
                             UPDATE dbo.WaLines SET Instance=NULL, Number=NULL, Status=NULL WHERE Instance=@i;", "@i", inst)) cmd.ExecuteNonQuery();
-                        if (logout) try { await Wapilot.Logout(token2, inst); } catch (WaException ex) { if (ex.Status != 404) { Web.Error(res, 400, "wapilot", ex.Message); return; } }
+                        // logout: on our server the number is deleted (nobody else would use it), on Wapilot the phone is logged out
+                        if (logout) try { await Wapilot.Release(token2, inst); } catch (WaException ex) { if (ex.Status != 404) { Web.Error(res, 400, "wapilot", ex.Message); return; } }
                         Web.Json(res, 200, await State(c, req));
                         return;
                     }
@@ -1273,7 +1369,8 @@ ELSE
         static async Task<Dictionary<string, object>> State(SqlConnection c, HttpRequest req)
         {
             var token = WaAccount.PlatformToken(c);
-            var d = new Dictionary<string, object> { { "tokenSet", token != null }, { "autoAssign", WaAccount.AutoAssign(c) },
+            bool bridge = WaBridge.On(c);
+            var d = new Dictionary<string, object> { { "tokenSet", token != null }, { "autoAssign", WaAccount.AutoAssign(c) }, { "provider", bridge ? "bridge" : "wapilot" },
                 { "price", WaAccount.ServicePrice(c) }, { "multiPrice", WaLines.MultiPrice(c) }, { "days", WaAccount.ServiceDays } };
             // every store, for the "assign to" list, with what it uses now and until when its WhatsApp service runs
             var stores = new List<Dictionary<string, object>>();
@@ -1305,11 +1402,14 @@ ELSE
                     int sid = (int)r["StoreId"]; int k; lineCount.TryGetValue(sid, out k); lineCount[sid] = ++k;
                     var st = stores.FirstOrDefault(x => (int)x["id"] == sid);
                     if (st == null || r["Instance"] == DBNull.Value) continue;
-                    byInstance[(string)r["Instance"]] = new Dictionary<string, object>(st) { { "name", (string)r["Name"] + " (رقم إضافي " + (k + 1) + ")" }, { "line", (int)r["Id"] } };
+                    // a copy of the store's row with this number's own name (set by index: the copy has "name" already)
+                    var ln = new Dictionary<string, object>(st); ln["name"] = (string)r["Name"] + " (رقم إضافي " + (k + 1) + ")"; ln["line"] = (int)r["Id"];
+                    byInstance[(string)r["Instance"]] = ln;
                 }
             foreach (var st in stores) { int k; lineCount.TryGetValue((int)st["id"], out k); st["extra"] = k; }
+            if (bridge) d["bridge"] = new Dictionary<string, object> { { "url", WaBridge.Url(c) }, { "secretSet", token != null }, { "watch", WaBridge.WatchJson(c) } };
             if (token == null) return d;
-            d["webhookUrl"] = WaAccount.PlatformHookUrl(req, c);
+            if (!bridge) d["webhookUrl"] = WaAccount.PlatformHookUrl(req, c);
             // tickets from owners who found no free number (for their main number, or an extra one)
             using (var cmd = Db.Cmd(c, @"SELECT t.Id, t.StoreId, s.Name, t.CreatedAt, t.Subject FROM dbo.Tickets t JOIN dbo.Stores s ON s.Id=t.StoreId
                 WHERE t.Status<>'closed' AND ((t.Subject=@sub AND s.WaInstance IS NULL)

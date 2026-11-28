@@ -48,6 +48,8 @@ namespace RiwaqChat
             if (string.IsNullOrEmpty(url) || url.Length > 800 || !Uri.TryCreate(url, UriKind.Absolute, out u)) return false;
             Uri testBase;
             if (Uri.TryCreate(Web.Setting("WapilotBase", "") ?? "", UriKind.Absolute, out testBase) && testBase.IsLoopback && u.IsLoopback && u.Port == testBase.Port) return true;
+            // tests: our WhatsApp server running on this machine (web.config WaBridgeLocal = its http://127.0.0.1:<port>)
+            if (Uri.TryCreate(Web.Setting("WaBridgeLocal", "") ?? "", UriKind.Absolute, out testBase) && testBase.IsLoopback && u.IsLoopback && u.Port == testBase.Port) return true;
             if (u.Scheme != "https" || u.IsLoopback || u.HostNameType == UriHostNameType.IPv6) return false;
             IPAddress ip;
             if (IPAddress.TryParse(u.Host, out ip))
@@ -62,6 +64,7 @@ namespace RiwaqChat
         public static async Task<ImageBlockParam> Load(string url, string token)
         {
             if (!SafeUrl(url)) return null;
+            if (WaBridge.Is(token)) token = null;   // our server's links are signed and expire: they need no header (and its secret stays home)
             for (int attempt = 0; attempt < 2; attempt++)
             {
                 try

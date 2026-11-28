@@ -129,7 +129,7 @@ namespace RiwaqChat
                 {
                     foreach (var t in tgTokens) try { await Tg.Call(t, "deleteWebhook"); } catch (Exception ex) { if (!(ex is TgException)) Log.Error(ex); }
                     foreach (var m in meta) try { await MetaApp.Call(HttpMethod.Delete, Uri.EscapeDataString(m[0]) + "/subscribed_apps", m[1], m[2]); } catch (Exception ex) { if (!(ex is MetaException)) Log.Error(ex); }
-                    if (waToken != null) foreach (var i in waInst.Distinct()) try { await Wapilot.Logout(waToken, i); } catch (Exception ex) { if (!(ex is WaException)) Log.Error(ex); }
+                    if (waToken != null) foreach (var i in waInst.Distinct()) try { await Wapilot.Release(waToken, i); } catch (Exception ex) { if (!(ex is WaException)) Log.Error(ex); }
                 });
 
             return new Dictionary<string, object> { { "ok", true }, { "stores", g.Select(x => x.Name).ToList() }, { "shops", shopSlugs } };
