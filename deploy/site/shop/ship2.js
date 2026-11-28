@@ -9,7 +9,8 @@ let L = null, LG = 0, N = 0;   /* the days for governorate LG */
 const gov = () => +S.co.gov || 0, covered = () => DY && !S.co.branch && gov() > 0 && (!DY.govs.length || DY.govs.includes(gov()));
 const cityOf = () => { const c = S.co, g = W.gov && W.gov(); return c.city && g && !g.c.includes(c.city) ? (c.cityT || "").trim() : c.city || ""; };
 /* what the sum and the order carry (core.js how()) */
-W.how2 = () => { const o = {}; if (RT) o.cq = cityOf(); if (PK && !S.co.branch && S.co.car) o.car = S.co.car; if (covered() && S.co.day) { o.day = S.co.day; if (DY.parts && S.co.dpart) o.dpart = S.co.dpart; } return o; };
+/* the city goes with the sum for the fee by city, and for the companies (one may not deliver to that city: CarrierAreas.Delivers) */
+W.how2 = () => { const o = {}; if (RT || PK) o.cq = cityOf(); if (PK && !S.co.branch && S.co.car) o.car = S.co.car; if (covered() && S.co.day) { o.day = S.co.day; if (DY.parts && S.co.dpart) o.dpart = S.co.dpart; } return o; };
 
 async function load(force) {
   const g = gov(); if (!covered() || (!force && L && LG === g)) return; const n = ++N;
@@ -26,8 +27,10 @@ const draw = () => { const e = $("ddw"); if (e) e.outerHTML = box(); else if (co
 const ways = () => PK && !S.co.branch && gov() > 0 && S.q && S.q.copts && S.q.copts.length > 1 ? S.q.copts : null;
 const carBox = () => {
   const l = ways(); if (!PK || S.co.branch) return ""; if (!l) return '<div id="cpw"></div>';
-  if (!l.some(o => o.k === S.co.car)) S.co.car = S.q.car || l[0].k;
-  const fee = o => o.free ? _("ببلاش", "Free") : W.m(o.fee);
+  /* the server's own pick (the first way, or another when the customer's went away): the sum was worked out for it, but the
+     page's key now carries the company, so the sum is asked again; else every template's delivery step waits with an empty fee */
+  if (!l.some(o => o.k === S.co.car)) { S.co.car = S.q.car || l[0].k; setTimeout(() => W.requote(true), 0); }
+  const fee = o => o.free || !o.fee ? _("ببلاش", "Free") : W.m(o.fee);
   return `<div class="sec cpw" id="cpw"><h2>${_("هتستلم مع مين؟", "Who delivers it?")}</h2><div class="cpg" role="radiogroup" aria-label="${_("شركة الشحن", "Delivery company")}">${l.map(o => { const on = o.k === S.co.car; return `<button type="button" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}" data-a="cpick:${esc(o.k)}"><b>${esc(_(o.n))}</b><span class="cpf">${fee(o)}</span>${o.d ? `<small>${_(`بيوصلك خلال ${esc(o.d)} يوم`, `Arrives in ${esc(o.d)} days`)}</small>` : ""}</button>`; }).join("")}</div><span class="err" id="e-car" role="alert"></span></div>`;
 };
 const drawCar = () => { const e = $("cpw"); if (e) { const f = D.activeElement && e.contains(D.activeElement); e.outerHTML = carBox(); if (f) { const b = D.querySelector("#cpw [aria-checked=true]"); if (b) b.focus(); } } };
@@ -40,7 +43,7 @@ if (PK && A.place) { const p1 = A.place; A.place = async () => { const l = ways(
 const fb = W.formBits, w0 = fb.where; fb.where = () => w0() + carBox() + box();
 A.dday = v => { S.co.day = S.co.day === v && !DY.must ? "" : v; draw(); };
 A.dpart = v => { S.co.dpart = S.co.dpart === v && !DY.must ? "" : v; draw(); };
-if (CH) { const g0 = CH.gov, c0 = CH.city; CH.gov = v => { S.co.day = ""; S.co.dpart = ""; L = null; g0(v); }; CH.city = v => { c0(v); if (RT) W.requote(true); }; }
+if (CH) { const g0 = CH.gov, c0 = CH.city; CH.gov = v => { S.co.day = ""; S.co.dpart = ""; L = null; g0(v); }; CH.city = v => { c0(v); if (RT || PK) W.requote(true); }; }
 /* the day first, when the store asks for one; after a refusal the days are asked again (one may have filled up) */
 if (DY && A.place) { const p0 = A.place; A.place = async () => {
   if (covered() && L && L.length && DY.must && (!S.co.day || (DY.parts && !S.co.dpart))) { const e = $("e-day"); if (e) { e.textContent = !S.co.day ? _("اختار يوم التوصيل", "Choose the delivery day") : _("اختار الصبح ولا بالليل", "Choose morning or evening"); $("ddw").scrollIntoView({ block: "center" }); } return; }
