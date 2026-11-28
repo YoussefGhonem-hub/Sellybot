@@ -2,7 +2,7 @@
 module.exports = {
   apps: [{
     name: 'wa-bridge',
-    script: 'src/server.mjs',
+    script: 'src/main.mjs',
     cwd: __dirname,
     node_args: '--max-old-space-size=512',
     env: { NODE_ENV: 'production', ENV_FILE: '/opt/wa-bridge/.env' },

@@ -4,12 +4,12 @@
   "private": true,
   "description": "Sellybot's own WhatsApp linked-device server (one Baileys connection per number)",
   "type": "module",
-  "main": "src/server.mjs",
+  "main": "src/main.mjs",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "start": "node src/server.mjs",
+    "start": "node src/main.mjs",
     "test": "node --test \"test/*.test.mjs\""
   },
   "license": "UNLICENSED",
