@@ -342,6 +342,8 @@ namespace RiwaqChat
                 case "ad-copy": return ShopPromo.AdCopy(c, s, sh, b, res);
                 case "bot-test": return ShopBot.Test(c, s, sh, res);
                 case "translate": return ShopTranslate.Run(c, s, sh, b, res);
+                case "fill": return ShopFill.Fill(c, s, sh, b, res);       // «جهّزلي متجري من حسابي»: suggestions only
+                case "cats-ai": return ShopFill.Cats(c, s, sh, b, res);    // «رتّب منتجاتك في أقسام»: suggestions only
                 case "translate-save": Ok(res, "done", ShopTranslate.Save(c, sh, b)); return null;
                 default: { Func<Task> later; if (!ShopDesk.Post(c, s, sh, a, b, res, out later)) Web.Error(res, 404, "not_found"); return later; }
             }
