@@ -77,9 +77,9 @@ fi
 
 say "8. the .env with the secret: made once, readable only by $USER_NAME"
 if [ ! -f $APP_ROOT/.env ]; then
-  umask 077
-  SECRET=$(openssl rand -base64 64 | tr -dc 'A-Za-z0-9' | cut -c1-48)
-  cat > $APP_ROOT/.env <<EOF
+  ( umask 077   # only for this file: a umask left on would make the global npm installs below unreadable to the bridge's user
+    SECRET=$(openssl rand -base64 64 | tr -dc 'A-Za-z0-9' | cut -c1-48)
+    cat > $APP_ROOT/.env <<EOF
 BRIDGE_SECRET=$SECRET
 WEBHOOK_URL=https://sellybot.online/api/wa-webhook.ashx?src=bridge
 PUBLIC_URL=https://$DOMAIN
@@ -88,12 +88,13 @@ HOST=127.0.0.1
 PORT=3100
 MAX_INSTANCES=25
 EOF
-  unset SECRET
+  )
 fi
 chown $USER_NAME:$USER_NAME $APP_ROOT/.env; chmod 600 $APP_ROOT/.env
 
 say "9. pm2 (one process, starts on boot) + log rotation"
-npm install -g --no-fund --no-audit "pm2@$PM2_VERSION" >/dev/null
+( umask 022; npm install -g --no-fund --no-audit "pm2@$PM2_VERSION" >/dev/null )
+chmod -R a+rX "$(npm root -g)/pm2"
 env PATH="$PATH" pm2 startup systemd -u $USER_NAME --hp /home/$USER_NAME >/dev/null
 sudo -u $USER_NAME -H pm2 install pm2-logrotate >/dev/null 2>&1 || true
 sudo -u $USER_NAME -H pm2 set pm2-logrotate:max_size 10M >/dev/null
