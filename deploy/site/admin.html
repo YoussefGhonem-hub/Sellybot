@@ -1062,6 +1062,17 @@
             <div class="calc" id="jbRows"></div>
             <div class="row" style="margin-top:12px"><button class="btn ghost sm" type="button" id="jbAgain">حدّث</button></div>
           </div>
+          <div class="card anim" id="apCard" style="animation-delay:.08s">
+            <div class="row"><h3>🍎 إشعارات iPhone (تطبيق الأدمن)</h3><span class="space"></span><span class="pill" id="apPill">…</span></div>
+            <p class="sub">علشان تطبيق Sellybot على الـ iPhone يوصله إشعار وهو مقفول، السيرفر بيبعت لـ Apple مباشرة بمفتاح APNs: ملف ‎.p8 من حساب Apple Developer (Keys). المفتاح بيتحفظ هنا ومابيرجعش لأي حد، ولا حتى للصفحة دي.</p>
+            <label for="apFile">ملف المفتاح (‎.p8)</label><input type="file" id="apFile" accept=".p8">
+            <label for="apKey">Key ID</label><input type="text" id="apKey" class="ltr" maxlength="10" placeholder="بيتكتب لوحده من اسم الملف AuthKey_XXXXXXXXXX.p8">
+            <label for="apTeam">Team ID</label><input type="text" id="apTeam" class="ltr" maxlength="10" placeholder="من Membership في حساب Apple Developer">
+            <label for="apBundle">Bundle ID</label><input type="text" id="apBundle" class="ltr" placeholder="online.sellybot.app">
+            <div class="hint" id="apLast"></div>
+            <div class="msg" id="apMsg"></div>
+            <div class="row" style="margin-top:12px"><button class="btn" type="button" id="apSave">احفظ</button><button class="btn ghost" type="button" id="apTest" hidden>ابعت إشعار تجربة</button><button class="btn ghost" type="button" id="apDel" hidden>شيل المفتاح</button></div>
+          </div>
           <form class="card anim" id="pwForm" style="animation-delay:.1s">
             <h3>باسورد الإدارة</h3>
             <p class="sub">غيّر الباسورد الافتراضي بباسورد قوي محدش يعرفه.</p>
@@ -2770,8 +2781,38 @@
   $("jbAgain").onclick = async function () { busy(this, true); await loadJobs(); busy(this, false); };
 
   // ---------- settings ----------
+  // ---------- «🍎 إشعارات iPhone»: Apple's push key for the admin app (Apns.cs); the key goes up once and never comes back ----------
+  async function loadApns() {
+    var a; try { a = await api("apns"); } catch (e) { $("apPill").textContent = "—"; return; }
+    $("apPill").className = "pill" + (a.configured ? " ok" : "");
+    $("apPill").textContent = a.configured ? "متفعّلة · " + fmt(a.devices) + " iPhone" : a.hasKey ? "ناقصها Key ID أو Team ID" : "مش متفعّلة";
+    $("apKey").value = a.keyId || ""; $("apTeam").value = a.teamId || ""; $("apBundle").value = a.bundle || "";
+    $("apTest").hidden = !a.configured; $("apDel").hidden = !a.hasKey;
+    var l = (a.last || "").split("|");
+    $("apLast").textContent = a.hasKey ? (l[0] ? "آخر إرسال " + ago(l[1]) + ": " + (l[0] === "ok" ? "Apple استلمه ✓" : "Apple رفضه (" + l[0].replace(/^error: ?/, "") + ")") : "المفتاح محفوظ. ارفع ملف جديد بس لو عايز تغيّره.") : "";
+  }
+  $("apFile").onchange = function () { var f = this.files[0]; var m = f && /AuthKey_([A-Z0-9]{10}).p8$/i.exec(f.name); if (m) $("apKey").value = m[1].toUpperCase(); };
+  $("apSave").onclick = async function () {
+    var btn = this; busy(btn, true); setMsg($("apMsg"), "");
+    try {
+      var f = $("apFile").files[0], key = f ? await f.text() : "";
+      await api("apns", { key: key, keyId: $("apKey").value.trim(), teamId: $("apTeam").value.trim(), bundle: $("apBundle").value.trim() });
+      $("apFile").value = ""; toast("اتحفظ ✓"); loadApns();
+    } catch (e) { setMsg($("apMsg"), e.message); } finally { busy(btn, false); }
+  };
+  $("apTest").onclick = async function () {
+    var btn = this; busy(btn, true); setMsg($("apMsg"), "");
+    try {
+      var r = await api("apns-test", {}), ok = r.results.every(function (x) { return x.ok; });
+      setMsg($("apMsg"), r.results.map(function (x) { return x.name + ": " + (x.ok ? "وصل ✓" : "Apple رفضه (" + x.reason + ")"); }).join(" · "), ok); loadApns();
+    } catch (e) { setMsg($("apMsg"), e.message); } finally { busy(btn, false); }
+  };
+  $("apDel").onclick = async function () {
+    if (!(await sbConfirm("إشعارات iPhone هتوقف لحد ما ترفع المفتاح تاني. أندرويد مش هيتأثر.", { title: "تشيل مفتاح Apple؟", ok: "شيله", no: "سيبه", danger: true }))) return;
+    try { await api("apns", { clear: true }); toast("اتشال المفتاح"); loadApns(); } catch (e) { toast(e.message, true); }
+  };
   async function loadSettings() {
-    loadJobs();
+    loadJobs(); loadApns();
     try {
       var s = await api("settings");
       $("sRate").value = s.usdRate; $("sWa").value = s.whatsapp; $("sUs").value = s.unitsSmall; $("sUm").value = s.unitsMedium; $("sUl").value = s.unitsLarge;
