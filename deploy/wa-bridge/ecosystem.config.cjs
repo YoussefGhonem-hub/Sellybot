@@ -9,6 +9,6 @@ module.exports = {
     max_memory_restart: '700M',
     kill_timeout: 8000,            // time to close every connection cleanly (the logins stay)
     exp_backoff_restart_delay: 2000,
-    time: true,
+    time: false,                   // our own lines carry the time already
   }],
 };

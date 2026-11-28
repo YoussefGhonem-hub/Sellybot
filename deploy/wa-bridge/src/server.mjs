@@ -111,7 +111,7 @@ export function createBridge(cfg, { makeSocket, fetchFn, log = makeLog('info') }
       for (const [method, rx, fn, open, limit] of routes) {
         const m = rx.exec(url.pathname);
         if (!m) continue;
-        if (req.method !== method) continue;
+        if (req.method !== method && !(req.method === 'HEAD' && method === 'GET' && open)) continue;   // HEAD /health for uptime monitors
         if (!open) {
           if (tooManyFails(ip)) return json(res, 429, { code: 'TOO_MANY_TRIES', message: 'too many wrong secrets, wait 10 minutes' });
           if (!authOk(req)) { failed(ip); log.warn('wrong secret', { ip, path: url.pathname.split('/').slice(0, 2).join('/') }); return json(res, 401, { code: 'UNAUTHORIZED', message: 'wrong or missing secret' }); }

@@ -25,7 +25,7 @@ export function loadConfig(env = process.env) {
     webhookUrl: e.WEBHOOK_URL || 'https://sellybot.online/api/wa-webhook.ashx?src=bridge',
     publicUrl: (e.PUBLIC_URL || 'https://wa.sellybot.online').replace(/\/+$/, ''),
     dataDir: e.DATA_DIR || '/var/lib/wa-bridge',
-    maxInstances: int(e.MAX_INSTANCES, 25),
+    maxInstances: int(e.MAX_INSTANCES, 15),
     perMinute: int(e.SEND_PER_MINUTE, 20),
     perHour: int(e.SEND_PER_HOUR, 400),
     gapMin: int(e.SEND_GAP_MIN_MS, 1200),
