@@ -1,0 +1,21 @@
+{
+  "name": "sellybot-wa-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sellybot's own WhatsApp linked-device server (one Baileys connection per number)",
+  "type": "module",
+  "main": "src/server.mjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "pino": "9.14.0",
+    "qrcode": "1.5.4"
+  }
+}

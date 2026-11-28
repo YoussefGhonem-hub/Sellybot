@@ -1,0 +1,18 @@
+# /etc/caddy/Caddyfile on the bridge's machine (server-setup.sh copies it). Caddy gets and renews the certificate by itself:
+# the DNS record must be "DNS only" (grey cloud), and ports 80 + 443 open (Oracle Security List and iptables).
+{
+	admin off
+}
+
+wa.sellybot.online {
+	encode gzip
+	request_body {
+		max_size 20MB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+	reverse_proxy 127.0.0.1:3100
+}

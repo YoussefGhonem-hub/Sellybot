@@ -35,3 +35,10 @@ deploy/ssl/
 
 # the owner's source videos for the reels page (the site copies live in deploy/site/reels/)
 /reels/
+
+# ---- the WhatsApp bridge (deploy/wa-bridge): the secret and every number's WhatsApp login never go in the repo ----
+deploy/wa-bridge/node_modules/
+deploy/wa-bridge/.env
+deploy/wa-bridge/data/
+deploy/wa-bridge/auth/
+/var/lib/wa-bridge/
