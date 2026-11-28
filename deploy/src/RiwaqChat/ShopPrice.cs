@@ -180,7 +180,7 @@ namespace RiwaqChat
             q.FreeShip = (over >= 0 && after >= over && ok.Count > 0) || (cp != null && cp.Type == "ship" && q.CouponUsed);
             q.FreeLeft = over > 0 && !q.FreeShip ? over - after : 0;
             q.Ship = gov > 0 && !q.FreeShip ? fee : 0;
-            ShopShipPick.Quote(c, d, q, how, gov, fee, days, over, after, ok.Count > 0, cp != null && cp.Type == "ship" && q.CouponUsed);   // the customer picks the company: its fee and days (off: as it was)
+            ShopShipPick.Quote(c, d, q, how, gov, city, fee, days, over, after, ok.Count > 0, cp != null && cp.Type == "ship" && q.CouponUsed);   // the customer picks the company: its fee and days (off: as it was)
             // taken from the shop: no delivery, wherever the customer lives
             if (how != null && !string.IsNullOrEmpty(how.Branch) && Branch(d.Row, how.Branch) != null) { q.Branch = how.Branch; q.Ship = 0; q.ShipFull = 0; q.FreeLeft = 0; off = false; q.Deliver = true; q.Days = ""; }
             if (how != null && ok.Count > 0)

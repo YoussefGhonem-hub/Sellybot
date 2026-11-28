@@ -100,6 +100,7 @@ END
             foreach (var l in q.Lines.Where(x => x.P != null && x.P.Digi != null && x.Err == null)) if (!Sellable(d.Row.StoreId, l.P)) l.Err = "gone";
             if (!ok.All(l => l.P.Digi != null)) return;
             q.Lines.RemoveAll(l => l.Gift > 0 && (l.P == null || l.P.Digi == null)); q.Ship = 0; q.ShipFull = 0; q.FreeLeft = 0; q.FreeShip = true; q.Days = ""; q.Deliver = true; q.Branch = null; q.Fees.RemoveAll(f => f.Kind == "cod");
+            q.Ways = null; q.Car = null;   // nothing is shipped: no «هتستلم مع مين؟» (ShopShipPick), even when the customer's governorate is known from before
         }
         // an order of digital lines only (ShopOrders.Place, before its checks): no governorate, no address
         public static bool Fill(SqlConnection c, Shop row, ShopOrderIn o)

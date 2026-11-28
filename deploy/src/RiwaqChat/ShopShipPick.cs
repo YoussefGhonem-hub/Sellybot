@@ -89,11 +89,14 @@ namespace RiwaqChat
 
         // ShopPrice.Quote, after the governorate's fee: every way for this place and cart, and the one that counts (the customer's,
         // else the first in the owner's order). gov 0 or no way: the sum stays exactly as it was.
-        public static void Quote(SqlConnection c, ShopData d, ShopQuote q, ShopHow how, int gov, decimal govFee, string govDays, decimal over, decimal after, bool any, bool codeFree)
+        // A company whose own list of areas says it doesn't deliver to this governorate or city isn't offered there (CarrierAreas.Delivers).
+        // If that leaves a single way, it is the one: its fee and days, no cards, nothing to pick; none left: the sum stays as it was.
+        public static void Quote(SqlConnection c, ShopData d, ShopQuote q, ShopHow how, int gov, string city, decimal govFee, string govDays, decimal over, decimal after, bool any, bool codeFree)
         {
             if (gov <= 0 || !q.Deliver) return; var l = Active(c, d.Row); if (l == null) return;
+            l = l.Where(o => o.K == "self" || CarrierAreas.Delivers(c, d.Row.StoreId, o.K, gov, city)).ToList(); if (l.Count == 0) return;
             q.Ways = l.Select(o => { var full = Fee(o, govFee); bool free = codeFree || (o.Free && over >= 0 && after >= over && any); return new Way { O = o, Full = full, Fee = free ? 0 : full, Free = free, Days = Days(o, govDays) }; }).ToList();
-            var want = how == null ? "" : how.Carrier ?? ""; var w = q.Ways.FirstOrDefault(x => x.O.K == want); q.CarOk = w != null; if (w == null) w = q.Ways[0];
+            var want = how == null ? "" : how.Carrier ?? ""; var w = q.Ways.FirstOrDefault(x => x.O.K == want); q.CarOk = w != null || q.Ways.Count == 1; if (w == null) w = q.Ways[0];
             q.Car = w.O.K; q.ShipFull = w.Full; q.FreeShip = w.Free; q.FreeLeft = w.O.Free && over > 0 && !w.Free ? over - after : 0; q.Ship = w.Fee; q.Days = w.Days;
             // a way «شحن مجاني فوق» doesn't cover has no free shipping to reach: -1 («never», as FreeOver says it), so no bar says «الشحن مجاني
             // ليك» while it is charged (every bar shows only above 0; 0 would read «always free» in some templates)

@@ -108,6 +108,18 @@ namespace RiwaqChat
             }
         }
 
+        // The checkout's «هتستلم مع مين؟» (ShopShipPick.Quote): false only when the company's own list is sure it doesn't deliver there.
+        // That is: every area it has in the governorate is closed, or the customer's city is one closed area with no open one beside it.
+        // Unsure (no list yet, our governorate's name not found in theirs, a city of many areas): it delivers, as before.
+        public static bool Delivers(SqlConnection c, int storeId, string company, int gov, string city)
+        {
+            var m = Load(c, company); if (m.Rows.Count == 0 || gov <= 0) return true;
+            var pool = InGov(m, gov); if (pool.Count == 0 || !pool.Any(r => r.Closed)) return true;
+            if (pool.All(r => r.Closed)) return false;
+            if (string.IsNullOrWhiteSpace(city)) return true;
+            var h = Match(c, storeId, company, gov, city, ""); return !(h.Closed && h.More.Count == 0);
+        }
+
         public static CarrierHit Match(SqlConnection c, int storeId, string company, int gov, string city, string area)
         {
             var m = Load(c, company); var h = new CarrierHit(); if (m.Rows.Count == 0) return h; string fc = Fold(city), fa = Fold(area);
