@@ -51,6 +51,28 @@ function translate() {
     inp: { cn: (v, i) => { cats[i].name = v; }, pn: (v, i) => { l[i].name = v; }, pd: (v, i) => { l[i].descr = v; }, po: (v, i, a) => { l[i].options[a].n = v; }, pv: (v, i, a, b) => { l[i].options[a].v[b][1] = v; } },
     acts: { go: b => run(b, async () => { const r = await post("translate", { skip }); l = r.list; cats = r.cats; p.draw(); }), no: i => { skip.push(l[+i].id); l.splice(+i, 1); p.draw(); }, save: b => run(b, async () => { await post("translate-save", { list: l, cats }); await SB.reload(); l = []; cats = []; say("اتحفظ ✅"); if (st().noEn > skip.length) { const r = await post("translate", { skip }); l = r.list; cats = r.cats; } p.draw(); if (SB.view() === "products") { SB.body().innerHTML = ""; load(); } }) } });
 }
+/* ---------- «✨ رتّب منتجاتك في أقسام»: the assistant groups the products by their names; the owner reads, renames, takes a product
+   out or a whole category, and only then the categories are made and the products put in them (nothing leaves a category it was in) ---------- */
+function catsAi() {
+  let l = null, left = [], all = false;
+  const p = pane({ title: "رتّب منتجاتك في أقسام", cls: "wide", dirty: () => !!(l && l.some(k => k.on)),
+    html: () => l === null ? `<p>المساعد بيقرا أسماء منتجاتك ويقترح أقسام، وبيحط كل منتج في قسم. إنت تراجع وتعدّل قبل ما حاجة تتعمل.</p>${SB.tog("all", all, "كل المنتجات", "حتى اللي في أقسام بالفعل: بيتضافوا لقسم كمان، ومش بيخرجوا من أقسامهم.", 'data-ch="cAll"')}<p class="sm-hint">بتتحسب من رصيد رسايل باقتك.</p>`
+      : `<p>${l.length ? "شيل العلامة من القسم اللي مش عايزه، وغيّر اسمه لو حابب، ودوس ✕ على أي منتج مش مكانه." : ""}</p><div class="sm-cai">${l.map((k, i) => `<section class="sm-caic ${k.on ? "" : "off"}"><div class="sm-caih"><input type="checkbox" data-ch="kOn:${i}" ${k.on ? "checked" : ""} aria-label="اعمل القسم ده">${k.id ? `<b>${esc(k.name)}</b><small class="sm-pill">قسم موجود</small>` : `<input type="text" value="${esc(k.name)}" maxlength="40" data-in="kName:${i}" aria-label="اسم القسم">`}<small>${plural(k.items.length, "منتج واحد", "منتجين", "منتجات", "منتج")}</small></div><div class="sm-caip">${k.items.map((x, j) => `<span class="sm-chip">${esc(x.name)}<button type="button" data-do="kOut:${i}:${j}" aria-label="شيل ${esc(x.name)} من القسم ده">${ico("x")}</button></span>`).join("")}</div></section>`).join("")}</div>${left.length ? `<p class="sm-hint">من غير قسم: ${left.map(x => esc(x.name)).join("، ")}</p>` : ""}`,
+    foot: () => l === null ? `<button type="button" class="btn" data-do="go">✨ اقترح الأقسام</button>` : `<button type="button" class="btn" data-do="save" ${l.some(k => k.on && k.items.length) ? "" : "disabled"}>اعمل الأقسام (${fmt(l.filter(k => k.on && k.items.length).length)})</button><button type="button" class="btn ghost" data-do="again">اقترح تاني</button>`,
+    ch: { cAll: v => { all = v; }, kOn: (v, i) => { l[+i].on = v; p.draw(); } },
+    inp: { kName: (v, i) => { l[+i].name = v; } },
+    acts: {
+      go: b => run(b, async () => { const r = await post("cats-ai", { all }); l = r.cats.map(k => ({ ...k, on: true })); left = r.left || []; p.draw(); }),
+      again: () => { l = null; left = []; p.draw(); },
+      kOut: (i, j) => { const k = l[+i], x = k.items.splice(+j, 1)[0]; if (x) left.push(x); if (!k.items.length) k.on = false; p.draw(); },
+      save: b => run(b, async () => {
+        const use = l.filter(k => k.on && k.items.length); if (use.some(k => !k.id && String(k.name || "").trim().length < 2)) throw new Error("اكتب اسم كل قسم.");
+        let n = 0;
+        for (const k of use) { const id = k.id || (await post("cat-save", { name: k.name.trim(), nameEn: k.en || "" })).id; await post("prod-bulk", { ids: k.items.map(x => x.id), what: "cat", cat: id }); n += k.items.length; }
+        await SB.reload(); l = null; p.close(true); say(`اتعملت ${plural(use.length, "قسم واحد", "قسمين", "أقسام", "قسم")} واتحط فيها ${plural(n, "منتج واحد", "منتجين", "منتجات", "منتج")} ✅`); if (SB.view() === "cats") V.cats.draw(SB.body());
+      })
+    } });
+}
 /* ---------- Excel ---------- */
 function excel() {
   let res = null;
@@ -187,11 +209,12 @@ V.cats = {
   async open(body) { V.cats.draw(body); },
   draw(body) {
     const all = st().cats, tops = all.filter(k => !k.parent), r = k => `<div class="sm-row cat ${k.hidden ? "dim" : ""}" data-id="${k.id}"><button type="button" class="sm-grip" aria-label="اسحب ${esc(k.name)} لترتيبه (أو الأسهم)">${ico("grip")}</button><span class="sm-th">${k.image ? `<img src="${esc(SB.src(k.image))}" alt="">` : ico("img")}</span><button type="button" class="grow" data-do="cEdit:${k.id}"><b>${esc(k.name)}</b><small>${plural(k.count, "منتج واحد", "منتجين", "منتجات", "منتج")}${k.hidden ? " · مخفي" : ""}${k.inHome || k.parent ? "" : " · مش في الرئيسية"}</small></button><button type="button" class="btn ghost sm" data-do="cProds:${k.id}">المنتجات</button></div>`;
-    body.innerHTML = `<section class="card"><div class="row"><div><h3>الأقسام</h3><p class="sub">اسحب من النقط عشان ترتّبهم زي ما هيظهروا في المتجر.</p></div><span class="space"></span>${st().biz && st().biz !== "other" ? `<button type="button" class="btn ghost sm" data-do="cReady">أقسام جاهزة</button>` : ""}<button type="button" class="btn sm" data-do="cEdit:0">${ico("plus")} قسم جديد</button></div>${tops.length ? `<div class="sm-list sm-cats" data-tops>${tops.map(k => `<div class="sm-cg" data-id="${k.id}">${r(k)}<div class="sm-sub" data-p="${k.id}">${all.filter(s => s.parent === k.id).map(r).join("")}</div><button type="button" class="sm-lk" data-do="cEdit:0:${k.id}">${ico("plus")} قسم فرعي</button></div>`).join("")}</div>` : '<div class="sm-empty"><span aria-hidden="true">🗂️</span><p><b>الأقسام بتسهّل على الزبون</b><br>ابدأ بأقسام جاهزة لنشاطك أو اعمل أقسامك.</p></div>'}</section>`;
+    body.innerHTML = `<section class="card"><div class="row"><div><h3>الأقسام</h3><p class="sub">اسحب من النقط عشان ترتّبهم زي ما هيظهروا في المتجر.</p></div><span class="space"></span>${((st().counts || {}).products || 0) >= 2 ? `<button type="button" class="btn ghost sm" data-do="cAi">✨ رتّب منتجاتك في أقسام</button>` : ""}${st().biz && st().biz !== "other" ? `<button type="button" class="btn ghost sm" data-do="cReady">أقسام جاهزة</button>` : ""}<button type="button" class="btn sm" data-do="cEdit:0">${ico("plus")} قسم جديد</button></div>${tops.length ? `<div class="sm-list sm-cats" data-tops>${tops.map(k => `<div class="sm-cg" data-id="${k.id}">${r(k)}<div class="sm-sub" data-p="${k.id}">${all.filter(s => s.parent === k.id).map(r).join("")}</div><button type="button" class="sm-lk" data-do="cEdit:0:${k.id}">${ico("plus")} قسم فرعي</button></div>`).join("")}</div>` : '<div class="sm-empty"><span aria-hidden="true">🗂️</span><p><b>الأقسام بتسهّل على الزبون</b><br>ابدأ بأقسام جاهزة لنشاطك أو اعمل أقسامك.</p></div>'}</section>`;
     const save = () => run(null, async () => { const ids = []; body.querySelectorAll("[data-tops] > .sm-cg").forEach(g => { ids.push(+g.dataset.id); g.querySelectorAll(".sm-sub > .sm-row").forEach(s => ids.push(+s.dataset.id)); }); await post("cat-sort", { ids }); say("الترتيب اتحفظ"); });
     const tb = body.querySelector("[data-tops]"); if (tb) { SB.sort(tb, ".sm-cg", save); tb.querySelectorAll(".sm-sub").forEach(s => SB.sort(s, ".sm-row", save)); }
   },
   acts: {
+    cAi: () => catsAi(),
     cReady: b => run(b, async () => { await post("cat-ready", { biz: st().biz }); say("اتضافوا ✅ عدّل اللي مش عاجبك."); V.cats.draw(SB.body()); }),
     cEdit: (id, parent) => {
       const k = JSON.parse(JSON.stringify(st().cats.find(x => x.id === +id) || { id: 0, name: "", nameEn: "", parent: typeof parent === "string" ? +parent : 0, descr: "", descrEn: "", image: "", cover: "", hidden: false, inMenu: true, inHome: true, slug: "", metaTitle: "", metaDesc: "", guide: null, linkOnly: false, from: "", to: "" })), en = st().draft.langs !== "ar", kids = st().cats.some(x => x.parent === k.id); let dirty = false;
