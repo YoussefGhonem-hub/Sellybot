@@ -381,7 +381,11 @@ namespace RiwaqChat
 
         static void SaveLook(SqlConnection c, StoreInfo s, Shop sh, Dictionary<string, object> b)
         {
-            var look = ShopLook.Clean(ShopJson.Sub(b, "look"), s.Id); var json = ShopJson.Write(look);
+            var look = ShopLook.Clean(ShopJson.Sub(b, "look"), s.Id);
+            // a new template only if it's open to merchants (a held or closed one is the admin's to open); the one the store already wears stays
+            string t = ShopJson.Str(ShopJson.At(look, "template")), was = ShopJson.Str(ShopJson.At(sh.Look(true), "template"));
+            if (t != was && t != ShopJson.Str(ShopJson.At(sh.Look(false), "template")) && !ShopTemplates.IsOpen(c, t)) look["template"] = was;
+            var json = ShopJson.Write(look);
             if (json.Length > 200000) throw new ShopException("too_big", "الشكل فيه كلام كتير. قلّل شوية.");
             Exec(c, null, "UPDATE dbo.Shops SET Draft=@d, DraftAt=SYSUTCDATETIME() WHERE StoreId=@s", "@d", json, "@s", s.Id);
         }
