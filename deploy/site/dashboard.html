@@ -2913,7 +2913,9 @@
       <div id="waOn" hidden>
         <div class="shop-status"><span class="ok-pill" id="waPill">✅ مربوط</span><span class="hint" id="waInfo" style="margin:0"></span></div>
         <div class="wa-warn" id="waWarn" hidden></div>
-        <!-- platform mode, phone not linked yet: the QR, refreshed until it's scanned -->
+        <!-- the phone removed the linked device (WaBridge.LostText): one button shows a new QR -->
+        <button class="btn" id="waRelink" type="button" hidden style="margin-top:10px">📷 اربطه تاني بالـ QR</button>
+        <!-- phone not linked yet: the QR, refreshed until it's scanned -->
         <div class="wa-qr" id="waQrBox" hidden>
           <div class="wa-qr-img"><img id="waQr" alt="كود QR لربط واتساب المتجر" hidden><div class="wa-qr-wait" id="waQrWait">⏳ بنجهّز الكود…</div></div>
           <div>
@@ -4917,6 +4919,15 @@
   // a warning on every page: WarnDays before the service ends (with the date), and after it ended while a number is still linked
   function renderWaBanner() {
     var sv = waSvc(), wb = $("waBanner");
+    // the phone removed the linked device (seen by our WhatsApp server): first, until it's scanned again
+    if (sv.on && sv.relink) {
+      wb.className = "banner full";
+      wb.innerHTML = '<span class="bn-ic">📵</span><span class="bn-t"><b>واتساب المتجر اتفصل عن الموبايل</b><small>المساعد مش بيرد على زباينك على الواتساب لحد ما تمسح الكود تاني من موبايل المتجر.</small></span>' +
+        '<a href="#wa" class="bn-cta">📷 اربطه تاني</a>';
+      wb.hidden = false;
+      wb.querySelector(".bn-cta").onclick = function (e) { e.preventDefault(); waQrOpen = true; go("wa"); };
+      return;
+    }
     var ending = sv.on && !sv.always && !sv.inPlan && sv.until && sv.daysLeft <= (sv.warnDays || 2), ended = !sv.on && !sv.always && sv.until && sv.connected;
     if (!ending && !ended) { wb.hidden = true; return; }
     wb.className = "banner " + (ended ? "full" : "wa");
@@ -8038,27 +8049,34 @@
       stopQr(); return;
     }
     stopUpsell();
-    var platform = wa.mode === "platform", linked = !!wa.linked;
-    var live = (wa.live || "").toUpperCase(), liveOk = !live || WA_LIVE[live] === "متصل";
+    var linked = !!wa.linked;
+    var live = (wa.live || "").toUpperCase();
     // the WhatsApp service ended: the number stays, but nothing goes out until it's renewed
     var svcOff = !!(wa.service && !wa.service.on);
+    // the phone removed the linked device: a warning and one button; the QR shows only once it's pressed
+    var relink = !!wa.relink && !linked && !svcOff, qrNow = !linked && !svcOff && (!relink || waQrOpen);
     var warn = svcOff ? "خدمة الواتساب خلصت" + (wa.service.until ? " يوم " + dateAr(wa.service.until) : "") + "، فالمساعد مش بيرد على الواتساب ومفيش رسايل بتطلع منه. جدّدها وكل حاجة ترجع زي ما كانت."
-      : wa.status || wa.liveError || (!liveOk && !platform ? "رقم الواتساب مش متصل دلوقتي (" + (WA_LIVE[live] || live) + ")." : "");
-    $("waUnlink").hidden = !(platform && linked);
-    $("waQrBox").hidden = !(platform && !linked) || svcOff;
-    if (platform && !linked && svcOff) {
+      : (relink && waQrOpen) ? "" : wa.status || wa.liveError || "";
+    $("waUnlink").hidden = !linked;
+    $("waRelink").hidden = !(relink && !waQrOpen);
+    $("waQrBox").hidden = !qrNow;
+    if (!linked && svcOff) {
       stopQr();
       $("waPill").className = "warn-pill"; $("waPill").textContent = "⏳ خدمة الواتساب خلصت";
       $("waInfo").textContent = "جدّد الخدمة، وبعدها امسح الكود من موبايل المتجر.";
-    } else if (platform && !linked) {
+    } else if (relink && !waQrOpen) {
+      stopQr();
+      $("waPill").className = "warn-pill"; $("waPill").textContent = "📵 محتاج تربطه تاني";
+      $("waInfo").textContent = "المساعد واقف على الواتساب لحد ما تمسح الكود تاني من موبايل المتجر.";
+    } else if (!linked) {
       $("waPill").className = "warn-pill"; $("waPill").textContent = "📱 مستني تمسح الـ QR";
       $("waInfo").textContent = "امسح الكود من موبايل المتجر وهيتربط على طول.";
       startQr();
     } else {
-      stopQr();
+      stopQr(); waQrOpen = false;
       $("waPill").className = warn ? "warn-pill" : "ok-pill";
-      $("waPill").textContent = (warn ? "⚠️ " : "✅ ") + "⁦" + (wa.number ? "+" + wa.number : platform ? "رقم المتجر" : wa.instance) + "⁩" + (live ? " · " + (WA_LIVE[live] || live) : "");
-      $("waInfo").textContent = wa.lastIncoming ? "آخر رسالة من زبون وصلت " + ago(wa.lastIncoming) : (platform ? "مربوط ✅ ابعت سؤال لرقم المتجر من موبايل تاني وشوف المساعد بيرد إزاي." : "لسه ماوصلتش رسايل.");
+      $("waPill").textContent = (warn ? "⚠️ " : "✅ ") + "⁦" + (wa.number ? "+" + wa.number : "رقم المتجر") + "⁩" + (live ? " · " + (WA_LIVE[live] || live) : "");
+      $("waInfo").textContent = wa.lastIncoming ? "آخر رسالة من زبون وصلت " + ago(wa.lastIncoming) : "مربوط ✅ ابعت سؤال لرقم المتجر من موبايل تاني وشوف المساعد بيرد إزاي.";
     }
     $("waWarn").hidden = !warn; $("waWarn").textContent = warn ? "⚠️ " + warn.replace(/^⚠️\s*/, "") : "";
     if (svcOff) {
@@ -8071,12 +8089,14 @@
       .forEach(function (x) { var s = document.createElement("span"); s.textContent = x[0] + " " + x[1]; st.appendChild(s); });
   }
   // QR polling: every ~4s while the tab is open and the phone isn't linked; the QR itself rotates on WhatsApp's side
-  var qrTimer = null, qrBusy = false;
+  var qrTimer = null, qrBusy = false, waQrOpen = false;   // waQrOpen: «اربطه تاني» pressed after the phone removed the link
+  // the QR is wanted while the number isn't linked (and, after the phone removed the link, once the owner asked for it)
+  function qrWanted() { return current === "wa" && !!wa && !!wa.connected && !wa.linked && !(wa.service && !wa.service.on) && (!wa.relink || waQrOpen); }
   function stopQr() { clearTimeout(qrTimer); qrTimer = null; }
   function startQr() { if (!qrTimer && !qrBusy) pollQr(); }
   async function pollQr() {
     qrTimer = null;
-    if (current !== "wa" || document.hidden || !wa || wa.mode !== "platform" || wa.linked) { if (current === "wa" && wa && wa.mode === "platform" && !wa.linked) qrTimer = setTimeout(pollQr, 4000); return; }
+    if (!qrWanted() || document.hidden) { if (qrWanted()) qrTimer = setTimeout(pollQr, 4000); return; }
     qrBusy = true;
     try {
       var r = await api("api/whatsapp.ashx?action=qr", { method: "POST", json: {} });
@@ -8089,9 +8109,10 @@
       else { $("waQr").hidden = true; $("waQrWait").hidden = false; $("waQrWait").textContent = "⏳ بنجهّز الكود…"; }
     } catch (e) { $("waQrWait").textContent = "⚠️ " + e.message; $("waQrWait").hidden = false; $("waQr").hidden = true; }
     qrBusy = false;
-    if (current === "wa" && wa && wa.mode === "platform" && !wa.linked) qrTimer = setTimeout(pollQr, 4000);
+    if (qrWanted()) qrTimer = setTimeout(pollQr, 4000);
   }
-  document.addEventListener("visibilitychange", function () { if (!document.hidden && current === "wa" && wa && wa.mode === "platform" && !wa.linked) { stopQr(); startQr(); } });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && qrWanted()) { stopQr(); startQr(); } });
+  $("waRelink").onclick = function () { waQrOpen = true; renderWa(); };
   async function waCall(action, body, btn, busy) {
     var old = btn.innerHTML; btn.classList.add("loading-txt"); if (busy) btn.textContent = busy; setMsg("waMsg", "");
     try { return await api("api/whatsapp.ashx?action=" + action, { method: "POST", json: body || {} }); }
@@ -8120,11 +8141,9 @@
     if (r) { wa = r; renderWa(); }
   };
   $("waOffBtn").onclick = async function () {
-    var platform = wa && wa.mode === "platform";
-    if (!(await sbConfirm(platform ? "المساعد هيبطّل يرد على الواتساب، والموبايل هيتفك من الربط، وهنمسح المحادثات المحفوظة عندنا. تقدر تربط تاني في أي وقت."
-                          : "المساعد هيبطّل يرد على الواتساب وهنمسح المحادثات المحفوظة عندنا. وتقدر تربط تاني في أي وقت.", { title: "تفصل الواتساب؟", ok: "افصله", no: "سيبه", danger: true }))) return;
+    if (!(await sbConfirm("المساعد هيبطّل يرد على الواتساب، والموبايل هيتفك من الربط، وهنمسح المحادثات المحفوظة عندنا. تقدر تربط تاني في أي وقت.", { title: "تفصل الواتساب؟", ok: "افصله", no: "سيبه", danger: true }))) return;
     var r = await waCall("disconnect", {}, this, "…");
-    if (r) { stopQr(); await loadWa(); setMsg("waMsg", platform ? "اتلغى الربط." : "اتلغى الربط.", true); }
+    if (r) { stopQr(); waQrOpen = false; await loadWa(); setMsg("waMsg", "اتلغى الربط.", true); }
   };
 
   // ---------------- «👥 أرقام الواتساب والفريق»: more than one number, and who holds each (api/wa-lines.ashx) ----------------
@@ -8151,7 +8170,7 @@
     var lines = wl.lines || [];
     lines.forEach(function (l) {
       var row = document.createElement("div"); row.className = "wl-row" + (l.main ? " main" : "") + (!l.works && !l.main ? " off" : ""); row.dataset.id = l.id;
-      var pill = l.main ? (l.linked ? "✅ مربوط" : "📱 مستني الـ QR فوق") : !l.assigned ? "⏳ بنجهّزلك رقم" : !l.works ? "⚠️ مش ضمن اشتراكك" : l.linked ? "✅ مربوط" : "📱 مستني تمسح الـ QR";
+      var pill = l.main ? (l.linked ? "✅ مربوط" : "📱 مستني الـ QR فوق") : !l.assigned ? "⏳ بنجهّزلك رقم" : !l.works ? "⚠️ مش ضمن اشتراكك" : l.linked ? "✅ مربوط" : l.relink ? "📵 اتفصل، اربطه تاني" : "📱 مستني تمسح الـ QR";
       var head = '<div class="wl-head"><span class="wl-n">' + l.index + '</span><b>' + esc(l.label) + '</b>' + (l.main ? '<span class="st-pill">⭐ الأساسي</span>' : '') +
         '<span class="st-pill' + (l.linked && l.works ? ' answered' : '') + '">' + pill + '</span>' + (l.top ? '<span class="wl-top">🏆 أكتر رقم بيرد</span>' : '') + '</div>';
       var st = l.stats || {};
@@ -8175,7 +8194,7 @@
       if (l.main) { var h = document.createElement("span"); h.className = "hint"; h.style.margin = "0"; h.textContent = "الرقم الأساسي بتربطه وتفكه من فوق، ومنه بتطلع رسايل التأكيد والعروض."; acts.appendChild(h); }
       else {
         if (!l.assigned) act("🔄 جرّب تاني", "ghost", function (b) { wlPost("link", { id: l.id }, b); });
-        else if (l.works && !l.linked && wlQrId !== l.id) act("📷 اعرض الـ QR", "", function () { openLineQr(l.id); });
+        else if (l.works && !l.linked && wlQrId !== l.id) act(l.relink ? "📷 اربطه تاني بالـ QR" : "📷 اعرض الـ QR", "", function () { openLineQr(l.id); });
         if (l.linked) act("📱 اربط موبايل تاني", "ghost", function (b) {
           sbConfirm("هنفك الموبايل الحالي عن الرقم ده، وهيظهرلك QR جديد تمسحه من الموبايل التاني.", { title: "تربط موبايل تاني؟", ok: "كمّل", no: "لأ" }).then(function (y) { if (y) wlPost("unlink", { id: l.id }, b).then(function (r) { if (r) openLineQr(l.id); }); });
         });
@@ -8206,7 +8225,7 @@
     // adding a number: free while the subscription covers it, otherwise a request in «باقتي» (only the days left until its renewal)
     var addBtn = $("wlAddBtn"), t = $("wlAddT"), full = lines.length >= wl.max;
     addBtn.hidden = full || !wl.platform || !wl.service;
-    if (!wl.platform) t.textContent = "الأرقام الإضافية شغالة مع الربط بالـ QR بس، ورقمك الأساسي مربوط بحساب Wapilot بتاعك.";
+    if (!wl.platform) t.textContent = "الأرقام الإضافية محتاجة رقمك الأساسي يكون مربوط بالـ QR من هنا. الغي ربطه واربطه تاني بالـ QR.";
     else if (!wl.service) t.textContent = "فعّل خدمة الواتساب الأول من «باقتي»، وبعدين ضيف أرقامك.";
     else if (full) t.textContent = "وصلت لأقصى عدد أرقام (" + fmt(wl.max) + ").";
     else if (wl.canAdd) {
