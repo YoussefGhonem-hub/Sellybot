@@ -864,7 +864,7 @@ to{transform:scale(1)}
 .st.t-nabd .n-cc{grid-template-columns:120px minmax(0,1fr) auto;padding:12px}
 .st.t-nabd .cdd{bottom:auto;top:calc(var(--nth,68px) - 6px);inset-inline-start:auto;inset-inline-end:max(16px,calc((100cqw - var(--rw,84px) - 1600px) / 2 + 16px));width:min(410px,calc(100cqw - 32px));max-height:var(--cddmax,calc(100cqh - 90px));border-radius:26px;transform-origin:90% 0}
 .st.t-nabd[dir=rtl] .cdd{transform-origin:10% 0}
-.st.t-nabd .cddb{background:rgba(13,10,30,.06);-webkit-backdrop-filter:none;backdrop-filter:none}
+.st.t-nabd .cddb{background:rgba(13,10,30,.06);-webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:none}
 .st.t-nabd .n-grab{display:none}
 .st.t-nabd .n-cdh{padding-top:12px}
 .st.t-nabd .toast{bottom:22px!important}
